@@ -1,0 +1,403 @@
+--[[--/*
+
+    CrossDistance.fuse
+
+    Based on https://www.shadertoy.com/view/XtGfzw a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion. With a lot of help by JiPi and base on
+    his work (see: https://youtu.be/dbrPWRldmbs).
+
+
+    The MIT License
+    Copyright © 2015 Inigo Quilez
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+    documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+    to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above
+    copyright notice and this permission notice shall be included in all copies or substantial portions of the
+    Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+    LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+    SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.    
+
+*/--]]--
+
+
+local shadertoy_name      = "Cross - distance"
+local shadertoy_author    = "iq"
+local shadertoy_id        = "XtGfzw"
+local shadertoy_license   = "Copyright © 2015 Inigo Quilez"
+local dctlfuse_code       = true
+local dctlfuse_name       = "CrossDistance"
+local dctlfuse_author     = "nmbr73"
+local dctlfuse_authorurl  = "https://www.youtube.com/c/nmbr73"
+local dctlfuse_infourl    = "https://www.youtube.com/c/nmbr73"
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
+  REGS_Category          = "Fuses\\DCTL\\Shadertoys",
+  REGS_OpIconString      = "ST-"..shadertoy_id,
+  REGS_OpDescription     = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..")",
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_Fuse_NoEdit        = not(dctlfuse_code),
+  REG_Fuse_NoReload      = not(dctlfuse_code),
+
+  REG_TimeVariant        = true,
+
+  REGS_Company           = dctlfuse_author,
+  REGS_URL               = dctlfuse_authorurl,
+  REG_Version            = 000001,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameter description
+-- // ------------------------------------------------------------------------
+ 
+DCTL_Params =
+[[
+  float cornerRadius;
+  float r;
+  float g;
+  float b;
+  float a;
+  int   medieval;
+  float freq;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation 
+-- // ------------------------------------------------------------------------
+
+DCTL_Kernel =
+    [[
+
+//############################################################################
+
+__DEVICE__ float sdCross( float2 p, float2 b, float r , int medieval) 
+{
+  p = abs(p); p = (p.y>p.x) ? p.yx : p.xy;
+    
+  float2  q = p - b;
+
+  if (medieval)
+    q = b - p;
+
+  float k = max(q.y,q.x);
+  float2  w = (k>0.0) ? q : to_float2(b.y-p.x,-k);
+    
+  return sign(k)*length(max(w,0.0f)) + r;
+}
+
+//############################################################################
+
+__KERNEL__ void DCTL_Kernel(
+    __CONSTANTREF__ DCTL_Params*  params, 
+    __TEXTURE2D__                 iChannel0, 
+    __TEXTURE2D_WRITE__           dst
+    )
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  float2 fragCoord   = to_float2(x, y); 
+  float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+  float4 fragColor   = to_float4_s(0.0f);
+  
+  // ----- Additional parameters
+  float red          = params->r;
+  float green        = params->g;
+  float blue         = params->b;
+  float alpha        = params->a;
+  int   medieval     = params->medieval;
+  float cornerRadius = params->cornerRadius;
+  
+  //##########################################################################
+
+  float2 p = (2.0f*fragCoord.xy-iResolution)/iResolution.y;
+
+  // size
+  float2 si = 0.5f + 0.3f*_cosf( iTime + to_float2(0.0f,1.57f) ); if( si.x<si.y ) si=si.yx;
+
+  // corner radious
+  float ra = cornerRadius * _sinf(iTime*(1.2f));
+
+
+  float d = sdCross( p, si, ra , medieval);
+
+
+  float3 col = to_float3_s(1.0f) - sign(d)*to_float3(red,green,blue);
+  col *= 1.0f - exp(-3.0f*abs(d));
+  col *= 0.8f + 0.2f*_cosf(150.0f*d);
+  col = mix( col, to_float3_s(1.0f), 1.0f-smoothstep(0.0f,0.015f,abs(d)) );
+
+  fragColor = to_float4_aw(col,alpha);
+  
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+  
+}
+
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ------------------- In/Out -----------------
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  --------------- Inspector Panle Controls ---------------
+
+  InfoButton = self:AddInput("Info ...", "InfoButton", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "ButtonControl",
+    INP_DoNotifyChanged = true,
+    INP_External = false,
+  })
+
+  self:BeginControlNest("Inner Color", "InnerColor", true, {})
+
+  InR = self:AddInput("Red", "Red", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.1,
+		ICS_Name = "Color",
+		IC_ControlGroup = 1,
+		IC_ControlID = 0,
+	})
+		
+	InG = self:AddInput("Green", "Green", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.4,
+		IC_ControlGroup = 1,
+		IC_ControlID = 1,
+	})
+		
+	InB = self:AddInput("Blue", "Blue", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.7,
+		IC_ControlGroup = 1,
+		IC_ControlID = 2,
+	})
+		
+	InA = self:AddInput("Global Alpha", "GlobalAlpha", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 1.0,
+		IC_ControlGroup = 1,
+		IC_ControlID = 3,
+	})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Playground", "Playground", true, {})
+
+  InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 2.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+  })
+
+  InCornerRadius = self:AddInput("Corner Radius", "Corner Radius", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 0.1,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 1.0,
+  })
+
+  InMedieval = self:AddInput("Medieval Walls", "Medieval Walls", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "CheckboxControl",
+	  INP_Integer        = true,
+    INP_Default        = 0,
+  }) 
+
+  self:EndControlNest()
+
+  InLabel = self:AddInput(
+    "Shadertoy <a href=\"https://www.shadertoy.com/view/"..shadertoy_id.."\" style=\"color:white; text-decoration:none; \">"
+    ..shadertoy_name.."</a> by <a href=\"https://www.shadertoy.com/user/"..shadertoy_author
+    .."\" style=\"color:yellow; text-decoration:none; \">"..shadertoy_author.."</a>",
+    "version", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    IC_NoLabel         = true,
+    ICD_Width          = 1,
+  })
+ 
+  InLabel = self:AddInput(
+    shadertoy_license,
+    "licence", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    IC_NoLabel         = true,
+    ICD_Width          = 1,
+  })
+
+  InLabel = self:AddInput(
+    "DCTLified and DaFused by <a href=\""
+    ..dctlfuse_authorurl.."\" style=\"color:white; text-decoration:none; \">"
+    ..dctlfuse_author.."</a>", 
+    "info", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    IC_NoLabel         = true,
+    ICD_Width          = 1,
+  })
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+   
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+   
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+    
+
+    -- Extern Texture or create a new one
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+    else
+        src1 = Image(imgattrs)
+        local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+        src1:Fill(p)
+    end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+    -- Interface for running DCTL-Code
+    node = DVIPComputeNode(req, "DCTL_Kernel", DCTL_Kernel, "DCTL_Params", DCTL_Params)
+
+    params = node:GetParamBlock(DCTL_Params)
+    params.r            = InR:GetValue(req).Value
+    params.g            = InG:GetValue(req).Value
+    params.b            = InB:GetValue(req).Value
+    params.a            = InA:GetValue(req).Value
+    params.medieval     = InMedieval:GetValue(req).Value
+    params.cornerRadius = InCornerRadius:GetValue(req).Value
+    params.freq         = InFreq:GetValue(req).Value
+    params.compOrder    = src1:IsMask() and 1 or 15
+    params.width        = src1.DataWindow:Width()
+    params.height       = src1.DataWindow:Height()
+    params.iTime        = req.Time / framerate        
+    node:SetParamBlock(params)
+   
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+    end
+
+    OutImage:Set(req, dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+	if (param ~= nil) then
+		if (param.Value == 1) then
+			if (inp == InfoButton) then
+				bmd.openurl(dctlfuse_infourl)
+			end	
+		end
+	end
+end
