@@ -1,0 +1,403 @@
+--[[--/*
+
+    CrossDistance.fuse
+
+    Based on https://www.shadertoy.com/view/XdsGD4 a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion. With a lot of help by JiPi and base on
+    his work (see: https://youtu.be/dbrPWRldmbs).
+
+    There was no licence provided on shadertoy.com. So if you
+    have the feeling that with this port your copyrights are
+    violated then please just let me know (no need for your lawyer
+    to inform me) and I will directly remove the code.
+
+*/--]]--
+
+-- TESTED ONLY ON METAL
+-- DOES NOT WORK ON CUDA
+
+local shadertoy_name      = "Rainbow Slices"
+local shadertoy_author    = "fizzer"
+local shadertoy_id        = "XdsGD4"
+local shadertoy_license   = ""
+local dctlfuse_code       = true
+local dctlfuse_name       = "RainbowSlices"
+local dctlfuse_author     = "nmbr73"
+local dctlfuse_authorurl  = "https://www.youtube.com/c/nmbr73"
+local dctlfuse_infourl    = "https://github.com/nmbr73/Shadertoys"
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
+  REGS_Category          = "Fuses\\DCTL\\Shadertoys",
+  REGS_OpIconString      = "ST-"..shadertoy_id,
+  REGS_OpDescription     = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..")",
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_Fuse_NoEdit        = not(dctlfuse_code),
+  REG_Fuse_NoReload      = not(dctlfuse_code),
+
+  REG_TimeVariant        = true,
+
+  REGS_Company           = dctlfuse_author,
+  REGS_URL               = dctlfuse_authorurl,
+  REG_Version            = 000001,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameter description
+-- // ------------------------------------------------------------------------
+ 
+DCTL_Params =
+[[
+  float freq;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation 
+-- // ------------------------------------------------------------------------
+
+DCTL_Kernel =
+    [[
+
+//############################################################################
+
+
+
+__DEVICE__ float sdCross( float2 p, float2 b, float r , int medieval) 
+{
+  p = abs(p); p = (p.y>p.x) ? p.yx : p.xy;
+    
+  float2  q = p - b;
+
+  if (medieval)
+    q = b - p;
+
+  float k = max(q.y,q.x);
+  float2  w = (k>0.0) ? q : to_float2(b.y-p.x,-k);
+    
+  return sign(k)*length(max(w,0.0f)) + r;
+}
+
+
+
+#define EPS to_float2(1e-4, 0.0)
+
+
+__DEVICE__ float3 rotateX(float a, float3 v)
+{
+   return float3(v.x, _cosf(a) * v.y + _sinf(a) * v.z, _cosf(a) * v.z - _sinf(a) * v.y);
+}
+
+__DEVICE__ float3 rotateY(float a, float3 v)
+{
+   return to_float3(_cosf(a) * v.x + _sinf(a) * v.z, v.y, _cosf(a) * v.z - _sinf(a) * v.x);
+}
+
+__DEVICE__ float sphere(float3 p, float r)
+{
+   return length(p) - r;
+}
+
+__DEVICE__ float plane(float3 p, float4 n)
+{
+   return dot(p, n.xyz) - n.w;
+}
+
+__DEVICE__ float sceneDist(float3 p, float time)
+{
+   const int num_spheres = 32;
+
+   float sd = 1e3;
+
+
+   for(int i = 0; i < num_spheres; ++i)
+   {
+      float r = 0.22 * sqrt(float(i));
+      float3 p2 = rotateX(cos(time + float(i) * 0.2f) * 0.15f, p);
+      float cd = -sphere(p2 + to_float3(0.0f, -0.9f, 0.0f), 1.3f);
+      sd = min(sd, max(abs(sphere(p2, r)), cd) - 1e-3);
+   }
+
+   return sd;
+}
+
+__DEVICE__ float3 sceneNorm(float3 p,float time)
+{
+   float d = sceneDist(p,time);
+   return normalize(to_float3(sceneDist(p + EPS.xyy,time) - d, sceneDist(p + EPS.yxy,time) - d,
+                           sceneDist(p + EPS.yyx, time) - d));
+}
+
+__DEVICE__ float3 col(float3 p)
+{
+   float a = length(p) * 20.0f;
+   return to_float3_s(0.5f) + 0.5f * _cosf(to_float3(a, a * 1.1f, a * 1.2f));
+}
+
+// ambient occlusion approximation (thanks to simesgreen)
+__DEVICE__ float ambientOcclusion(float3 p, float3 n, float time)
+{
+    const int steps = 4;
+    const float delta = 0.5f;
+
+    float a = 0.0f;
+    float weight = 3.0f;
+    for(int i=1; i<=steps; i++) {
+        float d = (float(i) / float(steps)) * delta; 
+        a += weight*(d - sceneDist(p + n*d, time ));
+        weight *= 0.5f;
+    }
+    return clamp(1.0f - a, 0.0f, 1.0f);
+}
+
+//############################################################################
+
+__KERNEL__ void DCTL_Kernel(
+    __CONSTANTREF__ DCTL_Params*  params, 
+    __TEXTURE2D__                 iChannel0, 
+    __TEXTURE2D_WRITE__           dst
+    )
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  float2 fragCoord   = to_float2(x, y); 
+  float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+  float4 fragColor   = to_float4_s(0.0f);
+    
+  //##########################################################################
+
+  float2 uv = fragCoord.xy / iResolution;
+  float2 t = uv * 2.0f - to_float2_s(1.0f);
+  t.x *= iResolution.x / iResolution.y;
+  
+  float time = iTime;
+  
+  float3 ro = to_float3(-0.4f, _sinf(time * 2.0f) * 0.05f, 0.7f), rd = rotateX(1.1f, rotateY(0.5f, normalize(to_float3_aw(t.xy, -0.8f))));
+  float f = 0.0f;
+  float3 rp, n;
+  
+  for(int i = 0; i < 100; ++i)
+  {
+      rp = ro + rd * f;
+      float d = sceneDist(rp,time);
+      
+      if(abs(d) < 1e-4)
+          break;
+      
+      f += d;
+  }
+  
+  n = sceneNorm(rp,time);
+  
+  float3 l = normalize(to_float3(1.0f, 1.0f, -1.0f));
+  
+  float ao = ambientOcclusion(rp, n, time);
+  
+  
+  fragColor.rgb = to_float3_s(0.5f + 0.5f * clamp(dot(n, l), 0.0f, 1.0f)) * col(rp) * mix(0.1f, 1.0f, ao) * 1.6f;
+  fragColor.a = 1.0f;
+  
+
+  //fragColor = to_float4_aw(r, g, b, 1.0f);
+  
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+  
+}
+
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ------------------- In/Out -----------------
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  --------------- Inspector Panle Controls ---------------
+
+  InfoButton = self:AddInput("Info ...", "InfoButton", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "ButtonControl",
+    INP_DoNotifyChanged = true,
+    INP_External = false,
+  })
+
+   InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 2.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+  })
+
+  InLabel = self:AddInput(
+    "Shadertoy <a href=\"https://www.shadertoy.com/view/"..shadertoy_id.."\" style=\"color:white; text-decoration:none; \">"
+    ..shadertoy_name.."</a> by <a href=\"https://www.shadertoy.com/user/"..shadertoy_author
+    .."\" style=\"color:yellow; text-decoration:none; \">"..shadertoy_author.."</a>",
+    "version", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    IC_NoLabel         = true,
+    ICD_Width          = 1,
+  })
+ 
+  if not(shadertoy_license=="") then
+    InLabel = self:AddInput(
+        shadertoy_license,
+        "licence", {
+        LINKID_DataType    = "Text",
+        INPID_InputControl = "LabelControl",
+        INP_External       = false,
+        INP_Passive        = true,
+        IC_NoLabel         = true,
+        ICD_Width          = 1,
+    })
+  end
+
+  InLabel = self:AddInput(
+    "DCTLified and DaFused by <a href=\""
+    ..dctlfuse_authorurl.."\" style=\"color:white; text-decoration:none; \">"
+    ..dctlfuse_author.."</a>", 
+    "info", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    IC_NoLabel         = true,
+    ICD_Width          = 1,
+  })
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+   
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+   
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+    
+
+    -- Extern Texture or create a new one
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+    else
+        src1 = Image(imgattrs)
+        local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+        src1:Fill(p)
+    end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+    -- Interface for running DCTL-Code
+    node = DVIPComputeNode(req, "DCTL_Kernel", DCTL_Kernel, "DCTL_Params", DCTL_Params)
+
+    params = node:GetParamBlock(DCTL_Params)
+    params.freq         = InFreq:GetValue(req).Value
+    params.compOrder    = src1:IsMask() and 1 or 15
+    params.width        = src1.DataWindow:Width()
+    params.height       = src1.DataWindow:Height()
+    params.iTime        = req.Time / framerate        
+    node:SetParamBlock(params)
+   
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+    end
+
+    OutImage:Set(req, dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+	if (param ~= nil) then
+		if (param.Value == 1) then
+			if (inp == InfoButton) then
+				bmd.openurl(dctlfuse_infourl)
+			end	
+		end
+	end
+end
