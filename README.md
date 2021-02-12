@@ -12,7 +12,11 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 Usage
 -----
-Just copy the whole folder resp. clone the repository into your `Fusion/Fuses/` directory (macOS: `~/Library/Application Support/Blackmagic Design/DaVinci Resolve/`; Windows 10: `%APPDATA%\\Blackmagic Design\\DaVinci Resolve\\Support\\`) or pick and choose only the .fuse files you are interested in (which is very simple as there is only one file so far).
+Just copy the whole folder resp. clone the repository into your `Fusion/Fuses/` directory (macOS: `~/Library/Application Support/Blackmagic Design/DaVinci Resolve/`; Windows 10: `%APPDATA%\\Blackmagic Design\\DaVinci Resolve\\Support\\`) or pick and choose only the .fuse files you are interested in (which is very simple as there are only two of them so far).
+
+    ATTENTION: Does currently not work on systems
+    using CUDA (Nvidia GPUs) as I myself can only
+    test the code on OpenCL and Metal.
 
 
 Fuses
@@ -20,8 +24,18 @@ Fuses
 
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
+
+
 ### CrossDistance.fuse
 
-Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](https://www.shadertoy.com/user/iq) and ported by [nmbr73](https://www.youtube.com/c/nmbr73).
+Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](https://www.shadertoy.com/user/iq) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). This was my very first attempt to play with Fuses and the conversion of WebGL to DCTL. Currently it is known to not work on CUDA!
 
 ![screenshot](CrossDistance.png "CrossDistance.fuse in DaVinci Resolve")
+
+
+
+### RainbowSlices.fuse
+
+Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer](https://www.shadertoy.com/user/fizzer) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). This is a quick and dirty convesion that will definiely need some rework. But it turned out to be very easy to tranlate so far and as this version already runs on Metal I wanted to share the itermediate result.
+
+![screenshot](RainbowSlices.png "RainbowSlices.fuse in DaVinci Resolve")

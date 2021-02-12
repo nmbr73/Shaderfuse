@@ -2,43 +2,32 @@
 
     CrossDistance.fuse
 
-    Based on https://www.shadertoy.com/view/XtGfzw a WebGL
+    Based on https://www.shadertoy.com/view/XdsGD4 a WebGL
     shader from shadertoy.com converted to DCTL and embeddet
     into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
     for use in DaFusion. With a lot of help by JiPi and base on
     his work (see: https://youtu.be/dbrPWRldmbs).
 
-
-    The MIT License
-    Copyright © 2015 Inigo Quilez
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-    documentation files (the "Software"), to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
-    to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above
-    copyright notice and this permission notice shall be included in all copies or substantial portions of the
-    Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-    LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-    SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.    
-
-V.02 Changes for Cuda (JiPi)
+    There was no licence provided on shadertoy.com. So if you
+    have the feeling that with this port your copyrights are
+    violated then please just let me know (no need for your lawyer
+    to inform me) and I will directly remove the code.
 
 */--]]--
 
 -- TESTED ONLY ON METAL
 -- DOES NOT WORK ON CUDA
 
-local shadertoy_name      = "Cross - distance"
-local shadertoy_author    = "iq"
-local shadertoy_id        = "XtGfzw"
-local shadertoy_license   = "Copyright © 2015 Inigo Quilez"
+local shadertoy_name      = "Rainbow Slices"
+local shadertoy_author    = "fizzer"
+local shadertoy_id        = "XdsGD4"
+local shadertoy_license   = ""
 local dctlfuse_code       = true
-local dctlfuse_name       = "CrossDistance"
+local dctlfuse_name       = "RainbowSlices"
 local dctlfuse_author     = "nmbr73"
 local dctlfuse_authorurl  = "https://www.youtube.com/c/nmbr73"
-local dctlfuse_infourl    = "https://www.youtube.com/c/nmbr73"
-local version             = "V0.2"
+local dctlfuse_infourl    = "https://github.com/nmbr73/Shadertoys"
+
 
 
 -- // ------------------------------------------------------------------------
@@ -65,7 +54,7 @@ FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
 
   REGS_Company           = dctlfuse_author,
   REGS_URL               = dctlfuse_authorurl,
-  REG_Version            = 000002,
+  REG_Version            = 000001,
   })
 
 
@@ -76,12 +65,6 @@ FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
  
 DCTL_Params =
 [[
-  float cornerRadius;
-  float r;
-  float g;
-  float b;
-  float a;
-  int   medieval;
   float freq;
   int   width;
   int   height;
@@ -98,30 +81,96 @@ DCTL_Params =
 DCTL_Kernel =
     [[
 
-__DEVICE__ float2 max2f(float2 v, float2 i) {return to_float2(_fmaxf(v.x,i.x),_fmaxf(v.y,i.y));}	
-__DEVICE__ float sign1f(float value) {
-  if (value == 0.0f) return 0.0f;
-  return value > 0.0f ? 1.0f : -1.0f;
-}
-__DEVICE__ float2 abs2f(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
-
 //############################################################################
+
+
 
 __DEVICE__ float sdCross( float2 p, float2 b, float r , int medieval) 
 {
-  p = abs2f(p); p = (p.y>p.x) ? to_float2(p.y,p.x) : to_float2(p.x,p.y);
+  p = abs(p); p = (p.y>p.x) ? p.yx : p.xy;
     
   float2  q = p - b;
 
   if (medieval)
     q = b - p;
 
-  float k = _fmaxf(q.y,q.x);
+  float k = max(q.y,q.x);
   float2  w = (k>0.0) ? q : to_float2(b.y-p.x,-k);
     
-  return sign1f(k)*length(max2f(w,to_float2_s(0.0f))) + r;
+  return sign(k)*length(max(w,0.0f)) + r;
 }
-__DEVICE__ float2 cos2f(float2 i) {float2 r; r.x = _cosf(i.x); r.y = _cosf(i.y); return r;}
+
+
+
+#define EPS to_float2(1e-4, 0.0)
+
+
+__DEVICE__ float3 rotateX(float a, float3 v)
+{
+   return float3(v.x, _cosf(a) * v.y + _sinf(a) * v.z, _cosf(a) * v.z - _sinf(a) * v.y);
+}
+
+__DEVICE__ float3 rotateY(float a, float3 v)
+{
+   return to_float3(_cosf(a) * v.x + _sinf(a) * v.z, v.y, _cosf(a) * v.z - _sinf(a) * v.x);
+}
+
+__DEVICE__ float sphere(float3 p, float r)
+{
+   return length(p) - r;
+}
+
+__DEVICE__ float plane(float3 p, float4 n)
+{
+   return dot(p, n.xyz) - n.w;
+}
+
+__DEVICE__ float sceneDist(float3 p, float time)
+{
+   const int num_spheres = 32;
+
+   float sd = 1e3;
+
+
+   for(int i = 0; i < num_spheres; ++i)
+   {
+      float r = 0.22 * sqrt(float(i));
+      float3 p2 = rotateX(cos(time + float(i) * 0.2f) * 0.15f, p);
+      float cd = -sphere(p2 + to_float3(0.0f, -0.9f, 0.0f), 1.3f);
+      sd = min(sd, max(abs(sphere(p2, r)), cd) - 1e-3);
+   }
+
+   return sd;
+}
+
+__DEVICE__ float3 sceneNorm(float3 p,float time)
+{
+   float d = sceneDist(p,time);
+   return normalize(to_float3(sceneDist(p + EPS.xyy,time) - d, sceneDist(p + EPS.yxy,time) - d,
+                           sceneDist(p + EPS.yyx, time) - d));
+}
+
+__DEVICE__ float3 col(float3 p)
+{
+   float a = length(p) * 20.0f;
+   return to_float3_s(0.5f) + 0.5f * _cosf(to_float3(a, a * 1.1f, a * 1.2f));
+}
+
+// ambient occlusion approximation (thanks to simesgreen)
+__DEVICE__ float ambientOcclusion(float3 p, float3 n, float time)
+{
+    const int steps = 4;
+    const float delta = 0.5f;
+
+    float a = 0.0f;
+    float weight = 3.0f;
+    for(int i=1; i<=steps; i++) {
+        float d = (float(i) / float(steps)) * delta; 
+        a += weight*(d - sceneDist(p + n*d, time ));
+        weight *= 0.5f;
+    }
+    return clamp(1.0f - a, 0.0f, 1.0f);
+}
 
 //############################################################################
 
@@ -141,35 +190,42 @@ __KERNEL__ void DCTL_Kernel(
   float2 iResolution = to_float2(params->width, params->height);
   float  iTime       = params->iTime * params->freq;
   float4 fragColor   = to_float4_s(0.0f);
-  
-  // ----- Additional parameters
-  float red          = params->r;
-  float green        = params->g;
-  float blue         = params->b;
-  float alpha        = params->a;
-  int   medieval     = params->medieval;
-  float cornerRadius = params->cornerRadius;
-  
+    
   //##########################################################################
 
-  float2 p = (2.0f*fragCoord-iResolution)/iResolution.y;
+  float2 uv = fragCoord.xy / iResolution;
+  float2 t = uv * 2.0f - to_float2_s(1.0f);
+  t.x *= iResolution.x / iResolution.y;
+  
+  float time = iTime;
+  
+  float3 ro = to_float3(-0.4f, _sinf(time * 2.0f) * 0.05f, 0.7f), rd = rotateX(1.1f, rotateY(0.5f, normalize(to_float3_aw(t.xy, -0.8f))));
+  float f = 0.0f;
+  float3 rp, n;
+  
+  for(int i = 0; i < 100; ++i)
+  {
+      rp = ro + rd * f;
+      float d = sceneDist(rp,time);
+      
+      if(abs(d) < 1e-4)
+          break;
+      
+      f += d;
+  }
+  
+  n = sceneNorm(rp,time);
+  
+  float3 l = normalize(to_float3(1.0f, 1.0f, -1.0f));
+  
+  float ao = ambientOcclusion(rp, n, time);
+  
+  
+  fragColor.rgb = to_float3_s(0.5f + 0.5f * clamp(dot(n, l), 0.0f, 1.0f)) * col(rp) * mix(0.1f, 1.0f, ao) * 1.6f;
+  fragColor.a = 1.0f;
+  
 
-  // size
-  float2 si = 0.5f + 0.3f*cos2f( iTime + to_float2(0.0f,1.57f) ); if( si.x<si.y ) si=to_float2(si.y,si.x);
-
-  // corner radious
-  float ra = cornerRadius * _sinf(iTime*(1.2f));
-
-
-  float d = sdCross( p, si, ra , medieval);
-
-
-  float3 col = to_float3_s(1.0f) - sign1f(d)*to_float3(red,green,blue);
-  col *= 1.0f - exp(-3.0f*abs(d));
-  col *= 0.8f + 0.2f*_cosf(150.0f*d);
-  col = _mix( col, to_float3_s(1.0f), 1.0f-smoothstep(0.0f,0.015f,abs(d)) );
-
-  fragColor = to_float4_aw(col,alpha);
+  //fragColor = to_float4_aw(r, g, b, 1.0f);
   
   //##########################################################################
 
@@ -208,77 +264,13 @@ function Create()
     INP_External = false,
   })
 
-  self:BeginControlNest("Inner Color", "InnerColor", true, {})
-
-  InR = self:AddInput("Red", "Red", {
-		LINKID_DataType = "Number",
-		INPID_InputControl = "ColorControl",
-		INP_MinScale = 0.0,
-		INP_MaxScale = 1.0,
-		INP_Default  = 0.1,
-		ICS_Name = "Color",
-		IC_ControlGroup = 1,
-		IC_ControlID = 0,
-	})
-		
-	InG = self:AddInput("Green", "Green", {
-		LINKID_DataType = "Number",
-		INPID_InputControl = "ColorControl",
-		INP_MinScale = 0.0,
-		INP_MaxScale = 1.0,
-		INP_Default  = 0.4,
-		IC_ControlGroup = 1,
-		IC_ControlID = 1,
-	})
-		
-	InB = self:AddInput("Blue", "Blue", {
-		LINKID_DataType = "Number",
-		INPID_InputControl = "ColorControl",
-		INP_MinScale = 0.0,
-		INP_MaxScale = 1.0,
-		INP_Default  = 0.7,
-		IC_ControlGroup = 1,
-		IC_ControlID = 2,
-	})
-		
-	InA = self:AddInput("Global Alpha", "GlobalAlpha", {
-		LINKID_DataType = "Number",
-		INPID_InputControl = "ColorControl",
-		INP_MinScale = 0.0,
-		INP_MaxScale = 1.0,
-		INP_Default  = 1.0,
-		IC_ControlGroup = 1,
-		IC_ControlID = 3,
-	})
-
-  self:EndControlNest()
-
-  self:BeginControlNest("Playground", "Playground", true, {})
-
-  InFreq = self:AddInput("Frequency", "Frequency", {
+   InFreq = self:AddInput("Frequency", "Frequency", {
     LINKID_DataType    = "Number",
     INPID_InputControl = "SliderControl",
     INP_Default        = 2.0,
     INP_MinScale 	     = 0.0,
     INP_MaxScale 	     = 5.0,
   })
-
-  InCornerRadius = self:AddInput("Corner Radius", "Corner Radius", {
-    LINKID_DataType    = "Number",
-    INPID_InputControl = "SliderControl",
-    INP_Default        = 0.1,
-    INP_MinScale 	     = 0.0,
-    INP_MaxScale 	     = 1.0,
-  })
-
-  InMedieval = self:AddInput("Medieval Walls", "Medieval Walls", {
-    LINKID_DataType    = "Number",
-    INPID_InputControl = "CheckboxControl",
-	  INP_Integer        = true,
-    INP_Default        = 0,
-  }) 
-
-  self:EndControlNest()
 
   InLabel = self:AddInput(
     "Shadertoy <a href=\"https://www.shadertoy.com/view/"..shadertoy_id.."\" style=\"color:white; text-decoration:none; \">"
@@ -293,21 +285,23 @@ function Create()
     ICD_Width          = 1,
   })
  
-  InLabel = self:AddInput(
-    shadertoy_license,
-    "licence", {
-    LINKID_DataType    = "Text",
-    INPID_InputControl = "LabelControl",
-    INP_External       = false,
-    INP_Passive        = true,
-    IC_NoLabel         = true,
-    ICD_Width          = 1,
-  })
+  if not(shadertoy_license=="") then
+    InLabel = self:AddInput(
+        shadertoy_license,
+        "licence", {
+        LINKID_DataType    = "Text",
+        INPID_InputControl = "LabelControl",
+        INP_External       = false,
+        INP_Passive        = true,
+        IC_NoLabel         = true,
+        ICD_Width          = 1,
+    })
+  end
 
   InLabel = self:AddInput(
     "DCTLified and DaFused by <a href=\""
     ..dctlfuse_authorurl.."\" style=\"color:white; text-decoration:none; \">"
-    ..dctlfuse_author.."</a>".."  "..version, 
+    ..dctlfuse_author.."</a>", 
     "info", {
     LINKID_DataType    = "Text",
     INPID_InputControl = "LabelControl",
@@ -370,37 +364,14 @@ function Process(req)
     -- Interface for running DCTL-Code
     node = DVIPComputeNode(req, "DCTL_Kernel", DCTL_Kernel, "DCTL_Params", DCTL_Params)
 
-
-    if not pcall(function ()  -- necessary to avoid memory leakage 
-		params.r            = InR:GetValue(req).Value
-		params.g            = InG:GetValue(req).Value
-		params.b            = InB:GetValue(req).Value
-		params.a            = InA:GetValue(req).Value
-		params.medieval     = InMedieval:GetValue(req).Value
-		params.cornerRadius = InCornerRadius:GetValue(req).Value
-		params.freq         = InFreq:GetValue(req).Value
-		params.compOrder    = src1:IsMask() and 1 or 15
-		params.width        = src1.DataWindow:Width()
-		params.height       = src1.DataWindow:Height()
-		params.iTime        = req.Time / framerate        
-		node:SetParamBlock(params)
-	end) then   
-	    params = node:GetParamBlock(DCTL_Params)
-	   
-   		params.r            = InR:GetValue(req).Value
-		params.g            = InG:GetValue(req).Value
-		params.b            = InB:GetValue(req).Value
-		params.a            = InA:GetValue(req).Value
-		params.medieval     = InMedieval:GetValue(req).Value
-		params.cornerRadius = InCornerRadius:GetValue(req).Value
-		params.freq         = InFreq:GetValue(req).Value
-		params.compOrder    = src1:IsMask() and 1 or 15
-		params.width        = src1.DataWindow:Width()
-		params.height       = src1.DataWindow:Height()
-		params.iTime        = req.Time / framerate        
-		node:SetParamBlock(params)
-    end	   
-	   
+    params = node:GetParamBlock(DCTL_Params)
+    params.freq         = InFreq:GetValue(req).Value
+    params.compOrder    = src1:IsMask() and 1 or 15
+    params.width        = src1.DataWindow:Width()
+    params.height       = src1.DataWindow:Height()
+    params.iTime        = req.Time / framerate        
+    node:SetParamBlock(params)
+   
     node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
 
     node:AddInput("iChannel0", src1)
