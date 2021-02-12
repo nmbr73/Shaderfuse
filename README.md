@@ -12,11 +12,8 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 Usage
 -----
-Just copy the whole folder resp. clone the repository into your `Fusion/Fuses/` directory (macOS: `~/Library/Application Support/Blackmagic Design/DaVinci Resolve/`; Windows 10: `%APPDATA%\\Blackmagic Design\\DaVinci Resolve\\Support\\`) or pick and choose only the .fuse files you are interested in (which is very simple as there are only two of them so far).
+Just copy the whole folder resp. clone the repository into your `Fusion/Fuses/` directory (macOS: `~/Library/Application Support/Blackmagic Design/DaVinci Resolve/`; Windows 10: `%APPDATA%\\Blackmagic Design\\DaVinci Resolve\\Support\\`) or pick and choose only the .fuse files you are interested in.
 
-    ATTENTION: Does currently not work on systems
-    using CUDA (Nvidia GPUs) as I myself can only
-    test the code on OpenCL and Metal.
 
 
 Fuses
@@ -28,7 +25,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 
 ### CrossDistance.fuse
 
-Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](https://www.shadertoy.com/user/iq) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). This was my very first attempt to play with Fuses and the conversion of WebGL to DCTL. Currently it is known to not work on CUDA!
+Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](https://www.shadertoy.com/user/iq) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). This was my very first attempt to play with Fuses and the conversion of WebGL to DCTL.
 
 ![screenshot](CrossDistance.png "CrossDistance.fuse in DaVinci Resolve")
 
@@ -41,11 +38,13 @@ Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer]
 ![screenshot](RainbowSlices.png "RainbowSlices.fuse in DaVinci Resolve")
 
 
+
 ### DancyTreeDoodle.fuse
 
 Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https://www.shadertoy.com/user/wyatt) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). This is also a quick and dirty conversion for a little AudioWaveform Video. 
 
 ![screenshot](/ObjektShader/DancyTreeDoodle.PNG "DancyTreeDoodle.fuse in DaVinci Resolve")
+
 
 
 ### Fake3DScene.fuse
