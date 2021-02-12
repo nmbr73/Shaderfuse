@@ -45,4 +45,4 @@ Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer]
 
 Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https://www.shadertoy.com/user/wyatt) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). This is also a quick and dirty conversion for a little AudioWaveform Video. 
 
-![screenshot](ObjektShader\DancyTreeDoodle.PNG "DancyTreeDoodle.fuse in DaVinci Resolve")
+![screenshot](/ObjektShader/DancyTreeDoodle.PNG "DancyTreeDoodle.fuse in DaVinci Resolve")
