@@ -1,0 +1,649 @@
+--[[--
+DancyTreeDoodle3D
+
+Based on https://www.shadertoy.com/view/4lVyzh Erstellt von wyatt am 2018-12-26
+
+
+V0.1 
+V0.2 
+V0.3 
+V0.4   
+  
+--]] --
+
+--------------------------------
+-- Registry declaration
+
+FuRegisterClass("DancyTreeDoodle3D", CT_SourceTool, {
+  REGS_Category      = "Fuses",
+  REGS_OpIconString  = "DTD3D",
+  REGS_OpDescription = "DancyTreeDoodle3D",
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_Fuse_NoEdit        = false,
+  REG_Fuse_NoReload      = false,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess    = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  REGS_Company           = "JiPi",
+  REGS_URL               = "https://www.steakunderwater.com/wesuckless/",
+  REG_Version            = 000001,
+  })
+
+version = "DancyTreeDoodle3D V0.1 - 30 Dez 2020"
+
+-----------------------------------
+-- Description of kernel parameters
+
+----------------DancyTreeDoodle3D--------------- 
+DancyTreeDoodle3DParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  float iMouse[3];
+  int width;
+  int height;
+  float itime;
+  int compOrder;
+]]
+
+
+-- source of kernel
+DancyTreeDoodle3DKernel =
+    [[
+//-------- mat2 ---------
+ typedef struct  
+  {  
+  float2 r0, r1;  
+  } mat2;  
+__DEVICE__ inline mat2 make_mat2( float2 A, float2 B)  
+  {  
+  mat2 C;  
+  C.r0 = A;  
+  C.r1 = B;  
+  return C;  
+  } 
+  __DEVICE__ inline float2 mat2_multi_2f( mat2 B, float2 A)  
+  {  
+  float2 C;  
+  C.x = A.x * B.r0.x + A.y * B.r0.y;  
+  C.y = A.x * B.r1.x + A.y * B.r1.y;  
+  return C;  
+  }
+   __DEVICE__ inline float2 f2_multi_mat2( float2 A, mat2 B)  
+  {  
+  float2 C;  
+  C.x = A.x * B.r0.x + A.y * B.r0.y;  
+  C.y = A.x * B.r1.x + A.y * B.r1.y;  
+  return C;  
+  }  
+  __DEVICE__ inline mat2 mat2_multi_f( mat2 A, float B)  
+  {  
+  return make_mat2(to_float2(A.r0.x * B, A.r0.y * B),to_float2( A.r1.x * B, A.r1.y * B));  
+  }  
+
+__DEVICE__ float4 sin4f(float4 i) {float4 r; r.x = _sinf(i.x); r.y = _sinf(i.y); r.z = _sinf(i.z); r.w = _sinf(i.w); return r;}
+__DEVICE__ float4 atan4f(float4 i, float j) {float4 r; r.x = _atan2f(i.x,j); r.y = _atan2f(i.y,j); r.z = _atan2f(i.z,j); r.w = _atan2f(i.w,j); return r;}
+
+ #define pi 3.1415926f
+
+ //float3 light;
+ __DEVICE__ float ln(float3 p, float3 a, float3 b, float R, float itime) { 
+     float r = dot(p-a,b-a)/dot(b-a,b-a);
+     r = clamp(r,0.0f,1.0f);
+     p.x+= 0.2f*_sqrtf(R)*smoothstep(1.0f,0.0f,_fabs(r*2.0f-1.0f))*_cosf(pi*(2.0f*itime));
+     return length(p-a-(b-a)*r)-R*(1.5f-0.4f*r);
+ }
+ __DEVICE__ mat2 ro(float a) {
+    float s = _sinf(a), c = _cosf(a);
+    return make_mat2(to_float2(c,-s),to_float2(s,c));
+ }
+
+__DEVICE__ float map (float3 p, float3 light, float itime) {
+     float l = length(p-light)-1e-2;
+     l = _fminf(l,(float)(_fabs(p.y+0.4f)-1e-2));
+     l = _fminf(l,(float)(_fabs(p.z-0.4f)-1e-2));
+     l = _fminf(l,(float)(_fabs(p.x-0.7f)-1e-2));
+     p.y += 0.4f;
+     p.z += 0.1f;
+     float2 pzx = to_float2(p.z,p.x);
+     pzx = mat2_multi_2f( ro(0.5f*itime) , pzx);
+     p.z = pzx.x;
+     p.x = pzx.y;
+     
+	 
+     float2 rl = to_float2(0.02f,0.25f+ 0.01f*_sinf(pi*4.0f*itime));
+     for (int i = 1; i < 11; i+=1) {
+         
+         l = _fminf(l,ln(p,to_float3_s(0),to_float3(0,rl.y,0),rl.x, itime));
+         p.y -= rl.y;
+		 
+	   float2 pxy = to_float2(p.x,p.y);
+         pxy = mat2_multi_2f( ro(0.2f*_sinf(3.1f*itime+(float)(i))+_sinf(0.222f*itime)*(-0.1f*_sinf(0.4f*pi*itime)+_sinf(0.543f*itime)/_fmaxf((float)(i),2.0f))) , pxy);
+         p.x = pxy.x;
+	   p.y = pxy.y;
+		 
+	   p.x = _fabs(p.x);
+		 
+         pxy = to_float2(p.x,p.y);
+	   pxy = mat2_multi_2f( ro(0.6f+0.4f*_sinf(itime)*_sinf(0.871f*itime)+0.05f*(float)(i)*_sinf(2.0f*itime)) , pxy);
+         p.x = pxy.x;
+	   p.y = pxy.y;
+         
+	   float2 pzx = to_float2(p.z,p.x);
+	   pzx = mat2_multi_2f( ro(0.5f*pi+0.2f*_sinf(0.5278f*itime)+0.8f*(float)(i)*(_sinf(0.1f*itime)*(_sinf(0.1f*pi*itime)+_sinf(0.333f*itime)+0.2f*_sinf(1.292f*itime)))), pzx);
+         p.z = pzx.x;
+	   p.x = pzx.y;
+         
+	   rl *= (0.7f+0.015f*(float)(i)*(_sinf(itime)+0.1f*_sinf(4.0f*pi*itime)));
+         
+         l=_fminf(l,length(p)-0.15f*_sqrtf(rl.x));
+     }
+ return l;
+ }
+__DEVICE__ float3 march (float3 p, float3 d, float3 light, float itime) {
+     float o = 1e3;
+     for (int i = 0; i < 24; i++) {
+         float l = map(p, light, itime);
+     p += l*d;
+         if (l < 1e-3)break;
+     }
+     return p;
+ }
+ __DEVICE__ float3 norm (float3 p, float3 light, float itime) { // iq
+    float2 e = to_float2(0.001f,0.0f);
+ 
+    float3 exyy = to_float3(e.x,e.y,e.y);
+    float3 eyxy = to_float3(e.y,e.x,e.y);
+    float3 eyyx = to_float3(e.y,e.y,e.x);		
+ 
+    return normalize(to_float3(
+		 map(p+exyy, light, itime) - map(p-exyy, light, itime),
+		 map(p+eyxy, light, itime) - map(p-eyxy, light, itime),
+		 map(p+eyyx, light, itime) - map(p-eyyx, light, itime)
+		 ));
+ } 
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+    float C = _cosf(angle);
+  float S = _sinf(angle);
+   
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+   
+return uv;
+} 
+
+//############################################################################################################################
+__KERNEL__ void DancyTreeDoodle3DKernel(__CONSTANTREF__ DancyTreeDoodle3DParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height) 
+  {
+    //-----------------------
+     float2 U = to_float2(x, y); 
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime*params->freq;
+     float4 C = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+     float2 R = iResolution;
+     float3 light = to_float3(0.2f*_sinf(itime),0.5f,-0.5f);
+     float2 iMouse = to_float2(params->iMouse[0], params->iMouse[1]);
+     if (params->iMouse[2] > 0.0f) light = to_float3_aw(to_float2(params->iMouse[0], params->iMouse[1]),-0.3f);
+     
+     U = (U-0.5f*R)/R.y;
+ 
+     float3 p = to_float3(0,0,-1);
+     float3 d = normalize(to_float3_aw(U,1));
+     p =  march(p,d, light, itime);
+     float3 n = norm(p, light, itime);
+     C = 0.6f+0.4f*sin4f(1.1f*to_float4(1,2,3,4)*dot(d,n));
+     float3 D = light-p;
+     d = normalize(D);
+     float3 lp = march(p+d*1e-2f,d, light, itime);
+     C *= 5.5f*(dot(d,n))*(0.3f+0.7f*length(lp-p)/length(light-p));
+     C = atan4f(C,pi*2.0f);
+     
+     C.w = 1.0f;
+    _tex2DVec4Write(dst, x, y, C); 
+  }
+}
+]]
+
+
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+mb = 1/5
+
+function Create()
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {       --6852
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  --------------- DancyTreeDoodle3D ---------------
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+	IC_Visible          = false,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "Center", 
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+	IC_Visible          = false,
+    })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",    
+    PC_Visible          = false,
+    IC_Visible          = false,	
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+	IC_Visible          = false,
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })    
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+	IC_Visible          = false,
+    })
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+	IC_Visible          = false,
+    INP_Integer = true,
+    INP_DoNotifyChanged = true, 
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+  })
+
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+  
+  
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })   
+
+
+self:BeginControlNest("Virtual Mouse", "Mouse", true, {})	
+		MousePoint = self:AddInput("Location", "MouseXY", {
+			LINKID_DataType = "Point",
+			INPID_InputControl = "OffsetControl",
+			INPID_PreviewControl = "CrosshairControl",	
+		})
+		MouseButton = self:AddInput("Button", "MouseButton", {
+			LINKID_DataType = "Number",
+			INPID_InputControl = "CheckboxControl",
+			INP_Default = 0,
+			INP_MinScale = 0,
+			INP_MaxScale = 1,
+		})	
+self:EndControlNest()
+
+self:BeginControlNest("Parameter", "Parameter", false, {})
+
+self:EndControlNest() 
+
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0.0,
+	IC_Visible  = false,
+    INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_External = false,
+    MBTNC_ForceButtons =    true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 4,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 4,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit = true,
+    MBTNC_ShowToolTip = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+    { MBTNC_AddButton = "Original", MBTNCD_ButtonWidth = 5/16, }, 
+  })
+  
+    
+  InLabel = self:AddInput(version, "version", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+    ICD_Width = 1,
+  })
+
+
+
+--------------------------------------------
+
+
+--------------------------------------------
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Ground", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+	LINK_Visible = false,
+    INP_Required = false
+  })
+  
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end 
+
+
+-------------------------------------------------------------------
+--       NotifyChanged
+-------------------------------------------------------------------
+function NotifyChanged(inp, param, time)
+
+
+  if inp ~= nil and param ~= nil then
+  
+    if inp == InCenter then
+        -- the center moved, reposition the axis according to the current offset
+        nCenterX = param.X
+        nCenterY = param.Y
+      
+        InPivot:SetAttrs({
+            PCD_OffsetX = nCenterX - 0.5,
+            PCD_OffsetY = nCenterY - 0.5,
+            })
+           
+        InAngle:SetAttrs({
+            PCD_OffsetX = (nCenterX - 0.5)/100,
+            PCD_OffsetY = (nCenterY - 0.5)/100,
+            })
+    end
+    if inp == InWidgets then  
+      if param.Value == 1.0 then
+         InCenter:SetAttrs({ PC_Visible = false })
+         InAngle:SetAttrs({ PC_Visible = false })
+         InPivot:SetAttrs({ PC_Visible = false })
+         InScale:SetAttrs({ PC_Visible = false })
+      else
+         InCenter:SetAttrs({ PC_Visible = true })
+         InAngle:SetAttrs({ PC_Visible = true })
+         InPivot:SetAttrs({ PC_Visible = true })
+         InScale:SetAttrs({ PC_Visible = true })
+      end
+    end
+	
+    if inp == InStop then  
+      if param.Value == 1 then
+	     InActtime:SetAttrs({IC_Visible = true})
+	  else
+	     InActtime:SetAttrs({IC_Visible = false})
+	  end
+	end  
+
+  end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle = -InAngle:GetValue(req).Value/360*3.1415*2
+    local debug = InDebug:GetValue(req).Value
+    local scale = InScale:GetValue(req).Value
+    local freq = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+   
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+   
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+    
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    
+      if (InImage1:GetValue(req) ~= nil) then
+         src1 = InImage1:GetValue(req)
+      else
+         src1 = Image(imgattrs)
+         src1:Fill(p)
+      end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+    if req:IsPreCalc() then
+	   --print("\n######################### Precalc ##############################\n")
+	   local out = Image({IMG_Like = dst, IMG_NoData = true})
+       OutImage:Set(req, out)
+	   return
+	end
+
+
+
+    --StartStop	
+    if InStop:GetValue(req).Value == 0 then             
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      stoptime = req.Time
+	      startstopsema = 0
+	   end
+	   _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	end
+
+    acttime = _acttime / framerate
+
+    
+    Sep1:SetAttrs({LINKS_Name = "__________DancyTreeDoodle3D____________",LBLC_LabelColor = 3,})
+    
+    node = DVIPComputeNode(req, "DancyTreeDoodle3DKernel", DancyTreeDoodle3DKernel, "DancyTreeDoodle3DParams", DancyTreeDoodle3DParams)
+
+    if not pcall(function () 
+        params.center[0] = center.X
+        params.center[1] = center.Y
+		params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.iMouse = {MousePoint:GetValue(req).X, MousePoint:GetValue(req).Y, MouseButton:GetValue(req).Value}
+        
+        params.compOrder = 15                   -- params.srcCompOrder = src:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+    
+        params.itime = acttime --req.Time / framerate
+    
+        node:SetParamBlock(params)
+    end) then
+        params = node:GetParamBlock(DancyTreeDoodle3DParams)
+    
+        params.center[0] = center.X
+        params.center[1] = center.Y
+		params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+        
+		params.iMouse = {MousePoint:GetValue(req).X, MousePoint:GetValue(req).Y, MouseButton:GetValue(req).Value}
+        
+        params.compOrder = 15                   -- params.srcCompOrder = src:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+        
+        params.itime = acttime  --req.Time / framerate
+    
+        node:SetParamBlock(params)
+    
+    end
+
+
+    local edges = InEdges:GetValue(req).Value
+    
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+     node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+     node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+     node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+     --print("Sampler 4")
+    end
+
+
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR, TEX_ADDRESS_MODE_CLAMP, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Fehlerausgabe des DCTL
+    end
+
+    OutImage:Set(req, dst)
+end
+
+
+
+
