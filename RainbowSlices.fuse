@@ -1,6 +1,6 @@
 --[[--/*
 
-    CrossDistance.fuse
+    Rainbow Slices.fuse
 
     Based on https://www.shadertoy.com/view/XdsGD4 a WebGL
     shader from shadertoy.com converted to DCTL and embeddet
@@ -27,7 +27,7 @@ local dctlfuse_name       = "RainbowSlices"
 local dctlfuse_author     = "nmbr73"
 local dctlfuse_authorurl  = "https://www.youtube.com/c/nmbr73"
 local dctlfuse_infourl    = "https://github.com/nmbr73/Shadertoys"
-
+local version             = "V0.2"
 
 
 -- // ------------------------------------------------------------------------
@@ -54,7 +54,7 @@ FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
 
   REGS_Company           = dctlfuse_author,
   REGS_URL               = dctlfuse_authorurl,
-  REG_Version            = 000001,
+  REG_Version            = 000002,
   })
 
 
@@ -84,30 +84,21 @@ DCTL_Kernel =
 //############################################################################
 
 
-
-__DEVICE__ float sdCross( float2 p, float2 b, float r , int medieval) 
-{
-  p = abs(p); p = (p.y>p.x) ? p.yx : p.xy;
-    
-  float2  q = p - b;
-
-  if (medieval)
-    q = b - p;
-
-  float k = max(q.y,q.x);
-  float2  w = (k>0.0) ? q : to_float2(b.y-p.x,-k);
-    
-  return sign(k)*length(max(w,0.0f)) + r;
+__DEVICE__ float2 max2f(float2 v, float2 i) {return to_float2(_fmaxf(v.x,i.x),_fmaxf(v.y,i.y));}	
+__DEVICE__ float sign1f(float value) {
+  if (value == 0.0f) return 0.0f;
+  return value > 0.0f ? 1.0f : -1.0f;
 }
-
-
+__DEVICE__ float2 abs2f(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+__DEVICE__ float2 cos2f(float2 i) {float2 r; r.x = _cosf(i.x); r.y = _cosf(i.y); return r;}
+__DEVICE__ float3 cos3f(float3 i) {float3 r; r.x = _cosf(i.x); r.y = _cosf(i.y); r.z = _cosf(i.z); return r;}
 
 #define EPS to_float2(1e-4, 0.0)
 
 
 __DEVICE__ float3 rotateX(float a, float3 v)
 {
-   return float3(v.x, _cosf(a) * v.y + _sinf(a) * v.z, _cosf(a) * v.z - _sinf(a) * v.y);
+   return to_float3(v.x, _cosf(a) * v.y + _sinf(a) * v.z, _cosf(a) * v.z - _sinf(a) * v.y);
 }
 
 __DEVICE__ float3 rotateY(float a, float3 v)
@@ -122,7 +113,7 @@ __DEVICE__ float sphere(float3 p, float r)
 
 __DEVICE__ float plane(float3 p, float4 n)
 {
-   return dot(p, n.xyz) - n.w;
+   return dot(p, to_float3(n.x,n.y,n.z)) - n.w;
 }
 
 __DEVICE__ float sceneDist(float3 p, float time)
@@ -134,26 +125,30 @@ __DEVICE__ float sceneDist(float3 p, float time)
 
    for(int i = 0; i < num_spheres; ++i)
    {
-      float r = 0.22 * sqrt(float(i));
-      float3 p2 = rotateX(cos(time + float(i) * 0.2f) * 0.15f, p);
+      float r = 0.22 * sqrt((float)i);
+      float3 p2 = rotateX(_cosf(time + (float)i * 0.2f) * 0.15f, p);
       float cd = -sphere(p2 + to_float3(0.0f, -0.9f, 0.0f), 1.3f);
-      sd = min(sd, max(abs(sphere(p2, r)), cd) - 1e-3);
+      sd = _fminf(sd, _fmaxf(_fabs(sphere(p2, r)), cd) - 1e-3);
    }
 
    return sd;
 }
 
-__DEVICE__ float3 sceneNorm(float3 p,float time)
+__DEVICE__ float3 sceneNorm(float3 p, float time)
 {
    float d = sceneDist(p,time);
-   return normalize(to_float3(sceneDist(p + EPS.xyy,time) - d, sceneDist(p + EPS.yxy,time) - d,
-                           sceneDist(p + EPS.yyx, time) - d));
+   
+   float3 exyy = to_float3(EPS.x,EPS.y,EPS.y);
+   float3 eyxy = to_float3(EPS.y,EPS.x,EPS.y);
+   float3 eyyx = to_float3(EPS.y,EPS.y,EPS.x);
+   return normalize(to_float3(sceneDist(p + exyy,time) - d, sceneDist(p + eyxy,time) - d,
+                              sceneDist(p + eyyx, time) - d));
 }
 
 __DEVICE__ float3 col(float3 p)
 {
    float a = length(p) * 20.0f;
-   return to_float3_s(0.5f) + 0.5f * _cosf(to_float3(a, a * 1.1f, a * 1.2f));
+   return to_float3_s(0.5f) + 0.5f * cos3f(to_float3(a, a * 1.1f, a * 1.2f));
 }
 
 // ambient occlusion approximation (thanks to simesgreen)
@@ -165,7 +160,7 @@ __DEVICE__ float ambientOcclusion(float3 p, float3 n, float time)
     float a = 0.0f;
     float weight = 3.0f;
     for(int i=1; i<=steps; i++) {
-        float d = (float(i) / float(steps)) * delta; 
+        float d = ((float)i / float(steps)) * delta; 
         a += weight*(d - sceneDist(p + n*d, time ));
         weight *= 0.5f;
     }
@@ -193,13 +188,13 @@ __KERNEL__ void DCTL_Kernel(
     
   //##########################################################################
 
-  float2 uv = fragCoord.xy / iResolution;
+  float2 uv = fragCoord / iResolution;
   float2 t = uv * 2.0f - to_float2_s(1.0f);
   t.x *= iResolution.x / iResolution.y;
   
   float time = iTime;
   
-  float3 ro = to_float3(-0.4f, _sinf(time * 2.0f) * 0.05f, 0.7f), rd = rotateX(1.1f, rotateY(0.5f, normalize(to_float3_aw(t.xy, -0.8f))));
+  float3 ro = to_float3(-0.4f, _sinf(time * 2.0f) * 0.05f, 0.7f), rd = rotateX(1.1f, rotateY(0.5f, normalize(to_float3_aw(to_float2(t.x,t.y), -0.8f))));
   float f = 0.0f;
   float3 rp, n;
   
@@ -208,7 +203,7 @@ __KERNEL__ void DCTL_Kernel(
       rp = ro + rd * f;
       float d = sceneDist(rp,time);
       
-      if(abs(d) < 1e-4)
+      if(_fabs(d) < 1e-4)
           break;
       
       f += d;
@@ -221,8 +216,8 @@ __KERNEL__ void DCTL_Kernel(
   float ao = ambientOcclusion(rp, n, time);
   
   
-  fragColor.rgb = to_float3_s(0.5f + 0.5f * clamp(dot(n, l), 0.0f, 1.0f)) * col(rp) * mix(0.1f, 1.0f, ao) * 1.6f;
-  fragColor.a = 1.0f;
+  fragColor = to_float4_aw(to_float3_s(0.5f + 0.5f * clamp(dot(n, l), 0.0f, 1.0f)) * col(rp) * _mix(0.1f, 1.0f, ao) * 1.6f, 1.0f);
+  //fragColor.a = 1.0f;
   
 
   //fragColor = to_float4_aw(r, g, b, 1.0f);
@@ -301,7 +296,7 @@ function Create()
   InLabel = self:AddInput(
     "DCTLified and DaFused by <a href=\""
     ..dctlfuse_authorurl.."\" style=\"color:white; text-decoration:none; \">"
-    ..dctlfuse_author.."</a>", 
+    ..dctlfuse_author.."</a>".."   "..version, 
     "info", {
     LINKID_DataType    = "Text",
     INPID_InputControl = "LabelControl",
