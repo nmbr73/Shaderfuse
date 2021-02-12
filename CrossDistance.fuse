@@ -22,6 +22,8 @@
     OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
     DEALINGS IN THE SOFTWARE.    
 
+V.02 Changes for Cuda (JiPi)
+
 */--]]--
 
 -- TESTED ONLY ON METAL
@@ -36,7 +38,7 @@ local dctlfuse_name       = "CrossDistance"
 local dctlfuse_author     = "nmbr73"
 local dctlfuse_authorurl  = "https://www.youtube.com/c/nmbr73"
 local dctlfuse_infourl    = "https://www.youtube.com/c/nmbr73"
-
+local version             = "V0.2"
 
 
 -- // ------------------------------------------------------------------------
@@ -63,7 +65,7 @@ FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
 
   REGS_Company           = dctlfuse_author,
   REGS_URL               = dctlfuse_authorurl,
-  REG_Version            = 000001,
+  REG_Version            = 000002,
   })
 
 
@@ -96,22 +98,30 @@ DCTL_Params =
 DCTL_Kernel =
     [[
 
+__DEVICE__ float2 max2f(float2 v, float2 i) {return to_float2(_fmaxf(v.x,i.x),_fmaxf(v.y,i.y));}	
+__DEVICE__ float sign1f(float value) {
+  if (value == 0.0f) return 0.0f;
+  return value > 0.0f ? 1.0f : -1.0f;
+}
+__DEVICE__ float2 abs2f(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+
 //############################################################################
 
 __DEVICE__ float sdCross( float2 p, float2 b, float r , int medieval) 
 {
-  p = abs(p); p = (p.y>p.x) ? p.yx : p.xy;
+  p = abs2f(p); p = (p.y>p.x) ? to_float2(p.y,p.x) : to_float2(p.x,p.y);
     
   float2  q = p - b;
 
   if (medieval)
     q = b - p;
 
-  float k = max(q.y,q.x);
+  float k = _fmaxf(q.y,q.x);
   float2  w = (k>0.0) ? q : to_float2(b.y-p.x,-k);
     
-  return sign(k)*length(max(w,0.0f)) + r;
+  return sign1f(k)*length(max2f(w,to_float2_s(0.0f))) + r;
 }
+__DEVICE__ float2 cos2f(float2 i) {float2 r; r.x = _cosf(i.x); r.y = _cosf(i.y); return r;}
 
 //############################################################################
 
@@ -142,10 +152,10 @@ __KERNEL__ void DCTL_Kernel(
   
   //##########################################################################
 
-  float2 p = (2.0f*fragCoord.xy-iResolution)/iResolution.y;
+  float2 p = (2.0f*fragCoord-iResolution)/iResolution.y;
 
   // size
-  float2 si = 0.5f + 0.3f*_cosf( iTime + to_float2(0.0f,1.57f) ); if( si.x<si.y ) si=si.yx;
+  float2 si = 0.5f + 0.3f*cos2f( iTime + to_float2(0.0f,1.57f) ); if( si.x<si.y ) si=to_float2(si.y,si.x);
 
   // corner radious
   float ra = cornerRadius * _sinf(iTime*(1.2f));
@@ -154,10 +164,10 @@ __KERNEL__ void DCTL_Kernel(
   float d = sdCross( p, si, ra , medieval);
 
 
-  float3 col = to_float3_s(1.0f) - sign(d)*to_float3(red,green,blue);
+  float3 col = to_float3_s(1.0f) - sign1f(d)*to_float3(red,green,blue);
   col *= 1.0f - exp(-3.0f*abs(d));
   col *= 0.8f + 0.2f*_cosf(150.0f*d);
-  col = mix( col, to_float3_s(1.0f), 1.0f-smoothstep(0.0f,0.015f,abs(d)) );
+  col = _mix( col, to_float3_s(1.0f), 1.0f-smoothstep(0.0f,0.015f,abs(d)) );
 
   fragColor = to_float4_aw(col,alpha);
   
@@ -297,7 +307,7 @@ function Create()
   InLabel = self:AddInput(
     "DCTLified and DaFused by <a href=\""
     ..dctlfuse_authorurl.."\" style=\"color:white; text-decoration:none; \">"
-    ..dctlfuse_author.."</a>", 
+    ..dctlfuse_author.."</a>".."  "..version, 
     "info", {
     LINKID_DataType    = "Text",
     INPID_InputControl = "LabelControl",
@@ -360,20 +370,37 @@ function Process(req)
     -- Interface for running DCTL-Code
     node = DVIPComputeNode(req, "DCTL_Kernel", DCTL_Kernel, "DCTL_Params", DCTL_Params)
 
-    params = node:GetParamBlock(DCTL_Params)
-    params.r            = InR:GetValue(req).Value
-    params.g            = InG:GetValue(req).Value
-    params.b            = InB:GetValue(req).Value
-    params.a            = InA:GetValue(req).Value
-    params.medieval     = InMedieval:GetValue(req).Value
-    params.cornerRadius = InCornerRadius:GetValue(req).Value
-    params.freq         = InFreq:GetValue(req).Value
-    params.compOrder    = src1:IsMask() and 1 or 15
-    params.width        = src1.DataWindow:Width()
-    params.height       = src1.DataWindow:Height()
-    params.iTime        = req.Time / framerate        
-    node:SetParamBlock(params)
-   
+
+    if not pcall(function ()  -- necessary to avoid memory leakage 
+		params.r            = InR:GetValue(req).Value
+		params.g            = InG:GetValue(req).Value
+		params.b            = InB:GetValue(req).Value
+		params.a            = InA:GetValue(req).Value
+		params.medieval     = InMedieval:GetValue(req).Value
+		params.cornerRadius = InCornerRadius:GetValue(req).Value
+		params.freq         = InFreq:GetValue(req).Value
+		params.compOrder    = src1:IsMask() and 1 or 15
+		params.width        = src1.DataWindow:Width()
+		params.height       = src1.DataWindow:Height()
+		params.iTime        = req.Time / framerate        
+		node:SetParamBlock(params)
+	end) then   
+	    params = node:GetParamBlock(DCTL_Params)
+	   
+   		params.r            = InR:GetValue(req).Value
+		params.g            = InG:GetValue(req).Value
+		params.b            = InB:GetValue(req).Value
+		params.a            = InA:GetValue(req).Value
+		params.medieval     = InMedieval:GetValue(req).Value
+		params.cornerRadius = InCornerRadius:GetValue(req).Value
+		params.freq         = InFreq:GetValue(req).Value
+		params.compOrder    = src1:IsMask() and 1 or 15
+		params.width        = src1.DataWindow:Width()
+		params.height       = src1.DataWindow:Height()
+		params.iTime        = req.Time / framerate        
+		node:SetParamBlock(params)
+    end	   
+	   
     node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
 
     node:AddInput("iChannel0", src1)
