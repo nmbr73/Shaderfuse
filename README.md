@@ -39,3 +39,10 @@ Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](h
 Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer](https://www.shadertoy.com/user/fizzer) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). This is a quick and dirty convesion that will definiely need some rework. But it turned out to be very easy to tranlate so far and as this version already runs on Metal I wanted to share the itermediate result.
 
 ![screenshot](RainbowSlices.png "RainbowSlices.fuse in DaVinci Resolve")
+
+
+### DancyTreeDoodle.fuse
+
+Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https://www.shadertoy.com/user/wyatt) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). This is also a quick and dirty conversion for a little AudioWaveform Video. 
+
+![screenshot](/ObjektShader/DancyTreeDoodle.PNG "DancyTreeDoodle.fuse in DaVinci Resolve")
