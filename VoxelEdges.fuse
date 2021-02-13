@@ -1,0 +1,674 @@
+--[[--/*
+
+    VoxelEdges.fuse
+
+    Based on https://www.shadertoy.com/view/4dfGzs a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion. With a lot of help by JiPi and based on
+    his work (see: https://youtu.be/dbrPWRldmbs).
+    
+    
+    Shader created by inigo quilez - iq/2013
+    License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+    Shading technique explained here:
+    http://www.iquilezles.org/www/articles/voxellines/voxellines.htm
+    
+*/--]]--
+
+local shadertoy_name       = "Voxel Edges"
+local shadertoy_author     = "iq"
+local shadertoy_id         = "4dfGzs"
+local shadertoy_license    = "Copyright © 2013 Inigo Quilez (CC-BY-SA)"     -- optional
+local dctlfuse_code        = true 
+local dctlfuse_name        = "VoxelEdges"
+local dctlfuse_author      = "nmbr73"
+local dctlfuse_authorurl   = "https://www.youtube.com/c/nmbr73"
+local dctlfuse_infourl     = "https://github.com/nmbr73/Shadertoys"
+local dctlfuse_versionNo   = 1
+local dctlfuse_versionDate = ""     -- optional
+
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
+  REGS_Category          = "Fuses\\Shadertoys",
+  REGS_OpIconString      = "ST-"..shadertoy_id,
+  REGS_OpDescription     = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..")",
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_Fuse_NoEdit        = not(dctlfuse_code),
+  REG_Fuse_NoReload      = not(dctlfuse_code),
+
+  REG_TimeVariant        = true,
+
+  REGS_Company           = dctlfuse_author,
+  REGS_URL               = dctlfuse_authorurl,
+  REG_Version            = dctlfuse_versionNo,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameter description
+-- // ------------------------------------------------------------------------
+ 
+ST_VoxelEdgesParams =
+[[
+  float freq;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation 
+-- // ------------------------------------------------------------------------
+
+ST_VoxelEdgesKernel =
+    [[
+
+//############################################################################
+
+// TODO
+
+//typedef texture2d<float,access::sample> sampler2D; // works with 'Metal'
+#define sampler2D __TEXTURE2D__ // works?
+
+
+__DEVICE__ float2 textureLoad(__TEXTURE2D__ , float2 , float ) { return to_float2(0.0f,0.0f); }
+__DEVICE__ float4 texture(sampler2D, float2) { return to_float4(0.0f,0.0f,0.0f,0.0f); }
+__DEVICE__ float map(float3) {return 0.0f; }
+
+// DONE
+
+// -------------------------------
+// mat3 implementation/workarounds
+// -------------------------------
+
+typedef struct
+{
+  float3 r0;
+  float3 r1;
+  float3 r2;
+
+} mat3;
+
+__DEVICE__ inline mat3 to_mat3( float3 a, float3 b, float3 c)
+{
+   mat3 t;
+   t.r0 = a; 
+   t.r1 = b; 
+   t.r2 = c; 
+   return t; 
+} 
+
+__DEVICE__ inline float3 mult_mat3_float3( mat3 m, float3 v)  
+{  
+  float3 t;  
+  t.x = v.x * m.r0.x + v.y * m.r1.x + v.z * m.r2.x;  
+  t.y = v.x * m.r0.y + v.y * m.r1.y + v.z * m.r2.y;  
+  t.z = v.x * m.r0.z + v.y * m.r1.z + v.z * m.r2.z;  
+  return t;  
+}
+
+
+//############################################################################
+
+
+__DEVICE__ float noise( float3 x , __TEXTURE2D__ iChannel0)
+{
+    float3 p = floor(x);
+    float3 f = fract(x);
+	f = f*f*(3.0-2.0*f);
+	
+	float2 uv = (p.xy+to_float2(37.0f,17.0f)*p.z) + f.xy;
+    float2 rg = textureLoad( iChannel0, (uv+0.5f)/256.0f, 0.0f ).yx;
+	return mix( rg.x, rg.y, f.z );
+}
+
+__DEVICE__ float4 texcube( sampler2D sam, float3 p, float3 n )
+{
+    float3 m = abs( n );
+	float4 x = texture( sam, p.yz );
+	float4 y = texture( sam, p.zx );
+	float4 z = texture( sam, p.xy );
+	return x*m.x + y*m.y + z*m.z;
+}
+
+
+__DEVICE__ float mapTerrain( float3 p, float iTime, __TEXTURE2D__ iChannel0 )
+{
+	p *= 0.1f; 
+	p.xz *= 0.6f;
+	
+	float time = 0.5f + 0.15f*iTime;
+	float ft = fract( time );
+	float it = floor( time );
+	ft = smoothstep( 0.7f, 1.0f, ft );
+	time = it + ft;
+	float spe = 1.4f;
+	
+	float f;
+    f  = 0.5000f*noise( p*1.00f + to_float3(0.0f,1.0f,0.0f)*spe*time ,iChannel0);
+    f += 0.2500f*noise( p*2.02f + to_float3(0.0f,2.0f,0.0f)*spe*time ,iChannel0);
+    f += 0.1250f*noise( p*4.01f                                      ,iChannel0);
+	return 25.0*f-10.0f;
+}
+
+
+
+
+
+__DEVICE__ float map(float3 c, float iTime, __TEXTURE2D__ iChannel0 , float3 gro ) 
+{
+	float3 p = c + 0.5f;
+	
+	float f = mapTerrain( p, iTime, iChannel0 ) + 0.25f*p.y;
+
+    f = mix( f, 1.0f, step( length(gro-p), 5.0f ) );
+
+	return step( f, 0.5f );
+}
+
+
+
+#ifdef DEVICE_IS_METAL  
+__DEVICE__ float castRay( float3 ro, float3 rd, device float3* oVos, device float3* oDir )
+#else
+__DEVICE__ float castRay( float3 ro, float3 rd, float3* oVos, float3* oDir )
+#endif
+
+
+{
+	float3 pos = floor(ro);
+	float3 ri = 1.0f/rd;
+	float3 rs = sign(rd);
+	float3 dis = (pos-ro + 0.5f + rs*0.5f) * ri;
+	
+	float res = -1.0f;
+	float3 mm = float3(0.0f);
+	for( int i=0; i<128; i++ ) 
+	{
+		if( map(pos)>0.5f ) { res=1.0f; break; }
+		mm = step(dis.xyz, dis.yzx) * step(dis.xyz, dis.zxy);
+		dis += mm * rs * ri;
+        pos += mm * rs;
+	}
+
+	//float3 nor = -mm*rs;
+	float3 vos = pos;
+	
+    // intersect the cube	
+	float3 mini = (pos-ro + 0.5f - 0.5f* rs )*ri; //// warum war hier ein vec3(rs), wenn doch rs ein vec3 ist?!?!?
+	float t = max ( mini.x, max ( mini.y, mini.z ) );
+	
+	oDir->x=mm.x;  oDir->y=mm.y;  oDir->z=mm.z;  //oDir = mm;
+	oVos->x=vos.x; oVos->y=vos.y; oVos->z=vos.z; //oVos = vos;
+
+	return t*res;
+}
+
+__DEVICE__ float3 path( float t, float ya )
+{
+    float2 p  = 100.0f*_sinf( 0.02f*t*to_float2(1.0,1.2) + to_float2(0.1f,0.9f) );
+	       p +=  50.0f*_sinf( 0.04f*t*to_float2(1.3,1.0) + to_float2(1.0f,4.5f) );
+	
+	return to_float3( p.x, 18.0f + ya*4.0f*_sinf(0.05f*t), p.y );
+}
+
+__DEVICE__ mat3 setCamera( float3 ro, float3 ta, float cr )
+{
+	float3 cw = normalize(ta-ro);
+	float3 cp = to_float3(_sinf(cr), _cosf(cr),0.0f);
+	float3 cu = normalize( cross(cw,cp) );
+	float3 cv = normalize( cross(cu,cw) );
+    return to_mat3( cu, cv, -cw );
+}
+
+
+__DEVICE__ float maxcomp( float4 v )
+{
+    return max( max(v.x,v.y), max(v.z,v.w) );
+}
+
+
+__DEVICE__ float isEdge( float2 uv, float4 va, float4 vb, float4 vc, float4 vd )
+{
+    float2 st = 1.0f - uv;
+
+    // edges
+    float4 wb = smoothstep( 0.85f, 0.99f, to_float4(uv.x,
+                                           st.x,
+                                           uv.y,
+                                           st.y) ) * ( 1.0f - va + va*vc );
+    // corners
+    float4 wc = smoothstep( 0.85f, 0.99f, to_float4(uv.x*uv.y,
+                                           st.x*uv.y,
+                                           st.x*st.y,
+                                           uv.x*st.y) ) * ( 1.0f - vb + vd*vb );
+    return maxcomp( max(wb,wc) );
+}
+
+__DEVICE__ float calcOcc( float2 uv, float4 va, float4 vb, float4 vc, float4 vd )
+{
+    float2 st = 1.0f - uv;
+
+    // edges
+    float4 wa = to_float4( uv.x, st.x, uv.y, st.y ) * vc;
+
+    // corners
+    float4 wb = to_float4(uv.x*uv.y,
+                   st.x*uv.y,
+                   st.x*st.y,
+                   uv.x*st.y)*vd*(1.0f-vc.xzyw)*(1.0f-vc.zywx);
+    
+    return wa.x + wa.y + wa.z + wa.w +
+           wb.x + wb.y + wb.z + wb.w;
+}
+
+
+__DEVICE__ float3 render( float3 ro, float3 rd,
+        float         iTime,
+        __TEXTURE2D__ iChannel0,
+        __TEXTURE2D__ iChannel1,
+        __TEXTURE2D__ iChannel2  )
+{
+    float3 lig = normalize( to_float3(-0.4f,0.3f,0.7f) );   // !!! GLOBAl VARIABLE!?!??
+    float3 gro = to_float3_s(0.0);                          // !!! GLOBAl VARIABLE!?!??
+
+    #define xmap(FLOATVEC) map(FLOATVEC,iTime,iChannel0,gro)
+
+    // -----
+
+    float3 col = to_float3_s(0.0);
+	
+    // raymarch	
+	
+    #ifdef DEVICE_IS_METAL
+    
+    float3 vos, dir;
+    float t=0.0f; dir=to_float3_s(0.0f); vos=to_float3_s(0.0f);
+
+    #else
+
+    float3 vos, dir;
+    float t = castRay( ro, rd, &vos, &dir ); // !!! does not work on Metal
+
+    #endif
+
+
+    // >!!!!!!!!!!!!!!!!!!
+    //    
+    // Problem was raised here ...
+    //
+    // https://www.steakunderwater.com/wesuckless/viewtopic.php?t=4524
+    // http://www.quabr.com/62546452/pointer-type-must-have-explicit-address-space-qualifier
+    //
+    // ... now I found out that in the function signature the pointers must be preceded by a 'device'.
+    // But I do not know yet how to get the correct reference.
+    //
+	// <!!!!!!!!!!!!!!!!!!
+    
+
+
+    if( t>0.0f )
+	{
+        float3 nor = -dir*sign(rd);
+        float3 pos = ro + rd*t;
+        float3 uvw = pos - vos;
+		
+		float3 v1  = vos + nor + dir.yzx;
+	    float3 v2  = vos + nor - dir.yzx;
+	    float3 v3  = vos + nor + dir.zxy;
+	    float3 v4  = vos + nor - dir.zxy;
+		float3 v5  = vos + nor + dir.yzx + dir.zxy;
+        float3 v6  = vos + nor - dir.yzx + dir.zxy;
+	    float3 v7  = vos + nor - dir.yzx - dir.zxy;
+	    float3 v8  = vos + nor + dir.yzx - dir.zxy;
+	    float3 v9  = vos + dir.yzx;
+	    float3 v10 = vos - dir.yzx;
+	    float3 v11 = vos + dir.zxy;
+	    float3 v12 = vos - dir.zxy;
+ 	    float3 v13 = vos + dir.yzx + dir.zxy; 
+	    float3 v14 = vos - dir.yzx + dir.zxy ;
+	    float3 v15 = vos - dir.yzx - dir.zxy;
+	    float3 v16 = vos + dir.yzx - dir.zxy;
+
+		float4 vc = to_float4( xmap(v1),  xmap(v2),  xmap(v3),  xmap(v4)  );
+	    float4 vd = to_float4( xmap(v5),  xmap(v6),  xmap(v7),  xmap(v8)  );
+	    float4 va = to_float4( xmap(v9),  xmap(v10), xmap(v11), xmap(v12) );
+	    float4 vb = to_float4( xmap(v13), xmap(v14), xmap(v15), xmap(v16) );
+		
+		float2 uv = to_float2( dot(dir.yzx, uvw), dot(dir.zxy, uvw) );
+			
+        // wireframe
+        float www = 1.0f - isEdge( uv, va, vb, vc, vd );
+        
+        float3 wir = smoothstep( 0.4, 0.5, abs(uvw-0.5f) );
+        float vvv = (1.0f-wir.x*wir.y)*(1.0f-wir.x*wir.z)*(1.0f-wir.y*wir.z);
+
+        col = 2.0f*texture( iChannel1,0.01f*pos.xz ).zyx; 
+        col += 0.8f*to_float3(0.1f,0.3f,0.4f);
+        col *= 0.5f + 0.5f*texcube( iChannel2, 0.5f*pos, nor ).x;
+        col *= 1.0f - 0.75f*(1.0f-vvv)*www;
+		
+        // lighting
+        float dif = clamp( dot( nor, lig ), 0.0f, 1.0f );
+        float bac = clamp( dot( nor, normalize(lig*to_float3(-1.0f,0.0f,-1.0f)) ), 0.0f, 1.0f );
+        float sky = 0.5f + 0.5f*nor.y;
+        float amb = clamp(0.75f + pos.y/25.0f,0.0f,1.0f);
+        float occ = 1.0f;
+	
+        // ambient occlusion
+        occ = calcOcc( uv, va, vb, vc, vd );
+        occ = 1.0f - occ/8.0f;
+        occ = occ*occ;
+        occ = occ*occ;
+        occ *= amb;
+
+        // lighting
+        float3 lin = to_float3_s(0.0f);
+        lin += 2.5*dif*to_float3(1.00f,0.90f,0.70f)*(0.5f+0.5f*occ);
+        lin += 0.5*bac*to_float3(0.15f,0.10f,0.10f)*occ;
+        lin += 2.0*sky*to_float3(0.40f,0.30f,0.15f)*occ;
+
+        // line glow	
+        float lineglow = 0.0f;
+        lineglow += smoothstep( 0.4f, 1.0f,      uv.x )*(1.0f-va.x*(1.0f-vc.x));
+        lineglow += smoothstep( 0.4f, 1.0f, 1.0f-uv.x )*(1.0f-va.y*(1.0f-vc.y));
+        lineglow += smoothstep( 0.4f, 1.0f,      uv.y )*(1.0f-va.z*(1.0f-vc.z));
+        lineglow += smoothstep( 0.4f, 1.0f, 1.0f-uv.y )*(1.0f-va.w*(1.0f-vc.w));
+        lineglow += smoothstep( 0.4f, 1.0f,       uv.y*       uv.x )*(1.0f-vb.x*(1.0f-vd.x));
+        lineglow += smoothstep( 0.4f, 1.0f,       uv.y* (1.0f-uv.x))*(1.0f-vb.y*(1.0f-vd.y));
+        lineglow += smoothstep( 0.4f, 1.0f, (1.0f-uv.y)*(1.0f-uv.x))*(1.0f-vb.z*(1.0f-vd.z));
+        lineglow += smoothstep( 0.4f, 1.0f, (1.0f-uv.y)*      uv.x )*(1.0f-vb.w*(1.0f-vd.w));
+		
+        float3 linCol = 2.0f*to_float3(5.0f,0.6f,0.0f);
+        linCol *= (0.5f+0.5f*occ)*0.5f;
+        lin += 3.0f*lineglow*linCol;
+		
+        col = col*lin;
+        col += 8.0f*linCol*to_float3(1.0f,2.0f,3.0f)*(1.0f-www);// * (0.5+1.0*sha);
+        col += 0.1f*lineglow*linCol;
+        col *= min(0.1f,exp( -0.07f*t ));
+	
+        // blend to black & white		
+        float3 col2 = to_float3_s(1.3f)*(0.5f+0.5f*nor.y)*occ*www*(0.9f+0.1f*vvv)*exp( -0.04f*t );
+        float mi = _sinf(-1.57f+0.5f*iTime);
+        mi = smoothstep( 0.70f, 0.75f, mi );
+        col = mix( col, col2, mi );
+	}
+
+	// gamma	
+	col = pow( col, to_float3_s(0.45f) ); // [nmbr73] for CUDA use _powf() here? or the corrected powcf() from Chris?
+
+    return col;
+}
+
+__DEVICE__ void mainImage( float4 fragColor, device float2* fragCoord, 
+    device float3* gro, // GLOBAL VARIABLE
+    float2 iResolution,
+    float4 iMouse,
+    float  iTime,
+    __TEXTURE2D__ iChannel0,
+    __TEXTURE2D__ iChannel1,
+    __TEXTURE2D__ iChannel2
+    )
+{
+
+    
+    // inputs	
+	float2 q = fragCoord->xy / iResolution.xy; // [nmbr73] or just iResolution without .xy?
+    float2 p = -1.0f + 2.0f*q;
+    p.x *= iResolution.x/ iResolution.y;
+	
+    float2 mo = iMouse.xy / iResolution.xy;
+    if( iMouse.w<=0.00001f ) mo=to_float2_s(0.0f);
+	
+	float time = 2.0f*iTime + 50.0f*mo.x;
+    // camera
+	float cr = 0.2f*_cosf(0.1f*iTime);
+	float3 ro = path( time+0.0f, 1.0f );
+	float3 ta = path( time+5.0f, 1.0f ) - to_float3(0.0f,6.0f,0.0f);
+	*gro = ro;
+
+    mat3 cam = setCamera( ro, ta, cr );
+	
+	// build ray
+    float r2 = p.x*p.x*0.32f + p.y*p.y;
+    p *= (7.0-sqrt(37.5f-11.5f*r2))/(r2+1.0f);
+    float3 rd = normalize( mult_mat3_float3(cam, to_float3_aw(p.xy,-2.5f) ));
+
+
+
+    float3 col = render( ro, rd , iTime, iChannel0, iChannel1, iChannel2);
+    
+
+	// vignetting	
+	col *= 0.5f + 0.5f*pow( 16.0f*q.x*q.y*(1.0f-q.x)*(1.0f-q.y), 0.1f );
+	
+	fragColor = to_float4_aw( col, 1.0f );
+}
+
+
+//############################################################################
+//void mainVR( out vec4 fragColor, in vec2 fragCoord, in vec3 fragRayOri, in vec3 fragRayDir )
+
+__KERNEL__ void ST_VoxelEdgesKernel(
+    __CONSTANTREF__ ST_VoxelEdgesParams*  params, 
+    __TEXTURE2D__                 iChannel0, 
+    __TEXTURE2D__                 iChannel1, 
+    __TEXTURE2D__                 iChannel2, 
+    __TEXTURE2D_WRITE__           dst
+    )
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  //float2 fragCoord   = to_float2(x, y); 
+  //float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+  float4 fragColor   = to_float4_s(0.0f);
+    
+  float3 fragRayOri = to_float3_s(1.0f); // maybe by parameter?
+  float3 fragRayDir = to_float3_s(1.0f); // maybe by parameter?
+
+  //##########################################################################
+
+
+  float time = 1.0f*iTime;
+
+  float cr = 0.0f;
+  float3 ro = path( time+0.0f, 0.0f ) + to_float3(0.0f,0.7f,0.0f);
+  float3 ta = path( time+2.5f, 0.0f ) + to_float3(0.0f,0.7f,0.0f);
+
+  mat3 cam = setCamera( ro, ta, cr );
+
+  float3 col = render( ro + mult_mat3_float3(cam,fragRayOri), mult_mat3_float3(cam,fragRayDir), iTime, iChannel0, iChannel1, iChannel2 );
+  
+  fragColor = to_float4_aw( col, 1.0 );
+
+  
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+  
+}
+
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ----- In/Out
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  ----- Inspector Panle Controls
+
+   InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 2.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+  })
+
+ 
+  ------ Information
+
+  InfoButton = self:AddInput("Info ...", "InfoButton", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "ButtonControl",
+    INP_DoNotifyChanged = true,
+    INP_External = false,
+    IC_ControlPage = -1,
+  })
+
+  InShaderInfoBlock = self:AddInput([[Shadertoy <a href="https://www.shadertoy.com/view/]]..shadertoy_id..[[" style="color:white; text-decoration:none; ">]]..shadertoy_name
+      ..[[</a> by <a href="https://www.shadertoy.com/user/]]..shadertoy_author..[[" style="color:yellow; text-decoration:none; ">]]..shadertoy_author..[[</a><br />]]    
+      ..shadertoy_license.. ( shadertoy_license=="" and "" or "<br>" )..[[DCTLified and DaFused by <a href="]]..dctlfuse_authorurl..[[" style="color:white; text-decoration:none; ">]]
+      ..dctlfuse_author..[[</a>]]..(dctlfuse_versionDate=="" and " v0."..dctlfuse_versionNo or "<br />Version 0."..dctlfuse_versionNo.." - "..dctlfuse_versionDate),"Label", {
+    LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true, -- IC_ControlPage = -1,
+  })
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+   
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+   
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+    
+
+    -- Extern Texture or create a new one
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+    else
+        src1 = Image(imgattrs)
+        local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+        src1:Fill(p)
+    end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+    -- Interface for running DCTL-Code
+
+    node = DVIPComputeNode(req, "ST_VoxelEdgesKernel", ST_VoxelEdgesKernel, "ST_VoxelEdgesParams", ST_VoxelEdgesParams)
+
+
+    if not pcall(function ()  -- necessary to avoid memory leakage 
+        params.freq         = InFreq:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate        
+
+        print("params reused")
+
+        node:SetParamBlock(params)        
+    end) then   
+        params = node:GetParamBlock(ST_VoxelEdgesParams)
+        params.freq         = InFreq:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate        
+
+        print("params created")
+
+        node:SetParamBlock(params)
+    end
+
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+    end
+
+    OutImage:Set(req, dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+	if (param ~= nil) then
+		if (param.Value == 1) then
+			if (inp == InfoButton) then
+				bmd.openurl(dctlfuse_infourl)
+			end	
+		end
+	end
+end
