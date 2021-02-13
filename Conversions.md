@@ -6,6 +6,16 @@
 
 The entry point for a compute shader is the *compute kernel* - this is the code executed by the GPU's shader unit. In GLSL this is the code's `main` function; in OpenCL it is a function with its definition preceded by the symbol `kernel`; in DCTL it's a function preceded by `__KERNEL__`. So for compatibility avoid naming your Kernel `main` or `kernel` as this might work on one, but not the other platform.
 
+In the world of Shader Languages and Compute Shaders we have to juggle around with the following frameworks, APIs, toolkits, abstractions ...
+
+- **GLSL** - [OpenGL ES 3.1 Spec](https://www.khronos.org/registry/OpenGL/specs/es/3.1/es_spec_3.1.pdf) ... OpenGL ES is a platform and GPU agnostic API targeting embedded systems. It is a subset of OpenGL (aka Desktop OpenGL), offers a Shader Language (GLSL) that also provides Compute Shaders, and OpenGL ES makes up the core of WebGL.
+- **DCTL** - :question::question::question:... the DaVinci Resolve Color Transformation Language seems to be just a layer on top of CUDA, Metal, OpenCL (utilizing the appropriate toolkit depending on your platform, GPU, and settings).
+- **CUDA** - [CUDA Toolkit Documentation](https://docs.nvidia.com/cuda/) ... CUDA is the Nvidia toolkit to access Nvidia GPUs.
+- **Metal** - [Metal SL Spec](https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf) ... Metal is the Apple GPU API for macOS, iOS, iPadOS, tvOS.
+- **OpenCL** [OpenCL 1.2 Spec](https://www.khronos.org/registry/OpenCL/specs/opencl-1.2.pdf) ... is a platform independent API to realize Compute Shaders; it was originally introduces by Apple, but has been abandoned on Macs in favor of Metal; OpenCL kernels can run not only run on GPUs, but also on CPUs.
+
+... if only we would have a DCTL spec it should ease the process of writing conversions from one language to the other :-/ ... there is the [CTL Manual](http://ampasctl.sourceforge.net/CtlManual.pdf), but I don't know if CTL defined an implementation and if and how DCTL is derived from it.
+
 
 ## Math Functions
 
@@ -13,7 +23,7 @@ The entry point for a compute shader is the *compute kernel* - this is the code 
 |--------|--------------------------------------------------------------|
 | GLGS   | `sin(float)`, `cos(float)`                                   |
 | DCTL   | `_sinf(float)`, `_cosf(float)`                               |
-| Cuda   |                                                              |
+| CUDA   |                                                              |
 | Metal  |                                                              |
 | OpenCL |                                                              |
 
