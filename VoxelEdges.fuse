@@ -85,15 +85,32 @@ ST_VoxelEdgesKernel =
 
 //############################################################################
 
-// TODO
+#ifdef DEVICE_IS_METAL  
+    
+    typedef texture2d<float,access::sample> sampler2D;
+    __DEVICE__ inline float2 sin2f(float2 x) { return sin(x); }
+    __DEVICE__ inline float  fract1f(float  f) {return fract(f); }
+    __DEVICE__ inline float3 fract3f(float3 v) {return fract(v); }
+    __DEVICE__ inline float3 abs3f(float3 v) { return abs(v); }
 
-//typedef texture2d<float,access::sample> sampler2D; // works with 'Metal'
-#define sampler2D __TEXTURE2D__ // works?
+    #define cast_to_float(VAL) (float(VAL))
+#else
+
+    #define sampler2D __TEXTURE2D__
+    __DEVICE__ float2 sin2f(float2 a) {float2 t; t.x = _sinf(a.x); t.y = _sinf(a.y); return t;}
+    __DEVICE__ float3 fract3f(float3 v){return make_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z));}
+    __DEVICE__ float3 abs3f(float3 v) {return (to_float3(_fabs(v.x), _fabs(v.y),_fabs(v.z)));}
+
+#endif
+
+#if DEVICE_IS_CUDA
+    __DEVICE__ float fract1f(float f){return f - _floor(f);} // In Cuda the fract function is missing
+#endif
 
 
-__DEVICE__ float2 textureLoad(__TEXTURE2D__ , float2 , float ) { return to_float2(0.0f,0.0f); }
-__DEVICE__ float4 texture(sampler2D, float2) { return to_float4(0.0f,0.0f,0.0f,0.0f); }
-__DEVICE__ float map(float3) {return 0.0f; }
+__DEVICE__ float2 textureLoad(__TEXTURE2D__ a, float2 b, float c) { return to_float2(0.0f,0.0f); }
+__DEVICE__ float4 texture(sampler2D a, float2 b) { return to_float4(0.0f,0.0f,0.0f,0.0f); }
+__DEVICE__ float TODO_map(float3 a) {return 0.0f; }
 
 // DONE
 
@@ -134,8 +151,8 @@ __DEVICE__ inline float3 mult_mat3_float3( mat3 m, float3 v)
 __DEVICE__ float noise( float3 x , __TEXTURE2D__ iChannel0)
 {
     float3 p = floor(x);
-    float3 f = fract(x);
-	f = f*f*(3.0-2.0*f);
+    float3 f = fract3f(x);
+	f = f*f*(3.0f-2.0f*f);
 	
 	float2 uv = (p.xy+to_float2(37.0f,17.0f)*p.z) + f.xy;
     float2 rg = textureLoad( iChannel0, (uv+0.5f)/256.0f, 0.0f ).yx;
@@ -144,7 +161,7 @@ __DEVICE__ float noise( float3 x , __TEXTURE2D__ iChannel0)
 
 __DEVICE__ float4 texcube( sampler2D sam, float3 p, float3 n )
 {
-    float3 m = abs( n );
+    float3 m = _fabs( n );
 	float4 x = texture( sam, p.yz );
 	float4 y = texture( sam, p.zx );
 	float4 z = texture( sam, p.xy );
@@ -158,7 +175,7 @@ __DEVICE__ float mapTerrain( float3 p, float iTime, __TEXTURE2D__ iChannel0 )
 	p.xz *= 0.6f;
 	
 	float time = 0.5f + 0.15f*iTime;
-	float ft = fract( time );
+	float ft = fract1f( time );
 	float it = floor( time );
 	ft = smoothstep( 0.7f, 1.0f, ft );
 	time = it + ft;
@@ -187,14 +204,25 @@ __DEVICE__ float map(float3 c, float iTime, __TEXTURE2D__ iChannel0 , float3 gro
 }
 
 
+    // >!!!!!!!!!!!!!!!!!!
+    //    
+    // Problem with reference parameters for Metal had been raised here ...
+    //
+    // https://www.steakunderwater.com/wesuckless/viewtopic.php?t=4524
+    // http://www.quabr.com/62546452/pointer-type-must-have-explicit-address-space-qualifier
+    //
+    // ... don't know if a solution was found, but for variables in function
+    // scope it could be an approach to make them thread local - at least it does
+    // compile. For global variables (if there is such a thing) it would be
+    // the 'device' qualifier instead of 'thread' I guess.
+    //
+	// <!!!!!!!!!!!!!!!!!!
 
 #ifdef DEVICE_IS_METAL  
-__DEVICE__ float castRay( float3 ro, float3 rd, device float3* oVos, device float3* oDir )
+__DEVICE__ float castRay( float3 ro, float3 rd, thread float3* oVos, thread float3* oDir )
 #else
 __DEVICE__ float castRay( float3 ro, float3 rd, float3* oVos, float3* oDir )
 #endif
-
-
 {
 	float3 pos = floor(ro);
 	float3 ri = 1.0f/rd;
@@ -205,7 +233,7 @@ __DEVICE__ float castRay( float3 ro, float3 rd, float3* oVos, float3* oDir )
 	float3 mm = float3(0.0f);
 	for( int i=0; i<128; i++ ) 
 	{
-		if( map(pos)>0.5f ) { res=1.0f; break; }
+		if( TODO_map(pos)>0.5f ) { res=1.0f; break; }
 		mm = step(dis.xyz, dis.yzx) * step(dis.xyz, dis.zxy);
 		dis += mm * rs * ri;
         pos += mm * rs;
@@ -226,8 +254,8 @@ __DEVICE__ float castRay( float3 ro, float3 rd, float3* oVos, float3* oDir )
 
 __DEVICE__ float3 path( float t, float ya )
 {
-    float2 p  = 100.0f*_sinf( 0.02f*t*to_float2(1.0,1.2) + to_float2(0.1f,0.9f) );
-	       p +=  50.0f*_sinf( 0.04f*t*to_float2(1.3,1.0) + to_float2(1.0f,4.5f) );
+    float2 p  = 100.0f*sin2f( 0.02f*t*to_float2(1.0f,1.2f) + to_float2(0.1f,0.9f) );
+	       p +=  50.0f*sin2f( 0.04f*t*to_float2(1.3f,1.0f) + to_float2(1.0f,4.5f) );
 	
 	return to_float3( p.x, 18.0f + ya*4.0f*_sinf(0.05f*t), p.y );
 }
@@ -300,32 +328,8 @@ __DEVICE__ float3 render( float3 ro, float3 rd,
 	
     // raymarch	
 	
-    #ifdef DEVICE_IS_METAL
-    
     float3 vos, dir;
-    float t=0.0f; dir=to_float3_s(0.0f); vos=to_float3_s(0.0f);
-
-    #else
-
-    float3 vos, dir;
-    float t = castRay( ro, rd, &vos, &dir ); // !!! does not work on Metal
-
-    #endif
-
-
-    // >!!!!!!!!!!!!!!!!!!
-    //    
-    // Problem was raised here ...
-    //
-    // https://www.steakunderwater.com/wesuckless/viewtopic.php?t=4524
-    // http://www.quabr.com/62546452/pointer-type-must-have-explicit-address-space-qualifier
-    //
-    // ... now I found out that in the function signature the pointers must be preceded by a 'device'.
-    // But I do not know yet how to get the correct reference.
-    //
-	// <!!!!!!!!!!!!!!!!!!
-    
-
+    float t = castRay( ro, rd, &vos, &dir );
 
     if( t>0.0f )
 	{
@@ -360,7 +364,7 @@ __DEVICE__ float3 render( float3 ro, float3 rd,
         // wireframe
         float www = 1.0f - isEdge( uv, va, vb, vc, vd );
         
-        float3 wir = smoothstep( 0.4, 0.5, abs(uvw-0.5f) );
+        float3 wir = smoothstep( 0.4f, 0.5f, abs3f(uvw-0.5f)  );
         float vvv = (1.0f-wir.x*wir.y)*(1.0f-wir.x*wir.z)*(1.0f-wir.y*wir.z);
 
         col = 2.0f*texture( iChannel1,0.01f*pos.xz ).zyx; 
@@ -384,9 +388,9 @@ __DEVICE__ float3 render( float3 ro, float3 rd,
 
         // lighting
         float3 lin = to_float3_s(0.0f);
-        lin += 2.5*dif*to_float3(1.00f,0.90f,0.70f)*(0.5f+0.5f*occ);
-        lin += 0.5*bac*to_float3(0.15f,0.10f,0.10f)*occ;
-        lin += 2.0*sky*to_float3(0.40f,0.30f,0.15f)*occ;
+        lin += 2.5f*dif*to_float3(1.00f,0.90f,0.70f)*(0.5f+0.5f*occ);
+        lin += 0.5f*bac*to_float3(0.15f,0.10f,0.10f)*occ;
+        lin += 2.0f*sky*to_float3(0.40f,0.30f,0.15f)*occ;
 
         // line glow	
         float lineglow = 0.0f;
@@ -421,8 +425,17 @@ __DEVICE__ float3 render( float3 ro, float3 rd,
     return col;
 }
 
-__DEVICE__ void mainImage( float4 fragColor, device float2* fragCoord, 
+__DEVICE__ void mainImage( 
+    float4 fragColor, 
+    
+#ifdef DEVICE_IS_METAL  
+    device float2* fragCoord, 
     device float3* gro, // GLOBAL VARIABLE
+#else
+    float2* fragCoord, 
+    float3* gro, // GLOBAL VARIABLE
+#endif
+    
     float2 iResolution,
     float4 iMouse,
     float  iTime,
@@ -430,6 +443,8 @@ __DEVICE__ void mainImage( float4 fragColor, device float2* fragCoord,
     __TEXTURE2D__ iChannel1,
     __TEXTURE2D__ iChannel2
     )
+
+
 {
 
     
@@ -452,7 +467,7 @@ __DEVICE__ void mainImage( float4 fragColor, device float2* fragCoord,
 	
 	// build ray
     float r2 = p.x*p.x*0.32f + p.y*p.y;
-    p *= (7.0-sqrt(37.5f-11.5f*r2))/(r2+1.0f);
+    p *= (7.0f-sqrt(37.5f-11.5f*r2))/(r2+1.0f);
     float3 rd = normalize( mult_mat3_float3(cam, to_float3_aw(p.xy,-2.5f) ));
 
 
