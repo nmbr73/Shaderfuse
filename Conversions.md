@@ -19,13 +19,11 @@ In the world of Shader Languages and Compute Shaders we have to juggle around wi
 
 ## Math Functions
 
-| System | Equivalent                                                   |
-|--------|--------------------------------------------------------------|
-| GLGS   | `sin(float)`, `cos(float)`                                   |
-| DCTL   | `_sinf(float)`, `_cosf(float)`                               |
-| CUDA   |                                                              |
-| Metal  |                                                              |
-| OpenCL |                                                              |
+
+| GLSL       | DCTL         | CUDA | Metal      | OpenCL |
+|------------|--------------|------|------------|--------|
+| sin(float) | _sinf(float) |      | sin(float) |        |
+| cos(float) | _cosf(float) |      | cos(float) |        |
 
 
 ## Data Types and Type Conversion
@@ -64,8 +62,7 @@ struct vec2
 | Metal  |                                                              |
 | OpenCL |                                                              |
 
-Probably DCTL does schon define some macros and functions, that make the GLSL digestable for the differen Shader Language dialects?!? It would be of great help, if these definitions are accessible anywhere!?!
-
+Probably DCTL does only define some macros and functions, that make the GLSL digest-able for the different Shader Language dialects?!? It would be of great help, if these definitions are accessible anywhere!?!
 
 
 
@@ -79,6 +76,15 @@ Probably DCTL does schon define some macros and functions, that make the GLSL di
 | Metal  |                                                              |
 | OpenCL |                                                              |
 
+Implementation provided by DCTL (on MacOS / Metal):
+
+    __DEVICE___ inline float3 to_float3(float x, float y, float z)
+    { float3 t;
+      t.x=x;
+      t.x=y; 
+      t.z=z;
+      return t;
+    }
 
 
 
