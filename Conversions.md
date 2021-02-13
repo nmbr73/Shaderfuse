@@ -7,6 +7,17 @@
 The entry point for a compute shader is the *compute kernel* - this is the code executed by the GPU's shader unit. In GLSL this is the code's `main` function; in OpenCL it is a function with its definition preceded by the symbol `kernel`; in DCTL it's a function preceded by `__KERNEL__`. So for compatibility avoid naming your Kernel `main` or `kernel` as this might work on one, but not the other platform.
 
 
+## Math Functions
+
+| System | Equivalent                                                   |
+|--------|--------------------------------------------------------------|
+| GLGS   | `sin(float)`, `cos(float)`                                   |
+| DCTL   | `_sinf(float)`, `_cosf(float)`                               |
+| Cuda   |                                                              |
+| Metal  |                                                              |
+| OpenCL |                                                              |
+
+
 ## Data Types and Type Conversion
 
 ### 2-dimensional Vector
@@ -53,7 +64,7 @@ Probably DCTL does schon define some macros and functions, that make the GLSL di
 | System | Equivalent                                                   |
 |--------|--------------------------------------------------------------|
 | GLGS   |`vec3`; Construction: `vec3(float,float,float)`, `vec3(vec2,float)`                        |
-| DCTL   | L-Value: `float3`; R-Value: `to_float3(float,float,float)`, `to_float3_aw(float2,float)` |
+| DCTL   | L-Value: `float3`; R-Value: `to_float3(float,float,float)`, `to_float3_aw(float2,float)`, `to_float3_s(float)` |
 | Cuda   |                                                              |
 | Metal  |                                                              |
 | OpenCL |                                                              |
@@ -68,8 +79,10 @@ Probably DCTL does schon define some macros and functions, that make the GLSL di
 | GLGS   |`mat3`; Construction: `mat3(vec3,vec3,vec3)`                                   |                
 | DCTL   | **Workaround:** L-Value: `mat3`; Construction: `to_mat3(float3,float3,float3)`|
 | Cuda   |                                                                               |
-| Metal  |                                                                               |
+| Metal  | `float3x3`; Construction: `float3x3(float)`, `float3x3(float3,float3,float3)`                    |
 | OpenCL |                                                                               |
+
+
 
 
 Workaround implementation:
@@ -91,7 +104,13 @@ __DEVICE__ inline mat3 to_mat3( float3 a, float3 b, float3 c)
 } 
 ```
 
+In Metal a `float3x3(fval)` creates ...
 
+    fval  0.0   0.0
+    0.0   fval  0.0
+    0.0   0.0   fval
+
+... which could be an indicator of how to implement a `mat3(float)`if something like this exists?!?
 
 
 ### 2D Texture
