@@ -17,6 +17,11 @@ Just copy the whole folder resp. clone the repository into your `Fusion/Fuses/` 
 
 Alternatively you can also use the installer: drag'n'drop the `Shadertoys_Installer.lua` onto you Fuison working area, perform the installation and restart DaVinci Resolve.
 
+<p align="center">
+<a href="https://github.com/nmbr73/Shadertoys/releases/download/v0.1-alpha.1/Shadertoys_Installer.lua"><img src="https://user-images.githubusercontent.com/78935215/107845614-fb394800-6ddc-11eb-826c-59d53fd29b8f.png"></a>
+</p>
+
+
 Usage
 -----
 
@@ -42,6 +47,7 @@ Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](h
 ### RainbowSlices.fuse
 
 Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer](https://www.shadertoy.com/user/fizzer) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). This is a quick and dirty convesion that will definiely need some rework. But it turned out to be very easy to tranlate so far and as this version already runs on Metal I wanted to share the itermediate result.
+
 
 ![screenshot](RainbowSlices.png "RainbowSlices.fuse in DaVinci Resolve")
 
