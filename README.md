@@ -65,4 +65,7 @@ Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt]
 
 Based on '_[Fake3DScene](https://www.shadertoy.com/view/MddSWB)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A little Shader for occasionally. 
 
-![screenshot](/PlanetShader/Fake3DScene.PNG "Fake3DScene.fuse in DaVinci Resolve")
+
+
+[![screenshot](/PlanetShader/Fake3DScene.PNG "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/J-i-P-i/Shadertoys/blob/main/PlanetShader/Fake3DScene.md)
+
