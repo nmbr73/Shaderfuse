@@ -83,3 +83,13 @@ Based on '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' b
 Based on '_[Favela](https://www.shadertoy.com/view/ldGcDh)_' by [duvengar](https://www.shadertoy.com/user/duvengar) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). First version; runs on Metal, but has some minor render errors; crashes on OpenCL; probably won't even compile on Cuda.
 
 ![screenshot](Favela.png "Favela.fuse in DaVinci Resolve")
+
+
+
+### Noisecube.fuse :zap:
+
+Based on '_[Noisecube](https://www.shadertoy.com/view/4sGBD1)_' by [flimshaw](https://www.shadertoy.com/user/flimshaw) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A flight through a Phongshader
+
+[![Noisecube](https://user-images.githubusercontent.com/78935215/107971617-fded9600-6fb2-11eb-82dd-7630ff3c34bd.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/AbstractShader/Noisecube.md)
+
+
