@@ -26,7 +26,7 @@
 
 */--]]--
 
-
+-- "LUA CODE..." /**
 
 local shadertoy_name       = "Favela"
 local shadertoy_author     = "duvengar"
@@ -77,10 +77,33 @@ FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
 -- // DCTL general compability code
 -- // ------------------------------------------------------------------------
 
+-- **/ "End of LUA CODE"
+
 local GLSL_CompabilityCode=[[
 
 // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
 #define USE_DEVICE_NATIVE_IMPLEMENTATION 1
+
+// In Cuda the fract function is missing
+#ifdef DEVICE_IS_CUDA
+  __DEVICE__ float fract1f(float f) {return f - _floor(f);}
+#endif
+
+#ifdef DEVICE_IS_METAL
+  __DEVICE__ float fract1f(float f) {return fract(f);}
+#endif
+
+
+
+#if defined(DEVICE_IS_METAL) && USE_DEVICE_NATIVE_IMPLEMENTATION
+  __DEVICE__ inline float2 fract_float2(float2 v) { return fract(v); }
+  __DEVICE__ inline float3 fract_float3(float3 v) { return fract(v); }
+#else
+  __DEVICE__ float2 fract_float2(float2 v) { return to_float2(v.x - _floor(v.x), v.y - _floor(v.y)); }
+  __DEVICE__ float3 fract_float3(float3 v) { return to_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z)); }
+#endif
+
+
 
 // @tida : did you fin out if you need to build a function for length?!?
 // See https://www.steakunderwater.com/wesuckless/viewtopic.php?p=35549&sid=c4b440f6caff5fb5e24d0318a0a36bdb#p35549
@@ -103,11 +126,7 @@ local GLSL_CompabilityCode=[[
   __DEVICE__ inline float4 to_float4_22( float2 a, float2 b) { return float4(a.x,a.y,b.x,b.y); } //float4 t(a.x,a.y,b.x,b.y); return t;
 
 
-// In Cuda the fract function is missing
 
-#ifdef DEVICE_IS_CUDA
-  __DEVICE__ float fract1f(float f){return f - _floor(f);}
-#endif
 
 // Our 2x2 matrix
 
@@ -220,22 +239,26 @@ __DEVICE__ float hash2(float2 p)
   // hash2 taken from Dave Hoskins
   // https://www.shadertoy.com/view/4djSRW
 
-  float3 p3  = fract(p.xyx * 0.2831f);
+  float3 p3  = fract_float3(p.xyx * 0.2831f);
   p3 += dot(p3, p3.yzx + 19.19f);
-  return fract((p3.x + p3.y) * p3.z);
+  return fract1f((p3.x + p3.y) * p3.z);
+
+  //float3 p3  = fract_float3(  to_float3(p.x,p.y,p.x) * 0.2831f);
+  //p3 += dot(p3, to_float3(p3.y,p3.z,p3.x) + 19.19f);
+  //return fract1f((p3.x + p3.y) * p3.z);
 }
 
 
 __DEVICE__ float hash(float n)
 {
-  return fract(_sinf(n)*43758.5453123f);
+  return fract1f(_sinf(n)*43758.5453123f);
 }
 
 
 __DEVICE__ float noise(float2 x)
 {
   float2 p = floor(x);
-  float2 f = fract(x);
+  float2 f = fract_float2(x);
   f = f * f * (3.0f - 2.0f * f);
   float n = p.x + p.y * 57.0f;
   return mix(mix(hash(n + 0.0f), hash(n + 1.0f), f.x), mix(hash(n + 57.0f), hash(n + 58.0f), f.x), f.y);
@@ -264,11 +287,16 @@ __DEVICE__ float fbm(float2 p)
 
   constant float2 s = to_float2(1.0f, 1.7320508f);
 
+#elif defined(DEVICE_IS_OPENCL)
+
+  #define s (to_float2(1.0f, 1.7320508f)) // okay, das ist hart, aber was will man machen?!?
+
 #else
 
   const float2 s = to_float2(1.0f, 1.7320508f);
 
 #endif
+
 
 
 
@@ -286,6 +314,8 @@ __DEVICE__ float4 getHex(float2 p)
   float4 h = to_float4_22(p - hC.xy*s, p - (hC.zw + 0.5f)*s);
   return dot(h.xy, h.xy)<dot(h.zw, h.zw) ? to_float4_22(h.xy, hC.xy) : to_float4_22(h.zw, hC.zw + to_float2(0.5f, 1.0f));
 }
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -316,10 +346,9 @@ __DEVICE__ float stripes( float2 uv, mat2 rot, float num, float amp, float blr)
 {
     uv = prod_float2_mat2(uv,rot); // uv *= rot;
     // uv *= M(.02);
-    float h =  smoothstep(amp+blr, amp - blr,  length1f(fract(uv.x * num )-0.5f));
+    float h =  smoothstep(amp+blr, amp - blr,  length1f(fract1f(uv.x * num )-0.5f));
     return h;
 }
-
 
 __DEVICE__ float dfDiamond(float2 h)
 {
@@ -338,6 +367,11 @@ __DEVICE__ float rect(float2 uv,float2 p, float w, float h, float b)
     float rh = S(w, w + b, length1f(uv.y));
     return rv + rh;
 }
+
+//#ifdef DEVICE_IS_OPENCL
+//  #undef s
+//#endif
+
 
 //############################################################################
 
@@ -398,11 +432,14 @@ __KERNEL__ void ST_FavelaKernel(
 
   float4  h       = getHex( pos + SCALE * uv + s.yx);   // hexagons center
   float   eDist   = hex(h.xy);                          // hexagone Edge distance.
-	float   eDist2  = hex(h.xy + to_float2(0.0f,0.25f));
-  float   cDist   = length(h.xy);                       // @Shane: cDist = dot(h.xy, h.xy);
+  float   eDist2  = hex(h.xy + to_float2(0.0f,0.25f));
+  //float   cDist   = length_float2(h.xy);                // @Shane: cDist = dot(h.xy, h.xy);
 
-  float   tilt    = hash2(h.zw*2376.345791f);           // random value depending on cel ids
-
+#ifdef DEVICE_IS_OPENCL
+  float tilt = 0.0f;    // @TODO !!!!!
+#else
+  float   tilt    = hash2(h.zw*2376.345791f); // random value depending on cel ids
+#endif
 
   //  ------------------------------------------------------------------------------------------------
   //  sorting the hexagons
@@ -446,11 +483,16 @@ __KERNEL__ void ST_FavelaKernel(
 
   //  wich tiles are hills?
   //  ---------------------
+
+#ifndef DEVICE_IS_OPENCL // @TODO !!!!
+
   if (flip == 0.0f && noise(h.zw)*0.5f > 0.3f)
   {
     hills = 1.0f;
     tree = tilt > 0.5f ? 1.0f : 0.0f;
   }
+#endif
+
 
   //  ------------------------------------------------------------------------------------------------
   //  create the windows elements
@@ -557,7 +599,7 @@ __KERNEL__ void ST_FavelaKernel(
     {
               col      = tilt > 0.2f  ? col :  col +0.3f * paint ;
       float2  dir      = cos(T + h.z) > 0.0f ? prod_mat2_float2(M(PI/3.0f),h.xy) : -prod_mat2_float2(M(PI/3.0f),h.xy); // was: -M(PI/3.0f)*h.xy;
-      float   blink    = S(1.0f,0.9f,fract(dir.x*2.0f)* 3.333f -0.5f)-0.5f;
+      float   blink    = S(1.0f,0.9f,fract1f(dir.x*2.0f)* 3.333f -0.5f)-0.5f;
 
       float   on       = S(-1.0f,1.0f,sun);
       float   light    = (-1.0f + tilt * floor(on*10.0f) > 0.0f ? blink : -1.0f);
@@ -571,7 +613,12 @@ __KERNEL__ void ST_FavelaKernel(
               blights += tilt > 0.8f && flip == 1.0f ? light * bwinnerR : 0.0f;
 
       float t1 = stripes(pat - to_float2(0.01f,0.0f), prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
-      float tt = stripes(pat - to_float2(fract(prod_mat2_float2(M(-PI*0.666f),pat)*8.0f).x >0.5f ? 0.20f : 0.01f,0.00f), prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
+      float tt = stripes(pat - to_float2(fract_float2( prod_mat2_float2(M(-PI*0.666f),pat)*8.0f).x >0.5f ? 0.20f : 0.01f,0.00f), prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
+
+//    float tt = stripes(pat - to_float2(((fract_float2(prod_mat2_float2(M(-PI*0.666f),pat)*8.0f)).x >0.5f ? 0.20f : 0.01f),0.00f),prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
+
+
+
       float t2 = stripes(pat - to_float2(-0.19f,0.01f), prod_mat2_mat2(M(TWO_PI*0.333f),M(0.02f)),   16.0f  , 0.05f, blr*2.0f );
       col += hills == 0.0f ? 0.1f*(t2+tt)* pow(noise((uv-motion*0.15f)*20.0f),1.5f) : 0.0f;
 
@@ -588,7 +635,7 @@ __KERNEL__ void ST_FavelaKernel(
   {
             col     += tilt > 0.2 ? to_float3_s(0.0f) : 0.3f * paint ;
     float2  dir      =  _cosf(T + h.z) > 0.0f ? prod_mat2_float2(M(PI),h.xy) : -prod_mat2_float2(M(PI),h.xy); // -M(PI)*h.xy
-    float   blink    = S(1.0f,0.9f,fract(dir.x*2.0f)* 3.333f -0.5f)-0.5f;
+    float   blink    = S(1.0f,0.9f,fract1f(dir.x*2.0f)* 3.333f -0.5f)-0.5f;
     float   on       = S(-1.0f,1.0f,sun);
     float   light    = 0.5f*(-1.0f + tilt * floor(on*10.0f) > 0.0f ? blink : -1.0f);
             col      = hills == 1.0f ? mix(col,to_float3(0.52f,0.13f,0.01f), 0.5f) : col;
@@ -600,7 +647,7 @@ __KERNEL__ void ST_FavelaKernel(
 
     // walls texture
     float t1 = stripes(pat - to_float2(0.01f,0.0f), prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
-    float tt = stripes(pat - to_float2(fract(prod_mat2_float2(M(-PI*0.333f),pat)*8.0f).x >0.5f ? 0.20f : 0.01f,0.00f), prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
+    float tt = stripes(pat - to_float2(fract_float2(prod_mat2_float2(M(-PI*0.333f),pat)*8.0f).x >0.5f ? 0.20f : 0.01f,0.00f), prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
     float t2 = stripes(pat - to_float2(-0.19f,0.01f), prod_mat2_mat2(M(TWO_PI*0.666f),M(0.02f)),   16.0f  , 0.05f, blr*2.0f );
     col += hills == 0.0f ? 0.15f*(t2+tt)* pow(noise((uv-motion*0.15f)*20.0f),1.5f) : 0.0f;
 
@@ -671,7 +718,7 @@ __KERNEL__ void ST_FavelaKernel(
   //  Roof top
   //  --------
 
-  float2 frh = fract(h.xy * 2.0f);
+  float2 frh = fract_float2(h.xy * 2.0f);
   float d1 = S(0.8f+blr, 0.8f-blr, dfDiamond(h.xy - to_float2(0.0f, flip*0.3f)));
   float d2 = S(0.8f+blr, 0.8f-blr, dfDiamond(h.xy - to_float2(0.0f, flip*0.2f)));
 
@@ -747,13 +794,15 @@ __KERNEL__ void ST_FavelaKernel(
 
   //##########################################################################
 
+
+  //fragColor = to_float4(1.0f,1.0f,0.0f,0.0f); // WECH!
   _tex2DVec4Write(dst, x, y, fragColor);
 
 }
 
 ]]
 
-
+-- "LUA CODE..." /**
 
 -- // ------------------------------------------------------------------------
 -- // Create
@@ -945,3 +994,6 @@ function NotifyChanged(inp, param, time)
 		end
 	end
 end
+
+
+-- **/ "End of LUA CODE"
