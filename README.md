@@ -75,3 +75,11 @@ Based on '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' b
 
 [![TNTHTW](https://user-images.githubusercontent.com/78935215/107889303-e4e0d880-6f11-11eb-80cc-e2e522a632e5.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/TunnelShader/TNTHTW.md)
 
+
+
+
+### Favela.fuse :hammer_and_wrench:
+
+Based on '_[Favela](https://www.shadertoy.com/view/ldGcDh)_' by [duvengar](https://www.shadertoy.com/user/duvengar) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). First version; runs on Metal, but has some minor render errors; crashes on OpenCL; probably won't even compile on Cuda.
+
+![screenshot](Favela.png "Favela.fuse in DaVinci Resolve")
