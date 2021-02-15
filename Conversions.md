@@ -8,7 +8,7 @@ The entry point for a compute shader is the *compute kernel* - this is the code 
 
 In the world of Shader Languages and Compute Shaders we have to juggle around with the following frameworks, APIs, toolkits, abstractions ...
 
-- **GLSL** - [OpenGL ES 3.1 Spec](https://www.khronos.org/registry/OpenGL/specs/es/3.1/es_spec_3.1.pdf) ... OpenGL ES is a platform and GPU agnostic API targeting embedded systems. It is a subset of OpenGL (aka Desktop OpenGL), offers a Shader Language (GLSL) that also provides Compute Shaders, and OpenGL ES makes up the core of WebGL.
+- **GLSL** - [OpenGL ES 3.1 Spec](https://www.khronos.org/registry/OpenGL/specs/es/3.1/es_spec_3.1.pdf), [OpenGL 4.5 Reference Page](https://www.khronos.org/registry/OpenGL-Refpages/gl4/), and [OpenGL Wiki](https://www.khronos.org/opengl/wiki/Main_Page)... OpenGL ES is a platform and GPU agnostic API targeting embedded systems. It is a subset of OpenGL (aka Desktop OpenGL), offers a Shader Language (GLSL) that also provides Compute Shaders, and OpenGL ES makes up the core of WebGL.
 - **DCTL** - :question::question::question:... the DaVinci Resolve Color Transformation Language seems to be just a layer on top of CUDA, Metal, OpenCL (utilizing the appropriate toolkit depending on your platform, GPU, and settings).
 - **CUDA** - [CUDA Toolkit Documentation](https://docs.nvidia.com/cuda/) ... CUDA is the Nvidia toolkit to access Nvidia GPUs.
 - **Metal** - [Metal SL Spec](https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf) ... Metal is the Apple GPU API for macOS, iOS, iPadOS, tvOS.
@@ -81,12 +81,21 @@ Implementation provided by DCTL (on MacOS / Metal):
     __DEVICE___ inline float3 to_float3(float x, float y, float z)
     { float3 t;
       t.x=x;
-      t.x=y; 
+      t.y=y; 
       t.z=z;
       return t;
     }
 
+### Swizzling
 
+In OpenGL you can access the components of vectors using the following syntax:
+
+    vec4 a;
+    a.x = 1; a.y=2; a.z=3; a.w=4;
+    vec2 b = a.yw;
+    a = b.xyyx;
+
+This is called *swizzling*.
 
 ### 3x3 Matrix
 
