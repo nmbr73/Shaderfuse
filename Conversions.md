@@ -28,7 +28,19 @@ In the world of Shader Languages and Compute Shaders we have to juggle around wi
 
 ## Data Types and Type Conversion
 
+### Vectors
+
+Overview...
+
+|float2                      | ...             |
+|----------------------------|-------------------|
+|`float2 to_float2(float, float)` |  |
+|`float2 to_float2_v(__CONSTANTREF__ float*)` | |
+|`to_float2_s(float)`| |
+
+
 ### 2-dimensional Vector
+
 
 Schema of what I guess a `vec2` looks like:
 
@@ -56,8 +68,8 @@ struct vec2
 
 | System | Equivalent                                                   |
 |--------|--------------------------------------------------------------|
-| GLGS   |`vec2`; Construction: `vec2(float,float)`                                                        |
-| DCTL   | L-Value: `float2`; R-Value: `to_float2(float,float)`, `to_float2_s(float)` |
+| GLGS   |`vec2`; Construction: `vec2(float,float)`, `vec(float2)`      |
+| DCTL   | L-Value: `float2`; R-Value: `to_float2(float,float)`, `to_float2_s(float)`, `to_float2_v(__CONSTANTREF__ float*)`, `to_float2_cint(int2)`, `to_float2_cuint(uint2 a)` |
 | Cuda   |                                                              |
 | Metal  |                                                              |
 | OpenCL |                                                              |
@@ -81,7 +93,7 @@ Implementation provided by DCTL (on MacOS / Metal):
     __DEVICE___ inline float3 to_float3(float x, float y, float z)
     { float3 t;
       t.x=x;
-      t.y=y; 
+      t.y=y;
       t.z=z;
       return t;
     }
@@ -101,7 +113,7 @@ This is called *swizzling*.
 
 | System | Equivalent                                                                    |
 |--------|-------------------------------------------------------------------------------|
-| GLGS   |`mat3`; Construction: `mat3(vec3,vec3,vec3)`                                   |                
+| GLGS   |`mat3`; Construction: `mat3(vec3,vec3,vec3)`                                   |
 | DCTL   | **Workaround:** L-Value: `mat3`; Construction: `to_mat3(float3,float3,float3)`|
 | Cuda   |                                                                               |
 | Metal  | `float3x3`; Construction: `float3x3(float)`, `float3x3(float3,float3,float3)`                    |
@@ -120,13 +132,13 @@ typedef struct
 
 
 __DEVICE__ inline mat3 to_mat3( float3 a, float3 b, float3 c)
-{ 
-  mat3 d; 
-  d.r0 = a; 
-  d.r1 = b; 
-  d.r2 = c; 
-  return d; 
-} 
+{
+  mat3 d;
+  d.r0 = a;
+  d.r1 = b;
+  d.r2 = c;
+  return d;
+}
 ```
 
 In Metal a `float3x3(fval)` creates ...
