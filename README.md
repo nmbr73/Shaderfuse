@@ -93,3 +93,9 @@ Based on '_[Noisecube](https://www.shadertoy.com/view/4sGBD1)_' by [flimshaw](ht
 [![Noisecube](https://user-images.githubusercontent.com/78935215/107971617-fded9600-6fb2-11eb-82dd-7630ff3c34bd.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/AbstractShader/Noisecube.md)
 
 
+### LonelyVoxel.fuse :star2:
+
+Based on '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](https://www.shadertoy.com/user/SudoNhim) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A cube with rounded corners and a very nice bump map.
+
+[![LonelyVoxel](https://user-images.githubusercontent.com/78935215/108084988-2211ab80-7075-11eb-911d-b24996b84a65.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/ObjektShader/LonelyVoxel.md)
+
