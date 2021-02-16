@@ -81,60 +81,132 @@ FuRegisterClass("ST_"..dctlfuse_name, CT_SourceTool, {
 
 local GLSL_CompabilityCode=[[
 
+
+// -----
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
 // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
-#define USE_DEVICE_NATIVE_IMPLEMENTATION 1
+
+#if 1
+  #if defined(DEVICE_IS_METAL)
+    #define USE_NATIVE_METAL_IMPL   1
+  #elif defined(DEVICE_IS_CUDA)
+    #define USE_NATIVE_CUDA_IMPL    1
+  #elif defined(DEVICE_IS_OPENCL)
+    #define USE_NATIVE_OPENCL_IMPL  1
+  #endif
+#endif
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Macros to resolve Open GL szwizzling
+// ---------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  #define swixy(V) (V).xy
+//#define swixx(V) (V).xx
+  #define swiyx(V) (V).yx
+//#define swiyy(V) (V).yx
+  #define swizw(V) (V).zw
+  #define swixyx(V) (V).xyx
+  #define swiyzx(V) (V).yzx
+  #define swixyxy(V) (V).xyxy
+
+#else
+
+  #define swixy(V) to_float2((V).x,(V).y)
+//#define swixx(V) to_float2((V).x,(V).x)
+  #define swiyx(V) to_float2((V).y,(V).x)
+//#define swiyy(V) to_float2((V).y,(V).y)
+  #define swizw(V) to_float2((V).z,(V).w)
+  #define swixyx(V) to_float3((V).x,(V).y,(V).x)
+  #define swiyzx(V) to_float3((V).y,(V).z,(V).z)
+  #define swixyxy(V) to_float4((V).x,(V).y,(V).x,(V).y)
+
+#endif
+
+
+// ---------------------------------------------------------------------------
+// Fraction
+// ---------------------------------------------------------------------------
 
 // In Cuda the fract function is missing
-#ifdef DEVICE_IS_CUDA
-  __DEVICE__ float fract1f(float f) {return f - _floor(f);}
-#endif
+// Does fract exist in OpenCL? And if so, what's its name then?
 
-#ifdef DEVICE_IS_METAL
-  __DEVICE__ float fract1f(float f) {return fract(f);}
-#endif
+#if defined(USE_NATIVE_METAL_IMPL)
 
-
-
-#if defined(DEVICE_IS_METAL) && USE_DEVICE_NATIVE_IMPLEMENTATION
+  __DEVICE__ inline float  fract1f(float f) {return fract(f);}
   __DEVICE__ inline float2 fract_float2(float2 v) { return fract(v); }
   __DEVICE__ inline float3 fract_float3(float3 v) { return fract(v); }
+  __DEVICE__ inline float4 fract_float4(float4 v) { return fract(v); }
+
 #else
-  __DEVICE__ float2 fract_float2(float2 v) { return to_float2(v.x - _floor(v.x), v.y - _floor(v.y)); }
-  __DEVICE__ float3 fract_float3(float3 v) { return to_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z)); }
+
+  __DEVICE__ float  fract1f(float f) {return f - _floor(f);}
+  __DEVICE__ float2 fract_float2(float2 v) { return to_float2(v.x - _floor(v.x), v.y - _floor(v.y)                                      ); }
+  __DEVICE__ float3 fract_float3(float3 v) { return to_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z)                   ); }
+  __DEVICE__ float4 fract_float4(float4 v) { return to_float4(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z), v.w - _floor(v.w)); }
+
 #endif
 
 
 
-// @tida : did you fin out if you need to build a function for length?!?
+// ---------------------------------------------------------------------------
+// Euclidean norm vector length
+// ---------------------------------------------------------------------------
+// @tida : did you finf out if you need to build a function for length?!?
 // See https://www.steakunderwater.com/wesuckless/viewtopic.php?p=35549&sid=c4b440f6caff5fb5e24d0318a0a36bdb#p35549
 // However, I need length and don't know if there is a differently named implementation in DCTL:
 
-  __DEVICE__ inline float length1f (float x                            ) { return x;                        }
-//__DEVICE__ inline float length2f (float x, float y                   ) { return _sqrtf(x*x+y*y);          }
-//__DEVICE__ inline float length3f (float x, float y, float z          ) { return _sqrtf(x*x+y*y+z*z);      }
-//__DEVICE__ inline float length4f (float x, float y, float z, float w ) { return _sqrtf(x*x+y*y+z*z+w*w);  }
+#if defined(USE_NATIVE_METAL_IMPL)
 
-//__DEVICE__ inline float length_float  ( float  v ) { return v;                                        }
+// In GLSL length(float) exists as well as length(vec2|3|4).
+// In Metal length(float) does not exist, but length(half|float2|3|4) exists.
+
+  __DEVICE__ inline float length1f      ( float  x ) { return abs(x);    }
+  __DEVICE__ inline float length_float2 ( float2 v ) { return length(v); }
+  __DEVICE__ inline float length_float3 ( float3 v ) { return length(v); }
+  __DEVICE__ inline float length_float4 ( float4 v ) { return length(v); }
+
+#else
+
+  __DEVICE__ inline float length1f      ( float  x ) { return _fabs(x);                                 }
   __DEVICE__ inline float length_float2 ( float2 v ) { return _sqrtf(v.x*v.x+v.y*v.y);                  }
-//__DEVICE__ inline float length_float3 ( float3 v ) { return _sqrtf(v.x*v.x+v.y*v.y+v.z*v.z);          }
-//__DEVICE__ inline float length_float4 ( float4 v ) { return _sqrtf(v.x*v.x+v.y*v.y+v.z*v.z+v.w*v.w);  }
+  __DEVICE__ inline float length_float3 ( float3 v ) { return _sqrtf(v.x*v.x+v.y*v.y+v.z*v.z);          }
+  __DEVICE__ inline float length_float4 ( float4 v ) { return _sqrtf(v.x*v.x+v.y*v.y+v.z*v.z+v.w*v.w);  }
 
-// Don't know if a to_float4_??(float2,float2) exists?!?
+#endif
 
-//__DEVICE__ inline float4 to_float4_31( float3 a, float b ) { return to_float4_aw(a,b);       }
-//__DEVICE__ inline float4 to_float4_13( float  a, float3 b) { return float4(a,b.x,b.y,b.z  ); }
-  __DEVICE__ inline float4 to_float4_22( float2 a, float2 b) { return float4(a.x,a.y,b.x,b.y); } //float4 t(a.x,a.y,b.x,b.y); return t;
 
+// ---------------------------------------------------------------------------
 
 
 
-// Our 2x2 matrix
+//__DEVICE__ inline float3 to_float3_12( float  x, float2 v ) { return to_float3(x,v.x,v.y);    }
+//__DEVICE__ inline float3 to_float3_21( float2 v, float  x ) { return to_float3_aw(v,x);       }
+//__DEVICE__ inline float4 to_float4_31( float3 a, float  b ) { return to_float4_aw(a,b);       }
+//__DEVICE__ inline float4 to_float4_13( float  a, float3 b ) { return float4(a,b.x,b.y,b.z  ); }
+  __DEVICE__ inline float4 to_float4_22( float2 a, float2 b ) { return float4(a.x,a.y,b.x,b.y); }
 
-#if defined(DEVICE_IS_METAL) && USE_DEVICE_NATIVE_IMPLEMENTATION
+
+
+
+// ---------------------------------------------------------------------------
+// 2x2 matrix
+// ---------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
 
   typedef float2x2 mat2;
 
-    __DEVICE__ inline mat2 to_mat2_4f ( float  a, float  b, float c, float d) { return mat2(a,b,c,d);       }
+    __DEVICE__ inline mat2 to_mat2    ( float  a, float  b, float c, float d) { return mat2(a,b,c,d);       }
   //__DEVICE__ inline mat2 to_mat2_1f ( float  a                            ) { return mat2(a,a,a,a);       }
   //__DEVICE__ inline mat2 to_mat2_s  ( float  a                            ) { return mat2(a);             }
   //__DEVICE__ inline mat2 to_mat2_22 ( float2 a, float2 b                  ) { return mat2(a,b);           }
@@ -156,7 +228,7 @@ local GLSL_CompabilityCode=[[
 
   } mat2;
 
-    __DEVICE__ inline mat2 to_mat2_4f ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+    __DEVICE__ inline mat2 to_mat2    ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
   //__DEVICE__ inline mat2 to_mat2_1f ( float  a                            )  { mat2 t; t.r0.x = a; t.r0.y = a; t.r1.x = a; t.r1.y = a;         return t; }
   //__DEVICE__ inline mat2 to_mat2_s  ( float  a                            )  { mat2 t; t.r0.x = a;  t.r0.y = 0.0f; t.r1.x = 0.0f; t.r1.y = a;  return t; }
   //__DEVICE__ inline mat2 to_mat2_22 ( float2 a, float2 b                  )  { mat2 t; t.r0 = a; t.r1 = b;                                     return t; }
@@ -175,15 +247,15 @@ local GLSL_CompabilityCode=[[
 
   __DEVICE__ inline float2 prod_float2_mat2( float2 v, mat2 m )
   {
-    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
-    // return float2(v.x*m.r0.x + v.y*m.r0.y, v.x*m.r1.x + v.y*m.r1.y);
+    // float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+    return float2(v.x*m.r0.x + v.y*m.r0.y, v.x*m.r1.x + v.y*m.r1.y);
   }
 
 
   __DEVICE__ inline float2 prod_mat2_float2( mat2 m, float2 v )
   {
-    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
-    // return float2(v.x*m.r0.x + v.y*m.r1.x, v.x*m.r0.y + v.y*m.r1.y);
+    // float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+    return float2(v.x*m.r0.x + v.y*m.r1.x, v.x*m.r0.y + v.y*m.r1.y);
   }
 
 
@@ -239,13 +311,9 @@ __DEVICE__ float hash2(float2 p)
   // hash2 taken from Dave Hoskins
   // https://www.shadertoy.com/view/4djSRW
 
-  float3 p3  = fract_float3(p.xyx * 0.2831f);
-  p3 += dot(p3, p3.yzx + 19.19f);
+  float3 p3  = fract_float3(swixyx(p) * 0.2831f);
+  p3 += dot(p3, swiyzx(p3) + 19.19f);
   return fract1f((p3.x + p3.y) * p3.z);
-
-  //float3 p3  = fract_float3(  to_float3(p.x,p.y,p.x) * 0.2831f);
-  //p3 += dot(p3, to_float3(p3.y,p3.z,p3.x) + 19.19f);
-  //return fract1f((p3.x + p3.y) * p3.z);
 }
 
 
@@ -270,7 +338,7 @@ __DEVICE__ float fbm(float2 p)
   // see iq
   // https://www.shadertoy.com/view/lsfGRr
 
-  const mat2 m = to_mat2_4f( 0.6f, 0.6f, -0.6f, 0.8f);
+  const mat2 m = to_mat2( 0.6f, 0.6f, -0.6f, 0.8f);
 
   float f = 0.0f;
   f += 0.5000f * noise(p); p = prod_float2_mat2(p,prod_mat2_1f(m, 2.02f));
@@ -283,9 +351,9 @@ __DEVICE__ float fbm(float2 p)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef DEVICE_IS_METAL
+#if defined(DEVICE_IS_METAL)
 
-  constant float2 s = to_float2(1.0f, 1.7320508f);
+  constant float2 s = to_float2(1.0f, 1.7320508f); // das geht in Metal
 
 #elif defined(DEVICE_IS_OPENCL)
 
@@ -293,7 +361,7 @@ __DEVICE__ float fbm(float2 p)
 
 #else
 
-  const float2 s = to_float2(1.0f, 1.7320508f);
+  const float2 s = to_float2(1.0f, 1.7320508f); // geht das in Cuda?
 
 #endif
 
@@ -310,9 +378,9 @@ __DEVICE__ float hex(float2 p)
 __DEVICE__ float4 getHex(float2 p)
 {
 
-  float4 hC = floor(to_float4_22(p, p - to_float2(0.5f, 1.0f)) / s.xyxy) + 0.5f;
-  float4 h = to_float4_22(p - hC.xy*s, p - (hC.zw + 0.5f)*s);
-  return dot(h.xy, h.xy)<dot(h.zw, h.zw) ? to_float4_22(h.xy, hC.xy) : to_float4_22(h.zw, hC.zw + to_float2(0.5f, 1.0f));
+  float4 hC = floor(to_float4_22(p, p - to_float2(0.5f, 1.0f)) / swixyxy(s)) + 0.5f;
+  float4 h = to_float4_22(p - swixy(hC)*s, p - (swizw(hC) + 0.5f)*s);
+  return dot(swixy(h), swixy(h))<dot(swizw(h), swizw(h)) ? to_float4_22( swixy(h), swixy(hC)) : to_float4_22( swizw(h), swizw(hC) + to_float2(0.5f, 1.0f));
 }
 
 
@@ -320,7 +388,7 @@ __DEVICE__ float4 getHex(float2 p)
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#define M(a)        to_mat2_4f(_cosf(a), -_sinf(a), _sinf(a), _cosf(a))
+#define M(a)        to_mat2(_cosf(a), -_sinf(a), _sinf(a), _cosf(a))
 #define S(a, b, c)  smoothstep(a, b, c)
 #define SAT(a)      _clampf(a, 0.0f, 1.0f)
 #define T           iTime
@@ -402,7 +470,7 @@ __KERNEL__ void ST_FavelaKernel(
 
   //  set up pixel coord
   //  ------------------
-  float2 uv = (2.0f * fragCoord - iResolution.xy) / iResolution.y;            // [nmbr73] or just iResolution without .xy?
+  float2 uv = (2.0f * fragCoord - swixy(iResolution)) / iResolution.y;
   uv = prod_float2_mat2(uv,M(0.25f * _cosf(PI) * 0.5f * length_float2(uv)));  // twist the pixels domain
   uv *= 1.1f;                                                                 // scale up the pixels domain
   uv = prod_float2_mat2(uv,M(PI));                                            // rotate the pixels domain
@@ -413,7 +481,7 @@ __KERNEL__ void ST_FavelaKernel(
   //  variables
   //  ------------------------------------------------------------------------------------------------
   float   motion  = 325.543f + T * 0.5f;		            // speed
-  float   SCALE   = rem(iResolution.xy)*SIZE;           // screen rescaling ratio
+  float   SCALE   = rem(swixy(iResolution))*SIZE;           // screen rescaling ratio
 
   // three options for the initialisation of the blur value were given
   // in the original shadertoy. But the one actually used there does not
@@ -430,16 +498,13 @@ __KERNEL__ void ST_FavelaKernel(
   //  Hexagons grid
   //  -------------
 
-  float4  h       = getHex( pos + SCALE * uv + s.yx);   // hexagons center
-  float   eDist   = hex(h.xy);                          // hexagone Edge distance.
-  float   eDist2  = hex(h.xy + to_float2(0.0f,0.25f));
-  //float   cDist   = length_float2(h.xy);                // @Shane: cDist = dot(h.xy, h.xy);
+  float4  h       = getHex( pos + SCALE * uv + swiyx(s));   // hexagons center
+  float   eDist   = hex(swixy(h));                          // hexagone Edge distance.
+  float   eDist2  = hex(swixy(h) + to_float2(0.0f,0.25f));
+  //float   cDist   = length_float2(swixy(h));                // @Shane: cDist = dot(h.xy, h.xy);
 
-#ifdef DEVICE_IS_OPENCL
-  float tilt = 0.0f;    // @TODO !!!!!
-#else
-  float   tilt    = hash2(h.zw*2376.345791f); // random value depending on cel ids
-#endif
+  // AB HIER PROBLEM IN OPENCL !!!!!!!!!!!!
+  float   tilt    = hash2(swizw(h)*2376.345791f); // random value depending on cel ids
 
   //  ------------------------------------------------------------------------------------------------
   //  sorting the hexagons
@@ -462,7 +527,10 @@ __KERNEL__ void ST_FavelaKernel(
   if (ff > 0.0f)
   {
     flip = 1.0f;
-    h.xy = prod_float2_mat2(h.xy,M(PI)); // does swizzling work on all platforms
+
+    float2 tmp= prod_float2_mat2(swixy(h),M(PI));;
+    h.x = tmp.x;
+    h.y = tmp.y;
 
     empty = ff > 0.99f ? 1.0f : 0.0f;
   }
@@ -484,23 +552,23 @@ __KERNEL__ void ST_FavelaKernel(
   //  wich tiles are hills?
   //  ---------------------
 
-#ifndef DEVICE_IS_OPENCL // @TODO !!!!
 
-  if (flip == 0.0f && noise(h.zw)*0.5f > 0.3f)
+  // AUCH HIER PROBLEM IN OPENCL !!!!!!!!!!!!
+
+  if (flip == 0.0f && noise(swizw(h))*0.5f > 0.3f)
   {
     hills = 1.0f;
     tree = tilt > 0.5f ? 1.0f : 0.0f;
   }
-#endif
 
 
   //  ------------------------------------------------------------------------------------------------
   //  create the windows elements
   //  ------------------------------------------------------------------------------------------------
 
-  float2 pat  = h.xy;                                                                             // original position (up lozenge in the hexagon)
-  float2 pat2 = h.xy-(to_float2(flip == 1.0f ? 0.05f : -0.05, flip == 1.0f ? 0.03f : - 0.03f));   // offseted and rotated position on the right side
-  float2 pat3 = h.xy-(to_float2(flip == 0.0f ? 0.05f : -0.05, flip == 1.0f ? 0.05f : - 0.05f));   // offseted and rotated position on the left side
+  float2 pat  = swixy(h);                                                                             // original position (up lozenge in the hexagon)
+  float2 pat2 = swixy(h)-(to_float2(flip == 1.0f ? 0.05f : -0.05, flip == 1.0f ? 0.03f : - 0.03f));   // offseted and rotated position on the right side
+  float2 pat3 = swixy(h)-(to_float2(flip == 0.0f ? 0.05f : -0.05, flip == 1.0f ? 0.05f : - 0.05f));   // offseted and rotated position on the left side
 
 
   float s1  = stripes(pat,  prod_mat2_mat2(M(0.0f),           M(0.02f)), flip == 1.0f ? 2.0f: 4.0f, 0.3f, blr );  // vertical stripes
@@ -568,11 +636,11 @@ __KERNEL__ void ST_FavelaKernel(
 
   //  painting
   //  --------
-  float3 paint = to_float3(_cosf(h.z + h.w *0.2f),_cosf(tilt)*0.3f,noise(h.zw));
+  float3 paint = to_float3(_cosf(h.z + h.w *0.2f),_cosf(tilt)*0.3f,noise(swizw(h)));
 
   //  lightning
   //  ---------
-  float2 facespos = h.xy;
+  float2 facespos = swixy(h);
   facespos = prod_float2_mat2(facespos, M(TWO_PI*ang.x));
 
   float2 fa = facespos;
@@ -598,7 +666,7 @@ __KERNEL__ void ST_FavelaKernel(
     if ( hills == 0.0f)
     {
               col      = tilt > 0.2f  ? col :  col +0.3f * paint ;
-      float2  dir      = cos(T + h.z) > 0.0f ? prod_mat2_float2(M(PI/3.0f),h.xy) : -prod_mat2_float2(M(PI/3.0f),h.xy); // was: -M(PI/3.0f)*h.xy;
+      float2  dir      = cos(T + h.z) > 0.0f ? prod_mat2_float2(M(PI/3.0f),swixy(h)) : -prod_mat2_float2(M(PI/3.0f),swixy(h));
       float   blink    = S(1.0f,0.9f,fract1f(dir.x*2.0f)* 3.333f -0.5f)-0.5f;
 
       float   on       = S(-1.0f,1.0f,sun);
@@ -615,11 +683,8 @@ __KERNEL__ void ST_FavelaKernel(
       float t1 = stripes(pat - to_float2(0.01f,0.0f), prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
       float tt = stripes(pat - to_float2(fract_float2( prod_mat2_float2(M(-PI*0.666f),pat)*8.0f).x >0.5f ? 0.20f : 0.01f,0.00f), prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
 
-//    float tt = stripes(pat - to_float2(((fract_float2(prod_mat2_float2(M(-PI*0.666f),pat)*8.0f)).x >0.5f ? 0.20f : 0.01f),0.00f),prod_mat2_mat2(M(0.0f),M(0.02f)), 8.0f, 0.05f, blr*2.0f );
-
-
-
       float t2 = stripes(pat - to_float2(-0.19f,0.01f), prod_mat2_mat2(M(TWO_PI*0.333f),M(0.02f)),   16.0f  , 0.05f, blr*2.0f );
+
       col += hills == 0.0f ? 0.1f*(t2+tt)* pow(noise((uv-motion*0.15f)*20.0f),1.5f) : 0.0f;
 
     } else
@@ -634,7 +699,7 @@ __KERNEL__ void ST_FavelaKernel(
   if(pol.x >= ang.y)
   {
             col     += tilt > 0.2 ? to_float3_s(0.0f) : 0.3f * paint ;
-    float2  dir      =  _cosf(T + h.z) > 0.0f ? prod_mat2_float2(M(PI),h.xy) : -prod_mat2_float2(M(PI),h.xy); // -M(PI)*h.xy
+    float2  dir      =  _cosf(T + h.z) > 0.0f ? prod_mat2_float2(M(PI),swixy(h)) : -prod_mat2_float2(M(PI),swixy(h));
     float   blink    = S(1.0f,0.9f,fract1f(dir.x*2.0f)* 3.333f -0.5f)-0.5f;
     float   on       = S(-1.0f,1.0f,sun);
     float   light    = 0.5f*(-1.0f + tilt * floor(on*10.0f) > 0.0f ? blink : -1.0f);
@@ -655,14 +720,14 @@ __KERNEL__ void ST_FavelaKernel(
     float2  pos1    = to_float2(0.25f,0.0f);
     float2  pos2    = to_float2(0.215f,0.0f);
     float   door    = stripes(pat + pos1 , prod_mat2_mat2(M(0.0f),M(0.02f)), 1.0f, 0.05f, blr);
-    float   doorcut = 1.-stripes(pat + pos1 , prod_mat2_mat2(M(TWO_PI*0.666f),M(0.02f)), 1.0f, 0.18f, blr);
-    float   maskcut = 1.-stripes(pat + pos2 , prod_mat2_mat2(M(TWO_PI*0.666f),M(0.02f)), 1.0f, 0.18f, blr);
+    float   doorcut = 1.0f-stripes(pat + pos1 , prod_mat2_mat2(M(TWO_PI*0.666f),M(0.02f)), 1.0f, 0.18f, blr);
+    float   maskcut = 1.0f-stripes(pat + pos2 , prod_mat2_mat2(M(TWO_PI*0.666f),M(0.02f)), 1.0f, 0.18f, blr);
     float   doormask= stripes(pat + pos2 , prod_mat2_mat2(M(0.0f),M(0.02f)), 1.0f, 0.05f, blr);
-            door    =  min(door,doorcut);
+            door    = min(door,doorcut);
             doormask= min(doormask, maskcut);
     float   dbevel  = SAT(min(door,door-doormask));
 
-    col += doors == 1.0f && flip == 0.0f && hills == 0.0f ? dbevel * 0.2f : 0.0f;
+    col += doors == 1.0f && flip == 0.0f && hills == 0.0f ? dbevel   * 0.2f : 0.0f;
     col += doors == 1.0f && flip == 0.0f && hills == 0.0f ? doormask * 0.4f : 0.0f;
   }
 
@@ -674,7 +739,7 @@ __KERNEL__ void ST_FavelaKernel(
     if (hills == 1.0f)
     {
       col += 0.1f * to_float3(0.5f,0.45f,0.1f);
-      float grass = 1.0f-S(1.1f+blr, 0.5f-blr, dfDiamond(h.xy - to_float2(0.0f, 0.3f)));
+      float grass = 1.0f-S(1.1f+blr, 0.5f-blr, dfDiamond(swixy(h) - to_float2(0.0f, 0.3f)));
       col = mix(to_float3(0.5f,0.45f,0.1f),col,1.0f-grass);
     }
   }
@@ -694,10 +759,10 @@ __KERNEL__ void ST_FavelaKernel(
     float tw = 0.07f;
     float crown = S(0.25f+blr,0.25f,eDist2);
 
-    float trunk = S(tw+blr, tw, hex(h.xy - to_float2(0.0f, 0.0f)));
-    trunk = max(trunk,S(tw+(blr*0.5f), tw, hex(h.xy - to_float2(0.0f, 0.5f*tw*2.5f))));
-    trunk = max(trunk,S(tw+(blr*0.5f), tw, hex(h.xy - to_float2(0.0f, 0.5f*tw*5.0f))));
-    trunk = max(trunk,S(tw+(blr*0.5f), tw, hex(h.xy - to_float2(0.0f, 0.5f*tw*7.5f))));
+    float trunk = S(tw+blr, tw, hex(swixy(h) - to_float2(0.0f, 0.0f)));
+    trunk = max(trunk,S(tw+(blr*0.5f), tw, hex(swixy(h) - to_float2(0.0f, 0.5f*tw*2.5f))));
+    trunk = max(trunk,S(tw+(blr*0.5f), tw, hex(swixy(h) - to_float2(0.0f, 0.5f*tw*5.0f))));
+    trunk = max(trunk,S(tw+(blr*0.5f), tw, hex(swixy(h) - to_float2(0.0f, 0.5f*tw*7.5f))));
 
     float a = pol.x < 0.5f ? 2.5f : 0.5f ;
     col = mix(col,to_float3(0.5f,0.3f,0.2f),trunk*a);
@@ -718,9 +783,9 @@ __KERNEL__ void ST_FavelaKernel(
   //  Roof top
   //  --------
 
-  float2 frh = fract_float2(h.xy * 2.0f);
-  float d1 = S(0.8f+blr, 0.8f-blr, dfDiamond(h.xy - to_float2(0.0f, flip*0.3f)));
-  float d2 = S(0.8f+blr, 0.8f-blr, dfDiamond(h.xy - to_float2(0.0f, flip*0.2f)));
+  float2 frh = fract_float2(swixy(h) * 2.0f);
+  float d1 = S(0.8f+blr, 0.8f-blr, dfDiamond(swixy(h) - to_float2(0.0f, flip*0.3f)));
+  float d2 = S(0.8f+blr, 0.8f-blr, dfDiamond(swixy(h) - to_float2(0.0f, flip*0.2f)));
 
   if (hills == 1.0f)
   {
@@ -735,31 +800,33 @@ __KERNEL__ void ST_FavelaKernel(
       col -= shw *(d1-min(d1,min(d1,d2))); // inner bevel
       if( tilt > 0.7f)
       {
-        float2 wtp = to_float2(0.0f,-0.2f);
-        float2 wtp2 = to_float2(0.0f,-0.58f);
-        float2 wtp3 = to_float2(0.0f,-0.25f);
-        float watertank = S(0.02f,0.02f-(blr*0.5f),dot(h.xy*s + wtp, h.xy*s + wtp));
-        float watertanktop = S(0.02f,0.02f-(blr*0.5f),dot(h.xy*s + wtp2, h.xy*s + wtp2));
-        float watertanktop2 = S(0.016f,0.016f-(blr*0.5f),dot(h.xy*s + wtp2, h.xy*s + wtp2));
-        float watertankside = 1.0f - rect(h.xy, wtp3, 0.1f,0.125f, blr);
-        watertank = max(watertank,watertanktop);
-        watertank = min(d1,watertank);
-        watertankside = SAT(watertankside);
-        float wtglobal = max(watertank, min(d1,watertankside));
+        float2  wtp           = to_float2(0.0f,-0.2f);
+        float2  wtp2          = to_float2(0.0f,-0.58f);
+        float2  wtp3          = to_float2(0.0f,-0.25f);
+        float   watertank     = S(0.02f,  0.02f  -(blr*0.5f),dot(swixy(h)*s + wtp,  swixy(h)*s + wtp));
+        float   watertanktop  = S(0.02f,  0.02f  -(blr*0.5f),dot(swixy(h)*s + wtp2, swixy(h)*s + wtp2));
+        float   watertanktop2 = S(0.016f, 0.016f -(blr*0.5f),dot(swixy(h)*s + wtp2, swixy(h)*s + wtp2));
+        float   watertankside = 1.0f - rect(swixy(h), wtp3, 0.1f,0.125f, blr);
+                watertank     = max(watertank,watertanktop);
+                watertank     = min(d1,watertank);
+                watertankside = SAT(watertankside);
+        float   wtglobal      = max(watertank, min(d1,watertankside));
 
-        col = mix(col,to_float3(0.2f,0.32f,0.45f),wtglobal);
+        col  = mix(col,to_float3(0.2f,0.32f,0.45f),wtglobal);
         col -= watertanktop2 * 0.15f;
         col += max(watertank,watertankside) * S(0.0f,0.15f,length1f(h.x-0.05f))*0.15f;
+
       } else
       {
         if(tilt > 0.3f )
         {
-          float2 fanpos = to_float2(-0.1f,-0.35f);
-          float fan = S(0.125f,0.125f-blr,hex(h.xy + fanpos));
-          col = mix(col,to_float3_s(1.0f),fan);
-          col = mix(col,0.95f*to_float3(0.9f,0.75f,0.6f),fan);
-          float ff1 = dfDiamond(fa.xy + to_float2(0.35f,0.015f));
-          float ff2 = dfDiamond(fb.xy - to_float2(0.255f,-0.19f));
+          float2  fanpos   = to_float2(-0.1f,-0.35f);
+          float   fan      = S(0.125f,0.125f-blr,hex(swixy(h) + fanpos));
+          col  = mix(col,to_float3_s(1.0f),fan);
+          col  = mix(col,0.95f*to_float3(0.9f,0.75f,0.6f),fan);
+
+          float   ff1      = dfDiamond(swixy(fa) + to_float2(0.35f,0.015f));
+          float   ff2      = dfDiamond(swixy(fb) - to_float2(0.255f,-0.19f));
           col -= to_float3_s(0.45f*S(0.26f,0.26f-(blr*2.0f),ff1));
           col -= to_float3_s(0.2f*S(0.26f,0.26f-(blr*2.0f),ff2));
         }
