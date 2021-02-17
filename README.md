@@ -99,3 +99,10 @@ Based on '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](
 
 [![LonelyVoxel](https://user-images.githubusercontent.com/78935215/108084988-2211ab80-7075-11eb-911d-b24996b84a65.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/ObjektShader/LonelyVoxel.md)
 
+
+### CrackerCars.fuse :star2:
+
+Based on '_[CrackerCars](https://www.shadertoy.com/view/4sdXzr)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). Cute little racing cars roar around on small planets. All colors are changeable
+
+[![CrackerCars](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/PlanetShader/CrackerCars.md)
+
