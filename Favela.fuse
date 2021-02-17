@@ -154,7 +154,13 @@ local GLSL_CompabilityCode=[[
   __DEVICE__ float3 fract_float3(float3 v) { return to_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z)                   ); }
   __DEVICE__ float4 fract_float4(float4 v) { return to_float4(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z), v.w - _floor(v.w)); }
 
+
 #endif
+
+// Workaround to run cuda (JiPi)
+__DEVICE__ float2 abs2f(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+#define lpowf _powf
+__DEVICE__ float3 pow3f(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
 
 
 
@@ -344,7 +350,7 @@ __DEVICE__ float fbm(float2 p)
 {
   // see iq
   // https://www.shadertoy.com/view/lsfGRr
-
+float var;
   const mat2 m = to_mat2( 0.6f, 0.6f, -0.6f, 0.8f);
 
   float f = 0.0f;
@@ -368,7 +374,7 @@ __DEVICE__ float fbm(float2 p)
 
 #else
 
-  const float2 s = to_float2(1.0f, 1.7320508f); // geht das in Cuda?
+ __DEVICE__ const float2 s = {1.0f, 1.7320508f}; // geht das in Cuda?
 
 #endif
 
@@ -377,7 +383,7 @@ __DEVICE__ float fbm(float2 p)
 
 __DEVICE__ float hex(float2 p)
 {
-  p = _fabs(p);
+  p = abs2f(p); // Change for Cuda (JiPi)
   return _fmaxf(dot(p, s *0.5f), p.x );
 }
 
@@ -676,7 +682,7 @@ __KERNEL__ void ST_FavelaKernel(
     if ( hills == 0.0f)
     {
               col      = tilt > 0.2f  ? col :  col +0.3f * paint ;
-      float2  dir      = cos(T + h.z) > 0.0f ? prod_mat2_float2(M(PI/3.0f),swixy(h)) : -prod_mat2_float2(M(PI/3.0f),swixy(h));
+      float2  dir      = cos(T + h.z) > 0.0f ? prod_mat2_float2(M(PI/3.0f),swixy(h)) : -1.0f*prod_mat2_float2(M(PI/3.0f),swixy(h));
       float   blink    = S(1.0f,0.9f,fract1f(dir.x*2.0f)* 3.333f -0.5f)-0.5f;
 
       float   on       = S(-1.0f,1.0f,sun);
@@ -709,7 +715,7 @@ __KERNEL__ void ST_FavelaKernel(
   if(pol.x >= ang.y)
   {
             col     += tilt > 0.2 ? to_float3_s(0.0f) : 0.3f * paint ;
-    float2  dir      =  _cosf(T + h.z) > 0.0f ? prod_mat2_float2(M(PI),swixy(h)) : -prod_mat2_float2(M(PI),swixy(h));
+    float2  dir      =  _cosf(T + h.z) > 0.0f ? prod_mat2_float2(M(PI),swixy(h)) : -1.0f*prod_mat2_float2(M(PI),swixy(h));
     float   blink    = S(1.0f,0.9f,fract1f(dir.x*2.0f)* 3.333f -0.5f)-0.5f;
     float   on       = S(-1.0f,1.0f,sun);
     float   light    = 0.5f*(-1.0f + tilt * _floor(on*10.0f) > 0.0f ? blink : -1.0f);
@@ -859,9 +865,11 @@ __KERNEL__ void ST_FavelaKernel(
   float3  night  = col;
           night  = _mix(day, to_float3(0.2f,0.5f,0.9f),0.5f);
 
-          night  = pow(night, to_float3_s(3.0f));
-          night += SAT(lights);
-          night += SAT(blights)*4.0f ;
+          night  = pow3f(night, to_float3_s(3.0f)); // Change for Cuda (JiPi)
+		  
+		  //#define SAT(a)      _clampf(a, 0.0f, 1.0f) // Error in Cuda - workaround: resolve define  (JiPi)
+          night += clamp(lights, 0.0f, 1.0f);
+          night += clamp(blights*4.0f, 0.0f, 1.0f);
 
   float3  final = _mix(day,night,S(-1.0f, 1.0f,sun));
 
