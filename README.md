@@ -65,7 +65,7 @@ Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt]
 
 Based on '_[Fake3DScene](https://www.shadertoy.com/view/MddSWB)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A little Shader for occasionally. 
 
-[![screenshot](/PlanetShader/Fake3DScene.PNG "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/J-i-P-i/Shadertoys/blob/main/PlanetShader/Fake3DScene.md)
+[![screenshot](/PlanetShader/Fake3DScene.PNG "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/Fake3DScene.md)
 
 
 
@@ -73,14 +73,14 @@ Based on '_[Fake3DScene](https://www.shadertoy.com/view/MddSWB)_' by [LaBodilsen
 
 Based on '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' by [hisojarvi](https://www.shadertoy.com/user/hisojarvi) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A Classic. 
 
-[![TNTHTW](https://user-images.githubusercontent.com/78935215/107889303-e4e0d880-6f11-11eb-80cc-e2e522a632e5.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/TunnelShader/TNTHTW.md)
+[![TNTHTW](https://user-images.githubusercontent.com/78935215/107889303-e4e0d880-6f11-11eb-80cc-e2e522a632e5.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/TunnelShader/TNTHTW.md)
 
 
 
 
-### Favela.fuse :hammer_and_wrench:
+### Favela.fuse :ok_hand:
 
-Based on '_[Favela](https://www.shadertoy.com/view/ldGcDh)_' by [duvengar](https://www.shadertoy.com/user/duvengar) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). First version; runs on Metal, but has some minor render errors; crashes on OpenCL; probably won't even compile on Cuda.
+Based on '_[Favela](https://www.shadertoy.com/view/ldGcDh)_' by [duvengar](https://www.shadertoy.com/user/duvengar) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). Now also runs under Cuda and OpenCL.
 
 ![screenshot](Favela.png "Favela.fuse in DaVinci Resolve")
 
@@ -90,19 +90,19 @@ Based on '_[Favela](https://www.shadertoy.com/view/ldGcDh)_' by [duvengar](https
 
 Based on '_[Noisecube](https://www.shadertoy.com/view/4sGBD1)_' by [flimshaw](https://www.shadertoy.com/user/flimshaw) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A flight through a Phongshader
 
-[![Noisecube](https://user-images.githubusercontent.com/78935215/107971617-fded9600-6fb2-11eb-82dd-7630ff3c34bd.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/AbstractShader/Noisecube.md)
+[![Noisecube](https://user-images.githubusercontent.com/78935215/107971617-fded9600-6fb2-11eb-82dd-7630ff3c34bd.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/AbstractShader/Noisecube.md)
 
 
 ### LonelyVoxel.fuse :star2:
 
 Based on '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](https://www.shadertoy.com/user/SudoNhim) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A cube with rounded corners and a very nice bump map.
 
-[![LonelyVoxel](https://user-images.githubusercontent.com/78935215/108084988-2211ab80-7075-11eb-911d-b24996b84a65.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/ObjektShader/LonelyVoxel.md)
+[![LonelyVoxel](https://user-images.githubusercontent.com/78935215/108084988-2211ab80-7075-11eb-911d-b24996b84a65.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/ObjektShader/LonelyVoxel.md)
 
 
-### CrackerCars.fuse :star2:
+### CrackerCars.fuse :red_car:
 
 Based on '_[CrackerCars](https://www.shadertoy.com/view/4sdXzr)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). Cute little racing cars roar around on small planets. All colors are changeable
 
-[![CrackerCars](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](https://github.com/J-i-P-i/Shadertoys/blob/main/PlanetShader/CrackerCars.md)
+[![CrackerCars](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/CrackerCars.md)
 
