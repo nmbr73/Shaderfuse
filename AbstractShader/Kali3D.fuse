@@ -1,0 +1,859 @@
+--[[--
+Kali3D
+
+Based on https://www.shadertoy.com/view/MdB3DK Erstellt von guil am 2014-02-27
+
+
+V0.1 
+V0.2 
+V0.3 
+V0.4   
+  
+--]] --
+local shadertoy_name      = "Kali3D"
+local shadertoy_author    = "guil"
+local shadertoy_id        = "MdB3DK"
+local shadertoy_license   = ""
+local dctlfuse_code       = true
+local dctlfuse_name       = "Kali3D"
+local dctlfuse_author     = "JiPi"
+local dctlfuse_authorurl  = ""
+local dctlfuse_infourl    = "https://github.com/nmbr73/Shadertoys"
+
+local versionNr           = 1
+local _version            = versionNr/10
+local version             = "<center>"..dctlfuse_name.." V".._version.." - 16 Feb 2021 </center>"
+
+--------------------------------
+-- Registry declaration
+
+FuRegisterClass("Kali3D", CT_SourceTool, {
+  REGS_Category      = "Fuses\\Shadertoys",
+  REGS_OpIconString  = "Ka3D",
+  REGS_OpDescription = "Kali3D",
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+  REG_Fuse_NoEdit        = not(dctlfuse_code),
+  REG_Fuse_NoReload      = not(dctlfuse_code),
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  REGS_Company           = "JiPi",
+  REGS_URL               = "https://www.steakunderwater.com/wesuckless/",
+  REG_Version            = versionNr,
+  })
+
+-----------------------------------
+-- Description of kernel parameters
+
+----------------Kali3D--------------- 
+Kali3DParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  float rotation[2];
+  float fog;
+  float ambient;
+  float ao;
+  float construction;
+  float modus;
+  int colorsel;
+  float optiontex;
+  float color[3];
+  float color2[3];
+  int width;
+  int height;
+  float itime;
+  int compOrder;
+]]
+
+
+-- source of kernel
+Kali3DKernel =
+    [[
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0f Unported License.
+
+//Based on https://www.shadertoy.com/view/4ds3zn by IQ
+#define igt  itime
+
+
+__DEVICE__ float3 abs_f3(float3 a) {return (to_float3(_fabs(a.x), _fabs(a.y),_fabs(a.z)));}
+__DEVICE__ float4 min_f4(float4 v, float4 i) {return to_float4(_fminf(v.x,i.x),_fminf(v.y,i.y),_fminf(v.z,i.z),_fminf(v.w,i.w));}	
+__DEVICE__ float3 sin_f3(float3 i) {float3 r; r.x = _sinf(i.x); r.y = _sinf(i.y); r.z = _sinf(i.z); return r;}
+ 
+
+
+__DEVICE__ float map( float3 p, float4 *ot ,__CONSTANTREF__ Kali3DParams *params)
+{
+	float g=params->construction;//g=1.564f; //Org:1.94f
+// float g=uF[1];//g=1.564f; //Org:1.94f
+
+	float3 C =  to_float3_s(-1.42f);
+	const int MaxIter = 12;
+	float dr = 1.0f;
+
+	*ot = to_float4_s(1000.0f); 
+  
+	for( int i=0; i<MaxIter;i++ )
+	{
+       
+        float r2 = dot(p,p);
+        if(r2>100.0f)  continue;
+
+        *ot = min_f4( *ot, to_float4_aw(abs_f3(p),r2) );
+
+		//Scaling, inversion and translation 
+          
+         
+		dr= dr/r2*g;            
+		p=abs_f3(p)/r2*g+C;
+	}
+    if ( params->modus == 1.0f )
+	    return 0.16f*_fabs(p.x)*length(to_float2(p.y,p.z))/dr;  //Try this
+	else
+        return 0.25f*length(p)/dr*_logf(length(p));
+
+}
+
+__DEVICE__ float trace( float3 ro, float3 rd , float4 *ot, __CONSTANTREF__ Kali3DParams *params)
+{
+    float maxd = 20.0f;
+    float precis = 0.001f;
+      
+    float h=precis*2.0f;
+    float t = 0.0f;
+    for( int i=0; i<150; i++ )
+    {
+	if( t>maxd ||  h<precis*(0.1f+t)) continue;//break;//        
+        
+        t += h;
+		h = map( ro+rd*t, ot, params );
+    }
+
+   if( t>maxd ) t=-1.0f;
+    return t;
+}
+
+__DEVICE__ float3 calcNormal( float3 pos ,float4 *ot, __CONSTANTREF__ Kali3DParams *params)
+{
+	float3 e = to_float3(0.0001f,0.0f,0.0f);
+	float3 nor;
+    float3 exyy = to_float3(e.x,e.y,e.y);
+    float3 eyxy = to_float3(e.y,e.x,e.y);
+    float3 eyyx = to_float3(e.y,e.y,e.x);	
+	
+	
+	nor.x = map(pos+exyy, ot, params) - map(pos-exyy, ot, params);
+	nor.y = map(pos+eyxy, ot, params) - map(pos-eyxy, ot, params);
+	nor.z = map(pos+eyyx, ot, params) - map(pos-eyyx, ot, params);
+	return normalize(nor);
+} 
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+  float C = _cosf(angle);
+  float S = _sinf(angle);
+   
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+   
+  return uv;
+} 
+
+//############################################################################################################################
+__KERNEL__ void Kali3DKernel(__CONSTANTREF__ Kali3DParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height) 
+  {
+  
+     //-----------------------
+     float2 fragCoord = to_float2(x, y); 
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime * params->freq;
+	 float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+     //Functionality.......
+
+	float4 ot; 
+	float4 *ot_ptr = &ot;
+
+    float2 uv = fragCoord/iResolution;
+
+	float zoom=1.6f;//+0.3f*_sinf(0.1f*igt);
+
+
+	float2 p = -1.0f + 2.0f*fragCoord / iResolution;
+	//p.x *= iResolution.x/iResolution.y;
+      p.x *= ratio;
+	  
+	// Standardparameter
+    p -=  to_float2( (params->center[0]-0.5f)*2.0f*ratio, (params->center[1]-0.5f)*2.0f);
+    p *= params->scale;
+    float2 pivot = to_float2(((params->pivot[0]-0.5f)*2.0f*ratio),(params->pivot[1]-0.5f)*2.0f);
+    p = spin(p, pivot, params->angle, 1.0f);
+
+
+	float2 m = to_float2_s(-0.5f)*6.28f;
+	//if( iMouse.z>0.0f ) m = (to_float2(iMouse.x, iMouse.y)/iResolution-0.5f)*6.28f;
+    m += (to_float2(params->rotation[0], params->rotation[1])-0.0f)*6.28f;
+	m += 0.5f*to_float2(_cosf(0.15f*igt),_cosf(0.09f*igt))+0.3f;      
+
+	// camera
+	float3 ta = to_float3(0.0f,0.2f*_sinf(0.12f*igt),0.0f);
+	float3 ro = ta- zoom*to_float3( _cosf(m.x)*_cosf(m.y), _sinf(m.y), _sinf(m.x)*_cosf(m.y));
+
+	float3 cw = normalize(ta-ro);
+	float3 cp = to_float3(0.0f,1.0f,0.0f);
+	float3 cu = normalize(cross(cw,cp));
+	float3 cv = normalize(cross(cu,cw));
+	float3 rd = normalize( p.x*cu + p.y*cv + 2.0f*cw );
+
+
+    // trace
+    float3 col = to_float3(0.8f,0.8f,1.0f);
+	float alpha = 1.0f;     
+	if (params->optiontex == 1)
+	{
+	   float4 tex = _tex2DVecN(iChannel0, uv.x, uv.y,15); 
+       col = to_float3(tex.x,tex.y,tex.z);
+	   alpha = tex.w;     
+    }
+	
+	float t = trace( ro, rd , ot_ptr, params);
+
+	if( t>0.0f )
+	{
+
+		float3 pos = ro + t*rd;
+		float3 nor = calcNormal( pos, ot_ptr, params);
+
+		// lighting
+        float3  light1 = to_float3(  0.577f, 0.577f, -0.577f )*1.0f;
+        float3  light2 = to_float3( -0.707f, 0.707f, 0.0f  )*1.0f;
+		float key = _clampf( dot( light1, nor ), 0.0f, 1.0f );
+		float bac = _clampf( 0.2f + 0.8f*dot( light2, nor ), 0.0f, 1.0f );
+		float amb = (params->ambient+0.3f*nor.y);
+		float ao = _powf( _clampf(ot.w*2.0f,0.2f,1.0f), params->ao );
+        float3 brdf = to_float3_s(ao)*(0.4f*amb+key+0.2f*bac);
+
+        // material
+		float3 rgb = to_float3_s(1.0f);
+
+		rgb =(0.4f*abs_f3(sin_f3(2.5f+(to_float3(01.5f*ot.w,ot.y*ot.y,2.0f-5.0f*ot.w))))+0.6f*sin_f3(to_float3(params->color[0],params->color[1],params->color[2])+2.3f+ot.x*22.5f))*0.85f + 0.15f;
+		float3 rgb_gbr=_mix(rgb,to_float3(rgb.z,rgb.y,rgb.x)+to_float3(params->color2[0],params->color2[1],params->color2[2]),0.5f+0.5f*_sinf(4.5f*ot.w));
+
+        switch (params->colorsel)
+		{
+			case 0: rgb.x = rgb_gbr.y; rgb.y = rgb_gbr.z; rgb.z = rgb_gbr.x; break;
+			case 1: rgb.x = rgb_gbr.y; rgb.y = rgb_gbr.x; rgb.z = rgb_gbr.z; break;
+			case 2: rgb.x = rgb_gbr.z; rgb.y = rgb_gbr.x; rgb.z = rgb_gbr.y; break;
+			case 3: rgb.x = rgb_gbr.z; rgb.y = rgb_gbr.y; rgb.z = rgb_gbr.x; break;
+			case 4: rgb.x = rgb_gbr.x; rgb.y = rgb_gbr.z; rgb.z = rgb_gbr.y; break;
+			case 5: rgb.x = rgb_gbr.x; rgb.y = rgb_gbr.y; rgb.z = rgb_gbr.z; break;
+            default:rgb.x = rgb_gbr.y; rgb.y = rgb_gbr.z; rgb.z = rgb_gbr.x;
+        }
+		
+		//color
+		//col = _mix(to_float3(0.8f,0.8f,1.0f),rgb*brdf,_expf(-0.08f*t));
+        col = _mix(col,rgb*brdf,_expf(-params->fog*t));
+        alpha = 1.0f;
+	}
+
+    fragColor=to_float4_aw(col, alpha);
+    _tex2DVec4Write(dst, x, y, fragColor); 
+  }
+}
+]]
+
+Logo_On = true
+
+if (Logo_On) then
+	BrandLogo = [[
+	<center><a href="https://www.steakunderwater.com/wesuckless/viewtopic.php?f=45&t=4597"><img width="320" height="60" src='data:image/png;base64,
+	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
+	</center>'/></a>    
+	]]
+end
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+function Create()
+if (Logo_On) then
+  InLogo = self:AddInput(BrandLogo, "Label", {
+	LINKID_DataType = "Text",
+	INPID_InputControl = "LabelControl",
+	LBLC_MultiLine = true,
+	IC_NoLabel = true,
+	IC_NoReset = true,
+	INP_External = false,
+	INP_Passive = true,
+	IC_ControlPage = -1,
+	})
+end
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  --------------- Kali3D ---------------
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "Center", 
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+    })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",    
+    PC_Visible          = false, 
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })    
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+    })
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true, 
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+  })
+
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+  
+  
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })   
+
+
+
+self:BeginControlNest("Parameter", "Parameter", true, {})
+  InRotation = self:AddInput("Rotation","Rotation", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.0,
+    INP_DefaultY = 0.0,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+  
+   InFog = self:AddInput("Fog", "Fog", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.008,
+	--INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })  
+  
+   InAmbient = self:AddInput("Ambient", "Ambient", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.7,
+	--INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })  
+  
+  InAmbientOcclusion = self:AddInput("Ambient Occlusion", "AmbientOcclusion", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.2,
+	--INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })  
+  
+   InConstruction = self:AddInput("Construction", "Construction", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.94,
+	--INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    INP_MinAllowed = 1.564,
+    INP_MaxAllowed = 2.3,
+    })  
+   InModus = self:AddInput("Modus", "Modus", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })   
+ 
+ InRedCH = self:AddInput("Red", "RedCH", {
+    ICS_Name            = "Colorfactor1",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = -0.2,
+    INP_MinScale        = -1.0,
+	INP_MaxScale        = 1.0,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 0,
+  })
+  InGreenCH = self:AddInput("Green", "GreenCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = -0.6,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 1,
+  })
+  InBlueCH = self:AddInput("Blue", "BlueCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.8,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 2,
+  })
+
+ InRed2CH = self:AddInput("Red2", "Red2CH", {
+    ICS_Name            = "Colorfactor2",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.3,
+	INP_MinScale        = -1.0,
+    INP_MaxScale        = 1.0,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 0,
+  })
+  InGreen2CH = self:AddInput("Green2", "Green2CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.1,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 1,
+  })
+  InBlue2CH = self:AddInput("Blue2", "Blue2CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = -0.2,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 2,
+  })
+
+  InColorSel = self:AddInput("Color select", "ColorSel", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "YZX", },
+	{ CCS_AddString = "YXZ", },
+    { CCS_AddString = "XYZ", },
+    { CCS_AddString = "XZY", },
+    { CCS_AddString = "ZXY", },
+	{ CCS_AddString = "ZYX", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+self:EndControlNest() 
+
+--------------------------------------------
+if (Logo_On) then
+   InLogoSw = self:AddInput("Logo", "LogoSw", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = true,
+    INP_External        = false,
+	INP_Passive         = true,
+  })
+end
+
+  
+  InShadertoyLabel = self:AddInput(
+    "<center>Shadertoy <a href=\"https://www.shadertoy.com/view/"..shadertoy_id.."\" style=\"color:white; text-decoration:none; \">"
+    ..shadertoy_name.."</a> by <a href=\"https://www.shadertoy.com/user/"..shadertoy_author
+    .."\" style=\"color:yellow; text-decoration:none; \">"..shadertoy_author.."</a></center>",
+    "ShadertoyLabel", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    IC_NoLabel         = true,
+    ICD_Width          = 1,
+  })
+
+  GithubButton = self:AddInput("Github","GithubButton", {
+	--LINKS_Name = "ScriptButton",
+	LINKID_DataType = "Number",
+	INPID_InputControl = "ButtonControl",
+	INP_Integer = false,
+	BTNCS_Execute = [[
+					os.execute('start "" "https://nmbr73.github.io/Shadertoys/"')
+					]],
+	--ICS_ControlPage = "Controls",
+	IC_NoLabel         = true,
+	})
+
+  InLabel = self:AddInput(version, "version", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    ICD_Width          = 1,
+	IC_NoLabel         = true,
+  })
+
+
+--------------------------------------------
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Ground", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+	--LINK_Visible = false,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end 
+
+
+-------------------------------------------------------------------
+--       NotifyChanged
+-------------------------------------------------------------------
+function NotifyChanged(inp, param, time)
+
+
+  if inp ~= nil and param ~= nil then
+  
+    if inp == InCenter then
+        -- the center moved, reposition the axis according to the current offset
+        nCenterX = param.X
+        nCenterY = param.Y
+      
+        InPivot:SetAttrs({
+            PCD_OffsetX = nCenterX - 0.5,
+            PCD_OffsetY = nCenterY - 0.5,
+            })
+           
+        InAngle:SetAttrs({
+            PCD_OffsetX = (nCenterX - 0.5)/100,
+            PCD_OffsetY = (nCenterY - 0.5)/100,
+            })
+    end
+    if inp == InWidgets then  
+      if param.Value == 1.0 then
+         InCenter:SetAttrs({ PC_Visible = false })
+         InAngle:SetAttrs({ PC_Visible = false })
+         InPivot:SetAttrs({ PC_Visible = false })
+         InScale:SetAttrs({ PC_Visible = false })
+      else
+         InCenter:SetAttrs({ PC_Visible = true })
+         InAngle:SetAttrs({ PC_Visible = true })
+         InPivot:SetAttrs({ PC_Visible = true })
+         InScale:SetAttrs({ PC_Visible = true })
+      end
+    end
+	
+    if inp == InStop then  
+      if param.Value == 1 then
+	     InActtime:SetAttrs({IC_Visible = true})
+	  else
+	     InActtime:SetAttrs({IC_Visible = false})
+	  end
+	end  
+
+    if (Logo_On) then
+    if inp == InLogoSw then  
+      if param.Value == 1 then
+         InLogo:SetAttrs({IC_Visible = true})
+      else
+	     InLogo:SetAttrs({IC_Visible = false})
+	  end
+	end 
+    end 
+  end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle = -InAngle:GetValue(req).Value/360*3.1415*2
+    local debug = InDebug:GetValue(req).Value
+    local scale = InScale:GetValue(req).Value
+    local freq = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+	local optiontex = 0
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+   
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+   
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+    
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    
+      if (InImage1:GetValue(req) ~= nil) then
+         src1 = InImage1:GetValue(req)
+		 optiontex = 1
+      else
+         src1 = Image(imgattrs)
+         src1:Fill(p)
+      end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+    if req:IsPreCalc() then
+	   --print("\n######################### Precalc ##############################\n")
+	   local out = Image({IMG_Like = dst, IMG_NoData = true})
+       OutImage:Set(req, out)
+	   return
+	end
+
+    --StartStop	
+    if InStop:GetValue(req).Value == 0 then             
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   else
+	      _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	   end	
+	end
+
+    acttime = _acttime / framerate
+
+    
+    Sep1:SetAttrs({LINKS_Name = "____________Kali3D______________________",LBLC_LabelColor = 3,})
+    
+    node = DVIPComputeNode(req, "Kali3DKernel", Kali3DKernel, "Kali3DParams", Kali3DParams)
+
+    if not pcall(function () 
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.rotation     = {InRotation:GetValue(req).X,InRotation:GetValue(req).Y}
+		params.fog          = InFog:GetValue(req).Value
+		params.ambient      = InAmbient:GetValue(req).Value
+		params.ao           = InAmbientOcclusion:GetValue(req).Value
+		params.construction = InConstruction:GetValue(req).Value
+		params.modus        = InModus:GetValue(req).Value
+		params.colorsel     = InColorSel:GetValue(req).Value
+		params.optiontex    = optiontex
+        params.color        = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+		params.color2       = {InRed2CH:GetValue(req).Value, InGreen2CH:GetValue(req).Value, InBlue2CH:GetValue(req).Value}
+        
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+    
+        params.itime = acttime --req.Time / framerate
+    
+        node:SetParamBlock(params)
+    end) then
+        params = node:GetParamBlock(Kali3DParams)
+    
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.rotation     = {InRotation:GetValue(req).X,InRotation:GetValue(req).Y}
+		params.fog          = InFog:GetValue(req).Value
+		params.ambient      = InAmbient:GetValue(req).Value
+		params.ao           = InAmbientOcclusion:GetValue(req).Value
+		params.construction = InConstruction:GetValue(req).Value
+		params.modus        = InModus:GetValue(req).Value
+		params.colorsel     = InColorSel:GetValue(req).Value
+		params.optiontex    = optiontex
+        params.color        = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+		params.color2       = {InRed2CH:GetValue(req).Value, InGreen2CH:GetValue(req).Value, InBlue2CH:GetValue(req).Value}
+        
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+        
+        params.itime = acttime  --req.Time / framerate
+    
+        node:SetParamBlock(params)
+    
+    end
+
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+     node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR, TEX_ADDRESS_MODE_CLAMP, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Fehlerausgabe des DCTL
+    end
+
+    OutImage:Set(req, dst)
+end
+
+
+
+
