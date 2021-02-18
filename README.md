@@ -34,7 +34,9 @@ Fuses
 
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
-
+Test if relative links to other markdown file, like e.g. [Conversions](Conversions.md), work on GitHub ...
+- [CrackerCars](PlanetShader/CrackerCars.md)
+- [Fake3DScene](PlanetShader/Fake3DScene.md)
 
 ### CrossDistance.fuse
 
@@ -55,7 +57,7 @@ Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer]
 
 ### DancyTreeDoodle.fuse
 
-Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https://www.shadertoy.com/user/wyatt) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). This is also a quick and dirty conversion for a little AudioWaveform Video. 
+Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https://www.shadertoy.com/user/wyatt) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). This is also a quick and dirty conversion for a little AudioWaveform Video.
 
 ![screenshot](/ObjektShader/DancyTreeDoodle.PNG "DancyTreeDoodle.fuse in DaVinci Resolve")
 
@@ -63,7 +65,7 @@ Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt]
 
 ### Fake3DScene.fuse
 
-Based on '_[Fake3DScene](https://www.shadertoy.com/view/MddSWB)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A little Shader for occasionally. 
+Based on '_[Fake3DScene](https://www.shadertoy.com/view/MddSWB)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A little Shader for occasionally.
 
 [![screenshot](/PlanetShader/Fake3DScene.PNG "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/Fake3DScene.md)
 
@@ -71,7 +73,7 @@ Based on '_[Fake3DScene](https://www.shadertoy.com/view/MddSWB)_' by [LaBodilsen
 
 ### TNTHTW.fuse
 
-Based on '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' by [hisojarvi](https://www.shadertoy.com/user/hisojarvi) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A Classic. 
+Based on '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' by [hisojarvi](https://www.shadertoy.com/user/hisojarvi) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A Classic.
 
 [![TNTHTW](https://user-images.githubusercontent.com/78935215/107889303-e4e0d880-6f11-11eb-80cc-e2e522a632e5.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/TunnelShader/TNTHTW.md)
 
@@ -105,4 +107,3 @@ Based on '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](
 Based on '_[CrackerCars](https://www.shadertoy.com/view/4sdXzr)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). Cute little racing cars roar around on small planets. All colors are changeable
 
 [![CrackerCars](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/CrackerCars.md)
-
