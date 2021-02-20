@@ -49,7 +49,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Dancy Tree Doodle](ObjektShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
   - [Dancy Tree Doodle 3D](ObjektShader/DancyTreeDoodle3D.md) ported by [JiPi](Profiles/JiPi.md)
   - [Lonely Voxel](ObjektShader/LonelyVoxel.md) ported by [JiPi](Profiles/JiPi.md)
-- [Planet](PlanetShader/README.md)
+- [Planet](PlanetShader/)
   - [Cracker Cars](PlanetShader/CrackerCars.md) ported by [JiPi](Profiles/JiPi.md)
   - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
 - Tunnel
