@@ -39,31 +39,19 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 
 
 - Object Shaders
-  - [DancyTreeDoodle](ObjektShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
+  - [Dancy Tree Doodle](ObjektShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
+- Tunnel Shaders
+  - [Try Not To Hit The Walls](TunnelShader/TNTHTW.md) ported by [JiPi](Profiles/JiPi.md)
 - Planet Shaders
   - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
-  - [CrackerCars](PlanetShader/CrackerCars.md) ported by [JiPi](Profiles/JiPi.md)
+  - [Cracker Cars](PlanetShader/CrackerCars.md) ported by [JiPi](Profiles/JiPi.md)
 - Uncategorized
-   - [CrossDistance](CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
-  - [RainbowSlices](RainbowSlices.md) ported by [nmbr73](Profiles/nmbr73.md)
+   - [Cross Distance](CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
+  - [Rainbow Slices](RainbowSlices.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Favela](Favela.md) ported by [nmbr73](Profiles/nmbr73.md)
 
 
 
-
-### Fake3DScene.fuse
-
-Based on '_[Fake3DScene](https://www.shadertoy.com/view/MddSWB)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A little Shader for occasionally.
-
-[![screenshot](/PlanetShader/Fake3DScene.PNG "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/Fake3DScene.md)
-
-
-
-### TNTHTW.fuse
-
-Based on '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' by [hisojarvi](https://www.shadertoy.com/user/hisojarvi) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A Classic.
-
-[![TNTHTW](https://user-images.githubusercontent.com/78935215/107889303-e4e0d880-6f11-11eb-80cc-e2e522a632e5.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/TunnelShader/TNTHTW.md)
 
 
 
@@ -82,11 +70,6 @@ Based on '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](
 [![LonelyVoxel](https://user-images.githubusercontent.com/78935215/108084988-2211ab80-7075-11eb-911d-b24996b84a65.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/ObjektShader/LonelyVoxel.md)
 
 
-### CrackerCars.fuse :red_car:
-
-Based on '_[CrackerCars](https://www.shadertoy.com/view/4sdXzr)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). Cute little racing cars roar around on small planets. All colors are changeable
-
-[![CrackerCars](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/CrackerCars.md)
 
 
 ### Kali3D.fuse :crystal_ball:
