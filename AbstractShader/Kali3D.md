@@ -2,7 +2,7 @@
 
 Based on '_[Kali3D](https://www.shadertoy.com/view/MdB3DK)_' by [guil](https://www.shadertoy.com/user/guil) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A flight through an abstract universe - colorful and very changeable
 
-[![Kali3D](https://user-images.githubusercontent.com/78935215/108375469-464ec300-7202-11eb-829f-172e724172a5.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/AbstractShader/Kali3D.md)
+[![Kali3D](https://user-images.githubusercontent.com/78935215/108375469-464ec300-7202-11eb-829f-172e724172a5.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/AbstractShader/Kali3D.fuse)
 
 Programmed completely without matrices and very compact. Both shape and color are more likely to be left to chance than specifically changeable, but that also makes it exciting.
 
