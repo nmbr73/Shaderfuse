@@ -42,7 +42,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Dancy Tree Doodle](ObjektShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
 - Tunnel Shaders
   - [Try Not To Hit The Walls](TunnelShader/TNTHTW.md) ported by [JiPi](Profiles/JiPi.md)
-- Planet Shaders
+- [Planet Shaders](PlanetShader/README.md)
   - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
   - [Cracker Cars](PlanetShader/CrackerCars.md) ported by [JiPi](Profiles/JiPi.md)
 - Uncategorized
