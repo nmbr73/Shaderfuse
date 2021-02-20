@@ -3,9 +3,7 @@ CrackerCars.fuse
 
 Based on '_[CrackerCars](https://www.shadertoy.com/view/4sdXzr)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). Cute little racing cars roar around on small planets. All colors are changeable
 
-[![thumbnail](CrackerCars.png "CrackerCars.fuse")](https://www.shadertoy.com/embed/4sdXzr?gui=true&t=10&paused=true&muted=false)
-
-[![screenshot](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/CrackerCars.md)
+[![screenshot](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/CrackerCars.fuse)
 
 
 A solution has been found for the tiresome multi-dimensional variable conversion. nmbr73 has defined cute defines ;-)

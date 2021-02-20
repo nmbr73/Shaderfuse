@@ -45,10 +45,10 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Kali 3D](AbstractShader/Kali3D.md) ported by [JiPi](Profiles/JiPi.md)
   - [Noisecube](AbstractShader/Noisecube.md) ported by [JiPi](Profiles/JiPi.md)
   - [Rainbow Slices](AbstractShader/RainbowSlices.md) ported by [nmbr73](Profiles/nmbr73.md)
-- Objekt
-  - [Dancy Tree Doodle](ObjektShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
-  - [Dancy Tree Doodle 3D](ObjektShader/DancyTreeDoodle3D.md) ported by [JiPi](Profiles/JiPi.md)
-  - [Lonely Voxel](ObjektShader/LonelyVoxel.md) ported by [JiPi](Profiles/JiPi.md)
+- Object
+  - [Dancy Tree Doodle](ObjectShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
+  - [Dancy Tree Doodle 3D](ObjectShader/DancyTreeDoodle3D.md) ported by [JiPi](Profiles/JiPi.md)
+  - [Lonely Voxel](ObjectShader/LonelyVoxel.md) ported by [JiPi](Profiles/JiPi.md)
 - [Planet](PlanetShader/)
   - [Cracker Cars](PlanetShader/CrackerCars.md) ported by [JiPi](Profiles/JiPi.md)
   - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
