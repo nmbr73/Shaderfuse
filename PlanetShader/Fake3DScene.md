@@ -2,7 +2,7 @@
 
 Based on '_[Fake3DScene](https://www.shadertoy.com/view/MddSWB)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A little Shader for occasionally.
 
-![Fake3DScene](Fake3DScene.png "Fake3DScene.fuse")
+[![thumbnail](Fake3DScene.png "Fake3DScene.fuse")](https://www.shadertoy.com/embed/MddSWB?gui=true&t=10&paused=true&muted=false)
 
 To use this Fuse you need two images as an input, one for the Ball (Image) and one for the Ground (Ground).
 
@@ -35,7 +35,7 @@ This is a nice shader to explore the use of a 2 dimensional matrix. With the hel
 ```
 
 
-![screenshot](Fake3DScene_screenshot.PNG "Fake3DScene.fuse in DaVinci Resolve")
+![screenshot](Fake3DScene_screenshot.png "Fake3DScene.fuse in DaVinci Resolve")
 
 
 Have fun
