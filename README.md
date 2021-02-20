@@ -1,13 +1,16 @@
 Shadertoys
 ==========
 
-DCTL Shader Fuses for use within DaVinci Resolve's Fusion page (aka DaFusion). These are based on WebGL shaders realeased on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each fuse's source code for the respective license information).
+DCTL Shader Fuses for use within DaVinci Resolve's Fusion page (aka DaFusion). These are based on WebGL shaders realeased on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each fuse's source code for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are definitely huge fans of this amazing website!
 
+Furthermore must be mentioned that this repository is only a playground and incubator to develop such Fuses and to exchange the experiences and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right place for you. As soon as an implementation in this repo achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in reactor under the same name but without the annoying '`ST_`' prefixes (ST has nothing to do with Shadertoy - it is ST for STaging, Some Trash, Sharder Test, or whatever).
 
 Background
 ----------
 
 This code is mainly based on the work of **Chris Ridings** and his *[Guide to Writing Fuses for Resolve/fusion](https://www.chrisridings.com/guide-to-writing-fuses-for-resolve-fusion-part-1/)* and the [FragmentShader.fuse](https://www.chrisridings.com/wp-content/uploads/2020/05/FragmentShader.fuse) from his *[Davinci Resolve Page Curl Transition](https://www.chrisridings.com/page-curl/)* article; **Bryan Ray**, who did a whole series of Blog posts on *[OpenCL Fuses](http://www.bryanray.name/wordpress/opencl-fuses-index/)*; **JiPi**, who did an excelent post on how to *[Convert a Shadertoy WebGL Code to DCTL](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=17&t=4460)* accompanied by a (German) [DCTL Tutorial](https://youtu.be/dbrPWRldmbs) Video and who last but not least was very patient in helping me and answering my questions. As an introduction and if you want to know more about shaders in general, I highly recommend to have a look at *[The Book of Shaders](https://thebookofshaders.com)*.
+
+See also the [Conversions](Conversions.md) (under construction) file for some more details on how to port GLSL to DCTL.
 
 
 Installation
@@ -34,32 +37,17 @@ Fuses
 
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
-Test if relative links to other markdown file, like e.g. [Conversions](Conversions.md), work on GitHub ...
-- [CrackerCars](PlanetShader/CrackerCars.md)
-- [Fake3DScene](PlanetShader/Fake3DScene.md)
 
-### CrossDistance.fuse
+- Object Shaders
+  - [DancyTreeDoodle](ObjektShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
+- Planet Shaders
+  - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
+  - [CrackerCars](PlanetShader/CrackerCars.md) ported by [JiPi](Profiles/JiPi.md)
+- Uncategorized
+   - [CrossDistance](CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
+  - [RainbowSlices](RainbowSlices.md) ported by [nmbr73](Profiles/nmbr73.md)
+  - [Favela](Favela.md) ported by [nmbr73](Profiles/nmbr73.md)
 
-Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](https://www.shadertoy.com/user/iq) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). This was my very first attempt to play with Fuses and the conversion of WebGL to DCTL.
-
-![screenshot](CrossDistance.png "CrossDistance.fuse in DaVinci Resolve")
-
-
-
-### RainbowSlices.fuse
-
-Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer](https://www.shadertoy.com/user/fizzer) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). This is a quick and dirty convesion that will definiely need some rework. But it turned out to be very easy to tranlate so far and as this version already runs on Metal I wanted to share the itermediate result.
-
-
-![screenshot](RainbowSlices.png "RainbowSlices.fuse in DaVinci Resolve")
-
-
-
-### DancyTreeDoodle.fuse
-
-Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https://www.shadertoy.com/user/wyatt) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). This is also a quick and dirty conversion for a little AudioWaveform Video.
-
-![screenshot](/ObjektShader/DancyTreeDoodle.PNG "DancyTreeDoodle.fuse in DaVinci Resolve")
 
 
 
@@ -77,14 +65,6 @@ Based on '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' b
 
 [![TNTHTW](https://user-images.githubusercontent.com/78935215/107889303-e4e0d880-6f11-11eb-80cc-e2e522a632e5.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/TunnelShader/TNTHTW.md)
 
-
-
-
-### Favela.fuse :ok_hand:
-
-Based on '_[Favela](https://www.shadertoy.com/view/ldGcDh)_' by [duvengar](https://www.shadertoy.com/user/duvengar) and ported by [nmbr73](https://www.youtube.com/c/nmbr73). Now also runs under Cuda and OpenCL.
-
-![screenshot](Favela.png "Favela.fuse in DaVinci Resolve")
 
 
 
