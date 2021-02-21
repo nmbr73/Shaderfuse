@@ -39,7 +39,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 
 
 - Abstract
-  - [Crazyness](Crazyness.md) ported by [nmbr73](Profiles/nmbr73.md)
+  - [Crazyness](AbstractShader/Crazyness.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Cross Distance](AbstractShader/CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Favela](AbstractShader/Favela.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Kali 3D](AbstractShader/Kali3D.md) ported by [JiPi](Profiles/JiPi.md)
@@ -64,6 +64,8 @@ Work in Progress
 
 Overview
 ========
+
+Hm, not the very best idea. Seems not to work on GitHub Pages :-/
 
 [![AbstractShader/Crazyness.fuse](AbstractShader/Crazyness_320x180.png)](AbstractShader/Crazyness.md)
 [![AbstractShader/CrossDistance.fuse](AbstractShader/CrossDistance_320x180.png)](AbstractShader/CrossDistance.md)
