@@ -5,7 +5,7 @@ local UI_DISPATCHER = bmd.UIDispatcher(UI_MANAGER)
 local UI_WINDOW_GEOMETRY = { 100, 100, 800, 400 }
 
 local TARGET_FUSES_SUBDIRECTORY="Shadertoys"
---local TARGET_FUSES_SUBDIRECTORY="DarthShader"
+-- local TARGET_FUSES_SUBDIRECTORY="DarthShader"
 local LIST_OF_FUSES=nil
 
 local MESSAGEBOX_WINDOW = nil
@@ -120,11 +120,11 @@ function showInstallSelectWindow()
         Weight=0,
         UI_MANAGER:Label{Text="Create Beta Version: ", Alignment = { AlignHCenter = false, AlignVTop = true, }, WordWrap = false, },
         UI_MANAGER:Button{ ID = "LocalCopy",          Text = "Install local copy of Fuses in 'Fuses:'" },
-        UI_MANAGER:Button{ ID = "SingleInstallers",   Text = "Create single Fuse-Installers in './'", Enabled=false, },
+        UI_MANAGER:Button{ ID = "SingleInstallers",   Text = "Create single Fuse-Installers in './' -NOT YET IMPLEMENTED-", Enabled=false, },
 
         UI_MANAGER:Label{Text="Create Release Cadidate: ", Alignment = { AlignHCenter = false, AlignVTop = true, }, WordWrap = false, },
-        UI_MANAGER:Button{ ID = "CreateInstaller",    Text = "Create self-contained installer in './'", Enabled=false },
-        UI_MANAGER:Button{ ID = "PrepareSuggestion",  Text = "Prepare Reactor suggestion './'", Enabled=false },
+        UI_MANAGER:Button{ ID = "CreateInstaller",    Text = "Create self-contained installer in './' -NOT YET IMPLEMENTED-", Enabled=false },
+        UI_MANAGER:Button{ ID = "PrepareSuggestion",  Text = "Prepare Reactor suggestion './' -NOT YET IMPLEMENTED-", Enabled=false },
       },
 
       UI_MANAGER:VGap(0,1),
@@ -280,11 +280,6 @@ function showInstallMainWindow()
         "directory and you are up to date and ready to go. Looking forward to your pull requests maybe contributing some "..
         "beatutiful shaders?!?")
 
-    -- err_print("found .git RunLoop()")
-    -- UI_DISPATCHER:RunLoop()
-    -- err_print("back from .git found RunLoop() - quit program")
-
-    -- os.exit()
     gui_print("return from showInstallMainWindow() after msgbox display")
     return
   end
@@ -416,7 +411,7 @@ end
 
 function getOwnPath()
   local path = debug.getinfo(2, "S").source:sub(2)
-  path=path:match("(.*/)")
+  path=path:match("(.*[/\\])")
   return path
 end
 
@@ -538,7 +533,17 @@ function processFuses(fuses, params)
         -- err_print("write "..params.targetDirectory.."/"..l.Path..l.File)
         local handle = io.open(fusion:MapPath("Fuses:/"..params.targetDirectory.."/"..l.Path..l.File),"wb")
         if handle then
-          handle:write(fuseSourceCode)
+          handle:write(
+            "\n\n\n"..
+            "-- ------------------------------------------------------------------- --\n"..
+            "--                                                                     --\n"..
+            "--        A T O M A G I C A L Y   G E N E R A T E D   F I L E          --\n"..
+            "--                  -   D O   N O T   E D I T   -                      --\n"..
+            "--       W I L L   B E   O V E R W R I T T E N   W I T H O U T         --\n"..
+            "--              A N Y   F U R T H E R   W A R N I N G                  --\n"..
+            "--                                                                     --\n"..
+            "-- ------------------------------------------------------------------- --\n"..
+            "\n\n\n\n"..fuseSourceCode)
           handle:close()
         else
           err_print("failed to write "..l.Path..l.File)
