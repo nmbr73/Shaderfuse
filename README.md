@@ -5,9 +5,7 @@ DCTL Shader Fuses for use within DaVinci Resolve's Fusion page (aka "DaFusion").
 
 Furthermore must be mentioned that this repository is only a an incubator to develop such Fuses and to exchange on experiences, approaches and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right and de facto go to place for you. As soon as an implementation in this repo achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in Reactor under the same name but without any of the annoying '`ST_`', '`BETA_`', whatsoever prefixes.
 
-
-
-[![Shadertoyparade](https://t3.ftcdn.net/jpg/03/00/02/52/360_F_300025264_9ixZEWzMH6mkmXQo3YEoiLUbHIoV3lm2.jpg)](https://www.youtube.com/embed/oyndG0pLEQQ "WebGL to DCTL")
+[![Shadertoyparade](_subscribe.png)](https://www.youtube.com/embed/oyndG0pLEQQ "WebGL to DCTL")
 
 
 Background
@@ -25,9 +23,12 @@ Just copy the whole folder resp. clone the repository into your `Fusion/Fuses/` 
 
 Alternatively you can also use the installer: drag'n'drop the `Shadertoys_Installer.lua` onto you Fuison working area, perform the installation and restart DaVinci Resolve.
 
-<p align="center">
+[![Installer](_download.png)](https://github.com/nmbr73/Shadertoys/releases/download/v0.1-alpha.1/Shadertoys_Installer.lua "Download Installer")
+
+
+<!-- p align="center">
 <a href="https://github.com/nmbr73/Shadertoys/releases/download/v0.1-alpha.1/Shadertoys_Installer.lua"><img src="https://user-images.githubusercontent.com/78935215/107845614-fb394800-6ddc-11eb-826c-59d53fd29b8f.png"></a>
-</p>
+</p -->
 
 
 Usage
