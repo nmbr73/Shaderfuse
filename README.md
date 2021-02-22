@@ -5,9 +5,9 @@ DCTL Shader Fuses for use within DaVinci Resolve's Fusion page (aka "DaFusion").
 
 Furthermore must be mentioned that this repository is only a an incubator to develop such Fuses and to exchange on experiences, approaches and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right and de facto go to place for you. As soon as an implementation in this repo achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in Reactor under the same name but without any of the annoying '`ST_`', '`BETA_`', whatsoever prefixes.
 
-<p align="center"><iframe width="560" height="315" src="https://www.youtube.com/embed/oyndG0pLEQQ" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>
 
-[![Shadertoyparade](http://img.youtube.com/vi/oyndG0pLEQQ/0.jpg)](http://www.youtube.com/watch?v=oyndG0pLEQQ "WebGL to DCTL")
+
+[![Shadertoyparade](https://t3.ftcdn.net/jpg/03/00/02/52/360_F_300025264_9ixZEWzMH6mkmXQo3YEoiLUbHIoV3lm2.jpg)](https://www.youtube.com/embed/oyndG0pLEQQ "WebGL to DCTL")
 
 
 Background
