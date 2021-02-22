@@ -3,7 +3,7 @@ TorturedBlob.fuse
 
 Based on '_[TorturedBlob](https://www.shadertoy.com/view/MlKGDK)_' by [roywig](https://www.shadertoy.com/user/roywig) and ported by [J-i-P-i](https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg). A classic blob with a lot of deformations. Tested under Cuda and OpenCL, test under metal is pending
 
-[![screenshot](TorturedBlob.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/BlobShader/TorturedBlob.fuse)
+[![screenshot](TorturedBlob.png)](https://github.com/nmbr73/Shadertoys/blob/main/BlobShader/TorturedBlob.fuse)
 
 
 A nice example of the use of the mat3
