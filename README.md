@@ -91,3 +91,17 @@ Hm, not the very best idea. Seems not to work on GitHub Pages :-/
 [![BlobShader/TorturedBlob.fuse](BlobShader/TorturedBlob_320x180.png)](BlobShader/TorturedBlob.md)
 [![PlanetShader/RayCastSphere.fuse](PlanetShader/RayCastSphere_320x180.png)](PlanetShader/RayCastSphere.md)
 [![PlanetShader/EARF.fuse](PlanetShader/EARF_320x180.png)](PlanetShader/EARF.md)
+
+Metal Only
+----------
+
+Running on Metal and Compiling on OpenCL (at least to the point where the error message in Resolve on a Mac is of no help) ... some help would be much appreciated.
+
+[![TunnelShader/Velocibox.fuse](TunnelShader/Velocibox_320x180.png)](TunnelShader/Velocibox.md)
+
+Work in Progress (nbmr73)
+-------------------------
+
+Please do not touch - I'm pretty close (I guess) and the challenges left are such I'd like to solve myself.
+
+[![AbstractShader/VoxelEdges.fuse](AbstractShader/VoxelEdges_320x180.png)](AbstractShader/VoxelEdges.md)
