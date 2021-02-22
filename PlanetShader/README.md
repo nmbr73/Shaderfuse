@@ -8,3 +8,4 @@ Planet Shaders implemented so far:
 [![Fake3DScene.fuse](Fake3DScene_320x180.png)](Fake3DScene.md)
 [![CrackerCars.fuse](CrackerCars_320x180.png)](CrackerCars.md)
 [![RayCastSphere.fuse](RayCastSphere_320x180.png)](RayCastSphere.md)
+[![EARF.fuse](EARF_320x180.png)](EARF.md)
