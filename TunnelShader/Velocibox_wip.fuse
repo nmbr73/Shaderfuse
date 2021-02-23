@@ -8,6 +8,8 @@
     for use in DaFusion.
 
     Shader created by zackpudil
+	
+	V0.2 bugfixes for OpenCL and CUDA
 
 */--]]--
 
@@ -32,7 +34,7 @@ local dctlfuse_name        = "Velocibox"
 local dctlfuse_author      = "nmbr73"
 local dctlfuse_authorurl   = "https://www.youtube.com/c/nmbr73"
 local dctlfuse_infourl     = "https://nmbr73.github.io/Shadertoys/"
-local dctlfuse_versionNo   = 1
+local dctlfuse_versionNo   = 2
 local dctlfuse_versionDate = ""
 
 
@@ -97,6 +99,7 @@ ST_VelociboxKernel =
   typedef float3x3 mat3;
 
   __DEVICE__ inline float  fract1f(float f) {return fract(f);}
+  __DEVICE__ inline float3 reflect_f3(float3 I, float3 N) {return reflect(I,N);}
 
   #define swixy(V) (V).xy
   #define swizy(V) (V).zy
@@ -108,7 +111,8 @@ ST_VelociboxKernel =
 
 #else
 
-  __DEVICE__ float  fract1f(float f) {return f - _floor(f);}
+  __DEVICE__ inline float  fract1f(float f) {return f - _floor(f);}
+  __DEVICE__ inline float3 reflect_f3(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
 
   #define swixy(V) to_float2((V).x,(V).y)
   #define swizy(V) to_float2((V).z,(V).y)
@@ -120,6 +124,16 @@ ST_VelociboxKernel =
 
 #endif
 
+#if defined(DEVICE_IS_CUDA)
+__DEVICE__ float2 abs_f2(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+__DEVICE__ float3 abs_f3(float3 a) {return (to_float3(_fabs(a.x), _fabs(a.y),_fabs(a.z)));}
+#define lpowf _powf
+__DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
+#else
+__DEVICE__ float2 abs_f2(float2 a) {return (_fabs(a));}
+__DEVICE__ float3 abs_f3(float3 a) {return (_fabs(a));}
+__DEVICE__ float3 pow_f3(float3 a, float3 b) {return (_powf(a,b));}
+#endif
 
 //############################################################################
 
@@ -161,7 +175,7 @@ __DEVICE__ float gTime(float iTime)
 
 __DEVICE__ float len(float3 p, float l)
 {
-  p = _powf(_fabs(p), to_float3_s(l));
+  p = pow_f3(abs_f3(p), to_float3_s(l));
   return _powf(p.x + p.y + p.z, 1.0f/l);
 }
 
@@ -191,7 +205,7 @@ __DEVICE__ float dObstacles(float3 p, float diff, float iTime)
       if(iTime <= 3.0f)
         o = 4.0f;
       else
-        o = mix(4.0f, 0.0f, fmod(iTime, 1.0f));
+        o = _mix(4.0f, 0.0f, fmod(iTime, 1.0f));
   } else
   {
     o = 0.0;
@@ -199,7 +213,7 @@ __DEVICE__ float dObstacles(float3 p, float diff, float iTime)
 
   p.y += path(p.z,iTime).x - o - (rnd < 0.5f ? 0.0f : 2.0f);
 
-  return dSegment(p, to_float3(5.5f, 1.0f, 0.0f), float3(-5.5f, 1.0f, 0.0f), 0.25f);
+  return dSegment(p, to_float3(5.5f, 1.0f, 0.0f), to_float3(-5.5f, 1.0f, 0.0f), 0.25f);
 }
 
 __DEVICE__ float2 opU(float2 a, float2 b)
@@ -221,7 +235,7 @@ __DEVICE__ float3 boxPos(float3 p, float diff, float o, float iTime)
 __DEVICE__ float2 map(float3 p, float iTime)
 {
   // the tunnel distance estimate was taken from Shane's (https://www.shadertoy.com/view/MlXSWX)
-  float2 tun = _fabs( swixy(p) - path(p.z, iTime))*to_float2(0.4f, 0.4f);
+  float2 tun = abs_f2( swixy(p) - path(p.z, iTime))*to_float2(0.4f, 0.4f);
   float2 t = to_float2(1.0f - _fmaxf(tun.x, tun.y), 0.0f);
 
   float3 bp = boxPos(p, 2.5f, 0.0f, iTime);
@@ -236,7 +250,7 @@ __DEVICE__ float2 map(float3 p, float iTime)
   xy=path(bp2.z,iTime); bp2.x += xy.x; bp2.y += xy.y;
 
   float2 s = to_float2(_fminf(len(p - bp2, 1.0f) - 0.3f, dSegment(p, bp, bp2, 0.04f)), 1.0f);
-
+float var;
   float2 o = to_float2(dObstacles(p, 2.5f,iTime), 2.0f);
 
   return opU(t, opU(s, o));
@@ -283,7 +297,7 @@ __DEVICE__ float ao(float3 p, float3 n, float iTime)
   float w = 1.0f;
   float d;
 
-  for(float i = 1.0f; i < 6.6f; i++)
+  for(float i = 1.0f; i < 6.6f; i+=1)
   {
       d = i/6.0f;
       r += w*(d - map(p + n*d, iTime).x);
@@ -301,7 +315,7 @@ __DEVICE__ float3 lighting(float3 p, float3 lp, float3 rd,float iTime)
   l /= dist;
 
   float3 n = normal(p,iTime);
-  float3 r = reflect(-l, n);
+  float3 r = reflect_f3(-l, n);
 
   float dif = _clampf(dot(l, n), 0.0f, 1.0f);
   float spe = _powf(_clampf(dot(r, -rd), 0.0f, 1.0f), 8.0f);
@@ -381,7 +395,7 @@ __DEVICE__ float4 render(float3 ro, float3 rd, float iTime)
 
   if(i.y != -1.0f) col *= lighting(p, lp1, rd,iTime)+lighting(p, lp2, rd,iTime);
 
-  col = _powf(col, to_float3_s(0.454545f));
+  col = pow_f3(col, to_float3_s(0.454545f));
 
   return to_float4_aw(col, 1.0f);
 }
@@ -438,6 +452,7 @@ function Create()
   InImage1 = self:AddInput("Image", "Image", {
     LINKID_DataType = "Image",
     LINK_Main = 1,
+	LINK_Visible = false,
     INP_Required = false
   })
 

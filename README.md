@@ -64,7 +64,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [EARF](PlanetShader/EARF.md) ported by [JiPi](Profiles/JiPi.md)
 - Tunnel
   - [Try Not To Hit The Walls](TunnelShader/TNTHTW.md) ported by [JiPi](Profiles/JiPi.md)
-
+  - [Velocibox.fuse](TunnelShader/Velocibox.md) ported by [nmbr73](Profiles/nmbr73.md)
 
 Work in Progress
 ----------------
@@ -91,13 +91,11 @@ Hm, not the very best idea. Seems not to work on GitHub Pages :-/
 [![BlobShader/TorturedBlob.fuse](BlobShader/TorturedBlob_320x180.png)](BlobShader/TorturedBlob.md)
 [![PlanetShader/RayCastSphere.fuse](PlanetShader/RayCastSphere_320x180.png)](PlanetShader/RayCastSphere.md)
 [![PlanetShader/EARF.fuse](PlanetShader/EARF_320x180.png)](PlanetShader/EARF.md)
+[![TunnelShader/Velocibox.fuse](TunnelShader/Velocibox_320x180.png)](TunnelShader/Velocibox.md)
 
 Metal Only
 ----------
 
-Running on Metal and Compiling on OpenCL (at least to the point where the error message in Resolve on a Mac is of no help) ... some help would be much appreciated.
-
-[![TunnelShader/Velocibox.fuse](TunnelShader/Velocibox_320x180.png)](TunnelShader/Velocibox.md)
 
 Work in Progress (nbmr73)
 -------------------------
