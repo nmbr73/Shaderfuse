@@ -5,4 +5,4 @@ Based on '_[Velocibox](https://www.shadertoy.com/view/lsdXD8)_' by [zackpudil](h
 
 
 
-[![thumb](Velocibox_320x180.png "Velocibox.fuse")](Velocibox_wip.fuse)
+[![thumb](Velocibox_320x180.png "Velocibox.fuse")](Velocibox.fuse)

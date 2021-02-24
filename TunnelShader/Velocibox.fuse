@@ -8,7 +8,7 @@
     for use in DaFusion.
 
     Shader created by zackpudil
-	
+
 	V0.2 bugfixes for OpenCL and CUDA
 
 */--]]--
@@ -77,7 +77,12 @@ FuRegisterClass(
 
 ST_VelociboxParams =
 [[
+  float wr, wg, wb; // wall
+  float kr, kg, kb; // kite
+  float jr, jg, jb; // joist
+
   float freq;
+  float exp;
   int   width;
   int   height;
   float iTime;
@@ -242,15 +247,11 @@ __DEVICE__ float2 map(float3 p, float iTime)
   float3 bp2 = boxPos(p, 2.5f, 0.1f, iTime);
   bp2.z += 0.5f;
 
-//bp.xy += path(bp.z);
-//bp2.xy += path(bp2.z);
-
   float2 xy;
-  xy=path(bp.z ,iTime); bp.x  += xy.x; bp.y  += xy.y;
-  xy=path(bp2.z,iTime); bp2.x += xy.x; bp2.y += xy.y;
+  xy=path(bp.z ,iTime); bp.x  += xy.x; bp.y  += xy.y; //bp.xy += path(bp.z);
+  xy=path(bp2.z,iTime); bp2.x += xy.x; bp2.y += xy.y; //bp2.xy += path(bp2.z);
 
   float2 s = to_float2(_fminf(len(p - bp2, 1.0f) - 0.3f, dSegment(p, bp, bp2, 0.04f)), 1.0f);
-float var;
   float2 o = to_float2(dObstacles(p, 2.5f,iTime), 2.0f);
 
   return opU(t, opU(s, o));
@@ -331,75 +332,6 @@ __DEVICE__ float3 lighting(float3 p, float3 lp, float3 rd,float iTime)
   return lin*atten*ao(p, n,iTime);
 }
 
-/*
-__DEVICE__ mat3 camera(float3 e, float3 l, float iTime)
-{
-  float3 rl = to_float3(_sinf(iTime), _cosf(iTime), 0.0f);
-  float3 f = normalize(l - e);
-  float3 r = cross(rl, f);
-  float3 u = cross(f, r);
-
-  return mat3(r, u, f);
-}
-*/
-
-__DEVICE__ float4 render(float3 ro, float3 rd, float iTime)
-{
-  ro.z += gTime(iTime) - 2.0f;
-  float3 la = ro + to_float3(0.0f, 0.0f, 2.0f);
-
-//  if (1)
-//  { rd = camera(ro, la, iTime)*rd;
-//  } else
-  { // camera
-
-    float3 rl = to_float3(_sinf(iTime), _cosf(iTime), 0.0f);
-    float3 f = normalize(la - ro);
-    float3 r = cross(rl, f);
-    float3 u = cross(f, r);
-
-    float x = r.x*rd.x + u.x*rd.y + f.x*rd.z;
-    float y = r.y*rd.x + u.y*rd.y + f.y*rd.z;
-    float z = r.z*rd.x + u.z*rd.y + f.z*rd.z;
-
-    rd = to_float3(x,y,z);
-
-  }
-
-
-
-  float3 lp1 = ro + to_float3(0.0f, 0.0f, 1.0f);
-  float3 lp2 = ro + to_float3(0.0f, 0.0f, 5.0f);
-
-
-//la.xy += path(la.z);
-//ro.xy += path(ro.z);
-  float2 xy;
-  xy=path(la.z,iTime); la.x += xy.x; la.y+=xy.y;
-  xy=path(ro.z,iTime); ro.x += xy.x; ro.y+=xy.y;
-
-  float3 col = to_float3_s(0.5f);
-
-  float2 i = intersect(ro, rd, iTime);
-  float3 p = ro + rd*i.x;
-
-  if (i.y == 0.0f)
-  {
-      float2 guv = normal(p,iTime).y == 0.0f ? swizy(p) : swixz(p) - path(p.z, iTime);
-      col = 0.45f + to_float3_s(1.0f)
-          *smoothstep(-0.05f, 0.05f,_fabs(fract1f(guv.x) - 0.5f)*2.0f)
-          *smoothstep(-0.05f, 0.05f,_fabs(fract1f(guv.y) - 0.5f)*2.0f);
-  }
-  if (i.y == 1.0f) col = to_float3(1.0f, 0.1f, 1.0f)*0.5f;
-  if (i.y == 2.0f) col = to_float3(0.0f, 0.3f, 1.0f);
-
-  if(i.y != -1.0f) col *= lighting(p, lp1, rd,iTime)+lighting(p, lp2, rd,iTime);
-
-  col = pow_f3(col, to_float3_s(0.454545f));
-
-  return to_float4_aw(col, 1.0f);
-}
-
 
 
 __KERNEL__ void ST_VelociboxKernel(
@@ -420,6 +352,11 @@ __KERNEL__ void ST_VelociboxKernel(
   float  iTime       = params->iTime * params->freq;
   float4 fragColor   = to_float4_s(0.0f);
 
+
+  float3 wallColor  = to_float3(params->wr,params->wg,params->wb);
+  float3 kiteColor  = to_float3(params->kr,params->kg,params->kb);
+  float3 joistColor = to_float3(params->jr,params->jg,params->jb);
+  float exp = params->exp;
   //##########################################################################
 
   float2 uv = -1.0f + 2.0f* ( swixy(fragCoord) / swixy(iResolution));
@@ -428,8 +365,57 @@ __KERNEL__ void ST_VelociboxKernel(
   float3 ro = to_float3(0.0f, 0.0f, -2.0f);
   float3 rd = normalize(to_float3_aw(uv, 2.0f));
 
+  // -----
+  // render
+  ro.z += gTime(iTime) - 2.0f;
 
-  fragColor = render(ro, rd, iTime);
+  float3 la = ro + to_float3(0.0f, 0.0f, 2.0f);
+
+  { // camera
+
+    float3 rl = to_float3(_sinf(iTime), _cosf(iTime), 0.0f);
+    float3 f = normalize(la - ro);
+    float3 r = cross(rl, f);
+    float3 u = cross(f, r);
+
+    float x = r.x*rd.x + u.x*rd.y + f.x*rd.z;
+    float y = r.y*rd.x + u.y*rd.y + f.y*rd.z;
+    float z = r.z*rd.x + u.z*rd.y + f.z*rd.z;
+
+    rd = to_float3(x,y,z);
+
+  }
+
+  float3 lp1 = ro + to_float3(0.0f, 0.0f, 1.0f);
+  float3 lp2 = ro + to_float3(0.0f, 0.0f, 5.0f);
+
+  float2 xy;
+  xy=path(la.z,iTime); la.x += xy.x; la.y+=xy.y; //la.xy += path(la.z);
+  xy=path(ro.z,iTime); ro.x += xy.x; ro.y+=xy.y; //ro.xy += path(ro.z);
+
+  float3 col = to_float3_s(0.5f);
+
+  float2 i = intersect(ro, rd, iTime);
+  float3 p = ro + rd*i.x;
+
+  if (i.y == 0.0f)
+  {
+      float2 guv = normal(p,iTime).y == 0.0f ? swizy(p) : swixz(p) - path(p.z, iTime);
+      col = 0.45f +
+      wallColor // to_float3_s(1.0f) // wall
+          *smoothstep(-0.05f, 0.05f,_fabs(fract1f(guv.x) - 0.5f)*2.0f)
+          *smoothstep(-0.05f, 0.05f,_fabs(fract1f(guv.y) - 0.5f)*2.0f);
+  }
+  if (i.y == 1.0f) col = kiteColor*0.5f;  //to_float3(1.0f, 0.1f, 1.0f)*0.5f;  // kite
+  if (i.y == 2.0f) col = joistColor;      //to_float3(0.0f, 0.3f, 1.0f);       // joist
+
+  if(i.y != -1.0f) col *= lighting(p, lp1, rd,iTime)+lighting(p, lp2, rd,iTime);
+
+  //col = pow_f3(col, to_float3_s(0.454545f));
+  col = pow_f3(col, to_float3_s(exp));
+
+
+  fragColor = to_float4_aw(col, 1.0f);
 
 
   //##########################################################################
@@ -440,7 +426,7 @@ __KERNEL__ void ST_VelociboxKernel(
 
 ]]
 
-
+-- /*
 
 -- // ------------------------------------------------------------------------
 -- // Create
@@ -456,6 +442,8 @@ function Create()
     INP_Required = false
   })
 
+
+
   OutImage = self:AddOutput("Output", "Output", {
     LINKID_DataType = "Image",
     LINK_Main = 1,
@@ -463,7 +451,28 @@ function Create()
 
   ----- Inspector Panel Controls
 
-   InFreq = self:AddInput("Frequency", "Frequency", {
+
+
+  self:BeginControlNest("Kite Color", "KColor", false, {})
+  InKR = self:AddInput("Red",   "KRed",   { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 1.0, ICS_Name = "Color", IC_ControlGroup = 1, IC_ControlID = 0, })
+	InKG = self:AddInput("Green", "KGreen", { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 0.1,                     IC_ControlGroup = 1, IC_ControlID = 1, })
+	InKB = self:AddInput("Blue",  "KBlue",  { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 1.0,                     IC_ControlGroup = 1, IC_ControlID = 2, })
+  self:EndControlNest()
+
+  self:BeginControlNest("Joist Color", "JColor", false, {})
+  InJR = self:AddInput("Red",   "JRed",   { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 0.0, ICS_Name = "Color", IC_ControlGroup = 2, IC_ControlID = 0, })
+	InJG = self:AddInput("Green", "JGreen", { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 0.3,                     IC_ControlGroup = 2, IC_ControlID = 1, })
+	InJB = self:AddInput("Blue",  "JBlue",  { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 1.0,                     IC_ControlGroup = 2, IC_ControlID = 2, })
+  self:EndControlNest()
+
+  self:BeginControlNest("Wall Color", "WColor", false, {})
+  InWR = self:AddInput("Red",   "WRed",   { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 1.0, ICS_Name = "Color", IC_ControlGroup = 3, IC_ControlID = 0, })
+	InWG = self:AddInput("Green", "WGreen", { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 1.0,                     IC_ControlGroup = 3, IC_ControlID = 1, })
+	InWB = self:AddInput("Blue",  "WBlue",  { LINKID_DataType = "Number", INPID_InputControl = "ColorControl", INP_MinScale = 0.0, INP_MaxScale = 1.0, INP_Default  = 1.0,                     IC_ControlGroup = 3, IC_ControlID = 2, })
+  self:EndControlNest()
+
+
+  InFreq = self:AddInput("Frequency", "Frequency", {
     LINKID_DataType    = "Number",
     INPID_InputControl = "SliderControl",
     INP_Default        = 1.0,
@@ -471,8 +480,14 @@ function Create()
     INP_MaxScale 	     = 5.0,
   })
 
+  InExp = self:AddInput("Darkness", "Exposure", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 0.454545,
+    INP_MinScale 	     = 0.01,
+    INP_MaxScale 	     = 10.0,
+  })
 
-  ------ Information
 
   ------ Information
 
@@ -568,6 +583,16 @@ function Process(req)
 
     if not pcall(function ()  -- necessary to avoid memory leakage
         params.freq         = InFreq:GetValue(req).Value
+        params.exp         = InExp:GetValue(req).Value
+        params.wr            = InWR:GetValue(req).Value
+        params.wg            = InWG:GetValue(req).Value
+        params.wb            = InWB:GetValue(req).Value
+        params.kr            = InKR:GetValue(req).Value
+        params.kg            = InKG:GetValue(req).Value
+        params.kb            = InKB:GetValue(req).Value
+        params.jr            = InJR:GetValue(req).Value
+        params.jg            = InJG:GetValue(req).Value
+        params.jb            = InJB:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
@@ -576,6 +601,16 @@ function Process(req)
     end) then
         params              = node:GetParamBlock(ST_VelociboxParams)
         params.freq         = InFreq:GetValue(req).Value
+        params.exp         = InExp:GetValue(req).Value
+        params.wr            = InWR:GetValue(req).Value
+        params.wg            = InWG:GetValue(req).Value
+        params.wb            = InWB:GetValue(req).Value
+        params.kr            = InKR:GetValue(req).Value
+        params.kg            = InKG:GetValue(req).Value
+        params.kb            = InKB:GetValue(req).Value
+        params.jr            = InJR:GetValue(req).Value
+        params.jg            = InJG:GetValue(req).Value
+        params.jb            = InJB:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
@@ -612,3 +647,5 @@ function NotifyChanged(inp, param, time)
 		end
 	end
 end
+
+-- */
