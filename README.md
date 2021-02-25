@@ -51,6 +51,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Kali 3D](AbstractShader/Kali3D.md) ported by [JiPi](Profiles/JiPi.md)
   - [Noisecube](AbstractShader/Noisecube.md) ported by [JiPi](Profiles/JiPi.md)
   - [Rainbow Slices](AbstractShader/RainbowSlices.md) ported by [nmbr73](Profiles/nmbr73.md)
+  - [Vine](AbstractShader/Vine.md) ported by [JiPi](Profiles/JiPi.md)
 - Blob
   - [TorturedBlob](BlobShader/TorturedBlob.md) ported by [JiPi](Profiles/JiPi.md)
   - [FunWithMetaballs](BlobShader/FunWithMetaballs.md) ported by [JiPi](Profiles/JiPi.md) 
@@ -96,6 +97,7 @@ Hm, not the very best idea. Seems not to work on GitHub Pages :-/
 [![TunnelShader/Velocibox.fuse](TunnelShader/Velocibox_320x180.png)](TunnelShader/Velocibox.md)
 [![FunWithMetaballs](BlobShader/FunWithMetaballs_320x180.png)](BlobShader/FunWithMetaballs.md)
 [![HW3Swing](ObjectShader/HW3Swing_320x180.png)](ObjectShader/HW3Swing.md)
+[![Vine](AbstractShader/Vine_320x180.png)](AbstractShader/Vine.md)
 
 Metal Only
 ----------
