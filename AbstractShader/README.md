@@ -1,8 +1,8 @@
-Abstract Shader
-===============
+Abstract Shaders
+================
 
 
-Planet Shaders implemented so far:
+Abstract Shaders implemented so far:
 
 [![BumpyReflectingBalls.fuse](BumpyReflectingBalls_320x180.png)](BumpyReflectingBalls.md)
 [![Crazyness.fuse](Crazyness_320x180.png)](Crazyness.md)

@@ -44,7 +44,7 @@ Fuses
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
 
-- [Abstract](AbstractShader/)
+- [Abstract Shaders](AbstractShader/)
   - [BumpyReflectingBalls](AbstractShader/BumpyReflectingBalls.md) ported by [JiPi](Profiles/JiPi.md)
   - [Crazyness](AbstractShader/Crazyness.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Cross Distance](AbstractShader/CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
@@ -63,7 +63,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Dancy Tree Doodle 3D](ObjectShader/DancyTreeDoodle3D.md) ported by [JiPi](Profiles/JiPi.md)
   - [Lonely Voxel](ObjectShader/LonelyVoxel.md) ported by [JiPi](Profiles/JiPi.md)
   - [HW3Swing](ObjectShader/HW3Swing.md) ported by [JiPi](Profiles/JiPi.md)
-- [Planet](PlanetShader/)
+- [Planet Shaders](PlanetShader/)
   - [Cracker Cars](PlanetShader/CrackerCars.md) ported by [JiPi](Profiles/JiPi.md)
   - [EARF](PlanetShader/EARF.md) ported by [JiPi](Profiles/JiPi.md)
   - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
