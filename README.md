@@ -44,7 +44,7 @@ Fuses
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
 
-- Abstract
+- [Abstract](AbstractShader/)
   - [BumpyReflectingBalls](AbstractShader/BumpyReflectingBalls.md) ported by [JiPi](Profiles/JiPi.md)
   - [Crazyness](AbstractShader/Crazyness.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Cross Distance](AbstractShader/CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
