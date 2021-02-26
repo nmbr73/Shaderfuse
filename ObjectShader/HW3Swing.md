@@ -5,6 +5,8 @@ Based on '_[HW3Swing](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https:
 
 I love these Wannerstedt videos and here I found one in the Shadertoy. The challenge was to resolve the global variables. It is also a nice example of using mat4.
 
+Does not run on Metal; some minor rework to be done.
+
 ```
 // **** mat4 ****
 typedef struct
