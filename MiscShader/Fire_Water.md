@@ -13,6 +13,8 @@ Due to the recursive call, the picture is changed when parameters are adjusted, 
 When switching on the manual mode, the CrosshairControl of the center is hidden in order not to disturb the CrosshairControl of the manual position, but it can also be switched on if necessary (OnScreenWidgets).
 The parameters invite you to play.
 
+Here is a little study of this fuse: https://www.youtube.com/watch?v=4R7ZVMyKLnY
+
 The Fuse is tested with Cuda, OpenCL and Metal.
 
 Have fun
