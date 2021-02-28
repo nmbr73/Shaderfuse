@@ -118,3 +118,7 @@ Work in Progress (nbmr73)
 Please do not touch - I'm pretty close (I guess) and the challenges left are such I'd like to solve myself.
 
 [![AbstractShader/VoxelEdges.fuse](AbstractShader/VoxelEdges_320x180.png)](AbstractShader/VoxelEdges.md)
+
+Coming Soon
+
+[![Working](Working/LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
