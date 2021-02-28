@@ -1,0 +1,545 @@
+--[[--/*
+
+    Favela.fuse
+
+    Based on https://www.shadertoy.com/view/XsBXWt a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion.
+
+    Shader created by Kali
+
+*/--]]--
+
+
+-- /* FUSE_COFIG::BEGIN
+local FC_CATEGORY  = "MiscShader"
+local FC_SHORTCUT  = false        -- use shortcut (e.g. DTD for DancyTreeDoodle) if exists; otherwise the shadertoy ID is used
+local FC_DEVEVELOP = true         -- set to 'true' to display reload/edit buttons in inspector
+local FC_INFOBTN   = -1           -- show button to open the project page -1 on top, 0 hide, 1 on bottom
+local FC_PREFIX    = "ST"         -- use 'ST' in the repo; to be replaced by 'BETA' for user downlaods and by "" if it goes officially into the reactor
+local FC_SCPREFIX  = FC_PREFIX    -- prefix for shortcuts
+local FC_SUBMENU   = "Shadertoys" -- you may want to prepend e.g. "Fuses\\" to not have the Shadertoys on your 'Add tool...' toplevel menu
+-- FUSE_COFIG::END */
+
+-- /*
+
+local shadertoy_name       = "Fractal Land"
+local shadertoy_author     = "Kali"
+local shadertoy_id         = "XsBXWt"
+local shadertoy_license    = ""
+local dctlfuse_code        = true
+local dctlfuse_name        = "FractalLand"
+local dctlfuse_author      = "nmbr73"
+local dctlfuse_authorurl   = "https://www.youtube.com/c/nmbr73"
+local dctlfuse_infourl     = "https://nmbr73.github.io/Shadertoys/"
+local dctlfuse_versionNo   = 1
+local dctlfuse_versionDate = ""
+
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(
+  ((FC_PREFIX ~= "" and FC_PREFIX.."_" or "") ..dctlfuse_name), CT_SourceTool, {
+  REGS_Category          = FC_SUBMENU .. (FC_CATEGORY~="" and "\\"..FC_CATEGORY or ""),
+  REGS_OpIconString      = (FC_SCPREFIX ~= "" and FC_SCPREFIX.."-" or "")..(FC_SHORTCUT and dctlfuse_shortcut and dctlfuse_shortcut~="" and dctlfuse_shortcut or shadertoy_id),
+  REGS_OpDescription     = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..")",
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_Fuse_NoEdit        = not(dctlfuse_code),
+  REG_Fuse_NoReload      = not(dctlfuse_code),
+
+  REG_TimeVariant        = true,
+
+  REGS_Company           = dctlfuse_author,
+  REGS_URL               = dctlfuse_authorurl,
+  REG_Version            = dctlfuse_versionNo,
+  })
+
+
+-- */
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+ST_FractalLandParams =
+[[
+  float freq;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+ST_FractalLandKernel =
+    [[
+
+
+#if defined (DEVICE_IS_METAL)
+
+  typedef float2x2 mat2;
+
+  __DEVICE__ inline float2  prod_float2_mat2( float2 v, mat2   m )  { return v*m; }
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline float2 prod_float2_mat2( float2 v, mat2 m ) { float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t; }
+
+#endif
+
+inline float radians(float degrees) { return M_PI * degrees / 180; }
+
+// "Fractal Cartoon" - former "DE edge detection" by Kali
+// There are no lights and no AO, only color by normals and dark edges.
+// update: Nyan Cat cameo, thanks to code from mu6k: https://www.shadertoy.com/view/4dXGWH
+
+
+//#define SHOWONLYEDGES
+#define NYAN
+#define WAVES
+#define BORDER
+
+#define RAY_STEPS   150
+
+#define BRIGHTNESS  1.2f
+#define GAMMA       1.4f
+#define SATURATION  0.65f
+
+
+#define detail      0.001f
+#define t           iTime*0.5f
+
+
+//const float3 origin=to_float3(-1.0f,0.7f,0.0f);
+//float det=0.0f;
+
+
+// 2D rotation function
+__DEVICE__ mat2 rot(float a) {
+	return mat2(_cosf(a),_sinf(a),-_sinf(a),_cosf(a));
+}
+
+// "Amazing Surface" fractal
+__DEVICE__ float4 formula(float4 p) {
+
+  // p.xz = abs(p.xz+1.0f)-abs(p.xz-1.0f)-p.xz;
+  // p.y-=0.25f;
+  // p.xy*=rot(radians(35.0f));
+
+  // p=p*2./clamp(dot(p.xyz,p.xyz),0.2f,1.0f);
+  // return p;
+
+  p.xz = abs(p.xz+1.0f)-abs(p.xz-1.0f)-p.xz;
+  p.y-=0.25f;
+  p.xy = prod_float2_mat2(p.xy,rot(radians(35.0f)));
+
+  p=p*2./clamp(dot(p.xyz,p.xyz),0.2f,1.0f);
+  return p;
+}
+
+// Distance function
+__DEVICE__ float de(float3 pos, float iTime) {
+#ifdef WAVES
+	pos.y+=_sinf(pos.z-t*6.0f)*0.15f; //waves!
+#endif
+	// float hid=0.0f; // unused
+	float3 tpos=pos;
+	tpos.z=abs(3.0f-_fmod(tpos.z,6.0f));
+	float4 p=to_float4_aw(tpos,1.0f);
+	for (int i=0; i<4; i++) {p=formula(p);}
+	float fr=(length(max(to_float2_s(0.0f),p.yz-1.5f))-1.0f)/p.w;
+	float ro=max(abs(pos.x+1.0f)-0.3f,pos.y-0.35f);
+		  ro=max(ro,-max(abs(pos.x+1.0f)-.1,pos.y-0.5f));
+	pos.z=abs(0.25f-_fmod(pos.z,0.5f));
+		  ro=max(ro,-max(abs(pos.z)-0.2f,pos.y-0.3f));
+		  ro=max(ro,-max(abs(pos.z)-0.01f,-pos.y+0.32f));
+	float d=min(fr,ro);
+	return d;
+}
+
+
+// Camera path
+__DEVICE__ float3 path(float ti) {
+	ti*=1.5f;
+	float3  p=to_float3(_sinf(ti),(1.0f-_sinf(ti*2.0f))*0.5f,-ti*5.0f)*0.5f;
+	return p;
+}
+
+// Calc normals, and here is edge detection, set to variable "edge"
+
+//float edge=0.0f;
+__DEVICE__ float3 normal(float3 p, float iTime, float det, thread float* edge) {
+
+  float3 e = to_float3(0.0f,det*5.0f,0.0f);
+
+	float d1=de(p-e.yxx,iTime),d2=de(p+e.yxx,iTime);
+	float d3=de(p-e.xyx,iTime),d4=de(p+e.xyx,iTime);
+	float d5=de(p-e.xxy,iTime),d6=de(p+e.xxy,iTime);
+	float d=de(p,iTime);
+	*edge = abs(d-0.5f*(d2+d1))+abs(d-0.5f*(d4+d3))+abs(d-0.5f*(d6+d5));//edge finder
+	*edge = min(1.0f,pow(*edge,0.55f)*15.0f);
+	return normalize(to_float3(d1-d2,d3-d4,d5-d6));
+}
+
+
+// Used Nyan Cat code by mu6k, with some mods
+
+__DEVICE__ float4 rainbow(float2 p, float iTime)
+{
+	// float q = max(p.x,-0.1f); // unused
+	float s = _sinf(p.x*7.0f+t*70.0f)*0.08f;
+	p.y+=s;
+	p.y*=1.1f;
+
+	float4 c;
+	if (p.x>0.0f) c=to_float4(0.0f,0.0f,0.0f,0.0f); else
+	if (0.0f/6.0f<p.y&&p.y<1.0f/6.0f) c= to_float4(255.0f,43.0f,14.0f,255.0f)/255.0f; else
+	if (1.0f/6.0f<p.y&&p.y<2.0f/6.0f) c= to_float4(255.0f,168.0f,6.0f,255.0f)/255.0f; else
+	if (2.0f/6.0f<p.y&&p.y<3.0f/6.0f) c= to_float4(255.0f,244.0f,0.0f,255.0f)/255.0f; else
+	if (3.0f/6.0f<p.y&&p.y<4.0f/6.0f) c= to_float4(51.0f,234.0f,5.0f,255.0f)/255.0f; else
+	if (4.0f/6.0f<p.y&&p.y<5.0f/6.0f) c= to_float4(8.0f,163.0f,255.0f,255.0f)/255.0f; else
+	if (5.0f/6.0f<p.y&&p.y<6.0f/6.0f) c= to_float4(122.0f,85.0f,255.0f,255.0f)/255.0f; else
+	if (abs(p.y)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
+	if (abs(p.y-1.0f)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
+		c=to_float4(0.0f,0.0f,0.0f,0.0f);
+	c.a*=0.8f-min(0.8f,abs(p.x*0.08f));
+	c.xyz=mix(c.xyz,to_float3_s(length(c.xyz)),0.15f);
+	return c;
+}
+
+__DEVICE__ float4 nyan(float2 p, float iTime)
+{
+	float2 uv = p*to_float2(0.4f,1.0f);
+	float ns=3.0f;
+	float nt = iTime*ns; nt-=_fmod(nt,240.0f/256.0f/6.0f); nt = _fmod(nt,240.0f/256.0f);
+	float ny = _fmod(iTime*ns,1.0f); ny-=_fmod(ny,0.75f); ny*=-0.05f;
+//	float4 color = texture(iChannel1,to_float2(uv.x/3.0f+210.0f/256.0f-nt+0.05f,0.5f-uv.y-ny));
+  float4 color = to_float4_s(0.0f); // !!! @todo
+	if (uv.x<-0.3f) color.a = 0.0f;
+	if (uv.x>0.2) color.a=0.0f;
+	return color;
+}
+
+
+// Raymarching and 2D graphics
+
+__DEVICE__ float3 raymarch(float3 from, float3 dir, float iTime)
+{
+  float edge; // was global(!)
+  float det=0.0f; // was global(!)
+
+	edge=0.0f;
+	float3 p, norm;
+	float d=100.0f;
+	float totdist=0.0f;
+	for (int i=0; i<RAY_STEPS; i++) {
+		if (d>det && totdist<25.0f) {
+			p=from+totdist*dir;
+			d=de(p,iTime);
+			det=detail*exp(0.13f*totdist);
+			totdist+=d;
+		}
+	}
+	float3 col=to_float3_s(0.0f);
+	p-=(det-d)*dir;
+	norm=normal(p,iTime,det,&edge);
+#ifdef SHOWONLYEDGES
+	col=1.0f-to_float3(edge); // show wireframe version
+#else
+	col=(1.0f-abs(norm))*max(0.0f,1.0f-edge*0.8f); // set normal as color with dark edges
+#endif
+	totdist=clamp(totdist,0.0f,26.0f);
+	dir.y-=0.02f;
+	//float sunsize=7.0f-max(0.0f,texture(iChannel0,to_float2(0.6f,0.2f)).x)*5.0f; // responsive sun size
+  float sunsize=7.0f; // !!! @todo
+	float an=_atan2f(dir.x,dir.y)+iTime*1.5f; // angle for drawing and rotating sun
+	float s=pow(clamp(1.0f-length(dir.xy)*sunsize-abs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun
+	float sb=pow(clamp(1.0f-length(dir.xy)*(sunsize-0.2f)-abs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun border
+	float sg=pow(clamp(1.0f-length(dir.xy)*(sunsize-4.5f)-0.5f*abs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),3.0f); // sun rays
+	float y=mix(0.45f,1.2f,pow(smoothstep(0.0f,1.0f,0.75f-dir.y),2.0f))*(1.0f-sb*0.5f); // gradient sky
+
+	// set up background with sky and sun
+	float3 backg=to_float3(0.5f,0.0f,1.0f)*((1.0f-s)*(1.0f-sg)*y+(1.0f-sb)*sg*to_float3(1.0f,0.8f,0.15f)*3.0f);
+		 backg+=to_float3(1.0f,0.9f,0.1f)*s;
+		 backg=max(backg,sg*to_float3(1.0f,0.9f,0.5f));
+
+	col=mix(to_float3(1.0f,0.9f,0.3f),col,exp(-0.004f*totdist*totdist));// distant fading to sun color
+	if (totdist>25.0f) col=backg; // hit background
+	col=pow(col,to_float3_s(GAMMA))*BRIGHTNESS;
+	col=mix(to_float3_s(length(col)),col,SATURATION);
+#ifdef SHOWONLYEDGES
+	col=1.0f-to_float3(length(col));
+#else
+	col*=to_float3(1.0f,0.9f,0.85f);
+#ifdef NYAN
+	dir.yx=prod_float2_mat2(dir.yx,rot(dir.x));
+	float2 ncatpos=(dir.xy+to_float2(-3.0f+_fmod(-t,6.0f),-0.27f));
+	float4 ncat=nyan(ncatpos*5.0f,iTime);
+	float4 rain=rainbow(ncatpos*10.0f+to_float2(0.8f,0.5f),iTime);
+	if (totdist>8.0f) col=mix(col,max(to_float3_s(0.2f),rain.xyz),rain.a*0.9f);
+	if (totdist>8.0f) col=mix(col,max(to_float3_s(0.2f),ncat.xyz),ncat.a*0.9f);
+#endif
+#endif
+	return col;
+}
+
+// get camera position
+// float3 move(inout float3 dir) { inout !!!
+__DEVICE__ float3 move(float3 dir, float iTime) {
+	float3 go=path(t);
+	float3 adv=path(t+0.7f);
+	//float hd=de(adv,iTime); // unused
+	float3 advec=normalize(adv-go);
+	float an=adv.x-go.x; an*=min(1.0f,abs(adv.z-go.z))*sign(adv.z-go.z)*0.7f;
+	dir.xy=prod_float2_mat2(dir.xy,mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an)));
+    an=advec.y*1.7f;
+	dir.yz=prod_float2_mat2(dir.yz,mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an)));
+	an=_atan2f(advec.x,advec.z);
+	dir.xz=prod_float2_mat2(dir.xz,mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an)));
+	return go;
+}
+
+//############################################################################
+
+
+__KERNEL__ void ST_FractalLandKernel(
+    __CONSTANTREF__ ST_FractalLandParams*  params,
+    __TEXTURE2D__                  iChannel0,
+    __TEXTURE2D_WRITE__            dst
+    )
+{
+
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  float2 fragCoord   = to_float2(x, y);
+  float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+  float4 fragColor   = to_float4_s(0.0f);
+
+  //##########################################################################
+	float2 uv = fragCoord.xy / iResolution.xy*2.0f-1.0f;
+	float2 oriuv=uv;
+	uv.y*=iResolution.y/iResolution.x;
+	//float2 mouse=(iMouse.xy/iResolution.xy-0.5f)*3.0f; // !!! @todo iMouse anklemmen
+	//if (iMouse.z<1.0f) mouse=to_float2(0.0f,-0.05f);
+  float2 mouse=to_float2(0.0f,-0.05f);
+
+	float fov=.9-max(0.0f,0.7f-iTime*0.3f);
+	float3 dir=normalize(to_float3_aw(uv*fov,1.0f));
+	dir.yz=prod_float2_mat2(dir.yz,rot(mouse.y));
+	dir.xz=prod_float2_mat2(dir.xz,rot(mouse.x));
+
+	//float3 from=origin+move(dir,iTime);
+	float3 from=to_float3(-1.0f,0.7f,0.0f)+move(dir,iTime);
+	float3 color=raymarch(from,dir,iTime);
+	#ifdef BORDER
+	color=mix(to_float3_s(0.0f),color,pow(max(0.0f,0.95f-length(oriuv*oriuv*oriuv*to_float2(1.05f,1.1f))),0.3f));
+	#endif
+	fragColor = to_float4_aw(color,1.0f);
+
+
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+
+}
+
+]]
+
+-- /*
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ----- In/Out
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+   InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+  })
+
+
+  ------ Information
+
+  ------ Information
+
+  if FC_INFOBTN~=0 then
+    InfoButton = self:AddInput("Info ...", "InfoButton", {
+      LINKID_DataType = "Text",
+      INPID_InputControl = "ButtonControl",
+      INP_DoNotifyChanged = true,
+      INP_External = false,
+      IC_ControlPage = FC_INFOBTN,
+    })
+  end
+
+
+  InShaderInfoBlock = self:AddInput(
+      (FC_INFOBTN~=1 and "<hr />" or "")..[[Shadertoy <a href="https://www.shadertoy.com/view/]]..shadertoy_id..[[" style="color:white; text-decoration:none; ">]]..shadertoy_name
+      ..[[</a> by <a href="https://www.shadertoy.com/user/]]..shadertoy_author..[[" style="color:yellow; text-decoration:none; ">]]..shadertoy_author..[[</a><br />]]
+      ..shadertoy_license.. ( shadertoy_license=="" and "" or "<br>" )..[[DCTLified and DaFused by <a href="]]..dctlfuse_authorurl..[[" style="color:white; text-decoration:none; ">]]
+      ..dctlfuse_author..[[</a>]]..(dctlfuse_versionDate=="" and " v0."..dctlfuse_versionNo or "<br />Version 0."..dctlfuse_versionNo.." - "..dctlfuse_versionDate),"Label", {
+    LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true, -- IC_ControlPage = -1,
+  })
+
+  if true then
+    InNmbr73Logo = self:AddInput(
+        "<p align=\"right\"><a href=\"https://www.youtube.com/c/nmbr73\"><img width=\"212\" height=\"41\" src=\"data:image/png;base64,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\" /></a></p>",
+        "Nmbr73Logo", {
+        LINKID_DataType = "Text",
+        INPID_InputControl = "LabelControl",
+        LBLC_MultiLine = true,
+        IC_NoLabel = true,
+        IC_NoReset = true,
+        INP_External = false,
+        INP_Passive = true,
+        -- IC_ControlPage = -1,
+        })
+    end
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+
+    -- Extern Texture or create a new one
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+    else
+        src1 = Image(imgattrs)
+        local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+        src1:Fill(p)
+    end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+    -- Interface for running DCTL-Code
+
+    node = DVIPComputeNode(req, "ST_FractalLandKernel", ST_FractalLandKernel, "ST_FractalLandParams", ST_FractalLandParams)
+
+
+    if not pcall(function ()  -- necessary to avoid memory leakage
+        params.freq         = InFreq:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        node:SetParamBlock(params)
+    end) then
+        params              = node:GetParamBlock(ST_FractalLandParams)
+        params.freq         = InFreq:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        node:SetParamBlock(params)
+    end
+
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst",      dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+    end
+    OutImage:Set(req, dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+	if (param ~= nil) then
+		if (param.Value == 1) then
+			if (inp == InfoButton) then
+				bmd.openurl(dctlfuse_infourl)
+			end
+		end
+	end
+end
+
+-- */
