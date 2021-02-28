@@ -122,3 +122,7 @@ Please do not touch - I'm pretty close (I guess) and the challenges left are suc
 Coming Soon
 
 [![Working](Working/LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
+
+Coming later
+
+[![Working](Working/Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
