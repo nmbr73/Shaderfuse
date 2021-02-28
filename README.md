@@ -58,6 +58,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [TorturedBlob](BlobShader/TorturedBlob.md) ported by [JiPi](Profiles/JiPi.md)
 - Miscellaneous
   - [Fire_Water](MiscShader/Fire_Water.md) ported by [JiPi](Profiles/JiPi.md)
+  - [WildKifs4D](MiscShader/WildKifs4D.md) ported by [JiPi](Profiles/JiPi.md)
 - Object
   - [Dancy Tree Doodle](ObjectShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
   - [Dancy Tree Doodle 3D](ObjectShader/DancyTreeDoodle3D.md) ported by [JiPi](Profiles/JiPi.md)
@@ -103,6 +104,7 @@ Hm, not the very best idea. Seems not to work on GitHub Pages :-/
 [![Vine](AbstractShader/Vine_320x180.png)](AbstractShader/Vine.md)
 [![BumpyReflectingBalls](AbstractShader/BumpyReflectingBalls_320x180.png)](AbstractShader/BumpyReflectingBalls.md)
 [![Fire_Water](MiscShader/Fire_Water_320x180.png)](MiscShader/Fire_Water.md)
+[![WildKifs4D](MiscShader/WildKifs4D_320x180.png)](MiscShader/WildKifs4D.md)
 
 Metal Only
 ----------
