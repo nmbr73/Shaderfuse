@@ -65,6 +65,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [TorturedBlob](BlobShader/TorturedBlob.md) ported by [JiPi](Profiles/JiPi.md)
 - Miscellaneous
   - [Fire_Water](MiscShader/Fire_Water.md) ported by [JiPi](Profiles/JiPi.md)
+  - [FractalLand](MiscShader/FractalLand.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [WildKifs4D](MiscShader/WildKifs4D.md) ported by [JiPi](Profiles/JiPi.md)
 - Object
   - [Dancy Tree Doodle](ObjectShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
@@ -84,7 +85,6 @@ Work in Progress
 ----------------
 
 - [Voxel Edges](AbstractShader/VoxelEdges.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
-- [FractalLand](MiscShader/FractalLand.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
 
 
 Overview
@@ -111,6 +111,7 @@ Overview
 [![BumpyReflectingBalls](AbstractShader/BumpyReflectingBalls_320x180.png)](AbstractShader/BumpyReflectingBalls.md)
 [![Fire_Water](MiscShader/Fire_Water_320x180.png)](MiscShader/Fire_Water.md)
 [![WildKifs4D](MiscShader/WildKifs4D_320x180.png)](MiscShader/WildKifs4D.md)
+[![MiscShader/FractalLand.fuse](MiscShader/FractalLand_320x180.png)](MiscShader/FractalLand.md)
 
 
 Work in Progress
@@ -126,5 +127,3 @@ Coming Soon
 ### nmbr73
 
 [![AbstractShader/VoxelEdges.fuse](AbstractShader/VoxelEdges_320x180.png)](AbstractShader/VoxelEdges.md)
-
-[![MiscShader/FractalLand.fuse](MiscShader/FractalLand_320x180.png)](MiscShader/FractalLand.md)
