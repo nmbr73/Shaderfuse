@@ -98,7 +98,23 @@ ST_FractalLandKernel =
     [[
 
 
+#if defined (DEVICE_IS_CUDA)
+  __DEVICE__ inline float sign(float x) { return (x<0.0f ? -1.0f : (x>0.0f ? 1.0f : 0.0f)); }
+  __DEVICE__ inline float3 pow_float3_float3(float3 a, float3 b)
+  {
+    return to_float3(_powf(a.x,b.x),_powf(a.y,b.y),_powf(a.z,b.z)); // idk if this makes any sense
+  }
+
+#else
+  
+  __DEVICE__ inline float3 pow_float3_float3(float3 x, float3 y)
+  {
+    return pow(x,y);
+  }
+#endif
+
 #if defined (DEVICE_IS_METAL)
+  __DEVICE__ inline float2 abs_float2(float2 a) { return abs(a); }
 
   typedef float2x2 mat2;
 
@@ -125,7 +141,8 @@ ST_FractalLandKernel =
   __DEVICE__ inline float3 abs_float3(float3 a) { return abs(a);}
 
 #else
-
+ __DEVICE__ inline float2 abs_float2(float2 a) { return to_float2(_fabs(a.x),_fabs(a.y)); }
+ 
   typedef struct { float2 r0; float2 r1; } mat2;
 
   __DEVICE__ inline mat2    to_mat2( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
@@ -201,7 +218,7 @@ __DEVICE__ float4 formula(float4 p) {
   // p=p*2.0f/clamp(dot(p.xyz,p.xyz),0.2f,1.0f);
   // return p;
 
-  lswixz(p,_fabs(swixz(p)+1.0f)-_fabs(swixz(p)-1.0f)-swixz(p));
+  lswixz(p,abs_float2(swixz(p)+1.0f)-abs_float2(swixz(p)-1.0f)-swixz(p));
   p.y-=0.25f;
   lswixy(p,prod_float2_mat2(swixy(p),rot(_radiansf(35.0f))));
 
@@ -277,8 +294,8 @@ __DEVICE__ float4 rainbow(float2 p, float iTime)
 	if (_fabs(p.y)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
 	if (_fabs(p.y-1.0f)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
 		c=to_float4(0.0f,0.0f,0.0f,0.0f);
-	c.a*=0.8f-min(0.8f,_fabs(p.x*0.08f));
-	lswixyz(c,mix(swixyz(c),to_float3_s(length(swixyz(c))),0.15f));
+	c.w*=0.8f-min(0.8f,_fabs(p.x*0.08f));
+	lswixyz(c,_mix(swixyz(c),to_float3_s(length(swixyz(c))),0.15f));
 	return c;
 }
 
@@ -290,8 +307,8 @@ __DEVICE__ float4 nyan(float2 p, float iTime)
 	float ny = _fmod(iTime*ns,1.0f); ny-=_fmod(ny,0.75f); ny*=-0.05f;
 //	float4 color = texture(iChannel1,to_float2(uv.x/3.0f+210.0f/256.0f-nt+0.05f,0.5f-uv.y-ny));
   float4 color = to_float4_s(0.0f); // !!! @todo
-	if (uv.x<-0.3f) color.a = 0.0f;
-	if (uv.x>0.2) color.a=0.0f;
+	if (uv.x<-0.3f) color.w = 0.0f;
+	if (uv.x>0.2) color.w=0.0f;
 	return color;
 }
 
@@ -332,17 +349,17 @@ __DEVICE__ float3 raymarch(float3 from, float3 dir, float iTime, int flags)
 	float s=_powf(clamp(1.0f-length(swixy(dir))*sunsize-_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun
 	float sb=_powf(clamp(1.0f-length(swixy(dir))*(sunsize-0.2f)-_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun border
 	float sg=_powf(clamp(1.0f-length(swixy(dir))*(sunsize-4.5f)-0.5f*_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),3.0f); // sun rays
-	float y=mix(0.45f,1.2f,_powf(smoothstep(0.0f,1.0f,0.75f-dir.y),2.0f))*(1.0f-sb*0.5f); // gradient sky
+	float y=_mix(0.45f,1.2f,_powf(smoothstep(0.0f,1.0f,0.75f-dir.y),2.0f))*(1.0f-sb*0.5f); // gradient sky
 
 	// set up background with sky and sun
 	float3 backg=to_float3(0.5f,0.0f,1.0f)*((1.0f-s)*(1.0f-sg)*y+(1.0f-sb)*sg*to_float3(1.0f,0.8f,0.15f)*3.0f);
 		 backg+=to_float3(1.0f,0.9f,0.1f)*s;
 		 backg=max_float3(backg,sg*to_float3(1.0f,0.9f,0.5f));
 
-	col=mix(to_float3(1.0f,0.9f,0.3f),col,exp(-0.004f*totdist*totdist));// distant fading to sun color
+	col=_mix(to_float3(1.0f,0.9f,0.3f),col,exp(-0.004f*totdist*totdist));// distant fading to sun color
 	if (totdist>25.0f) col=backg; // hit background
-	col=_powf(col,to_float3_s(GAMMA))*BRIGHTNESS;
-	col=mix(to_float3_s(length(col)),col,SATURATION);
+	col=pow_float3_float3(col,to_float3_s(GAMMA))*BRIGHTNESS;
+	col=_mix(to_float3_s(length(col)),col,SATURATION);
 if (flags & FLAG_SHOWONLYEDGES)
 {	col=1.0f-to_float3_s(length(col));
 } else {
@@ -352,8 +369,8 @@ if (flags & FLAG_SHOWONLYEDGES)
   	float2 ncatpos=(swixy(dir)+to_float2(-3.0f+_fmod(-t,6.0f),-0.27f));
   	float4 ncat=nyan(ncatpos*5.0f,iTime);
     float4 rain=rainbow(ncatpos*10.0f+to_float2(0.8f,0.5f),iTime);
-    if (totdist>8.0f) col=mix(col,max_float3(to_float3_s(0.2f),swixyz(rain)),rain.a*0.9f);
-    if (totdist>8.0f) col=mix(col,max_float3(to_float3_s(0.2f),swixyz(ncat)),ncat.a*0.9f);
+    if (totdist>8.0f) col=_mix(col,max_float3(to_float3_s(0.2f),swixyz(rain)),rain.w*0.9f);
+    if (totdist>8.0f) col=_mix(col,max_float3(to_float3_s(0.2f),swixyz(ncat)),ncat.w*0.9f);
   }
 }
 	return col;
@@ -418,14 +435,14 @@ __KERNEL__ void ST_FractalLandKernel(
 
 	float fov=0.9f-_fmaxf(0.0f,0.7f-iTime*0.3f);
 	float3 dir=normalize(to_float3_aw(uv*fov,1.0f));
-	lswiyz(dir,prod_float2_mat2(dir.yz,rot(mouse.y)));
-	lswixz(dir,prod_float2_mat2(dir.xz,rot(mouse.x)));
+	lswiyz(dir,prod_float2_mat2(swiyz(dir),rot(mouse.y)));
+	lswixz(dir,prod_float2_mat2(swixz(dir),rot(mouse.x)));
 
 	//float3 from=origin+move(dir,iTime);
 	float3 from=to_float3(-1.0f,0.7f,0.0f)+move(dir,-iTime);
 	float3 color=raymarch(from,dir,iTime,flags);
 	if (flags & FLAG_BORDER)
-	  color=mix(to_float3_s(0.0f),color,_powf(_fmaxf(0.0f,0.95f-length(oriuv*oriuv*oriuv*to_float2(1.05f,1.1f))),0.3f));
+	  color=_mix(to_float3_s(0.0f),color,_powf(_fmaxf(0.0f,0.95f-length(oriuv*oriuv*oriuv*to_float2(1.05f,1.1f))),0.3f));
 	fragColor = to_float4_aw(color,1.0f);
 
 
@@ -489,13 +506,14 @@ function Create()
     IC_NoLabel = true,
   })
 
-  InWaves = self:AddInput("WAVES", "Waves", {
+  InWaves = self:AddInput("WAVES (disabling not implemented yet)", "Waves", {
     LINKID_DataType     = "Number",
     INPID_InputControl  = "CheckboxControl",
 	  INP_Integer         = true,
     INP_DoNotifyChanged = true,
     INP_Default         = 1,
     INP_External        = false,
+    INP_Disabled = true,
     IC_NoLabel = true,
   })
 
