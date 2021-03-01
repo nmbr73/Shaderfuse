@@ -120,6 +120,10 @@ ST_FractalLandKernel =
   #define lswixz(L,R) (L).xz = (R)
   #define lswixyz(L,R) (L).xyz = (R)
 
+  __DEVICE__ inline float2 max_float2(float2 a, float2 b) {return _fmaxf(a,b); }
+  __DEVICE__ inline float3 max_float3(float3 a, float3 b) {return _fmaxf(a,b); }
+  __DEVICE__ inline float3 abs_float3(float3 a) { return abs(a);}
+
 #else
 
   typedef struct { float2 r0; float2 r1; } mat2;
@@ -142,9 +146,16 @@ ST_FractalLandKernel =
   #define lswixz(L,R) { float2 tmp = (R); (L).x=tmp.x; (L).z=tmp.y; }
   #define lswixyz(L,R) { float3 tmp = (R); (L).x=tmp.x; (L).y=tmp.y; (L).z=tmp.z; }
 
+  __DEVICE__ inline float2 max_float2(float2 a, float2 b) {return to_float2(_fmaxf(a.x,b.x),_fmaxf(a.y,b.y));}
+  __DEVICE__ inline float3 max_float3(float3 a, float3 b) {return to_float3(_fmaxf(a.x,b.x),_fmaxf(a.y,b.y),_fmaxf(a.z,b.z) );}
+  __DEVICE__ inline float3 abs_float3(float3 a) {return (to_float3(_fabs(a.x), _fabs(a.y),_fabs(a.z)));}
+
 #endif
 
-inline float _radiansf(float degrees) { return M_PI * degrees / 180.0f; }
+
+
+
+__DEVICE__ inline float _radiansf(float degrees) { return M_PI * degrees / 180.0f; }
 
 // "Fractal Cartoon" - former "DE edge detection" by Kali
 // There are no lights and no AO, only color by normals and dark edges.
@@ -187,14 +198,14 @@ __DEVICE__ float4 formula(float4 p) {
   // p.y-=0.25f;
   // p.xy*=rot(_radiansf(35.0f));
 
-  // p=p*2./clamp(dot(p.xyz,p.xyz),0.2f,1.0f);
+  // p=p*2.0f/clamp(dot(p.xyz,p.xyz),0.2f,1.0f);
   // return p;
 
-  p.xz = abs(swixz(p)+1.0f)-abs(swixz(p)-1.0f)-swixz(p);
+  lswixz(p,_fabs(swixz(p)+1.0f)-_fabs(swixz(p)-1.0f)-swixz(p));
   p.y-=0.25f;
-  p.xy = prod_float2_mat2(swixy(p),rot(_radiansf(35.0f)));
+  lswixy(p,prod_float2_mat2(swixy(p),rot(_radiansf(35.0f))));
 
-  p=p*2./clamp(dot(swixyz(p),swixyz(p)),0.2f,1.0f);
+  p=p*2.0f/clamp(dot(swixyz(p),swixyz(p)),0.2f,1.0f);
   return p;
 }
 
@@ -205,15 +216,15 @@ __DEVICE__ float de(float3 pos, float iTime) {
 #endif
 	// float hid=0.0f; // unused
 	float3 tpos=pos;
-	tpos.z=abs(3.0f-_fmod(tpos.z,6.0f));
+	tpos.z=_fabs(3.0f-_fmod(tpos.z,6.0f));
 	float4 p=to_float4_aw(tpos,1.0f);
 	for (int i=0; i<4; i++) {p=formula(p);}
-	float fr=(length(max(to_float2_s(0.0f),swiyz(p)-1.5f))-1.0f)/p.w;
-	float ro=max(abs(pos.x+1.0f)-0.3f,pos.y-0.35f);
-		  ro=max(ro,-max(abs(pos.x+1.0f)-.1,pos.y-0.5f));
-	pos.z=abs(0.25f-_fmod(pos.z,0.5f));
-		  ro=max(ro,-max(abs(pos.z)-0.2f,pos.y-0.3f));
-		  ro=max(ro,-max(abs(pos.z)-0.01f,-pos.y+0.32f));
+	float fr=(length(max_float2(to_float2_s(0.0f),swiyz(p)-1.5f))-1.0f)/p.w;
+	float ro=_fmaxf(_fabs(pos.x+1.0f)-0.3f,pos.y-0.35f);
+		  ro=_fmaxf(ro,-_fmaxf(_fabs(pos.x+1.0f)-0.1f,pos.y-0.5f));
+	pos.z=_fabs(0.25f-_fmod(pos.z,0.5f));
+		  ro=_fmaxf(ro,-_fmaxf(_fabs(pos.z)-0.2f,pos.y-0.3f));
+		  ro=_fmaxf(ro,-_fmaxf(_fabs(pos.z)-0.01f,-pos.y+0.32f));
 	float d=min(fr,ro);
 	return d;
 }
@@ -229,16 +240,19 @@ __DEVICE__ float3 path(float ti) {
 // Calc normals, and here is edge detection, set to variable "edge"
 
 //float edge=0.0f;
+#if defined(DEVICE_IS_METAL)
 __DEVICE__ float3 normal(float3 p, float iTime, float det, thread float* edge) {
-
+#else
+__DEVICE__ float3 normal(float3 p, float iTime, float det, float* edge) {
+#endif
   float3 e = to_float3(0.0f,det*5.0f,0.0f);
 
 	float d1=de(p-swiyxx(e),iTime),d2=de(p+swiyxx(e),iTime);
 	float d3=de(p-swixyx(e),iTime),d4=de(p+swixyx(e),iTime);
 	float d5=de(p-swixxy(e),iTime),d6=de(p+swixxy(e),iTime);
 	float d=de(p,iTime);
-	*edge = abs(d-0.5f*(d2+d1))+abs(d-0.5f*(d4+d3))+abs(d-0.5f*(d6+d5));//edge finder
-	*edge = min(1.0f,pow(*edge,0.55f)*15.0f);
+	*edge = _fabs(d-0.5f*(d2+d1))+_fabs(d-0.5f*(d4+d3))+_fabs(d-0.5f*(d6+d5));//edge finder
+	*edge = min(1.0f,_powf(*edge,0.55f)*15.0f);
 	return normalize(to_float3(d1-d2,d3-d4,d5-d6));
 }
 
@@ -247,7 +261,7 @@ __DEVICE__ float3 normal(float3 p, float iTime, float det, thread float* edge) {
 
 __DEVICE__ float4 rainbow(float2 p, float iTime)
 {
-	// float q = max(p.x,-0.1f); // unused
+	// float q = _fmaxf(p.x,-0.1f); // unused
 	float s = _sinf(p.x*7.0f+t*70.0f)*0.08f;
 	p.y+=s;
 	p.y*=1.1f;
@@ -260,10 +274,10 @@ __DEVICE__ float4 rainbow(float2 p, float iTime)
 	if (3.0f/6.0f<p.y&&p.y<4.0f/6.0f) c= to_float4(51.0f,234.0f,5.0f,255.0f)/255.0f; else
 	if (4.0f/6.0f<p.y&&p.y<5.0f/6.0f) c= to_float4(8.0f,163.0f,255.0f,255.0f)/255.0f; else
 	if (5.0f/6.0f<p.y&&p.y<6.0f/6.0f) c= to_float4(122.0f,85.0f,255.0f,255.0f)/255.0f; else
-	if (abs(p.y)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
-	if (abs(p.y-1.0f)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
+	if (_fabs(p.y)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
+	if (_fabs(p.y-1.0f)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
 		c=to_float4(0.0f,0.0f,0.0f,0.0f);
-	c.a*=0.8f-min(0.8f,abs(p.x*0.08f));
+	c.a*=0.8f-min(0.8f,_fabs(p.x*0.08f));
 	lswixyz(c,mix(swixyz(c),to_float3_s(length(swixyz(c))),0.15f));
 	return c;
 }
@@ -308,26 +322,26 @@ __DEVICE__ float3 raymarch(float3 from, float3 dir, float iTime, int flags)
   if (flags & FLAG_SHOWONLYEDGES)
     col=1.0f-to_float3_s(edge); // show wireframe version
   else
-    col=(1.0f-abs(norm))*max(0.0f,1.0f-edge*0.8f); // set normal as color with dark edges
+    col=(1.0f-abs_float3(norm))*_fmaxf(0.0f,1.0f-edge*0.8f); // set normal as color with dark edges
 
 	totdist=clamp(totdist,0.0f,26.0f);
 	dir.y-=0.02f;
-	//float sunsize=7.0f-max(0.0f,texture(iChannel0,to_float2(0.6f,0.2f)).x)*5.0f; // responsive sun size
+	//float sunsize=7.0f-_fmaxf(0.0f,texture(iChannel0,to_float2(0.6f,0.2f)).x)*5.0f; // responsive sun size
   float sunsize=7.0f; // !!! @todo
 	float an=_atan2f(dir.x,dir.y)+iTime*1.5f; // angle for drawing and rotating sun
-	float s=pow(clamp(1.0f-length(dir.xy)*sunsize-abs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun
-	float sb=pow(clamp(1.0f-length(dir.xy)*(sunsize-0.2f)-abs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun border
-	float sg=pow(clamp(1.0f-length(dir.xy)*(sunsize-4.5f)-0.5f*abs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),3.0f); // sun rays
-	float y=mix(0.45f,1.2f,pow(smoothstep(0.0f,1.0f,0.75f-dir.y),2.0f))*(1.0f-sb*0.5f); // gradient sky
+	float s=_powf(clamp(1.0f-length(swixy(dir))*sunsize-_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun
+	float sb=_powf(clamp(1.0f-length(swixy(dir))*(sunsize-0.2f)-_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun border
+	float sg=_powf(clamp(1.0f-length(swixy(dir))*(sunsize-4.5f)-0.5f*_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),3.0f); // sun rays
+	float y=mix(0.45f,1.2f,_powf(smoothstep(0.0f,1.0f,0.75f-dir.y),2.0f))*(1.0f-sb*0.5f); // gradient sky
 
 	// set up background with sky and sun
 	float3 backg=to_float3(0.5f,0.0f,1.0f)*((1.0f-s)*(1.0f-sg)*y+(1.0f-sb)*sg*to_float3(1.0f,0.8f,0.15f)*3.0f);
 		 backg+=to_float3(1.0f,0.9f,0.1f)*s;
-		 backg=max(backg,sg*to_float3(1.0f,0.9f,0.5f));
+		 backg=max_float3(backg,sg*to_float3(1.0f,0.9f,0.5f));
 
 	col=mix(to_float3(1.0f,0.9f,0.3f),col,exp(-0.004f*totdist*totdist));// distant fading to sun color
 	if (totdist>25.0f) col=backg; // hit background
-	col=pow(col,to_float3_s(GAMMA))*BRIGHTNESS;
+	col=_powf(col,to_float3_s(GAMMA))*BRIGHTNESS;
 	col=mix(to_float3_s(length(col)),col,SATURATION);
 if (flags & FLAG_SHOWONLYEDGES)
 {	col=1.0f-to_float3_s(length(col));
@@ -338,8 +352,8 @@ if (flags & FLAG_SHOWONLYEDGES)
   	float2 ncatpos=(swixy(dir)+to_float2(-3.0f+_fmod(-t,6.0f),-0.27f));
   	float4 ncat=nyan(ncatpos*5.0f,iTime);
     float4 rain=rainbow(ncatpos*10.0f+to_float2(0.8f,0.5f),iTime);
-    if (totdist>8.0f) col=mix(col,max(to_float3_s(0.2f),swixyz(rain)),rain.a*0.9f);
-    if (totdist>8.0f) col=mix(col,max(to_float3_s(0.2f),swixyz(ncat)),ncat.a*0.9f);
+    if (totdist>8.0f) col=mix(col,max_float3(to_float3_s(0.2f),swixyz(rain)),rain.a*0.9f);
+    if (totdist>8.0f) col=mix(col,max_float3(to_float3_s(0.2f),swixyz(ncat)),ncat.a*0.9f);
   }
 }
 	return col;
@@ -352,7 +366,7 @@ __DEVICE__ float3 move(float3 dir, float iTime) {
 	float3 adv=path(t+0.7f);
 	//float hd=de(adv,iTime); // unused
 	float3 advec=normalize(adv-go);
-	float an=adv.x-go.x; an*=min(1.0f,abs(adv.z-go.z))*sign(adv.z-go.z)*0.7f;
+	float an=adv.x-go.x; an*=min(1.0f,_fabs(adv.z-go.z))*sign(adv.z-go.z)*0.7f;
 	lswixy(dir,prod_float2_mat2(swixy(dir),to_mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an))));
     an=advec.y*1.7f;
 	lswiyz(dir,prod_float2_mat2(swiyz(dir),to_mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an))));
@@ -402,7 +416,7 @@ __KERNEL__ void ST_FractalLandKernel(
 	//if (iMouse.z<1.0f) mouse=to_float2(0.0f,-0.05f);
   float2 mouse=to_float2(0.0f,-0.05f);
 
-	float fov=0.9f-max(0.0f,0.7f-iTime*0.3f);
+	float fov=0.9f-_fmaxf(0.0f,0.7f-iTime*0.3f);
 	float3 dir=normalize(to_float3_aw(uv*fov,1.0f));
 	lswiyz(dir,prod_float2_mat2(dir.yz,rot(mouse.y)));
 	lswixz(dir,prod_float2_mat2(dir.xz,rot(mouse.x)));
@@ -411,7 +425,7 @@ __KERNEL__ void ST_FractalLandKernel(
 	float3 from=to_float3(-1.0f,0.7f,0.0f)+move(dir,-iTime);
 	float3 color=raymarch(from,dir,iTime,flags);
 	if (flags & FLAG_BORDER)
-	  color=mix(to_float3_s(0.0f),color,pow(max(0.0f,0.95f-length(oriuv*oriuv*oriuv*to_float2(1.05f,1.1f))),0.3f));
+	  color=mix(to_float3_s(0.0f),color,_powf(_fmaxf(0.0f,0.95f-length(oriuv*oriuv*oriuv*to_float2(1.05f,1.1f))),0.3f));
 	fragColor = to_float4_aw(color,1.0f);
 
 
@@ -464,13 +478,14 @@ function Create()
     IC_NoLabel = true,
   })
 
-  InNyan = self:AddInput("NYAN", "Nyan", {
+  InNyan = self:AddInput("NYAN (not implemented yet)", "Nyan", {
     LINKID_DataType     = "Number",
     INPID_InputControl  = "CheckboxControl",
 	  INP_Integer         = true,
     INP_DoNotifyChanged = true,
-    INP_Default         = 1,
+    INP_Default         = 0,
     INP_External        = false,
+    INP_Disabled = true,
     IC_NoLabel = true,
   })
 
