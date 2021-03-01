@@ -77,7 +77,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
   - [RayCastSphere](PlanetShader/RayCastSphere.md) ported by [JiPi](Profiles/JiPi.md)
 - Recursiv
-  - [Spilled](RecurssivShader/Spilled.md) ported by [JiPi](Profiles/JiPi.md)
+  - [Spilled](RecursivShader/Spilled.md) ported by [JiPi](Profiles/JiPi.md)
 - Tunnel
   - [Try Not To Hit The Walls](TunnelShader/TNTHTW.md) ported by [JiPi](Profiles/JiPi.md)
   - [Velocibox.fuse](TunnelShader/Velocibox.md) ported by [nmbr73](Profiles/nmbr73.md)
