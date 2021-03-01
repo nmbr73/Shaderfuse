@@ -78,6 +78,10 @@ FuRegisterClass(
 ST_FractalLandParams =
 [[
   float freq;
+  bool  showonlyedges;
+  bool  nyan;
+  bool  waves;
+  bool  border;
   int   width;
   int   height;
   float iTime;
@@ -98,22 +102,58 @@ ST_FractalLandKernel =
 
   typedef float2x2 mat2;
 
+  __DEVICE__ inline mat2    to_mat2( float  a, float  b, float c, float d) { return mat2(a,b,c,d);       }
   __DEVICE__ inline float2  prod_float2_mat2( float2 v, mat2   m )  { return v*m; }
+
+  #define swixy(V) (V).xy
+  #define swiyx(V) (V).yx
+  #define swixz(V) (V).xz
+  #define swiyz(V) (V).yz
+  #define swixyz(V) (V).xyz
+  #define swixxy(V) (V).xxy
+  #define swixyx(V) (V).xyx
+  #define swiyxx(V) (V).yxx
+
+  #define lswixy(L,R) (L).xy = (R)
+  #define lswiyx(L,R) (L).yx = (R)
+  #define lswiyz(L,R) (L).yz = (R)
+  #define lswixz(L,R) (L).xz = (R)
+  #define lswixyz(L,R) (L).xyz = (R)
 
 #else
 
   typedef struct { float2 r0; float2 r1; } mat2;
 
-  __DEVICE__ inline float2 prod_float2_mat2( float2 v, mat2 m ) { float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t; }
+  __DEVICE__ inline mat2    to_mat2( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+  __DEVICE__ inline float2  prod_float2_mat2( float2 v, mat2 m ) { float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t; }
+
+  #define swixy(V) to_float2((V).x,(V).y)
+  #define swiyx(V) to_float2((V).y,(V).x)
+  #define swixz(V) to_float2((V).x,(V).z)
+  #define swiyz(V) to_float2((V).y,(V).z)
+  #define swixyz(V) to_float3((V).x,(V).y,(V).z)
+  #define swixxy(V) to_float3((V).x,(V).x,(V).y)
+  #define swixyx(V) to_float3((V).x,(V).y,(V).x)
+  #define swiyxx(V) to_float3((V).y,(V).x,(V).x)
+
+  #define lswixy(L,R) { float2 tmp = (R); (L).x=tmp.x; (L).y=tmp.y; }
+  #define lswiyx(L,R) { float2 tmp = (R); (L).y=tmp.x; (L).x=tmp.y; }
+  #define lswiyz(L,R) { float2 tmp = (R); (L).y=tmp.x; (L).z=tmp.y; }
+  #define lswixz(L,R) { float2 tmp = (R); (L).x=tmp.x; (L).z=tmp.y; }
+  #define lswixyz(L,R) { float3 tmp = (R); (L).x=tmp.x; (L).y=tmp.y; (L).z=tmp.z; }
 
 #endif
 
-inline float radians(float degrees) { return M_PI * degrees / 180; }
+inline float _radiansf(float degrees) { return M_PI * degrees / 180.0f; }
 
 // "Fractal Cartoon" - former "DE edge detection" by Kali
 // There are no lights and no AO, only color by normals and dark edges.
 // update: Nyan Cat cameo, thanks to code from mu6k: https://www.shadertoy.com/view/4dXGWH
 
+#define FLAG_SHOWONLYEDGES  1
+#define FLAG_NYAN           2
+#define FLAG_WAVES          4
+#define FLAG_BORDER         8
 
 //#define SHOWONLYEDGES
 #define NYAN
@@ -137,7 +177,7 @@ inline float radians(float degrees) { return M_PI * degrees / 180; }
 
 // 2D rotation function
 __DEVICE__ mat2 rot(float a) {
-	return mat2(_cosf(a),_sinf(a),-_sinf(a),_cosf(a));
+	return to_mat2(_cosf(a),_sinf(a),-_sinf(a),_cosf(a));
 }
 
 // "Amazing Surface" fractal
@@ -145,16 +185,16 @@ __DEVICE__ float4 formula(float4 p) {
 
   // p.xz = abs(p.xz+1.0f)-abs(p.xz-1.0f)-p.xz;
   // p.y-=0.25f;
-  // p.xy*=rot(radians(35.0f));
+  // p.xy*=rot(_radiansf(35.0f));
 
   // p=p*2./clamp(dot(p.xyz,p.xyz),0.2f,1.0f);
   // return p;
 
-  p.xz = abs(p.xz+1.0f)-abs(p.xz-1.0f)-p.xz;
+  p.xz = abs(swixz(p)+1.0f)-abs(swixz(p)-1.0f)-swixz(p);
   p.y-=0.25f;
-  p.xy = prod_float2_mat2(p.xy,rot(radians(35.0f)));
+  p.xy = prod_float2_mat2(swixy(p),rot(_radiansf(35.0f)));
 
-  p=p*2./clamp(dot(p.xyz,p.xyz),0.2f,1.0f);
+  p=p*2./clamp(dot(swixyz(p),swixyz(p)),0.2f,1.0f);
   return p;
 }
 
@@ -168,7 +208,7 @@ __DEVICE__ float de(float3 pos, float iTime) {
 	tpos.z=abs(3.0f-_fmod(tpos.z,6.0f));
 	float4 p=to_float4_aw(tpos,1.0f);
 	for (int i=0; i<4; i++) {p=formula(p);}
-	float fr=(length(max(to_float2_s(0.0f),p.yz-1.5f))-1.0f)/p.w;
+	float fr=(length(max(to_float2_s(0.0f),swiyz(p)-1.5f))-1.0f)/p.w;
 	float ro=max(abs(pos.x+1.0f)-0.3f,pos.y-0.35f);
 		  ro=max(ro,-max(abs(pos.x+1.0f)-.1,pos.y-0.5f));
 	pos.z=abs(0.25f-_fmod(pos.z,0.5f));
@@ -193,9 +233,9 @@ __DEVICE__ float3 normal(float3 p, float iTime, float det, thread float* edge) {
 
   float3 e = to_float3(0.0f,det*5.0f,0.0f);
 
-	float d1=de(p-e.yxx,iTime),d2=de(p+e.yxx,iTime);
-	float d3=de(p-e.xyx,iTime),d4=de(p+e.xyx,iTime);
-	float d5=de(p-e.xxy,iTime),d6=de(p+e.xxy,iTime);
+	float d1=de(p-swiyxx(e),iTime),d2=de(p+swiyxx(e),iTime);
+	float d3=de(p-swixyx(e),iTime),d4=de(p+swixyx(e),iTime);
+	float d5=de(p-swixxy(e),iTime),d6=de(p+swixxy(e),iTime);
 	float d=de(p,iTime);
 	*edge = abs(d-0.5f*(d2+d1))+abs(d-0.5f*(d4+d3))+abs(d-0.5f*(d6+d5));//edge finder
 	*edge = min(1.0f,pow(*edge,0.55f)*15.0f);
@@ -224,7 +264,7 @@ __DEVICE__ float4 rainbow(float2 p, float iTime)
 	if (abs(p.y-1.0f)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
 		c=to_float4(0.0f,0.0f,0.0f,0.0f);
 	c.a*=0.8f-min(0.8f,abs(p.x*0.08f));
-	c.xyz=mix(c.xyz,to_float3_s(length(c.xyz)),0.15f);
+	lswixyz(c,mix(swixyz(c),to_float3_s(length(swixyz(c))),0.15f));
 	return c;
 }
 
@@ -244,7 +284,7 @@ __DEVICE__ float4 nyan(float2 p, float iTime)
 
 // Raymarching and 2D graphics
 
-__DEVICE__ float3 raymarch(float3 from, float3 dir, float iTime)
+__DEVICE__ float3 raymarch(float3 from, float3 dir, float iTime, int flags)
 {
   float edge; // was global(!)
   float det=0.0f; // was global(!)
@@ -264,11 +304,12 @@ __DEVICE__ float3 raymarch(float3 from, float3 dir, float iTime)
 	float3 col=to_float3_s(0.0f);
 	p-=(det-d)*dir;
 	norm=normal(p,iTime,det,&edge);
-#ifdef SHOWONLYEDGES
-	col=1.0f-to_float3(edge); // show wireframe version
-#else
-	col=(1.0f-abs(norm))*max(0.0f,1.0f-edge*0.8f); // set normal as color with dark edges
-#endif
+
+  if (flags & FLAG_SHOWONLYEDGES)
+    col=1.0f-to_float3_s(edge); // show wireframe version
+  else
+    col=(1.0f-abs(norm))*max(0.0f,1.0f-edge*0.8f); // set normal as color with dark edges
+
 	totdist=clamp(totdist,0.0f,26.0f);
 	dir.y-=0.02f;
 	//float sunsize=7.0f-max(0.0f,texture(iChannel0,to_float2(0.6f,0.2f)).x)*5.0f; // responsive sun size
@@ -288,19 +329,19 @@ __DEVICE__ float3 raymarch(float3 from, float3 dir, float iTime)
 	if (totdist>25.0f) col=backg; // hit background
 	col=pow(col,to_float3_s(GAMMA))*BRIGHTNESS;
 	col=mix(to_float3_s(length(col)),col,SATURATION);
-#ifdef SHOWONLYEDGES
-	col=1.0f-to_float3(length(col));
-#else
+if (flags & FLAG_SHOWONLYEDGES)
+{	col=1.0f-to_float3_s(length(col));
+} else {
 	col*=to_float3(1.0f,0.9f,0.85f);
-#ifdef NYAN
-	dir.yx=prod_float2_mat2(dir.yx,rot(dir.x));
-	float2 ncatpos=(dir.xy+to_float2(-3.0f+_fmod(-t,6.0f),-0.27f));
-	float4 ncat=nyan(ncatpos*5.0f,iTime);
-	float4 rain=rainbow(ncatpos*10.0f+to_float2(0.8f,0.5f),iTime);
-	if (totdist>8.0f) col=mix(col,max(to_float3_s(0.2f),rain.xyz),rain.a*0.9f);
-	if (totdist>8.0f) col=mix(col,max(to_float3_s(0.2f),ncat.xyz),ncat.a*0.9f);
-#endif
-#endif
+  if (flags & FLAG_NYAN)
+	{ lswiyx(dir,prod_float2_mat2(swiyx(dir),rot(dir.x)));
+  	float2 ncatpos=(swixy(dir)+to_float2(-3.0f+_fmod(-t,6.0f),-0.27f));
+  	float4 ncat=nyan(ncatpos*5.0f,iTime);
+    float4 rain=rainbow(ncatpos*10.0f+to_float2(0.8f,0.5f),iTime);
+    if (totdist>8.0f) col=mix(col,max(to_float3_s(0.2f),swixyz(rain)),rain.a*0.9f);
+    if (totdist>8.0f) col=mix(col,max(to_float3_s(0.2f),swixyz(ncat)),ncat.a*0.9f);
+  }
+}
 	return col;
 }
 
@@ -312,13 +353,15 @@ __DEVICE__ float3 move(float3 dir, float iTime) {
 	//float hd=de(adv,iTime); // unused
 	float3 advec=normalize(adv-go);
 	float an=adv.x-go.x; an*=min(1.0f,abs(adv.z-go.z))*sign(adv.z-go.z)*0.7f;
-	dir.xy=prod_float2_mat2(dir.xy,mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an)));
+	lswixy(dir,prod_float2_mat2(swixy(dir),to_mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an))));
     an=advec.y*1.7f;
-	dir.yz=prod_float2_mat2(dir.yz,mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an)));
+	lswiyz(dir,prod_float2_mat2(swiyz(dir),to_mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an))));
 	an=_atan2f(advec.x,advec.z);
-	dir.xz=prod_float2_mat2(dir.xz,mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an)));
+	lswixz(dir,prod_float2_mat2(swixz(dir),to_mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an))));
 	return go;
 }
+
+
 
 //############################################################################
 
@@ -341,8 +384,18 @@ __KERNEL__ void ST_FractalLandKernel(
   float  iTime       = params->iTime * params->freq;
   float4 fragColor   = to_float4_s(0.0f);
 
+  int flags = 0;
+
+  if (params->showonlyedges )  flags |= FLAG_SHOWONLYEDGES;
+  if (params->nyan          )  flags |= FLAG_NYAN;
+  if (params->border        )  flags |= FLAG_BORDER;
+  if (params->waves         )  flags |= FLAG_WAVES;
+
+
+
+
   //##########################################################################
-	float2 uv = fragCoord.xy / iResolution.xy*2.0f-1.0f;
+	float2 uv = swixy(fragCoord) / swixy(iResolution)*2.0f-1.0f;
 	float2 oriuv=uv;
 	uv.y*=iResolution.y/iResolution.x;
 	//float2 mouse=(iMouse.xy/iResolution.xy-0.5f)*3.0f; // !!! @todo iMouse anklemmen
@@ -351,15 +404,14 @@ __KERNEL__ void ST_FractalLandKernel(
 
 	float fov=0.9f-max(0.0f,0.7f-iTime*0.3f);
 	float3 dir=normalize(to_float3_aw(uv*fov,1.0f));
-	dir.yz=prod_float2_mat2(dir.yz,rot(mouse.y));
-	dir.xz=prod_float2_mat2(dir.xz,rot(mouse.x));
+	lswiyz(dir,prod_float2_mat2(dir.yz,rot(mouse.y)));
+	lswixz(dir,prod_float2_mat2(dir.xz,rot(mouse.x)));
 
 	//float3 from=origin+move(dir,iTime);
 	float3 from=to_float3(-1.0f,0.7f,0.0f)+move(dir,-iTime);
-	float3 color=raymarch(from,dir,iTime);
-	#ifdef BORDER
-	color=mix(to_float3_s(0.0f),color,pow(max(0.0f,0.95f-length(oriuv*oriuv*oriuv*to_float2(1.05f,1.1f))),0.3f));
-	#endif
+	float3 color=raymarch(from,dir,iTime,flags);
+	if (flags & FLAG_BORDER)
+	  color=mix(to_float3_s(0.0f),color,pow(max(0.0f,0.95f-length(oriuv*oriuv*oriuv*to_float2(1.05f,1.1f))),0.3f));
 	fragColor = to_float4_aw(color,1.0f);
 
 
@@ -402,7 +454,46 @@ function Create()
   })
 
 
-  ------ Information
+  InShowonlyedges = self:AddInput("SHOWONLYEDGES", "Showonlyedges", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+    IC_NoLabel = true,
+  })
+
+  InNyan = self:AddInput("NYAN", "Nyan", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    INP_External        = false,
+    IC_NoLabel = true,
+  })
+
+  InWaves = self:AddInput("WAVES", "Waves", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    INP_External        = false,
+    IC_NoLabel = true,
+  })
+
+  InBorder = self:AddInput("BORDER", "Border", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    INP_External        = false,
+    IC_NoLabel = true,
+  })
+
 
   ------ Information
 
@@ -497,6 +588,10 @@ function Process(req)
 
     if not pcall(function ()  -- necessary to avoid memory leakage
         params.freq         = InFreq:GetValue(req).Value
+        params.showonlyedges= InShowonlyedges:GetValue(req).Value
+        params.nyan         = InNyan:GetValue(req).Value
+        params.waves        = InWaves:GetValue(req).Value
+        params.border       = InBorder:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
@@ -505,6 +600,10 @@ function Process(req)
     end) then
         params              = node:GetParamBlock(ST_FractalLandParams)
         params.freq         = InFreq:GetValue(req).Value
+        params.showonlyedges= InShowonlyedges:GetValue(req).Value
+        params.nyan         = InNyan:GetValue(req).Value
+        params.waves        = InWaves:GetValue(req).Value
+        params.border       = InBorder:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
