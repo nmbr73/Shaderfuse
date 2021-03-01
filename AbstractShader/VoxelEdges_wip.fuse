@@ -24,27 +24,6 @@
     *                                      *    | | | | | | | | | |_) | |./ /  .___/ /
     ****************************************    |_| |_|_| |_| |_|_.__/|_|\_/   \____/
 
-
-    Okay, diesen Shader habe ich mir als Spielwiese ausgesucht, um mich mal
-    an einer nicht ganz so einfach Konvertierung zu versuchen - Hilfestellungen
-    zu den verschiedenen Herausforderungen gerne per Chat, aber ansonsten bitte
-    nicht "einfach mal schnell fertig machen" ... zum Ueben lasst mir bitte den
-    Schmerz :-D
-
-    Weitestgehen erledigt:
-
-    - syntaktisch korrekt für Metal
-    - syntaktisch korrekt für OpenCL
-
-    Die nächsten Herausforderungen:
-
-    - Umgang mit globalen Variablen
-    - Umsetzung von texture, und textureLod (Stichwort: _tex2DVecN)
-    - Irgendwas einfallen lassen, damit man bei map() vielleicht nicht
-      die ganzen Parameter durchschleifen muss
-    - Gucken, ob und wie man die Vektoren als "const&" übergeben kann
-      und ob das sinnvoll ist
-
 */--]]--
 
 
@@ -133,11 +112,13 @@ ST_VoxelEdgesKernel =
 
 #ifdef DEVICE_IS_METAL
 
-    typedef texture2d<float,access::sample> sampler2D;
-    __DEVICE__ inline float2 sin2f(float2 x) { return sin(x); }
-    __DEVICE__ inline float  fract1f(float  f) {return fract(f); }
-    __DEVICE__ inline float3 fract3f(float3 v) {return fract(v); }
-    __DEVICE__ inline float3 abs3f(float3 v) { return abs(v); }
+  #define swiyx(V) (V).yx
+
+  typedef texture2d<float,access::sample> sampler2D;
+  __DEVICE__ inline float2 sin2f(float2 x) { return sin(x); }
+  __DEVICE__ inline float  fract1f(float  f) {return fract(f); }
+  __DEVICE__ inline float3 fract3f(float3 v) {return fract(v); }
+  __DEVICE__ inline float3 abs3f(float3 v) { return abs(v); }
 
   typedef float3x3 mat3;
 
@@ -145,12 +126,13 @@ ST_VoxelEdgesKernel =
   __DEVICE__ inline float3 mult_mat3_float3( mat3 m, float3 v) { return m*v; }
 
 #else
+  #define swiyx(V) to_float2((V).y,(V).x)
 
-    #define sampler2D __TEXTURE2D__
-    __DEVICE__ float2 sin2f(float2 a) {float2 t; t.x = _sinf(a.x); t.y = _sinf(a.y); return t;}
-    __DEVICE__ float  fract1f(float f){return f - _floor(f);} // In Cuda the fract function is missing
-    __DEVICE__ float3 fract3f(float3 v){return make_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z));}
-    __DEVICE__ float3 abs3f(float3 v) {return (to_float3(_fabs(v.x), _fabs(v.y),_fabs(v.z)));}
+  #define sampler2D __TEXTURE2D__
+  __DEVICE__ float2 sin2f(float2 a) {float2 t; t.x = _sinf(a.x); t.y = _sinf(a.y); return t;}
+  __DEVICE__ float  fract1f(float f){return f - _floor(f);} // In Cuda the fract function is missing
+  __DEVICE__ float3 fract3f(float3 v){return make_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z));}
+  __DEVICE__ float3 abs3f(float3 v) {return (to_float3(_fabs(v.x), _fabs(v.y),_fabs(v.z)));}
 
 
   typedef struct
@@ -180,33 +162,7 @@ ST_VoxelEdgesKernel =
   }
 
 
-
 #endif
-
-
-// gvec4 textureLod(	gsampler2D sampler, vec2 P, float lod);
-// ... performs a texture lookup at coordinate P from the texture bound to sampler with an explicit level-of-detail as specified in lod.
-//
-// If you want to compute the mipmap LOD parameter entirely on your own (instead of biasing the pre-computed LOD), you may use this function:
-
-//  gvec textureLod(gsampler sampler​, vec texCoord​, float lod​);
-// This will sample the texture at the mipmap LOD lod​. 0 means the base level (as set by the appropriate texture parameter). Sampler types that forbid mipmaps (rectangle, buffer, etc), multisample samplers, and shadow cubemap array samplers cannot be used with texture LOD functions.
-
-// Mipmap filtering can still be used by selecting fractional levels. A level of 0.5 would be 50% of mipmap 0 and 50% of mipmap 1.
-
-// Note that gradients when using Lod functions (see textureGrad below) are effectively zero. So anisotropic filtering is useless when using this function.
-
-// This function does not require implicit derivatives, since it samples explicitly from the given mipmap level(s).
-
-__DEVICE__ float4 textureLod(__TEXTURE2D__ a, float2 b, float c) { return to_float4(0.5f,0.1f,0.0f,0.0f); }
-
-
-// gvec4 texture(	gsampler2D sampler, vec2 P,[float bias]);
-// ... samples texels from the texture bound to sampler at texture coordinate P. An optional bias, specified in bias is included in the
-// level-of-detail computation that is used to choose mipmap(s) from which to sample.
-
-__DEVICE__ float4 texture(sampler2D a, float2 b) { return to_float4(0.0f,0.0f,0.0f,0.0f); }
-
 
 
 //############################################################################
@@ -219,17 +175,19 @@ __DEVICE__ float noise( float3 x , __TEXTURE2D__ iChannel0)
   f = f*f*(3.0f-2.0f*f);
 
   float2 uv = (p.xy+to_float2(37.0f,17.0f)*p.z) + f.xy;
-  float2 rg = textureLod( iChannel0, (uv+0.5f)/256.0f, 0.0f ).yx;
+  // float2 rg = swiyx(textureLod( iChannel0, (uv+0.5f)/256.0f, 0.0f ));
+  float2 rg = swiyx(_tex2DVecN( iChannel0, (uv.x+0.5)/256.0, (uv.y+0.5)/256.0, 15) );
   return mix( rg.x, rg.y, f.z );
 }
 
 __DEVICE__ float4 texcube( sampler2D sam, float3 p, float3 n )
 {
-  float3 m = _fabs( n );
-  float4 x = texture( sam, p.yz );
-  float4 y = texture( sam, p.zx );
-  float4 z = texture( sam, p.xy );
-  return x*m.x + y*m.y + z*m.z;
+  // float3 m = _fabs( n );
+  // float4 x = texture( sam, p.yz );
+  // float4 y = texture( sam, p.zx );
+  // float4 z = texture( sam, p.xy );
+  // return x*m.x + y*m.y + z*m.z;
+  return to_float4_s(0.0f);
 }
 
 
@@ -268,18 +226,18 @@ __DEVICE__ float map(float3 c, float iTime, __TEXTURE2D__ iChannel0 , float3 gro
 }
 
 
-    // >!!!!!!!!!!!!!!!!!!
-    //
-    // Problem with reference parameters for Metal had been raised here ...
-    //
-    // https://www.steakunderwater.com/wesuckless/viewtopic.php?t=4524
-    // http://www.quabr.com/62546452/pointer-type-must-have-explicit-address-space-qualifier
-    //
-    // ... don't know if a solution was found, but for variables in function
-    // scope it could be an approach to make them thread local - at least it does
-    // compile. For global variables (if there is such a thing) it would be
-    // the 'device' qualifier instead of 'thread' I guess.
-    //
+  // >!!!!!!!!!!!!!!!!!!
+  //
+  // Problem with reference parameters for Metal had been raised here ...
+  //
+  // https://www.steakunderwater.com/wesuckless/viewtopic.php?t=4524
+  // http://www.quabr.com/62546452/pointer-type-must-have-explicit-address-space-qualifier
+  //
+  // ... don't know if a solution was found, but for variables in function
+  // scope it could be an approach to make them thread local - at least it does
+  // compile. For global variables (if there is such a thing) it would be
+  // the 'device' qualifier instead of 'thread' I guess.
+  //
 	// <!!!!!!!!!!!!!!!!!!
 
 #ifdef DEVICE_IS_METAL
@@ -509,7 +467,7 @@ __KERNEL__ void ST_VoxelEdgesKernel(
   float2 iResolution = to_float2(params->width, params->height);
   float  iTime       = params->iTime * params->freq;
   float4 fragColor   = to_float4_s(0.0f);
-  float4 iMouse = to_float4_s(0.0f);
+  float4 iMouse      = to_float4(1.0f,1.0f,1.0f,1.0f);
 
   //##########################################################################
 
@@ -517,8 +475,9 @@ __KERNEL__ void ST_VoxelEdgesKernel(
   float2 p = -1.0f + 2.0f*q;
   p.x *= iResolution.x/ iResolution.y;
 
-  float2 mo = iMouse.xy / iResolution.xy;
-  if( iMouse.w<=0.00001f ) mo=to_float2_s(0.0f);
+//  float2 mo = iMouse.xy / iResolution.xy;
+//  if( iMouse.w<=0.00001f ) mo=to_float2_s(0.0f);
+  float2 mo = to_float2(0.0f,0.0f);
 
 	float time = 2.0f*iTime + 50.0f*mo.x;
     // camera
@@ -588,7 +547,7 @@ function Create()
    InFreq = self:AddInput("Frequency", "Frequency", {
     LINKID_DataType    = "Number",
     INPID_InputControl = "SliderControl",
-    INP_Default        = 2.0,
+    INP_Default        = 1.0,
     INP_MinScale 	     = 0.0,
     INP_MaxScale 	     = 5.0,
   })

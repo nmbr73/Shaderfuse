@@ -86,6 +86,7 @@ Work in Progress
 ----------------
 
 - [Voxel Edges](AbstractShader/VoxelEdges.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
+- [FractalLand](MiscShader/FractalLand.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
 
 
 Overview
@@ -114,12 +115,10 @@ Overview
 [![WildKifs4D](MiscShader/WildKifs4D_320x180.png)](MiscShader/WildKifs4D.md)
 [![Spilled](RecursivShader/Spilled_320x180.png)](RecurssivShader/Spilled.md)
 
-Work in Progress (nbmr73)
--------------------------
+Work in Progress
+----------------
 
-Please do not touch - I'm pretty close (I guess) and the challenges left are such I'd like to solve myself.
-
-[![AbstractShader/VoxelEdges.fuse](AbstractShader/VoxelEdges_320x180.png)](AbstractShader/VoxelEdges.md)
+### JiPi
 
 Coming Soon
 
@@ -128,3 +127,9 @@ Coming Soon
 Coming later
 
 [![Working](Working/Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
+
+### nmbr73
+
+[![AbstractShader/VoxelEdges.fuse](AbstractShader/VoxelEdges_320x180.png)](AbstractShader/VoxelEdges.md)
+
+[![MiscShader/FractalLand.fuse](MiscShader/FractalLand_320x180.png)](MiscShader/FractalLand.md)
