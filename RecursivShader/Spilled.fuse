@@ -1,0 +1,1075 @@
+--[[--
+Spilled
+
+Based on https://www.shadertoy.com/view/MsGSRd Erstellt von flockaroo am 2016-06-15
+
+
+V0.1 JiiPii Recursiv BufferA Shadertoy
+V0.2 JiiPii Corrected mat2-Function and added reflect-Function to run under OpenCL
+V0.3 Tida added some modifiers, change code for learning, added blending
+V0.4 Cleanup - added Reset - added Noise  
+  
+--]] --
+
+-- /* FUSE_COFIG::BEGIN
+local FC_CATEGORY  = "RecursivShader"
+local FC_SHORTCUT  = false        -- use shortcut (e.g. DTD for DancyTreeDoodle) if exists; otherwise the shadertoy ID is used
+local FC_DEVEVELOP = true         -- set to 'true' to display reload/edit buttons in inspector
+local FC_INFOBTN   = -1           -- show button to open the project page -1 on top, 0 hide, 1 on bottom
+local FC_PREFIX    = "ST"         -- use 'ST' in the repo; to be replaced by 'BETA' for user downlaods and by "" if it goes officially into the reactor
+local FC_SCPREFIX  = FC_PREFIX    -- prefix for shortcuts
+local FC_SUBMENU   = "Shadertoys" -- you may want to prepend e.g. "Fuses\\" to not have the Shadertoys on your 'Add tool...' toplevel menu
+-- FUSE_COFIG::END */
+
+local shadertoy_name      = "Spilled"
+local shadertoy_author    = "flockaroo"
+local shadertoy_id        = "MsGSRd"
+local shadertoy_license   = ""
+local dctlfuse_name       = "Spilled"
+local dctlfuse_author     = "JiPi"
+local dctlfuse_authorurl  = "https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg"
+local dctlfuse_infourl    = "https://github.com/nmbr73/Shadertoys"
+local dctlfuse_versionNo   = 4
+local dctlfuse_versionDate = "01 Mrz 2021"
+
+local _version            = dctlfuse_versionNo/10
+local version             = "<center>"..dctlfuse_name.." V".._version.." - "..dctlfuse_versionDate.."</center>"
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass( ((FC_PREFIX ~= "" and FC_PREFIX.."_" or "") ..dctlfuse_name), CT_SourceTool, {
+  REGS_Category          = FC_SUBMENU .. (FC_CATEGORY~="" and "\\"..FC_CATEGORY or ""),
+  REGS_OpIconString      = (FC_SCPREFIX ~= "" and FC_SCPREFIX.."-" or "")..(FC_SHORTCUT and dctlfuse_shortcut and dctlfuse_shortcut~="" and dctlfuse_shortcut or shadertoy_id),
+  REGS_OpDescription     = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..")",
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+  REG_Fuse_NoEdit        = not(FC_DEVEVELOP),
+  REG_Fuse_NoReload      = not(FC_DEVEVELOP),
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  REGS_Company           = dctlfuse_author,
+  REGS_URL               = dctlfuse_authorurl,
+  REG_Version            = dctlfuse_versionNo,
+  })
+
+-----------------------------------
+
+
+GlobalParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float coordscor[2];
+  float scale;
+  float freq;
+  int width;
+  int height;
+  float itime;
+  int iframe;
+  bool startpicture;	
+  bool noise;
+  bool reset;
+	
+	float Structure;
+	float Reflection;
+	float SampleSize;
+	float X_Shift;
+	float Y_Shift;		
+	
+	float Blend01;
+	float Blend02;
+	float Blend03;
+	float Brightness;
+	float Drift;		
+	
+	float Alpha_Show;
+	float Alpha_Apply;
+	float Alpha_Red;
+	float Alpha_Green;
+	float Alpha_Blue;
+
+	float Alpha_Low;
+	float Alpha_High;
+	float Alpha_Contrast;
+	float Alpha_Pivot;	
+	
+]]
+
+----------------BufferA--------------- 
+-- source of kernel
+BufferAKernel =
+    [[
+//-----------------------
+//-------- mat2 ---------
+//-----------------------
+ typedef struct  
+  {  
+  float2 r0, r1;  
+  } mat2;  
+
+ __DEVICE__ inline mat2 make_mat2( float2 A, float2 B)  
+  {  
+  mat2 C;  
+  C.r0 = A;  
+  C.r1 = B;  
+  return C;  
+  } 
+  
+ __DEVICE__ inline mat2 make_mat2_2( float A, float B, float C, float D)  
+  {  
+  mat2 E;  
+  E.r0 = to_float2(A,B);  
+  E.r1 = to_float2(C,D);  
+  return E;  
+  } 
+ 
+  __DEVICE__ inline float2 mat2_multi_f2( mat2 B, float2 A)  
+  {  
+  float2 C;  
+  C.x = A.x * B.r0.x + A.y * B.r0.y;  
+  C.y = A.x * B.r1.x + A.y * B.r1.y;  
+  return C;  
+  }
+  
+  
+__DEVICE__ float fractf(float A){return A - _floor(A);}
+
+
+// created by florian berger (flockaroo) - 2016
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0f Unported License.
+
+// single pass CFD
+// ---------------
+// this is some "computational flockarooid dynamics" ;)
+// the self-advection is done purely rotational on all scales. 
+// therefore i dont need any divergence-free velocity field. 
+// with stochastic sampling i get the proper "mean values" of rotations 
+// over time for higher order scales.
+//
+// try changing "RotNum" for different accuracies of rotation calculation
+// for even RotNum uncomment the line #define SUPPORT_EVEN_ROTNUM
+
+
+__DEVICE__ float randS(float2 uv)
+{
+    //return fractf(_sinf(dot(x,to_float2(52.127f, 61.2871f))) * 521.582f); //hash21
+    return fractf(_sinf(dot(uv, to_float2(12.9898, 78.233))) * 43758.5453);
+}
+
+
+__DEVICE__ float getRot(float2 pos, float2 b, float2 Res, __TEXTURE2D__ iChannel0, float ang, float RotNum)
+{
+    mat2 m = make_mat2_2(cos(ang),sin(ang),-sin(ang),cos(ang));
+
+    float2 p = b;
+    float rot=0.0f;
+    for(int i=0.0f;i<5.0f;i++)
+    {
+        rot+=dot(to_float2(_tex2DVecN(iChannel0,fractf((pos.x+p.x)/Res.x),fractf((pos.y+p.y)/Res.y),15).x,_tex2DVecN(iChannel0,fractf((pos.x+p.x)/Res.x),fractf((pos.y+p.y)/Res.y),15).y)-to_float2_s(0.5f),to_float2(p.y,p.x)*to_float2(1,-1));
+        p = mat2_multi_f2(m , p);
+    }
+    return rot/(float)(RotNum)/dot(b,b);
+} 
+
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+  float C = cos(angle);
+  float S = sin(angle);
+   
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+   
+return uv;
+} 
+
+
+//############################################################################################################################
+__KERNEL__ void BufferAKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height) 
+  {
+  
+    //-----------------------
+     float2 fragCoord = to_float2(x, y); 
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime*params->freq;
+     float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+    float2 Res = iResolution;
+		
+	float RotNum = 5.0f;
+	float ang  = (2.0f*3.1415926535f/(float)(RotNum));
+	float an = params->Drift*2.0f;
+
+    //mat2 m = make_mat2_2(_cosf(ang*an),_sinf(ang*an),-_sinf(ang*an),_cosf(ang*an));
+	mat2 m = make_mat2_2(cos(ang*an),sin(ang*an),-sin(ang*an),cos(ang*an));
+    //mat2 mh = make_mat2_2(cos(ang*0.5f),sin(ang*0.5f),-sin(ang*0.5f),cosf(ang*0.5f));
+  
+    float2 pos = to_float2(fragCoord.x+0.5f,fragCoord.y+0.5f);
+
+	float rnd = 0.0f;
+    if (params->noise) 
+          rnd = randS(to_float2((float)(params->iframe)/Res.x, 0.5/Res.y)); 
+	
+	//rnd = _tex2DVecN(iChannel3,(float)(params->iframe)/Res.x, 0.5/Res.y, 15).x - 0.5f; //Noisepattern
+	
+    
+    float2 b = to_float2(cos(ang*rnd),sin(ang*rnd));
+    float2 v=to_float2_s(0);
+    float bbMax=0.7f*Res.y; bbMax*=bbMax;
+    for(int j=0.0f;j<20.00f;j++)
+    {
+        if ( dot(b,b) > bbMax ) break;
+        float2 p = b;
+        for(int i=0;i<5;i++)
+        {
+           //float2 mhb = mat2_multi_f2(mh , b); //Even RotNums
+		   //v+=swiyx(p)*getRot(pos+p,-mhb); //Original
+
+		   v+= to_float2(p.y,p.x)*getRot(pos+p,b,Res*params->Structure*2.0f,iChannel0,ang, RotNum)*params->freq;
+           
+		   p = mat2_multi_f2(m , p);
+        }
+        b*=2.0f;
+    }
+    
+    fragColor=_tex2DVecN(iChannel0,fractf((pos.x+v.x*-1*2.0f*params->X_Shift*2.0f)/Res.x),fractf((pos.y+v.y*1*2.0f*params->Y_Shift*2.0f)/Res.y),15);
+        
+	// add a little "motor" the center
+    float2 scr=(fragCoord/Res)*2.0f-to_float2_s(1.0f);
+	fragColor += to_float4_aw(to_float3_aw((0.01f*2.0f*params->SampleSize*to_float2(scr.x,scr.y) / (dot(scr,scr)/0.1f+0.3f)),0.0f),0.0f);
+    
+		
+	if (params->Blend01 >0.0f)fragColor = _mix(fragColor,_tex2DVecN(iChannel1,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15),params->Blend01);   
+	if (params->Blend02 >0.0f) fragColor = _mix(fragColor,_tex2DVecN(iChannel2,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15),params->Blend02);   
+	if (params->Blend03 >0.0f)fragColor = _mix(fragColor,_tex2DVecN(iChannel3,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15),params->Blend03);   			
+
+		
+    if ((params->startpicture && params->iframe <= 4.0f) || (params->reset))
+		fragColor = _tex2DVecN(iChannel1,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15);		
+		
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+----------------Image--------------- 
+-- source of kernel
+ImageKernel =
+    [[
+__DEVICE__ float3 reflectf3(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+
+__DEVICE__ float getVal(float2 uv, __TEXTURE2D__ iChannel0)
+{
+    return length(to_float3(_tex2DVecN(iChannel0,uv.x,uv.y,15).x,_tex2DVecN(iChannel0,uv.x,uv.y,15).y,_tex2DVecN(iChannel0,uv.x,uv.y,15).z));
+}
+    
+__DEVICE__ float2 getGrad(float2 uv,float delta, __TEXTURE2D__ iChannel0)
+{
+    float2 d=to_float2(delta,0);
+    return to_float2(
+        getVal(uv+to_float2(d.x,d.y),iChannel0)-getVal(uv-to_float2(d.x,d.y),iChannel0),
+        getVal(uv+to_float2(d.y,d.x),iChannel0)-getVal(uv-to_float2(d.y,d.x),iChannel0)
+    )/delta;
+}
+	__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect) {
+		float C = _cosf(angle);
+		float S = _sinf(angle);
+		   
+		uv -= center;
+		float x = uv.x;
+		uv.x = (x*aspect * C - uv.y * S);
+		uv.y = (x*aspect * S + uv.y * C);
+		uv += center;
+		return uv;
+	} 
+	
+	__DEVICE__ inline float pow1f(float x, float y) {
+		float ret = _powf(x,y);
+		if (isnan(ret)) {
+			ret = 0.0001f;
+		}
+		return ret;
+	}	
+
+	__DEVICE__ float contrast_curve( float ch_low, float ch_high, float ch_in, float contrast, float pivot) {
+		float ch_out = 0.0f;		
+		float q = 2.0f / (1.0f - contrast) - 1.0f;
+		if (ch_in < 0.0f) {ch_out = ch_low;}
+		if (ch_in > 1.0f) {ch_out = ch_high;}
+			
+		if (ch_in <= pivot && ch_in >= 0.0f) {	ch_out =         pow1f(ch_in    , q) / pow1f(pivot        , q - 1.0f)  * (ch_high - ch_low) + ch_low; }		
+		if (ch_in >  pivot && ch_in <= 1.0f) {	ch_out = (1.0f - pow1f(1.0f - ch_in , q) / pow1f(1.0f - pivot , q - 1.0f)) * (ch_high - ch_low) + ch_low; }
+			
+		return ch_out;
+	}		
+	
+//************************************************************************
+__KERNEL__ void ImageKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  if (x < params->width && y < params->height) 
+  {
+  
+    //-----------------------
+    float2 fragCoord = to_float2(x, y); 
+    float2 iResolution = to_float2(params->width, params->height);
+    float ratio = (float)params->width/(float)params->height;
+    float itime=params->itime*params->freq;
+    float4 fragColor = to_float4_s(0.0f);
+    //-----------------------
+	float2 uv = (fragCoord - 0.5f*iResolution)/iResolution.y;		
+	//uv = fragCoord / iResolution;		
+	uv -=  to_float2( (params->center[0]-0.5f)*ratio, (params->center[1]-0.5f)); 
+	uv = uv / (float)params->scale;
+	float2 Pivot = to_float2(((params->pivot[0]-0.5f)*ratio),(params->pivot[1]-0.5f));
+	uv = spin(uv, Pivot, params->angle, 1.0f);	
+
+	uv = to_float2(uv.x/ratio+0.5f,uv.y+0.5f);
+
+    float3 n = to_float3_aw(getGrad(uv,1.0f/iResolution.y,iChannel0),150.0f);
+    n=normalize(n);
+    fragColor=to_float4_aw(n,1);
+    float3 light = normalize(to_float3(1,1,2));
+    float diff=_clampf(dot(n,light),0.5f,1.0f)*params->Brightness*2.0f*0.62f/0.5f;
+    float spec=_clampf(dot(reflectf3(light,n),to_float3(0,0,-1)),0.0f,1.0f);
+    spec=_powf(spec,36.0f)*2.5f*params->Reflection*2.0f;
+      //spec=0.0f;
+	fragColor = _tex2DVecN(iChannel0,uv.x,uv.y,15)*to_float4_s(diff)+to_float4_s(spec);
+	fragColor.w = 1.0f; 
+	
+	
+	if (params->Blend01 >0.0f)fragColor = _mix(fragColor,_tex2DVecN(iChannel1,uv.x,uv.y,15),params->Blend01*params->Blend01);   
+	if (params->Blend02 >0.0f) fragColor = _mix(fragColor,_tex2DVecN(iChannel2,uv.x,uv.y,15),params->Blend02*params->Blend02);   
+	if (params->Blend03 >0.0f)fragColor = _mix(fragColor,_tex2DVecN(iChannel3,uv.x,uv.y,15),params->Blend03*params->Blend03);   	
+	
+	float luma;				
+	float alpha;	
+	luma = (fragColor.x * params->Alpha_Red + fragColor.y * params->Alpha_Green + fragColor.z * params->Alpha_Blue);		
+	alpha = contrast_curve(params->Alpha_Low , params->Alpha_High, luma, params->Alpha_Contrast , params->Alpha_Pivot);
+	if (params->Alpha_Apply) fragColor.w = alpha;					
+
+	if (params->Alpha_Show > 0.0f && params->Alpha_Apply) {
+		fragColor = to_float4(alpha,alpha,alpha,1.0f);
+	}	
+
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+
+Logo_On = true
+
+if (Logo_On) then
+	BrandLogo = [[
+	<center><a href="https://www.steakunderwater.com/wesuckless/viewtopic.php?f=45&t=4597"><img width="320" height="60" src='data:image/png;base64,
+	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
+	</center>'/></a>    
+	]]
+end
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+function Create()
+if (Logo_On) then
+  InLogo = self:AddInput(BrandLogo, "Label", {
+	LINKID_DataType = "Text",
+	INPID_InputControl = "LabelControl",
+	LBLC_MultiLine = true,
+	IC_NoLabel = true,
+	IC_NoReset = true,
+	INP_External = false,
+	INP_Passive = true,
+	IC_ControlPage = -1,
+	})
+end
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+	IC_Visible          = true,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "true", 
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+	IC_Visible          = true,
+    })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+	IC_Visible          = true,
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })    
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+	IC_Visible          = true,
+    })
+	
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true, 
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+	--IC_Visible          = false,
+  })
+	
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+	IC_Visible         = true,
+  })
+
+  
+  Reset = self:AddInput("Reset", "_Reset", {
+    INPID_InputControl  = "ButtonControl",
+	INP_DoNotifyChanged = true,
+    INP_External        = false,
+    IC_Visible          = true,
+    BTNCS_Execute       = "fusion.CacheManager:Purge()",
+    })    
+  InResetclick = self:AddInput("Resetclick", "Resetclick", {
+    LINKID_DataType     = "Number",
+	--INPID_InputControl = "SliderControl",
+    INPID_InputControl  = "CheckboxControl",
+	INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = false,
+    INP_External        = false,
+  })
+  
+  self:BeginControlNest("Parameter", "Parameter", true, {})
+  InStartpicture = self:AddInput("Startpicture (Image1)", "Startpicture", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = true,
+    INP_External        = false,
+  })
+
+  InNoise = self:AddInput("Noise", "Noise", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = true,
+    INP_External        = false,
+  })
+
+--------------------------------------------
+
+	InStructure = self:AddInput("Structure", "Structure", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})			
+	InDrift = self:AddInput("Drift", "Drift", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})			
+	
+	InX_Shift = self:AddInput("X_Shift", "X_Shift", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})			
+	InY_Shift = self:AddInput("Y_Shift", "Y_Shift", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})			
+	
+	InReflection = self:AddInput("Reflection", "Reflection", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})			
+	
+	InBrightness = self:AddInput("Brightness", "Brightness", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})		
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })	
+	
+	InBlend01 = self:AddInput("Blend01", "Blend01", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})			
+	
+	InBlend02 = self:AddInput("Blend02", "Blend02", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})			
+
+	InBlend03 = self:AddInput("Blend03", "Blend03", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+	})	
+
+	InSampleSize = self:AddInput("Sample Size", "SampleSize", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,		
+		INP_Integer = false,		
+	})			
+	
+
+  Sep1 = self:AddInput(string.rep("_", 100), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+	InAlpha_Apply = self:AddInput("Apply Alpha", "Alpha_Apply", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "CheckboxControl",
+		INP_Integer = false,
+		INP_Default = 0,
+		ICD_Width = 1,
+		INP_DoNotifyChanged = true,			
+		})	
+		
+	InAlpha_Red = self:AddInput("Channel", "Alpha_Red", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.2126,
+		IC_ControlGroup = 1,
+		IC_ControlID = 0,
+		})
+		
+	InAlpha_Green = self:AddInput("Alpha Green", "Alpha_Green", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.7152,
+		IC_ControlGroup = 1,
+		IC_ControlID = 1,
+		})
+		
+	InAlpha_Blue = self:AddInput("Alpha Blue", "Alpha_Blue", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.0722,
+		IC_ControlGroup = 1,
+		IC_ControlID = 2,
+		})	
+		
+	InAlpha_Low = self:AddInput("Low", "Alpha_Low", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "SliderControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.0,
+		})	
+		
+	InAlpha_High = self:AddInput("High", "Alpha_High", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "SliderControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 1.0,
+		})			
+		
+	InAlpha_Contrast = self:AddInput("Contrast", "Alpha_Contrast", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "SliderControl",
+		INP_MinScale = -0.95,
+		INP_MaxScale = 0.95,
+		INP_Default  = 0.0,
+		})	
+	InAlpha_Pivot = self:AddInput("Pivot", "Alpha_Pivot", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "SliderControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.5,
+		})			
+		
+	InAlpha_Show = self:AddInput("Show", "Alpha_Show", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "CheckboxControl",
+		INP_Integer = false,
+		INP_Default = 0,
+		ICD_Width = 1,
+		INP_DoNotifyChanged = true,			
+		})			
+
+
+  self:EndControlNest() 
+--------------------------------------------
+
+
+--------------------------------------------
+if (Logo_On) then
+   InLogoSw = self:AddInput("Logo", "LogoSw", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = true,
+    INP_External        = false,
+	INP_Passive         = true,
+  })
+end
+
+
+  
+  InShadertoyLabel = self:AddInput(
+    "<center>Shadertoy <a href=\"https://www.shadertoy.com/view/"..shadertoy_id.."\" style=\"color:white; text-decoration:none; \">"
+    ..shadertoy_name.."</a> by <a href=\"https://www.shadertoy.com/user/"..shadertoy_author
+    .."\" style=\"color:yellow; text-decoration:none; \">"..shadertoy_author.."</a></center>",
+    "ShadertoyLabel", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    IC_NoLabel         = true,
+    ICD_Width          = 1,
+  })
+
+  GithubButton = self:AddInput("Github","GithubButton", {
+	--LINKS_Name = "ScriptButton",
+	LINKID_DataType    = "Number",
+	INPID_InputControl = "ButtonControl",
+	INP_Integer        = false,
+	BTNCS_Execute      = [[
+					os.execute('start "" "https://nmbr73.github.io/Shadertoys/"')
+					]],
+	--ICS_ControlPage  = "Controls",
+	IC_NoLabel         = true,
+	})
+
+  InLabel = self:AddInput(version, "version", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+    ICD_Width          = 1,
+	IC_NoLabel         = true,
+  })
+
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+	LINK_Visible = false,
+    LINK_Main = 1,
+    INP_Required = false
+  })
+  
+  InImage2 = self:AddInput("Image1", "Image1", {
+    LINKID_DataType = "Image",
+    LINK_Main = 2,
+    INP_Required = false
+  })
+  InImage3 = self:AddInput("Image2", "Image2", {
+
+    LINKID_DataType = "Image",
+    LINK_Main = 3,
+    INP_Required = false
+  })
+  
+  InImage4 = self:AddInput("Image3", "Image3", {
+    LINKID_DataType = "Image",
+    LINK_Main = 4,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end 
+
+function NotifyChanged(inp, param, time)
+	if inp ~= nil and param ~= nil then
+	
+		if inp == InCenter then
+			-- the center moved, reposition the axis according to the current offset
+			nCenterX = param.X
+			nCenterY = param.Y
+	  
+			InPivot:SetAttrs({
+			PCD_OffsetX = nCenterX - 0.5,
+			PCD_OffsetY = nCenterY - 0.5,
+			})
+		   
+			InAngle:SetAttrs({
+			PCD_OffsetX = (nCenterX - 0.5)/100,
+			PCD_OffsetY = (nCenterY - 0.5)/100,
+		})
+		end
+		if inp == InWidgets then  
+		  if param.Value == 1.0 then
+			 InCenter:SetAttrs({ PC_Visible = false })
+			 InAngle:SetAttrs({ PC_Visible = false })
+			 InPivot:SetAttrs({ PC_Visible = false })
+			 InScale:SetAttrs({ PC_Visible = false })
+		  else
+			 InCenter:SetAttrs({ PC_Visible = true })
+			 InAngle:SetAttrs({ PC_Visible = true })
+			 InPivot:SetAttrs({ PC_Visible = true })
+			 InScale:SetAttrs({ PC_Visible = true })
+		  end
+		end
+
+	
+		if inp == InAlpha_Apply then
+			InAlpha_Red:SetAttrs({ IC_Visible = true, })	
+			InAlpha_Low:SetAttrs({ IC_Visible = true, })	
+			InAlpha_High:SetAttrs({ IC_Visible = true, })	
+			InAlpha_Contrast:SetAttrs({ IC_Visible = true, })	
+			InAlpha_Pivot:SetAttrs({ IC_Visible = true, })					
+			InAlpha_Show:SetAttrs({ IC_Visible = true, })				
+			
+			if param.Value == 0 then 				
+				InAlpha_Red:SetAttrs({ IC_Visible = false, })	
+				InAlpha_Low:SetAttrs({ IC_Visible = false, })	
+				InAlpha_High:SetAttrs({ IC_Visible = false, })	
+				InAlpha_Contrast:SetAttrs({ IC_Visible = false, })	
+				InAlpha_Pivot:SetAttrs({ IC_Visible = false, })		
+				InAlpha_Show:SetAttrs({ IC_Visible = false, })								
+			end
+		end
+	
+	    if inp == Reset then
+		   if param.Value == 1 then
+		      InResetclick:SetSource(Number(1),0,0)
+		   end	  
+		end
+	
+		if (Logo_On) then
+		  if inp == InLogoSw then  
+			if param.Value == 1 then
+			  InLogo:SetAttrs({IC_Visible = true})
+			else
+			  InLogo:SetAttrs({IC_Visible = false})
+			end
+		  end 
+		end
+	
+	end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+		IMG_DeferAlloc = false,
+        }
+		
+Image_Buff_Global = Image(ImgAttrs_Global)	
+
+--------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle  = -InAngle:GetValue(req).Value/360*3.1415*2
+    local scale  = InScale:GetValue(req).Value
+    local freq   = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+   
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+   
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+    
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    src1 = Image(imgattrs)
+    src1:Fill(p)
+
+	  if (InImage2:GetValue(req) ~= nil) then
+         src2 = InImage2:GetValue(req)
+      else
+         src2 = Image(imgattrs)
+         src2:Fill(p)
+      end
+      if (InImage3:GetValue(req) ~= nil) then
+         src3 = InImage3:GetValue(req)
+      else
+         src3 = Image(imgattrs)
+         src3:Fill(p)
+      end
+      if (InImage4:GetValue(req) ~= nil) then
+         src4 = InImage4:GetValue(req)
+      else
+         src4 = Image(imgattrs)
+         src4:Fill(p)
+      end  
+	  
+
+    local dstA = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+	local dstI = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+	if req:IsPreCalc() then
+		 --print("\n######################### Precalc ##############################\n")
+		 local out = Image({IMG_Like = dstI, IMG_NoData = true})
+		 OutImage:Set(req, out)
+		 return
+	end
+  
+    -------------------------- BufferA-Kernel----------------------------------------
+    nodeA = DVIPComputeNode(req, "BufferAKernel", BufferAKernel, "GlobalParams", GlobalParams)
+
+	local params = {}
+	if not pcall(function () 
+	
+		params.center = {center.X,center.Y}
+		params.scale = 1/scale
+		params.angle = angle
+		params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq = freq				
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime = req.Time / framerate				
+		params.iframe = req.Time
+		params.startpicture = InStartpicture:GetValue(req).Value	
+		params.noise = InNoise:GetValue(req).Value	
+		params.reset = InResetclick:GetValue(req).Value
+			
+		params.Blend01  	= InBlend01:GetValue(req).Value	
+		params.Blend02  	= InBlend02:GetValue(req).Value
+		params.Blend03  	= InBlend03:GetValue(req).Value
+		params.Brightness = InBrightness:GetValue(req).Value
+		params.Drift  		= InDrift:GetValue(req).Value
+			
+		params.Structure  = InStructure:GetValue(req).Value	
+		params.Reflection = InReflection:GetValue(req).Value
+		params.SampleSize = InSampleSize:GetValue(req).Value
+		params.X_Shift  	= InX_Shift:GetValue(req).Value
+		params.Y_Shift  	= InY_Shift:GetValue(req).Value		
+		
+		params.Alpha_Apply 	= InAlpha_Apply:GetValue(req).Value									
+		params.Alpha_Show 	= InAlpha_Show:GetValue(req).Value									
+		params.Alpha_Red 	= InAlpha_Red:GetValue(req).Value			
+		params.Alpha_Green 	= InAlpha_Green:GetValue(req).Value			
+		params.Alpha_Blue 	= InAlpha_Blue:GetValue(req).Value					
+		
+		params.Alpha_Low 	= InAlpha_Low:GetValue(req).Value											
+		params.Alpha_High 	= InAlpha_High:GetValue(req).Value											
+		params.Alpha_Contrast = InAlpha_Contrast:GetValue(req).Value											
+		params.Alpha_Pivot 	= InAlpha_Pivot:GetValue(req).Value	
+		
+		nodeA:SetParamBlock(params)
+    end) then
+
+		params = nodeA:GetParamBlock(GlobalParams)
+		
+		params.center = {center.X,center.Y}
+		params.scale = 1/scale
+		params.angle = angle
+		params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq = freq				
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime = req.Time / framerate				
+		params.iframe = req.Time
+		params.startpicture = InStartpicture:GetValue(req).Value	
+		params.noise = InNoise:GetValue(req).Value	
+		params.reset = InResetclick:GetValue(req).Value
+			
+		params.Blend01  	= InBlend01:GetValue(req).Value	
+		params.Blend02  	= InBlend02:GetValue(req).Value
+		params.Blend03  	= InBlend03:GetValue(req).Value
+		params.Brightness   = InBrightness:GetValue(req).Value
+		params.Drift  		= InDrift:GetValue(req).Value
+			
+		params.Structure    = InStructure:GetValue(req).Value	
+		params.Reflection   = InReflection:GetValue(req).Value
+		params.SampleSize   = InSampleSize:GetValue(req).Value
+		params.X_Shift  	= InX_Shift:GetValue(req).Value
+		params.Y_Shift  	= InY_Shift:GetValue(req).Value		
+		
+		params.Alpha_Apply 	= InAlpha_Apply:GetValue(req).Value									
+		params.Alpha_Show 	= InAlpha_Show:GetValue(req).Value									
+		params.Alpha_Red 	= InAlpha_Red:GetValue(req).Value			
+		params.Alpha_Green 	= InAlpha_Green:GetValue(req).Value			
+		params.Alpha_Blue 	= InAlpha_Blue:GetValue(req).Value					
+		
+		params.Alpha_Low 	= InAlpha_Low:GetValue(req).Value											
+		params.Alpha_High 	= InAlpha_High:GetValue(req).Value											
+		params.Alpha_Contrast = InAlpha_Contrast:GetValue(req).Value											
+		params.Alpha_Pivot 	= InAlpha_Pivot:GetValue(req).Value	
+		
+		nodeA:SetParamBlock(params)
+	end	
+
+    nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+    nodeA:AddInput("iChannel0", Image_Buff_Global)
+	nodeA:AddInput("iChannel1", src2)
+	nodeA:AddInput("iChannel2", src3)
+	nodeA:AddInput("iChannel3", src4)
+    nodeA:AddOutput("dst", dstA)
+
+
+    local success = nodeA:RunSession(req)
+    if not success then
+        dstA = nil
+        dump(nodeA:GetErrorLog()) 
+    end
+
+    Image_Buff_Global = dstA --Recursiv Image
+
+
+    if (InResetclick:GetValue(req).Value == 1) then
+       InResetclick:SetSource(Number(0),0,0)
+    end
+
+  -------------------------- ImageKernel----------------------------------------
+  node = DVIPComputeNode(req, "ImageKernel", ImageKernel, "GlobalParams", GlobalParams)
+  node:SetParamBlock(params)
+ 
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  
+  node:AddInput("iChannel0", Image_Buff_Global)
+  node:AddInput("iChannel1", src2)
+  node:AddInput("iChannel2", src3)
+  node:AddInput("iChannel3", src4)
+  node:AddOutput("dst", dstI)
+
+  local success = node:RunSession(req)
+  if not success then
+      dstI = nil
+      dump(node:GetErrorLog())
+  end
+
+  OutImage:Set(req, dstI)
+	collectgarbage();
+end
+
+
+
+
