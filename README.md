@@ -84,7 +84,7 @@ Work in Progress
 ----------------
 
 - [Voxel Edges](AbstractShader/VoxelEdges.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
-- [FractalLand](MiscShader/FractalLAnd.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
+- [FractalLand](MiscShader/FractalLand.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
 
 
 Overview
