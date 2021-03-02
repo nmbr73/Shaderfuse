@@ -12,3 +12,10 @@ In the original, a very interesting possibility has been created to make the app
 The Fuse is tested with Cuda, OpenCL. Test for Metal is pending.
 
 Have fun
+
+
+## Compability
+- [ ] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL
