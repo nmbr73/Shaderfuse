@@ -7,3 +7,5 @@ Based on '_[FunWithMetaballs](https://www.shadertoy.com/view/MlyXWV)_' by [fwill
 
 
 Have fun
+
+[![FunWithMetaballs](FunWithMetaballs.gif)](FunWithMetaballs.fuse)
