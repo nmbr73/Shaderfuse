@@ -114,7 +114,6 @@ Overview
 [![Fire_Water](MiscShader/Fire_Water_320x180.png)](MiscShader/Fire_Water.md)
 [![WildKifs4D](MiscShader/WildKifs4D_320x180.png)](MiscShader/WildKifs4D.md)
 [![MiscShader/FractalLand.fuse](MiscShader/FractalLand_320x180.png)](MiscShader/FractalLand.md)
-
 [![Spilled](RecursivShader/Spilled_320x180.png)](RecurssivShader/Spilled.md)
 
 Work in Progress
@@ -122,13 +121,18 @@ Work in Progress
 
 ### JiPi
 
-Coming Soon
-
+- Coming Soon
 [![Working](Working/LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
 
-Coming later
-
+- Coming later
 [![Working](Working/Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
+
+- Coming next
+[![TransparentDistortion](https://user-images.githubusercontent.com/78935215/109943088-19f07780-7cd5-11eb-8183-31ecafe9f446.gif)](https://www.shadertoy.com/view/ttBBRK)
+
+-  Comes then
+[![DiffuisonGathering](https://user-images.githubusercontent.com/78935215/109943592-a56a0880-7cd5-11eb-97c0-a899d167d6e7.gif)](https://www.shadertoy.com/view/3sGXRy)
+
 
 ### nmbr73
 
