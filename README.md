@@ -79,7 +79,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [RayCastSphere](PlanetShader/RayCastSphere.md) ported by [JiPi](Profiles/JiPi.md)
 - Recursiv
   - [Spilled](RecursivShader/Spilled.md) ported by [JiPi](Profiles/JiPi.md)
-  - [TDSOTM_Nebula](RecursivShader/TDSOTM_Nebula.png) ported by [JiPi](Profiles/JiPi.md) :new:
+  - [TDSOTM_Nebula](RecursivShader/TDSOTM_Nebula.md) ported by [JiPi](Profiles/JiPi.md) :new:
 - Tunnel
   - [Try Not To Hit The Walls](TunnelShader/TNTHTW.md) ported by [JiPi](Profiles/JiPi.md)
   - [Velocibox.fuse](TunnelShader/Velocibox.md) ported by [nmbr73](Profiles/nmbr73.md)
