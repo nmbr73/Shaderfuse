@@ -88,7 +88,7 @@ Work in Progress
 ----------------
 
 - [Voxel Edges](AbstractShader/VoxelEdges.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
-- [FbmWarp](AbstractShader/FbMWarp.md) currently under construction by [JiPi](Profiles/JiPi.md)
+- [FbmWarp](AbstractShader/FbmWarp.md) currently under construction by [JiPi](Profiles/JiPi.md)
 
 Overview
 ========
