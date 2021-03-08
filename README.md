@@ -56,7 +56,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Crazyness](AbstractShader/Crazyness.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Cross Distance](AbstractShader/CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Favela](AbstractShader/Favela.md) ported by [nmbr73](Profiles/nmbr73.md)
-  - [FlightThroughANebula](AbstractShader/FlightThroughANebula.md) ported by [JiPi](Profiles/JiPi.md)
+  - [FlightThroughANebula](AbstractShader/FlightThroughANebula.md) ported by [JiPi](Profiles/JiPi.md) :new:
   - [Kali 3D](AbstractShader/Kali3D.md) ported by [JiPi](Profiles/JiPi.md)
   - [Noisecube](AbstractShader/Noisecube.md) ported by [JiPi](Profiles/JiPi.md)
   - [Rainbow Slices](AbstractShader/RainbowSlices.md) ported by [nmbr73](Profiles/nmbr73.md)
@@ -65,7 +65,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [FunWithMetaballs](BlobShader/FunWithMetaballs.md) ported by [JiPi](Profiles/JiPi.md)
   - [TorturedBlob](BlobShader/TorturedBlob.md) ported by [JiPi](Profiles/JiPi.md)
 - Distortion
-  - [FbmWarp](DistortionShader/FbmWarp.md) ported by [JiPi](Profiles/JiPi.md)
+  - [FbmWarp](DistortionShader/FbmWarp.md) ported by [JiPi](Profiles/JiPi.md) :new:
 - Miscellaneous
   - [Fire_Water](MiscShader/Fire_Water.md) ported by [JiPi](Profiles/JiPi.md)
   - [FractalLand](MiscShader/FractalLand.md) ported by [nmbr73](Profiles/nmbr73.md)
