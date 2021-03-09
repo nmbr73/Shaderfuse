@@ -1,8 +1,8 @@
 require("string")
 
 local g_ui                = fu.UIManager
-local g_disp             = bmd.UIDispatcher(g_ui)
-local g_wingeometry        = { 100, 100, 800, 400 }
+local g_disp              = bmd.UIDispatcher(g_ui)
+local g_wingeometry       = { 100, 100, 800, 400 }
 
 local TARGET_FUSES_SUBDIRECTORY = "Shadertoys"
 -- local TARGET_FUSES_SUBDIRECTORY="DarthShader"
@@ -15,58 +15,56 @@ local g_useShortcutPrefix = nil
 local g_useShadertoyID = nil
 local g_useCategoryPathes = nil
 
--- --------------------------------------
 
 
-local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+-- ----------------------------------------------------------------------
+
+
 
 function base64_decode(data)
-    data = string.gsub(data, '[^'..b..'=]', '')
-    return (data:gsub('.', function(x)
-        if (x == '=') then return '' end
-        local r,f='',(b:find(x)-1)
-        for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
-        return r;
-    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
-        if (#x ~= 8) then return '' end
-        local c=0
-        for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
-        return string.char(c)
-    end))
+  local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+  data = string.gsub(data, '[^'..b..'=]', '')
+  return (data:gsub('.', function(x)
+    if (x == '=') then return '' end
+    local r,f='',(b:find(x)-1)
+    for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
+    return r;
+  end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+    if (#x ~= 8) then return '' end
+    local c=0
+    for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+    return string.char(c)
+  end))
 end
 
+
+
 function base64_encode(data)
+  local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
   return ((data:gsub('.', function(x)
-      local r,b='',x:byte()
-      for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
-      return r;
+    local r,b='',x:byte()
+    for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
+    return r;
   end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
-      if (#x < 6) then return '' end
-      local c=0
-      for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
-      return b:sub(c+1,c+1)
+    if (#x < 6) then return '' end
+    local c=0
+    for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
+    return b:sub(c+1,c+1)
   end)..({ '', '==', '=' })[#data%3+1])
 end
 
 
--- ----------------------------------------------------------------------
--- error_print() and gui_print()
---
--- Just because I have no clue how to print to stderr in a way that the
--- Resolve colsole shows it.
--- ----------------------------------------------------------------------
 
 function printERR(message)
-	if message~=nil then
+
+  -- Just because I have no clue how to print to stderr in a way that the
+  -- Resolve colsole shows it.
+
+  if message~=nil then
 		print("ERR " .. message)
 	end
 end
 
-function printGUI(message)
-	if message~=nil then
-		--print("GUI " .. message)
-	end
-end
 
 
 -- ----------------------------------------------------------------------
@@ -102,19 +100,18 @@ function initInstallModeOptions(params)
 
   local options=
   {
-
     { -- Mode        = MODE_NONE,
       Label       = "- chose installation mode -",
       Enabled     = false,
       Procedure   = doNothing,
-      Text        = "<p>This script is menat to install the shader fuses, or to create installation scripts to install the shader fuses. Use the select box on top to chose an installation mode and to see further details on the respective mode.</p>",
+      Text        = "<p>This script is menat to install the shader fuses, or to create installation scripts to install the shader fuses. Use the select box on top to chose an installation mode and to see further details on the respective method.</p>",
     },
 
     { -- Mode        = MODE_LOCALCOPY,
       Label       = "Local Copy",
       Enabled     = localCopyEnabled,
       Procedure   = doLocalCopy,
-      Text        = "<p>If you have downloaded and extracted the whole repository as a ZIP file, then this mode should help you to create a local copy of the fuses in the right target directory. In this case the script creates the <em>Shadertoys<em> subdirectories in your DaVinci Resolve's / Fusion's <em>Fuses</em> directory and copies all the .fuse files and only these to that directory.</p>"
+      Text        = "<p>If you have downloaded and extracted(!) the whole repository as a ZIP file, then this mode should help you to create a local copy of the fuses in the correct target directory. In this case the script creates the <em>Shadertoys<em> subdirectories in your DaVinci Resolve's / Fusion's <em>Fuses</em> directory and copies all the .fuse files and only these to that directory.</p>"
                       ..localCopyTextAdd,
     },
 
@@ -122,14 +119,14 @@ function initInstallModeOptions(params)
       Label       = "Single Installers",
       Enabled     = true,
       Procedure   = doSingleInstallers,
-      Text        = "<p>This options generates a separate installer script for each Fuse. These scripts can be used to share single Fuses with people, but still providing the convenience of not having to copy the Fuse to the specific pathes on your own. Just drag and drop such an installer script onto your Fusion's working area and the script will guide you through the Fuse installation.</p>",
+      Text        = "<p>This options generates a separate installer script for each fuse. These scripts can be used to share single Fuses separated from the repository with others, but still providing the convenience of not having to copy the Fuse to the specific pathes manually. Just drag and drop such an installer script onto your Fusion's working area and the script will guide you through the installation.</p>",
     },
 
     { -- Mode        = MODE_CREATEINSTALLER,
       Label       = "Create Installer",
       Enabled     = false,
       Procedure   = doCreateInstaller,
-      Text        = "<p>The 'Create Installer' is to create a single Lua script that can be used to install all the Fuses. It is indended to be provided in particular as a separate download with no need to copy the ZIP or clone the repo.</p>"
+      Text        = "<p>The 'Create Installer' is to create a single Lua script that can be used to install all the fuses. It is intended to be provided in particular as a separate download with no need to copy the ZIP or clone the repository.</p>"
                       .."<p style=\"color:#ff9090; \">This option hasn't been implemented yet!</p>",
     },
 
@@ -137,28 +134,21 @@ function initInstallModeOptions(params)
       Label       = "Prepare WSL Suggestion",
       Enabled     = false,
       Procedure   = doPrepareSuggestion,
-      Text        = "<p>Idea is to have the installer create copies of the Fuses without all the prefixes, debug settings, additinal files, etc. This to end up with a directory structure that can be uses as a suggestion for integration into the Reactor.</p>"
+      Text        = "<p>Idea is to have the installer create copies of the Fuses without all the prefixes, debug settings, additinal files, etc. This to end up with a directory structure that can be used in preparation of a suggestion for integration into the WSL Reactor.</p>"
                       .."<p style=\"color:#ff9090; \">This option hasn't been implemented yet!</p>",
     },
-
-
   }
 
   g_chosenInstallModeOption = options[1]
-
 
   return options
 end
 
 
 
-
-
 -- ----------------------------------------------------------------------
 -- WINDOW TO JUST SHOW A SIMPLE MESSAGE
 -- ----------------------------------------------------------------------
-
-
 
 function showMessageBoxWindow(str)
 
@@ -214,10 +204,10 @@ function showMessageBoxWindow(str)
 end
 
 
+
 -- ----------------------------------------------------------------------
 -- WINDOWN TO SELECT THE INSTALLATION PROCEDURE
 -- ----------------------------------------------------------------------
-
 
 function initInstallSelectWindow(params)
 
@@ -290,8 +280,8 @@ function initInstallSelectWindow(params)
     itm.Description.Text=entry.Text
   end
 
+
   function win.On.Continue.Clicked(ev)
-    printGUI("installselectwin.On.Continue.Clicked() called")
     win:Hide()
     --showInstallMainWindow()
     params.NextWindow:Show()
@@ -299,30 +289,25 @@ function initInstallSelectWindow(params)
 
 
   function win.On.Cancel.Clicked(ev)
-    printGUI("installselectwin.On.Cancel.Clicked() called")
     g_disp:ExitLoop()
     os.exit()
   end
+
 
   function win.On.ShaderInstallSelect.Close(ev)
-    printERR("SelectWin Window closed")
     g_disp:ExitLoop()
     os.exit()
   end
 
-
   return win
-  --WINDOW_INSTALLSELECT:Show()
 
-end -- function showInstallSelectWindow
+end
 
 
 
 -- ----------------------------------------------------------------------
 -- MAIN WINDOW
 -- ----------------------------------------------------------------------
-
-
 
 function initMainWindow(params)
 
@@ -383,8 +368,6 @@ function initMainWindow(params)
     },
   })
 
-  -- ----------------------------------------------------------------------
-
 
   function win.On.Install.Clicked(ev)
 
@@ -394,10 +377,12 @@ function initMainWindow(params)
     g_chosenInstallModeOption.Procedure(params.ListOfFuses)
   end
 
+
   function win.On.Cancel.Clicked(ev)
     g_disp:ExitLoop()
     os.exit()
   end
+
 
   function win.On.ShaderInstallMain.Close(ev)
     g_disp:ExitLoop()
@@ -439,15 +424,13 @@ end
 
 
 
--- ----------------------------------------------------------------------
--- directoryExists(path)
---
--- Returns true, if path exists and is a directory; false otherwise.
--- ----------------------------------------------------------------------
-
 function directoryExists(path, dir)
 
-	assert(path~=nil and path~="" and dir~=nil and dir~="")
+  -- Returns true, if path exists and is a directory; false otherwise.
+  -- Instead of missusing the bmd.readdir() function there probably is
+  --- a better way to do this!?!
+
+  assert(path~=nil and path~="" and dir~=nil and dir~="")
 
 	path = string.gsub(path,"\\","/")
 
@@ -463,16 +446,11 @@ end
 
 
 
--- ----------------------------------------------------------------------
--- list=fetchFiles(path,[suffix])
---
--- Traverse the directory 'path' and adds all files with the suffix
--- 'suffix' to the 'list'. Files and directories stating with '.' are
--- omitted!
--- ----------------------------------------------------------------------
-
-
 function fetchFuses(path)
+
+  -- Traverses the directory 'path' and adds all files with the suffix
+  -- 'suffix' to the 'list'. Files and directories stating with '.' are
+  -- omitted!
 
   assert(path)
 
@@ -522,26 +500,17 @@ end
 
 
 
--- ----------------------------------------------------------------------
--- getOwnPath()
---
--- Path this script has been executed from.
--- ----------------------------------------------------------------------
 
 function getOwnPath()
+
+  -- Return the path this script has been executed from.
+
   local path = debug.getinfo(2, "S").source:sub(2)
   path=path:match("(.*[/\\])")
   return path
 end
 
 
-
--- ----------------------------------------------------------------------
--- readFuseCode(filepath,config)
---
--- Read the Fuse and replace its configuration with 'config' if the
--- markers were found in the source.
--- -----------------------------------------
 
 function luaWarningComment()
   return
@@ -556,9 +525,13 @@ function luaWarningComment()
     "-- // ------------------------------------------------------------------- // --\n"..
     "\n\n\n\n"
 end
------------------------------
+
+
 
 function readFuseCode(filepath,config)
+
+  -- Read the Fuse and replace its configuration with 'config' if the
+  -- markers were found in the source.
 
   local cb  = "FUSE_COFIG::BEGIN"
   local ce  = "FUSE_COFIG::END"
@@ -578,8 +551,9 @@ function readFuseCode(filepath,config)
   end
 
   return  luaWarningComment() .. t
-
 end
+
+
 
 function readThumbnail(filepath)
 
@@ -600,40 +574,32 @@ function readThumbnail(filepath)
   return t
 end
 
--- ----------------------------------------------------------------------
--- formatCategory(categoryPath)
---
--- Formats 'categoryPath' to be used as the category in the "Add
--- Tools..." menu, resp the FC_CATEGORY configuration option.
--- ----------------------------------------------------------------------
+
 
 function formatCategory(cat)
 
-    cat = cat or ""
+  -- Formats 'categoryPath' to be used as the category in the "Add
+  -- Tools..." menu, resp the FC_CATEGORY configuration option.
 
-    cat = cat:gsub("\\","/") -- just in case
+  cat = cat or ""
 
-    if cat:len()>0 and cat:sub(-1) == "/" then
-      cat=cat:sub(1,-2)
-    end
+  cat = cat:gsub("\\","/") -- just in case
 
-    if cat:len()>0 and cat:sub(1,1) == "/" then
-      cat=cat:sub(2)
-    end
+  if cat:len()>0 and cat:sub(-1) == "/" then
+    cat=cat:sub(1,-2)
+  end
 
-    cat = cat:gsub("/","\\\\")
+  if cat:len()>0 and cat:sub(1,1) == "/" then
+    cat=cat:sub(2)
+  end
 
-    return '"'..cat..'"'
+  cat = cat:gsub("/","\\\\")
+
+  return '"'..cat..'"'
 
 end
 
 
-
-
-
--- ----------------------------------------------------------------------
---
--- ----------------------------------------------------------------------
 
 function bailOut()
   g_disp:ExitLoop()
@@ -684,9 +650,9 @@ function doLocalCopy(fuses)
 
     listItem=listItem.next
   end
-
-
 end
+
+
 
 function doSingleInstallers(fuses)
 
@@ -703,7 +669,6 @@ function doSingleInstallers(fuses)
       .. 'local FC_SCPREFIX  = '..  (g_useShortcutPrefix.Checked and 'FC_PREFIX' or '"ST"') .. '\n'
       .. 'local FC_SUBMENU   = "Shadertoys (beta)"\n'
 
-
   local listItem = fuses.head
   local targetSubDirectory  = TARGET_FUSES_SUBDIRECTORY .. '_beta'
 
@@ -716,13 +681,10 @@ function doSingleInstallers(fuses)
 
       assert(baseFilename ~= nil)
 
-
       local cat = "local FC_CATEGORY  = "..formatCategory(g_useCategoryPathes and listItem.Path or "").."\n"
       local fuseSourceCode    = readFuseCode(path..listItem.File, cat..cfg);
 
-
       if fuseSourceCode then
-
 
         -- printERR("path = '"..fuses.Root..listItem.Path.."")
 
@@ -752,8 +714,6 @@ function doSingleInstallers(fuses)
 
             out:write(luaWarningComment())
 
-
-
             out:write( ""
               .. "local ST_ID               = '"..ST_ID.."'\n"
               .. "local ST_NAME             = '"..ST_NAME.."'\n"
@@ -768,7 +728,6 @@ function doSingleInstallers(fuses)
               .. "local FUSE_THUMB          = '"..FUSE_THUMB.."'\n"
             )
 
-
             if (FUSE_AUTHOR == 'JiPi') then
                 out:write("local FUSE_AUTHORIMG= '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'\n")
                 out:write("local FUSE_AUTHORIMGSIZE = {47,24}\n")
@@ -780,8 +739,9 @@ function doSingleInstallers(fuses)
               out:write("local FUSE_AUTHORIMGSIZE  = {0,0}\n")
             end
 
-
             out:write(base64_decode('Cgpsb2NhbCBnX2dlb21ldHJ5ICAgICAgICA9IHsxMDAsIDEwMCwgMTAyNCwgMjcwfQpsb2NhbCBnX3VpICAgICAgICAgICAgICA9IGZ1LlVJTWFuYWdlcgpsb2NhbCBnX3VpZGlzcGF0Y2hlciAgICA9IGJtZC5VSURpc3BhdGNoZXIoZ191aSkKCmxvY2FsIGdfaW5zdGFsbFdpbmRvdyA9IG5pbDsKbG9jYWwgZ19lbmRTY3JlZW4gICAgID0gbmlsOwpsb2NhbCBnX2ZpbGVFeGlzdHMgICAgPSBmYWxzZTsKCgpsb2NhbCBiPSdBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWmFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6MDEyMzQ1Njc4OSsvJwpmdW5jdGlvbiBkZWMoZGF0YSkKICAgIGRhdGEgPSBzdHJpbmcuZ3N1YihkYXRhLCAnW14nLi5iLi4nPV0nLCAnJykKICAgIHJldHVybiAoZGF0YTpnc3ViKCcuJywgZnVuY3Rpb24oeCkKICAgICAgICBpZiAoeCA9PSAnPScpIHRoZW4gcmV0dXJuICcnIGVuZAogICAgICAgIGxvY2FsIHIsZj0nJywoYjpmaW5kKHgpLTEpCiAgICAgICAgZm9yIGk9NiwxLC0xIGRvIHI9ci4uKGYlMl5pLWYlMl4oaS0xKT4wIGFuZCAnMScgb3IgJzAnKSBlbmQKICAgICAgICByZXR1cm4gcjsKICAgIGVuZCk6Z3N1YignJWQlZCVkPyVkPyVkPyVkPyVkPyVkPycsIGZ1bmN0aW9uKHgpCiAgICAgICAgaWYgKCN4IH49IDgpIHRoZW4gcmV0dXJuICcnIGVuZAogICAgICAgIGxvY2FsIGM9MAogICAgICAgIGZvciBpPTEsOCBkbyBjPWMrKHg6c3ViKGksaSk9PScxJyBhbmQgMl4oOC1pKSBvciAwKSBlbmQKICAgICAgICByZXR1cm4gc3RyaW5nLmNoYXIoYykKICAgIGVuZCkpCmVuZAoKCgoKZnVuY3Rpb24gY3JlYXRlSW5zdGFsbFdpbmRvdygpCgogIGxvY2FsIHRleHQ9JycKICBpZiBGVVNFX0FVVEhPUklNR349JycgdGhlbgogICAgdGV4dCA9JzxpbWcgc3JjPSJkYXRhOmltYWdlL3BuZztiYXNlNjQsJy4uRlVTRV9BVVRIT1JJTUcuLiciIC8+JwogIGVuZAoKCiAgZ19pbnN0YWxsV2luZG93ID0gZ191aWRpc3BhdGNoZXI6QWRkV2luZG93KHsKICAgIElEID0gJ0luc3RhbGxXaW5kb3cnLAogICAgV2luZG93VGl0bGUgPSBGVVNFX05BTUUuLicgSW5zdGFsbGVyJywKICAgIEdlb21ldHJ5ICAgID0gZ19nZW9tZXRyeSwKICAgIFNwYWNpbmcgICAgID0gMTAsCgogICAgZ191aTpWR3JvdXAgewoKICAgICAgSUQgPSAncm9vdCcsCgogICAgICBnX3VpOkhHcm91cCB7CiAgICAgICAgZ191aTpMYWJlbHsKICAgICAgICAgIElEID0gIiIsIFdvcmRXcmFwID0gZmFsc2UsIFdlaWdodCA9IDAsCiAgICAgICAgICBNaW5pbXVtU2l6ZSA9IHszMjAsIDE4MH0sIFJlYWRPbmx5ID0gdHJ1ZSwgRmxhdCA9IHRydWUsCiAgICAgICAgICBBbGlnbm1lbnQgPSB7IEFsaWduSENlbnRlciA9IGZhbHNlLCBBbGlnblRvcCA9IHRydWUsIH0sCiAgICAgICAgICBUZXh0ID0gJzxpbWcgc3JjPSJkYXRhOmltYWdlL3BuZztiYXNlNjQsJy4uIEZVU0VfVEhVTUIgLi4gJyIgLz4nLAogICAgICAgIH0sCgogICAgICAgIGdfdWk6SEdhcCgyMCksCiAgICAgICAgLS0gdWk6SEdhcCgxLjAsMC4xKSwKCiAgICAgICAgZ191aTpMYWJlbHsKICAgICAgICAgIFdlaWdodCA9IDIuMCwKICAgICAgICAgIElEID0gJ1RleHRMYWJlbCcsCiAgICAgICAgICBUZXh0ID0gJycKICAgICAgICAgICAgLi4nPGgyIHN0eWxlPSJjb2xvcjojZWZiZDc4OyAiPldlbGNvbWUgdG8gdGhlICcuLkZVU0VfTkFNRS4uJyBTZXR1cDwvaDI+JwogICAgICAgICAgICAuLic8cCBzdHlsZT0iZm9udC1zaXplOmxhcmdlOyBjb2xvcjojZmZmZmZmOyAiPicKICAgICAgICAgICAgLi4nPGEgaHJlZj0iaHR0cHM6Ly93d3cuc2hhZGVydG95LmNvbS92aWV3LycuLlNUX0lELi4nIiBzdHlsZT0iY29sb3I6cmdiKDEzOSwxNTUsMjE2KTsgdGV4dC1kZWNvcmF0aW9uOm5vbmU7ICI+Jy4uU1RfTkFNRS4uJzwvYT4gY3JlYXRlZCBieSAnCiAgICAgICAgICAgIC4uJzxhIGhyZWY9Imh0dHBzOi8vd3d3LnNoYWRlcnRveS5jb20vdXNlci8nLi5TVF9BVVRIT1IuLiciIHN0eWxlPSJjb2xvcjpyZ2IoMTM5LDE1NSwyMTYpOyB0ZXh0LWRlY29yYXRpb246bm9uZTsgIj4nLi5TVF9BVVRIT1IuLic8L2E+ICcKICAgICAgICAgICAgLi4nYW5kIHBvcnRlZCBieSA8YSBocmVmPSInLi5GVVNFX0FVVEhPUlVSTC4uJyIgc3R5bGU9ImNvbG9yOnJnYigxMzksMTU1LDIxNik7IHRleHQtZGVjb3JhdGlvbjpub25lOyAiPicuLkZVU0VfQVVUSE9SLi4nPC9hPjxiciAvPicKICAgICAgICAgICAgLi4nPHNwYW4gc3R5bGU9ImNvbG9yOmdyYXk7IGZvbnQtc2l6ZTpzbWFsbDsgIj4nLi5GVVNFX0NPUFlSSUdIVC4uJyZuYnNwOzwvc3Bhbj4nCiAgICAgICAgICAgIC4uJzwvcD4nCiAgICAgICAgICAgIC4uJzxwPicKICAgICAgICAgICAgLi4nICBUaGlzIHNjcmlwdCB3aWxsIGluc3RhbGwgXCcnLi5GVVNFX0ZJTEVOQU1FLi4nXCcgJy4uRlVTRV9WRVJTSU9OLi4nIG9uIHlvdXIgY29tcHV0ZXIuPGJyIC8+JwogICAgICAgICAgICAuLicgIFRISVMgSVMgQVQgWU9VUiBPV04gUklTSyBBTkQgV0lUSE9VVCBXQVJSQU5UWSBPRiBBTlkgS0lORCE8YnIgLz4nCiAgICAgICAgICAgIC4uJyAgQ2xpY2sgXCdJbnN0YWxsXCcgdG8gY29udGludWUgb3IgXCdDYW5jZWxcJyB0byBleGl0IHRoZSBzZXR1cC4nCiAgICAgICAgICAgIC4uJzwvcD4nCiAgICAgICAgICAgIC4uJzxwIHN0eWxlPSJjb2xvcjojZmZmZmZmOyAiPicKICAgICAgICAgICAgLi4nICBWaXNpdCB1cyBvbiA8YSBocmVmPSJodHRwczovL2dpdGh1Yi5jb20vbm1icjczL1NoYWRlcnRveXMiIHN0eWxlPSJjb2xvcjogcmdiKDEzOSwxNTUsMjE2KTsgdGV4dC1kZWNvcmF0aW9uOm5vbmU7ICI+R2l0SHViPC9hPiBmb3IgbW9yZSBjdXRlIGxpdHRsZSBTaGFkZXJGdXNlcyEnCiAgICAgICAgICAgIC4uJzwvcD4nCiAgICAgICAgICAgIC4uKGdfZmlsZUV4aXN0cyBhbmQgJzxwIGFsaWduPSJjZW50ZXIiPjxzcGFuIHN0eWxlPSJjb2xvcjojZmZmZmZmOyBiYWNrZ3JvdW5kLWNvbG9yOiNmZjAwMDA7ICI+Jm5ic3A7QVRURU5USU9OISAnLi5GVVNFX0ZJTEVOQU1FLi4nIGRvZXMgYWxyZWFkeSBleGlzdCBhbmQgd2lsbCBiZSBvdmVyd3JpdHRlbiEmbmJzcDs8L3NwYW4+PC9wPicgb3IgJycpLAogICAgICAgICAgQWxpZ25tZW50ID0geyBBbGlnbkhDZW50ZXIgPSBmYWxzZSwgQWxpZ25WQ2VudGVyID0gZmFsc2UsIH0sCiAgICAgICAgICBXb3JkV3JhcCA9IHRydWUsCiAgICAgICAgICBPcGVuRXh0ZXJuYWxMaW5rcyA9IHRydWUsCiAgICAgICAgfSwKICAgICAgfSwKCiAgICAgIGdfdWk6TGFiZWx7CiAgICAgICAgV2VpZ2h0ID0gMCwKICAgICAgICBJRCA9ICdocicsCiAgICAgICAgVGV4dD0nPGhyIC8+JywKICAgICAgfSwKCiAgICAgIGdfdWk6SEdyb3VwewoKICAgICAgICBnX3VpOkhHYXAoNSksCiAgICAgICAgZ191aTpMYWJlbHsKICAgICAgICAgIElEID0gIiIsIFdvcmRXcmFwID0gZmFsc2UsIFdlaWdodCA9IDAsCiAgICAgICAgICBNaW5pbXVtU2l6ZSA9IEZVU0VfQVVUSE9SSU1HU0laRSwKICAgICAgICAgIFJlYWRPbmx5ID0gdHJ1ZSwgRmxhdCA9IHRydWUsCiAgICAgICAgICBBbGlnbm1lbnQgPSB7IEFsaWduSENlbnRlciA9IGZhbHNlLCBBbGlnblRvcCA9IHRydWUsIH0sCiAgICAgICAgICBUZXh0ID0gdGV4dCwKICAgICAgICB9LAoKCiAgICAgICAgV2VpZ2h0ID0gMCwKICAgICAgICBnX3VpOkhHYXAoMCwgMi4wKSwKICAgICAgICBnX3VpOkJ1dHRvbnsgIElEID0gIkluc3RhbGwiLCBUZXh0ID0gIkluc3RhbGwiLCAgICB9LAogICAgICAgIGdfdWk6QnV0dG9ueyAgSUQgPSAiQ2FuY2VsIiwgIFRleHQgPSAiQ2FuY2VsIiwgIH0sCiAgICAgIH0sCiAgICB9LAogIH0pCgogIGZ1bmN0aW9uIGdfaW5zdGFsbFdpbmRvdy5Pbi5JbnN0YWxsV2luZG93LkNsb3NlKGV2KQogICAgICBnX3VpZGlzcGF0Y2hlcjpFeGl0TG9vcCgpCiAgZW5kCgogIGZ1bmN0aW9uIGdfaW5zdGFsbFdpbmRvdy5Pbi5JbnN0YWxsLkNsaWNrZWQoZXYpCiAgICBnX2luc3RhbGxXaW5kb3c6SGlkZSgpCiAgICBpbnN0YWxsKCkKICBlbmQKCiAgZnVuY3Rpb24gZ19pbnN0YWxsV2luZG93Lk9uLkNhbmNlbC5DbGlja2VkKGV2KQogICAgZ191aWRpc3BhdGNoZXI6RXhpdExvb3AoKQogIGVuZAplbmQKCgpmdW5jdGlvbiBjcmVhdGVFbmRTY3JlZW4oKQoKICBsb2NhbCB0ZXh0PScnCiAgaWYgZ19maWxlRXhpc3RzIHRoZW4KICAgIHRleHQ9JzxwPkFzIHlvdSBhbHJlYWR5IGhhZCB0aGlzIEZ1c2UgaW5zdGFsbGVkLCB5b3UgbWF5IG5vdCBuZWVkIHRvIHJlc3RhcnQgdGhlIGFwcGxpY2F0aW9uLiBCdXQgY2hhbmNlcyBhcmUsIHRoYXQgeW91IGhhdmUganVzdCBvdmVyd3JpdHRlbiB0aGUgc2FtZSB2ZXJzaW9uIGFuZCB3aWxsIG5vdCBmaW5kIGFueXRoaW5nIG5ldy4gJwogIGVsc2UKICAgIHRleHQ9JzxwPkluIG9yZGVyIHRvIHVzZSB0aGUgbmV3bHkgaW5zdGFsbGVkIFBsdWctaW4geW91IHdpbGwgbmVlZCB0byByZXN0YXJ0IERhVmluY2kgUmVzb2x2ZSAvIEZ1c2lvbi4gJwogIGVuZAoKICB0ZXh0ID0gdGV4dCAuLiAnSG93ZXZlciwgZ28gaW50byBGdXNpb24sIHNtYXNoIHRoZSBcJ1NoaWZ0K1NwYWNlXCcgc2hvcnRjdXQgYW5kIHNlYXJjaCBmb3IgIicuLkZVU0VfTkFNRS4uJyIgdG8gYWRkIHRoaXMgdHlwZSBvZiBub2RlIC0gYW5kIHRoZW4gLi4uPC9wPjxwIHN0eWxlPSJjb2xvcjojZmZmZmZmOyAiPkhhdmUgRnVuIScKCiAgaWYgRlVTRV9BVVRIT1JJTUd+PScnIHRoZW4KICAgIHRleHQ9dGV4dC4uJzxiciAvPjxpbWcgc3JjPSJkYXRhOmltYWdlL3BuZztiYXNlNjQsJy4uRlVTRV9BVVRIT1JJTUcuLiciIC8+PC9wPicKICBlbHNlCiAgICB0ZXh0PXRleHQuLic8L3A+JwogIGVuZAoKCiAgZ19lbmRTY3JlZW4gPSBnX3VpZGlzcGF0Y2hlcjpBZGRXaW5kb3coewogICAgSUQgPSAnRW5kU2NyZWVuJywKICAgIFdpbmRvd1RpdGxlID0gRlVTRV9OQU1FLi4nIEluc3RhbGxlZCcsCiAgICBHZW9tZXRyeSA9IHszMDAsIDEwMCwgNjQwLCAyNzB9LAoKICAgIGdfdWk6Vkdyb3VwewogICAgICBJRCA9ICdyb290JywKCiAgICAgIGdfdWk6TGFiZWx7CiAgICAgICAgICBXZWlnaHQgPSAxLjAsIElEID0gJ0ZpbmFsVGV4dExhYmVsJywKICAgICAgICAgIFRleHQgPSc8aDI+SW5zdGFsbGF0aW9uIG9mIDxzcGFuIHN0eWxlPSJjb2xvcjojZmZmZmZmOyAiPicuLkZVU0VfTkFNRS4uJzwvc3Bhbj4gKGhvcGVmdWxseSkgY29tcGxldGVkPC9oMj48cD4nLi50ZXh0Li4nPC9wPicsCiAgICAgICAgICBBbGlnbm1lbnQgPSB7IEFsaWduSENlbnRlciA9IHRydWUsIEFsaWduVlRvcCA9IHRydWUsIH0sCiAgICAgICAgICBXb3JkV3JhcCA9IHRydWUsCiAgICAgIH0sCgogICAgICBnX3VpOkhHcm91cHsKICAgICAgICBXZWlnaHQgPSAwLAogICAgICAgIGdfdWk6SEdhcCgwLCAyLjApLAogICAgICAgIGdfdWk6QnV0dG9ueyBXZWlnaHQgPSAwLjEsIElEID0gIk9rYXkiLCBUZXh0ID0gIk9rYXkiLCB9LAogICAgICAgIGdfdWk6SEdhcCgwLCAyLjApLAogICAgICB9LAogICAgfSwKICB9KQoKICBmdW5jdGlvbiBnX2VuZFNjcmVlbi5Pbi5FbmRTY3JlZW4uQ2xvc2UoZXYpCiAgICAgIGdfdWlkaXNwYXRjaGVyOkV4aXRMb29wKCkKICBlbmQKCiAgZnVuY3Rpb24gZ19lbmRTY3JlZW4uT24uT2theS5DbGlja2VkKGV2KQogICAgICBnX3VpZGlzcGF0Y2hlcjpFeGl0TG9vcCgpCiAgZW5kCgplbmQKCgpmdW5jdGlvbiBmaWxlRXhpc3RzKHBhdGgsIGZpbGUpCgogIGFzc2VydChwYXRofj1uaWwgYW5kIHBhdGh+PScnKQogIGFzc2VydChmaWxlfj1uaWwgYW5kIGZpbGV+PScnKQoKCWxvY2FsIGggPSBibWQucmVhZGRpcihwYXRoLi5maWxlKQoKCWZvciBrLCB2IGluIHBhaXJzKGgpIGRvCiAgICBpZiB2Lk5hbWV+PW5pbCBhbmQgdi5OYW1lPT1maWxlIHRoZW4KICAgICAgcmV0dXJuIHRydWU7CiAgICBlbmQKCWVuZAoKCXJldHVybiBmYWxzZTsKZW5kCgoKCmZ1bmN0aW9uIGluc3RhbGwoKQoKICBibWQuY3JlYXRlZGlyKGZ1c2lvbjpNYXBQYXRoKCdGdXNlczovJy4uRlVTRV9QQVRIKSk7CgogIGxvY2FsIGYgPSBpby5vcGVuKGZ1c2lvbjpNYXBQYXRoKCdGdXNlczovJy4uRlVTRV9QQVRILi5GVVNFX0ZJTEVOQU1FKSwid2IiKQogIHdyaXRlRnVzZUNvZGUoZik7CiAgZjpjbG9zZSgpCiAgZ19lbmRTY3JlZW46U2hvdygpCmVuZAoKCgpmdW5jdGlvbiBnb0Zvckl0KCkKCiAgZ19maWxlRXhpc3RzICAgID0gIGZpbGVFeGlzdHMoZnVzaW9uOk1hcFBhdGgoJ0Z1c2VzOi8nLi5GVVNFX1BBVEgpLCBGVVNFX0ZJTEVOQU1FKQoKICBjcmVhdGVJbnN0YWxsV2luZG93KCkKICBjcmVhdGVFbmRTY3JlZW4oKQoKICBnX2luc3RhbGxXaW5kb3c6U2hvdygpCiAgZ191aWRpc3BhdGNoZXI6UnVuTG9vcCgpCiAgZ19lbmRTY3JlZW46SGlkZSgpCmVuZAo='))
+
+            fuseSourceCode = fuseSourceCode:gsub("\r","") -- that's rought, but I guess we don't need line feeds - hope this help with Windows/Unix line endings
 
             out:write(
                  'function writeFuseCode(f)\n'
@@ -795,7 +755,6 @@ function doSingleInstallers(fuses)
           end
 
           -- bailOut()
-
         end
 
         -- if listItem.Path ~= "" then
@@ -816,15 +775,19 @@ function doSingleInstallers(fuses)
 end
 
 
+
 function doCreateInstaller(fuses)
   printERR("doCreateInstaller")
   bailOut()
 end
 
+
+
 function doPrepareSuggestion(fuses)
   printERR("doCreateInstaller")
   bailOut()
 end
+
 
 
 function doNothing()
@@ -834,12 +797,11 @@ end
 
 
 
--- ######################################################################
-
-
 function getTargetDirectory()
   return fusion:MapPath("Fuses:/")..TARGET_FUSES_SUBDIRECTORY.."/"
 end
+
+
 
 function logo()
   return g_ui:Label{
@@ -858,17 +820,16 @@ function logo()
 end
 
 
-function hereWeGo()
 
-  local listOfFuses         = fetchFuses(getOwnPath())
-  local targetIsGitRepo     = directoryExists(getTargetDirectory(),".git")
-  local installModeOptions  = initInstallModeOptions( { TargetIsGitRepo = targetIsGitRepo, } )
-  local installMainWindow   = initMainWindow( { InstallModeOptions = installModeOptions, ListOfFuses=listOfFuses, })
-  local installSelectWindow = initInstallSelectWindow( { InstallModeOptions = installModeOptions, NextWindow = installMainWindow })
-
-  installSelectWindow:Show()
-  g_disp:RunLoop()
-end
+-- ----------------------------------------------------------------------
 
 
-hereWeGo()
+
+local listOfFuses         = fetchFuses(getOwnPath())
+local targetIsGitRepo     = directoryExists(getTargetDirectory(),".git")
+local installModeOptions  = initInstallModeOptions( { TargetIsGitRepo = targetIsGitRepo, } )
+local installMainWindow   = initMainWindow( { InstallModeOptions = installModeOptions, ListOfFuses=listOfFuses, })
+local installSelectWindow = initInstallSelectWindow( { InstallModeOptions = installModeOptions, NextWindow = installMainWindow })
+
+installSelectWindow:Show()
+g_disp:RunLoop()
