@@ -1,4 +1,4 @@
- [![Discord](https://img.shields.io/discord/793508729785155594?label=discord)]( https://discord.gg/Zb48E4z3Pg) [![GitHub release](https://img.shields.io/github/v/release/nmbr73/Shadertoys?include_prereleases)](https://github.com/nmbr73/Shadertoys/releases/latest) [![License](https://img.shields.io/badge/license-various-critical)](LICENSE) [![YouTube Demo](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
+ [![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/75FUn4N4pv) [![GitHub release](https://img.shields.io/github/v/release/nmbr73/Shadertoys?include_prereleases)](https://github.com/nmbr73/Shadertoys/releases/latest) [![License](https://img.shields.io/badge/license-various-critical)](LICENSE) [![YouTube Demo](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
 
 
 Shadertoys
@@ -51,10 +51,11 @@ Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and star
 
 Connect
 -------
+[![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/75FUn4N4pv)
 
-... this is just a test to see if the iframe works on GitHub
+... meet us on Discord
 
-<iframe src="https://discord.com/widget?id=793508729785155594&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+<!-- regrettably the iframe works on github pages bit not on github :-/ ...  iframe src="https://discord.com/widget?id=793508729785155594&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe -->
 
 
 Contribute
