@@ -131,6 +131,8 @@ Work in Progress
 
 - [Voxel Edges](AbstractShader/VoxelEdges.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
 - [FbmWarp](AbstractShader/FbmWarp.md) currently under construction by [JiPi](Profiles/JiPi.md)
+- [InteractiveThinks](Working/Interactive.md) currently under construction by [JiPi](Profiles/JiPi.md)
+
 
 Overview
 ========
@@ -174,7 +176,7 @@ Coming Soon
 [![Working](Working/Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
 [![TransparentDistortion](https://user-images.githubusercontent.com/78935215/109943088-19f07780-7cd5-11eb-8183-31ecafe9f446.gif)](https://www.shadertoy.com/view/ttBBRK)
 [![DiffuisonGathering](https://user-images.githubusercontent.com/78935215/109943592-a56a0880-7cd5-11eb-97c0-a899d167d6e7.gif)](https://www.shadertoy.com/view/3sGXRy)
-
+[![InteractiveThinks](https://user-images.githubusercontent.com/78935215/110646914-aad4c080-81b7-11eb-80eb-6562a27cf929.gif)](https://www.shadertoy.com/view/Xt3SR4)
 
 ### nmbr73
 
