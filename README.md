@@ -1,8 +1,6 @@
-<center>
-
 [![Shadertoyparade](img_subscribe.png)](https://youtu.be/oyndG0pLEQQ "WebGL to DCTL")
 
-</center>
+
 
 Shadertoys
 ==========
