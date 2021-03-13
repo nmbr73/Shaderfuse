@@ -94,7 +94,8 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Cross Distance](AbstractShader/CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Favela](AbstractShader/Favela.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [FlightThroughANebula](AbstractShader/FlightThroughANebula.md) ported by [JiPi](Profiles/JiPi.md) :new:
-  - [Kali 3D](AbstractShader/Kali3D.md) ported by [JiPi](Profiles/JiPi.md)
+  - [Kali 3D](AbstractShader/Kali3D.md) ported by [JiPi](Profiles/JiPi.md) 
+  - [Mosaic](AbstractShader/Mosaic.md) ported by [JiPi](Profiles/JiPi.md) :new:
   - [Noisecube](AbstractShader/Noisecube.md) ported by [JiPi](Profiles/JiPi.md)
   - [Rainbow Slices](AbstractShader/RainbowSlices.md) ported by [nmbr73](Profiles/nmbr73.md)
   - [Vine](AbstractShader/Vine.md) ported by [JiPi](Profiles/JiPi.md)
@@ -161,6 +162,7 @@ Overview
 [![TDSOTM_Nebula](RecursivShader/TDSOTM_Nebula_320x180.png)](RecurssivShader/TDSOTM_Nebula.md)
 [![FlightThroughANebula](AbstractShader/FlightThroughANebula_320x180.png)](AbstractShader/FlightThroughANebula.md)
 [![FbmWarp](DistortionShader/FbmWarp_320x180.png)](DistortionShader/FbmWarp.md)
+[![AbstractShader/Mosaic.fuse](https://user-images.githubusercontent.com/78935215/111024004-98879c00-83dc-11eb-9152-cd0ad2fd8a54.gif)](AbstractShader/Mosaic.md)
 
 
 Work in Progress
