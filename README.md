@@ -111,6 +111,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 - Object
   - [Dancy Tree Doodle](ObjectShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
   - [Dancy Tree Doodle 3D](ObjectShader/DancyTreeDoodle3D.md) ported by [JiPi](Profiles/JiPi.md)
+  - [FractalRadioBase](ObjectShader/FractalRadioBase.md) ported by [JiPi](Profiles/JiPi.md) :new:
   - [Lonely Voxel](ObjectShader/LonelyVoxel.md) ported by [JiPi](Profiles/JiPi.md)
   - [HW3Swing](ObjectShader/HW3Swing.md) ported by [JiPi](Profiles/JiPi.md)
 - [Planet Shaders](PlanetShader/)
@@ -163,6 +164,8 @@ Overview
 [![FlightThroughANebula](AbstractShader/FlightThroughANebula_320x180.png)](AbstractShader/FlightThroughANebula.md)
 [![FbmWarp](DistortionShader/FbmWarp_320x180.png)](DistortionShader/FbmWarp.md)
 [![AbstractShader/Mosaic.fuse](https://user-images.githubusercontent.com/78935215/111024004-98879c00-83dc-11eb-9152-cd0ad2fd8a54.gif)](AbstractShader/Mosaic.md)
+[![FractalRadioBase](https://user-images.githubusercontent.com/78935215/111489390-5e9afa80-873a-11eb-8f12-62143cc53916.gif)](ObjectShader/FractalRadioBase.md)
+
 
 
 Work in Progress
