@@ -182,6 +182,13 @@ Coming Soon
 [![InteractiveThinks](https://user-images.githubusercontent.com/78935215/110646914-aad4c080-81b7-11eb-80eb-6562a27cf929.gif)](https://www.shadertoy.com/view/Xt3SR4)
 [![Pendulum](https://user-images.githubusercontent.com/78935215/111521453-73d35180-8759-11eb-8f52-259612de94a2.gif)](https://www.shadertoy.com/view/wtdyDn)
 [![Soul22](https://user-images.githubusercontent.com/78935215/111699010-d733b100-8837-11eb-8565-b05b7d068551.gif)](https://www.shadertoy.com/view/3tcBWN)
+[![FractalEngine](https://user-images.githubusercontent.com/78935215/111883188-11c55700-89ba-11eb-89fe-163f55daf831.gif)](https://www.shadertoy.com/view/ttSBRm)
+[![Fractal03_gaz](https://user-images.githubusercontent.com/78935215/111883240-55b85c00-89ba-11eb-9629-5543465c4de7.gif)](https://www.shadertoy.com/view/3lKcDV)
+[![FractalGutter](https://user-images.githubusercontent.com/78935215/111883269-7f718300-89ba-11eb-8ef9-27aa8a16c7dc.gif)](https://www.shadertoy.com/view/ttjBD1)
+[![EnergyPlant](https://user-images.githubusercontent.com/78935215/111883788-c44ae900-89bd-11eb-85d6-0bb84f59f19b.gif)](https://www.shadertoy.com/view/WdjBWc)
+[![Circuits](https://user-images.githubusercontent.com/78935215/111883288-a3cd5f80-89ba-11eb-9eb3-5722e3090e29.gif)](https://www.shadertoy.com/view/XlX3Rj)
+[![ChocolatePackage](https://user-images.githubusercontent.com/78935215/111883950-a5992200-89be-11eb-9d04-cdd1cf3dbc54.gif)](https://www.shadertoy.com/view/tllyDj)
+
 
 
 ### nmbr73
