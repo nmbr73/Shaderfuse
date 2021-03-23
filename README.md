@@ -107,6 +107,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 - Miscellaneous
   - [Fire_Water](MiscShader/Fire_Water.md) ported by [JiPi](Profiles/JiPi.md)
   - [FractalLand](MiscShader/FractalLand.md) ported by [nmbr73](Profiles/nmbr73.md)
+  - [IHeartFourier](MiscShader/IHeartFourier.md) ported by [JiPi](Profiles/JiPi.md) :new:
   - [WildKifs4D](MiscShader/WildKifs4D.md) ported by [JiPi](Profiles/JiPi.md)
 - Object
   - [Dancy Tree Doodle](ObjectShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
@@ -165,7 +166,7 @@ Overview
 [![FbmWarp](DistortionShader/FbmWarp_320x180.png)](DistortionShader/FbmWarp.md)
 [![AbstractShader/Mosaic.fuse](https://user-images.githubusercontent.com/78935215/111024004-98879c00-83dc-11eb-9152-cd0ad2fd8a54.gif)](AbstractShader/Mosaic.md)
 [![FractalRadioBase](https://user-images.githubusercontent.com/78935215/111519940-e2afab00-8757-11eb-883a-e8578422e648.gif)](ObjectShader/FractalRadioBase.md)
-
+[![IHEartFourier](https://user-images.githubusercontent.com/78935215/112179345-e67d7a80-8bfa-11eb-9670-d338dfe01382.gif)](MiscShader/IHeartFourier.md)
 
 
 Work in Progress
@@ -188,7 +189,7 @@ Coming Soon
 [![EnergyPlant](https://user-images.githubusercontent.com/78935215/111883788-c44ae900-89bd-11eb-85d6-0bb84f59f19b.gif)](https://www.shadertoy.com/view/WdjBWc)
 [![Circuits](https://user-images.githubusercontent.com/78935215/111883288-a3cd5f80-89ba-11eb-9eb3-5722e3090e29.gif)](https://www.shadertoy.com/view/XlX3Rj)
 [![ChocolatePackage](https://user-images.githubusercontent.com/78935215/111883950-a5992200-89be-11eb-9d04-cdd1cf3dbc54.gif)](https://www.shadertoy.com/view/tllyDj)
-
+[![TrippyHappyJumper](https://user-images.githubusercontent.com/78935215/112180355-c7331d00-8bfb-11eb-9769-71b551174b8d.gif)](https://www.shadertoy.com/view/3dVSRD)
 
 
 ### nmbr73
