@@ -53,7 +53,11 @@ Alternatively you can also use the installer of the v0.1-alpha.1 release: drag'n
 
 Usage
 -----
-[![YouTube Demo](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
+[![YouTube Demo1](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
+[![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)]
+[![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)]
+
+
 
 In the Fusion page of DaVinci Resolve right click into the working area. In the context menu under 'Add tool' you'll find a 'Shadertoys/' submenu. That submenu corresponds to the repository's directory structure and provides access to all fuses installed.
 
@@ -121,8 +125,8 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
   - [RayCastSphere](PlanetShader/RayCastSphere.md) ported by [JiPi](Profiles/JiPi.md)
 - Recursiv
-  - [Spilled](RecursivShader/Spilled.md) ported by [JiPi](Profiles/JiPi.md)
-  - [TDSOTM_Nebula](RecursivShader/TDSOTM_Nebula.md) ported by [JiPi](Profiles/JiPi.md) :new:
+  - [Spilled](RecursiveShader/Spilled.md) ported by [JiPi](Profiles/JiPi.md)
+  - [TDSOTM_Nebula](RecursiveShader/TDSOTM_Nebula.md) ported by [JiPi](Profiles/JiPi.md) :new:
 - Tunnel
   - [Try Not To Hit The Walls](TunnelShader/TNTHTW.md) ported by [JiPi](Profiles/JiPi.md)
   - [Velocibox.fuse](TunnelShader/Velocibox.md) ported by [nmbr73](Profiles/nmbr73.md)
@@ -133,6 +137,7 @@ Work in Progress
 - [Voxel Edges](AbstractShader/VoxelEdges.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
 - [FbmWarp](AbstractShader/FbmWarp.md) currently under construction by [JiPi](Profiles/JiPi.md)
 - [InteractiveThinks](Working/InteractiveThinks.md) currently under construction by [JiPi](Profiles/JiPi.md)
+- [AncientTemple](Working/AncientTemple.md) currently under construction by [JiPi](Profiles/JiPi.md) :collision:
 
 
 Overview
