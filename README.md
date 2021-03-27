@@ -54,8 +54,8 @@ Alternatively you can also use the installer of the v0.1-alpha.1 release: drag'n
 Usage
 -----
 [![YouTube Demo1](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
-[![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)]
-[![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)]
+[![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws&t)
+[![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)](https://youtu.be/ntrp6BfVk0k)
 
 
 
@@ -125,8 +125,9 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
   - [RayCastSphere](PlanetShader/RayCastSphere.md) ported by [JiPi](Profiles/JiPi.md)
 - Recursiv
+  - [FallingCuteBombs](RecursiveShader/FallingCuteBombs.md) ported by [JiPi](Profiles/JiPi.md) :new:
   - [Spilled](RecursiveShader/Spilled.md) ported by [JiPi](Profiles/JiPi.md)
-  - [TDSOTM_Nebula](RecursiveShader/TDSOTM_Nebula.md) ported by [JiPi](Profiles/JiPi.md) :new:
+  - [TDSOTM_Nebula](RecursiveShader/TDSOTM_Nebula.md) ported by [JiPi](Profiles/JiPi.md) 
 - Tunnel
   - [Try Not To Hit The Walls](TunnelShader/TNTHTW.md) ported by [JiPi](Profiles/JiPi.md)
   - [Velocibox.fuse](TunnelShader/Velocibox.md) ported by [nmbr73](Profiles/nmbr73.md)
@@ -138,7 +139,6 @@ Work in Progress
 - [FbmWarp](AbstractShader/FbmWarp.md) currently under construction by [JiPi](Profiles/JiPi.md)
 - [InteractiveThinks](Working/InteractiveThinks.md) currently under construction by [JiPi](Profiles/JiPi.md)
 - [AncientTemple](Working/AncientTemple.md) currently under construction by [JiPi](Profiles/JiPi.md) :collision:
-
 
 Overview
 ========
@@ -172,7 +172,7 @@ Overview
 [![AbstractShader/Mosaic.fuse](https://user-images.githubusercontent.com/78935215/111024004-98879c00-83dc-11eb-9152-cd0ad2fd8a54.gif)](AbstractShader/Mosaic.md)
 [![FractalRadioBase](https://user-images.githubusercontent.com/78935215/111519940-e2afab00-8757-11eb-883a-e8578422e648.gif)](ObjectShader/FractalRadioBase.md)
 [![IHEartFourier](https://user-images.githubusercontent.com/78935215/112179345-e67d7a80-8bfa-11eb-9670-d338dfe01382.gif)](MiscShader/IHeartFourier.md)
-
+[![FallingCuteBombs](https://user-images.githubusercontent.com/78935215/112716550-55065500-8ee7-11eb-8c67-a63abf1be8f7.gif)](AbstractShader/FallingCuteBombs.md)
 
 Work in Progress
 ----------------
@@ -195,7 +195,8 @@ Coming Soon
 [![Circuits](https://user-images.githubusercontent.com/78935215/111883288-a3cd5f80-89ba-11eb-9eb3-5722e3090e29.gif)](https://www.shadertoy.com/view/XlX3Rj)
 [![ChocolatePackage](https://user-images.githubusercontent.com/78935215/111883950-a5992200-89be-11eb-9d04-cdd1cf3dbc54.gif)](https://www.shadertoy.com/view/tllyDj)
 [![TrippyHappyJumper](https://user-images.githubusercontent.com/78935215/112180355-c7331d00-8bfb-11eb-9769-71b551174b8d.gif)](https://www.shadertoy.com/view/3dVSRD)
-
+[![GridOfCylinders](https://user-images.githubusercontent.com/78935215/112716612-a1519500-8ee7-11eb-9868-8d709202a1df.gif)
+)](https://www.shadertoy.com/view/4dSGW1)
 
 ### nmbr73
 
