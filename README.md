@@ -1,5 +1,9 @@
 [![Shadertoyparade](img_subscribe.png)](https://youtu.be/oyndG0pLEQQ "WebGL to DCTL")
 
+[![YouTube Demo1](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
+[![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws&t)
+[![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)](https://youtu.be/ntrp6BfVk0k)
+
 <!-- WebbHook anyone -->
 
 Shadertoys
@@ -53,12 +57,6 @@ Alternatively you can also use the installer of the v0.1-alpha.1 release: drag'n
 
 Usage
 -----
-[![YouTube Demo1](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
-[![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws&t)
-[![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)](https://youtu.be/ntrp6BfVk0k)
-
-
-
 In the Fusion page of DaVinci Resolve right click into the working area. In the context menu under 'Add tool' you'll find a 'Shadertoys/' submenu. That submenu corresponds to the repository's directory structure and provides access to all fuses installed.
 
 Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and start typing "ST-" to filter for all our shadertoy fuses.
@@ -140,6 +138,7 @@ Work in Progress
 - [InteractiveThinks](Working/InteractiveThinks.md) currently under construction by [JiPi](Profiles/JiPi.md)
 - [AncientTemple](Working/AncientTemple.md) currently under construction by [JiPi](Profiles/JiPi.md) :collision:
 
+
 Overview
 ========
 
@@ -179,7 +178,7 @@ Work in Progress
 
 ### JiPi
 
-Coming Soon
+Coming Soon (Conversion is finished, the DCTL code still has to be provided with parameters and placed in a fuse.)
 
 [![Working](Working/LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
 [![Working](Working/Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
@@ -197,6 +196,10 @@ Coming Soon
 [![TrippyHappyJumper](https://user-images.githubusercontent.com/78935215/112180355-c7331d00-8bfb-11eb-9769-71b551174b8d.gif)](https://www.shadertoy.com/view/3dVSRD)
 [![GridOfCylinders](https://user-images.githubusercontent.com/78935215/112716612-a1519500-8ee7-11eb-9868-8d709202a1df.gif)
 )](https://www.shadertoy.com/view/4dSGW1)
+[![GoldFrame](https://user-images.githubusercontent.com/78935215/112769665-7fa8f880-9022-11eb-8a01-085b0c00725a.gif)](https://www.shadertoy.com/view/lstXRr)
+[![SurfaceOfTheVoid](https://user-images.githubusercontent.com/78935215/112769715-bf6fe000-9022-11eb-820e-04ac2ae64a3f.gif)](https://www.shadertoy.com/view/WtGBDG)
+
+
 
 ### nmbr73
 
