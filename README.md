@@ -114,6 +114,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 - Object
   - [Dancy Tree Doodle](ObjectShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
   - [Dancy Tree Doodle 3D](ObjectShader/DancyTreeDoodle3D.md) ported by [JiPi](Profiles/JiPi.md)
+  - [EggHunt](ObjectShader/EggHunt.md) ported by [JiPi](Profiles/JiPi.md) :new:
   - [FractalRadioBase](ObjectShader/FractalRadioBase.md) ported by [JiPi](Profiles/JiPi.md) :new:
   - [Lonely Voxel](ObjectShader/LonelyVoxel.md) ported by [JiPi](Profiles/JiPi.md)
   - [HW3Swing](ObjectShader/HW3Swing.md) ported by [JiPi](Profiles/JiPi.md)
@@ -172,6 +173,9 @@ Overview
 [![FractalRadioBase](https://user-images.githubusercontent.com/78935215/111519940-e2afab00-8757-11eb-883a-e8578422e648.gif)](ObjectShader/FractalRadioBase.md)
 [![IHEartFourier](https://user-images.githubusercontent.com/78935215/112179345-e67d7a80-8bfa-11eb-9670-d338dfe01382.gif)](MiscShader/IHeartFourier.md)
 [![FallingCuteBombs](https://user-images.githubusercontent.com/78935215/112716550-55065500-8ee7-11eb-8c67-a63abf1be8f7.gif)](AbstractShader/FallingCuteBombs.md)
+[![EggHunt](https://user-images.githubusercontent.com/78935215/112955107-6053bd80-913f-11eb-8407-da1100e60da4.gif)](ObjectShader/EggHunt.md)
+
+
 
 Work in Progress
 ----------------
@@ -195,7 +199,7 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![ChocolatePackage](https://user-images.githubusercontent.com/78935215/111883950-a5992200-89be-11eb-9d04-cdd1cf3dbc54.gif)](https://www.shadertoy.com/view/tllyDj)
 [![TrippyHappyJumper](https://user-images.githubusercontent.com/78935215/112180355-c7331d00-8bfb-11eb-9769-71b551174b8d.gif)](https://www.shadertoy.com/view/3dVSRD)
 [![GridOfCylinders](https://user-images.githubusercontent.com/78935215/112716612-a1519500-8ee7-11eb-9868-8d709202a1df.gif)
-)](https://www.shadertoy.com/view/4dSGW1)
+](https://www.shadertoy.com/view/4dSGW1)
 [![GoldFrame](https://user-images.githubusercontent.com/78935215/112769665-7fa8f880-9022-11eb-8a01-085b0c00725a.gif)](https://www.shadertoy.com/view/lstXRr)
 [![SurfaceOfTheVoid](https://user-images.githubusercontent.com/78935215/112769715-bf6fe000-9022-11eb-820e-04ac2ae64a3f.gif)](https://www.shadertoy.com/view/WtGBDG)
 
