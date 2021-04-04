@@ -1,4 +1,4 @@
-[![Shadertoyparade](img_subscribe.png)](https://youtu.be/oyndG0pLEQQ "WebGL to DCTL")
+[![Shadertoyparade](Site/img_subscribe.png)](https://youtu.be/oyndG0pLEQQ "WebGL to DCTL")
 
 [![YouTube Demo1](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
 [![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws&t)
@@ -90,92 +90,92 @@ Fuses
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
 
-- [Abstract Shaders](AbstractShader/)
-  - [BumpyReflectingBalls](AbstractShader/BumpyReflectingBalls.md) ported by [JiPi](Profiles/JiPi.md)
-  - [Crazyness](AbstractShader/Crazyness.md) ported by [nmbr73](Profiles/nmbr73.md)
-  - [Cross Distance](AbstractShader/CrossDistance.md) ported by [nmbr73](Profiles/nmbr73.md)
-  - [Favela](AbstractShader/Favela.md) ported by [nmbr73](Profiles/nmbr73.md)
-  - [FlightThroughANebula](AbstractShader/FlightThroughANebula.md) ported by [JiPi](Profiles/JiPi.md) :new:
-  - [Kali 3D](AbstractShader/Kali3D.md) ported by [JiPi](Profiles/JiPi.md) 
-  - [Mosaic](AbstractShader/Mosaic.md) ported by [JiPi](Profiles/JiPi.md) :new:
-  - [Noisecube](AbstractShader/Noisecube.md) ported by [JiPi](Profiles/JiPi.md)
-  - [Rainbow Slices](AbstractShader/RainbowSlices.md) ported by [nmbr73](Profiles/nmbr73.md)
-  - [Vine](AbstractShader/Vine.md) ported by [JiPi](Profiles/JiPi.md)
+- [Abstract Shaders](Shaders/Abstract/)
+  - [BumpyReflectingBalls](Shaders/Abstract/BumpyReflectingBalls.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [Crazyness](Shaders/Abstract/Crazyness.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
+  - [Cross Distance](Shaders/Abstract/CrossDistance.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
+  - [Favela](Shaders/Abstract/Favela.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
+  - [FlightThroughANebula](Shaders/Abstract/FlightThroughANebula.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [Kali 3D](Shaders/Abstract/Kali3D.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [Mosaic](Shaders/Abstract/Mosaic.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [Noisecube](Shaders/Abstract/Noisecube.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [Rainbow Slices](Shaders/Abstract/RainbowSlices.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
+  - [Vine](Shaders/Abstract/Vine.md) ported by [JiPi](Site/Profiles/JiPi.md)
 - Blob
-  - [FunWithMetaballs](BlobShader/FunWithMetaballs.md) ported by [JiPi](Profiles/JiPi.md)
-  - [TorturedBlob](BlobShader/TorturedBlob.md) ported by [JiPi](Profiles/JiPi.md)
+  - [FunWithMetaballs](Shaders/Blob/FunWithMetaballs.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [TorturedBlob](Shaders/Blob/TorturedBlob.md) ported by [JiPi](Site/Profiles/JiPi.md)
 - Distortion
-  - [FbmWarp](DistortionShader/FbmWarp.md) ported by [JiPi](Profiles/JiPi.md) :new:
+  - [FbmWarp](Shaders/Distortion/FbmWarp.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
 - Miscellaneous
-  - [Fire_Water](MiscShader/Fire_Water.md) ported by [JiPi](Profiles/JiPi.md)
-  - [FractalLand](MiscShader/FractalLand.md) ported by [nmbr73](Profiles/nmbr73.md)
-  - [IHeartFourier](MiscShader/IHeartFourier.md) ported by [JiPi](Profiles/JiPi.md) :new:
-  - [WildKifs4D](MiscShader/WildKifs4D.md) ported by [JiPi](Profiles/JiPi.md)
+  - [Fire_Water](Shaders/Misc/Fire_Water.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [FractalLand](Shaders/Misc/FractalLand.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
+  - [IHeartFourier](Shaders/Misc/IHeartFourier.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [WildKifs4D](Shaders/Misc/WildKifs4D.md) ported by [JiPi](Site/Profiles/JiPi.md)
 - Object
-  - [Dancy Tree Doodle](ObjectShader/DancyTreeDoodle.md) ported by [JiPi](Profiles/JiPi.md)
-  - [Dancy Tree Doodle 3D](ObjectShader/DancyTreeDoodle3D.md) ported by [JiPi](Profiles/JiPi.md)
-  - [EggHunt](ObjectShader/EggHunt.md) ported by [JiPi](Profiles/JiPi.md) :new:
-  - [FractalRadioBase](ObjectShader/FractalRadioBase.md) ported by [JiPi](Profiles/JiPi.md) :new:
-  - [Lonely Voxel](ObjectShader/LonelyVoxel.md) ported by [JiPi](Profiles/JiPi.md)
-  - [HW3Swing](ObjectShader/HW3Swing.md) ported by [JiPi](Profiles/JiPi.md)
-- [Planet Shaders](PlanetShader/)
-  - [Cracker Cars](PlanetShader/CrackerCars.md) ported by [JiPi](Profiles/JiPi.md)
-  - [EARF](PlanetShader/EARF.md) ported by [JiPi](Profiles/JiPi.md)
-  - [Fake3DScene](PlanetShader/Fake3DScene.md) ported by [JiPi](Profiles/JiPi.md)
-  - [RayCastSphere](PlanetShader/RayCastSphere.md) ported by [JiPi](Profiles/JiPi.md)
-- Recursiv
-  - [FallingCuteBombs](RecursiveShader/FallingCuteBombs.md) ported by [JiPi](Profiles/JiPi.md) :new:
-  - [Spilled](RecursiveShader/Spilled.md) ported by [JiPi](Profiles/JiPi.md)
-  - [TDSOTM_Nebula](RecursiveShader/TDSOTM_Nebula.md) ported by [JiPi](Profiles/JiPi.md) 
+  - [Dancy Tree Doodle](Shaders/Object/DancyTreeDoodle.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [Dancy Tree Doodle 3D](Shaders/Object/DancyTreeDoodle3D.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [EggHunt](Shaders/Object/EggHunt.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [FractalRadioBase](Shaders/Object/FractalRadioBase.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [Lonely Voxel](Shaders/Object/LonelyVoxel.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [HW3Swing](Shaders/Object/HW3Swing.md) ported by [JiPi](Site/Profiles/JiPi.md)
+- [Planet Shaders](Shaders/Planet/)
+  - [Cracker Cars](Shaders/Planet/CrackerCars.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [EARF](Shaders/Planet/EARF.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [Fake3DScene](Shaders/Planet/Fake3DScene.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [RayCastSphere](Shaders/Planet/RayCastSphere.md) ported by [JiPi](Site/Profiles/JiPi.md)
+- Recursive
+  - [FallingCuteBombs](Shaders/Recursive/FallingCuteBombs.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [Spilled](Shaders/Recursive/Spilled.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [TDSOTM_Nebula](Shaders/Recursive/TDSOTM_Nebula.md) ported by [JiPi](Site/Profiles/JiPi.md)
 - Tunnel
-  - [Try Not To Hit The Walls](TunnelShader/TNTHTW.md) ported by [JiPi](Profiles/JiPi.md)
-  - [Velocibox.fuse](TunnelShader/Velocibox.md) ported by [nmbr73](Profiles/nmbr73.md)
-  - [WindingMengerTunnel](TunnelShader/WindingMengerTunnel.md) ported by [JiPi](Profiles/JiPi.md) :new:
+  - [Try Not To Hit The Walls](Shaders/Tunnel/TNTHTW.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [Velocibox.fuse](Shaders/Tunnel/Velocibox.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
+  - [WindingMengerTunnel](Shaders/Tunnel/WindingMengerTunnel.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
 
 Work in Progress
 ----------------
 
-- [Voxel Edges](AbstractShader/VoxelEdges.md) currently under construction by [nmbr73](Profiles/nmbr73.md)
-- [FbmWarp](AbstractShader/FbmWarp.md) currently under construction by [JiPi](Profiles/JiPi.md)
-- [InteractiveThinks](Working/InteractiveThinks.md) currently under construction by [JiPi](Profiles/JiPi.md)
-- [AncientTemple](Working/AncientTemple.md) currently under construction by [JiPi](Profiles/JiPi.md) :collision:
+- [Voxel Edges](Shaders/Abstract/VoxelEdges.md) currently under construction by [nmbr73](Site/Profiles/nmbr73.md)
+- [FbmWarp](Shaders/Abstract/FbmWarp.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
+- [InteractiveThinks](Working/InteractiveThinks.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
+- [AncientTemple](Working/AncientTemple.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
 
 
 Overview
 ========
 
-[![AbstractShader/Crazyness.fuse](AbstractShader/Crazyness_320x180.png)](AbstractShader/Crazyness.md)
-[![AbstractShader/CrossDistance.fuse](AbstractShader/CrossDistance_320x180.png)](AbstractShader/CrossDistance.md)
-[![AbstractShader/Favela.fuse](AbstractShader/Favela_320x180.png)](AbstractShader/Favela.md)
-[![AbstractShader/Kali3D.fuse](AbstractShader/Kali3D_320x180.png)](AbstractShader/Kali3D.md)
-[![AbstractShader/Noisecube.fuse](AbstractShader/Noisecube_320x180.png)](AbstractShader/Noisecube.md)
-[![AbstractShader/RainbowSlices.fuse](AbstractShader/RainbowSlices_320x180.png)](AbstractShader/RainbowSlices.md)
-[![ObjectShader/DancyTreeDoodle.fuse](ObjectShader/DancyTreeDoodle_320x180.png)](ObjectShader/DancyTreeDoodle.md)
-[![ObjectShader/DancyTreeDoodle3D.fuse](ObjectShader/DancyTreeDoodle3D_320x180.png)](ObjectShader/DancyTreeDoodle3D.md)
-[![ObjectShader/LonelyVoxel.fuse](ObjectShader/LonelyVoxel_320x180.png)](ObjectShader/LonelyVoxel.md)
-[![PlanetShader/CrackerCars.fuse](PlanetShader/CrackerCars_320x180.png)](PlanetShader/CrackerCars.md)
-[![PlanetShader/Fake3DScene.fuse](PlanetShader/Fake3DScene_320x180.png)](PlanetShader/Fake3DScene.md)
-[![BlobShader/TorturedBlob.fuse](BlobShader/TorturedBlob_320x180.png)](BlobShader/TorturedBlob.md)
-[![PlanetShader/RayCastSphere.fuse](PlanetShader/RayCastSphere_320x180.png)](PlanetShader/RayCastSphere.md)
-[![PlanetShader/EARF.fuse](PlanetShader/EARF_320x180.png)](PlanetShader/EARF.md)
-[![TunnelShader/Velocibox.fuse](TunnelShader/Velocibox_320x180.png)](TunnelShader/Velocibox.md)
-[![FunWithMetaballs](BlobShader/FunWithMetaballs_320x180.png)](BlobShader/FunWithMetaballs.md)
-[![HW3Swing](ObjectShader/HW3Swing_320x180.png)](ObjectShader/HW3Swing.md)
-[![Vine](AbstractShader/Vine_320x180.png)](AbstractShader/Vine.md)
-[![BumpyReflectingBalls](AbstractShader/BumpyReflectingBalls_320x180.png)](AbstractShader/BumpyReflectingBalls.md)
-[![Fire_Water](MiscShader/Fire_Water_320x180.png)](MiscShader/Fire_Water.md)
-[![WildKifs4D](MiscShader/WildKifs4D_320x180.png)](MiscShader/WildKifs4D.md)
-[![MiscShader/FractalLand.fuse](MiscShader/FractalLand_320x180.png)](MiscShader/FractalLand.md)
-[![Spilled](RecursiveShader/Spilled_320x180.png)](RecursiveShader/Spilled.md)
-[![TDSOTM_Nebula](RecursiveShader/TDSOTM_Nebula_320x180.png)](RecursiveShader/TDSOTM_Nebula.md)
-[![FlightThroughANebula](AbstractShader/FlightThroughANebula_320x180.png)](AbstractShader/FlightThroughANebula.md)
-[![FbmWarp](DistortionShader/FbmWarp_320x180.png)](DistortionShader/FbmWarp.md)
-[![AbstractShader/Mosaic.fuse](https://user-images.githubusercontent.com/78935215/111024004-98879c00-83dc-11eb-9152-cd0ad2fd8a54.gif)](AbstractShader/Mosaic.md)
-[![FractalRadioBase](https://user-images.githubusercontent.com/78935215/111519940-e2afab00-8757-11eb-883a-e8578422e648.gif)](ObjectShader/FractalRadioBase.md)
-[![IHEartFourier](https://user-images.githubusercontent.com/78935215/112179345-e67d7a80-8bfa-11eb-9670-d338dfe01382.gif)](MiscShader/IHeartFourier.md)
-[![FallingCuteBombs](https://user-images.githubusercontent.com/78935215/112716550-55065500-8ee7-11eb-8c67-a63abf1be8f7.gif)](AbstractShader/FallingCuteBombs.md)
-[![EggHunt](https://user-images.githubusercontent.com/78935215/112955107-6053bd80-913f-11eb-8407-da1100e60da4.gif)](ObjectShader/EggHunt.md)
-[![WindingMengerTunnel](https://user-images.githubusercontent.com/78935215/113430326-44b81380-93da-11eb-9581-0569c1567694.gif)](TunnelShader/WindingMengerTunnel.md)
+[![Shaders/Abstract/Crazyness.fuse](Shaders/Abstract/Crazyness_320x180.png)](Shaders/Abstract/Crazyness.md)
+[![Shaders/Abstract/CrossDistance.fuse](Shaders/Abstract/CrossDistance_320x180.png)](Shaders/Abstract/CrossDistance.md)
+[![Shaders/Abstract/Favela.fuse](Shaders/Abstract/Favela_320x180.png)](Shaders/Abstract/Favela.md)
+[![Shaders/Abstract/Kali3D.fuse](Shaders/Abstract/Kali3D_320x180.png)](Shaders/Abstract/Kali3D.md)
+[![Shaders/Abstract/Noisecube.fuse](Shaders/Abstract/Noisecube_320x180.png)](Shaders/Abstract/Noisecube.md)
+[![Shaders/Abstract/RainbowSlices.fuse](Shaders/Abstract/RainbowSlices_320x180.png)](Shaders/Abstract/RainbowSlices.md)
+[![Shaders/Object/DancyTreeDoodle.fuse](Shaders/Object/DancyTreeDoodle_320x180.png)](Shaders/Object/DancyTreeDoodle.md)
+[![Shaders/Object/DancyTreeDoodle3D.fuse](Shaders/Object/DancyTreeDoodle3D_320x180.png)](Shaders/Object/DancyTreeDoodle3D.md)
+[![Shaders/Object/LonelyVoxel.fuse](Shaders/Object/LonelyVoxel_320x180.png)](Shaders/Object/LonelyVoxel.md)
+[![Shaders/Planet/CrackerCars.fuse](Shaders/Planet/CrackerCars_320x180.png)](Shaders/Planet/CrackerCars.md)
+[![Shaders/Planet/Fake3DScene.fuse](Shaders/Planet/Fake3DScene_320x180.png)](Shaders/Planet/Fake3DScene.md)
+[![Shaders/Blob/TorturedBlob.fuse](Shaders/Blob/TorturedBlob_320x180.png)](Shaders/Blob/TorturedBlob.md)
+[![Shaders/Planet/RayCastSphere.fuse](Shaders/Planet/RayCastSphere_320x180.png)](Shaders/Planet/RayCastSphere.md)
+[![Shaders/Planet/EARF.fuse](Shaders/Planet/EARF_320x180.png)](Shaders/Planet/EARF.md)
+[![Shaders/Tunnel/Velocibox.fuse](Shaders/Tunnel/Velocibox_320x180.png)](Shaders/Tunnel/Velocibox.md)
+[![FunWithMetaballs](Shaders/Blob/FunWithMetaballs_320x180.png)](Shaders/Blob/FunWithMetaballs.md)
+[![HW3Swing](Shaders/Object/HW3Swing_320x180.png)](Shaders/Object/HW3Swing.md)
+[![Vine](Shaders/Abstract/Vine_320x180.png)](Shaders/Abstract/Vine.md)
+[![BumpyReflectingBalls](Shaders/Abstract/BumpyReflectingBalls_320x180.png)](Shaders/Abstract/BumpyReflectingBalls.md)
+[![Fire_Water](Shaders/Misc/Fire_Water_320x180.png)](Shaders/Misc/Fire_Water.md)
+[![WildKifs4D](Shaders/Misc/WildKifs4D_320x180.png)](Shaders/Misc/WildKifs4D.md)
+[![Shaders/Misc/FractalLand.fuse](Shaders/Misc/FractalLand_320x180.png)](Shaders/Misc/FractalLand.md)
+[![Spilled](Shaders/Recursive/Spilled_320x180.png)](Shaders/Recursive/Spilled.md)
+[![TDSOTM_Nebula](Shaders/Recursive/TDSOTM_Nebula_320x180.png)](Shaders/Recursive/TDSOTM_Nebula.md)
+[![FlightThroughANebula](Shaders/Abstract/FlightThroughANebula_320x180.png)](Shaders/Abstract/FlightThroughANebula.md)
+[![FbmWarp](Shaders/Distortion/FbmWarp_320x180.png)](Shaders/Distortion/FbmWarp.md)
+[![Shaders/Abstract/Mosaic.fuse](https://user-images.githubusercontent.com/78935215/111024004-98879c00-83dc-11eb-9152-cd0ad2fd8a54.gif)](Shaders/Abstract/Mosaic.md)
+[![FractalRadioBase](https://user-images.githubusercontent.com/78935215/111519940-e2afab00-8757-11eb-883a-e8578422e648.gif)](Shaders/Object/FractalRadioBase.md)
+[![IHEartFourier](https://user-images.githubusercontent.com/78935215/112179345-e67d7a80-8bfa-11eb-9670-d338dfe01382.gif)](Shaders/Misc/IHeartFourier.md)
+[![FallingCuteBombs](https://user-images.githubusercontent.com/78935215/112716550-55065500-8ee7-11eb-8c67-a63abf1be8f7.gif)](Shaders/Abstract/FallingCuteBombs.md)
+[![EggHunt](https://user-images.githubusercontent.com/78935215/112955107-6053bd80-913f-11eb-8407-da1100e60da4.gif)](Shaders/Object/EggHunt.md)
+[![WindingMengerTunnel](https://user-images.githubusercontent.com/78935215/113430326-44b81380-93da-11eb-9581-0569c1567694.gif)](Shaders/Tunnel/WindingMengerTunnel.md)
 
 
 
@@ -213,4 +213,4 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 
 Someday / maybe
 
-[![AbstractShader/VoxelEdges.fuse](AbstractShader/VoxelEdges_320x180.png)](AbstractShader/VoxelEdges.md)
+[![Shaders/Abstract/VoxelEdges.fuse](Shaders/Abstract/VoxelEdges_320x180.png)](Shaders/Abstract/VoxelEdges.md)
