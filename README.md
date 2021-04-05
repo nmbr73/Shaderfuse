@@ -114,6 +114,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 - Distortion
   - [FbmWarp](Shaders/Distortion/FbmWarp.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
 - Miscellaneous
+  - [BuoyantBalls](Shaders/Misc/BuoyantBalls.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
   - [Fire_Water](Shaders/Misc/Fire_Water.md) ported by [JiPi](Site/Profiles/JiPi.md)
   - [FractalLand](Shaders/Misc/FractalLand.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
   - [IHeartFourier](Shaders/Misc/IHeartFourier.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
@@ -146,6 +147,8 @@ Work in Progress
 - [FbmWarp](Shaders/Abstract/FbmWarp.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
 - [InteractiveThinks](Working/InteractiveThinks.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
 - [AncientTemple](Working/AncientTemple.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
+- [Physically-BasedSoapBubble](WorkInProgress/JiPi/Physically-BasedSoapBubble.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
+
 
 
 Overview
@@ -183,7 +186,7 @@ Overview
 [![FallingCuteBombs](https://user-images.githubusercontent.com/78935215/112716550-55065500-8ee7-11eb-8c67-a63abf1be8f7.gif)](Shaders/Abstract/FallingCuteBombs.md)
 [![EggHunt](https://user-images.githubusercontent.com/78935215/112955107-6053bd80-913f-11eb-8407-da1100e60da4.gif)](Shaders/Object/EggHunt.md)
 [![WindingMengerTunnel](https://user-images.githubusercontent.com/78935215/113430326-44b81380-93da-11eb-9581-0569c1567694.gif)](Shaders/Tunnel/WindingMengerTunnel.md)
-
+[![BuoyantBalls](https://user-images.githubusercontent.com/78935215/113590215-ab376e80-9632-11eb-9cf2-c632d25069df.gif)](Shaders/Misc/BuoyantBalls.md)
 
 
 
@@ -194,8 +197,8 @@ Work in Progress
 
 Coming Soon (Conversion is finished, the DCTL code still has to be provided with parameters and placed in a fuse.)
 
-[![Working](Working/LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
-[![Working](Working/Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
+[![Working](WorkInProgress\JiPi\LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
+[![Working](WorkInProgress\JiPi\Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
 [![TransparentDistortion](https://user-images.githubusercontent.com/78935215/109943088-19f07780-7cd5-11eb-8183-31ecafe9f446.gif)](https://www.shadertoy.com/view/ttBBRK)
 [![DiffuisonGathering](https://user-images.githubusercontent.com/78935215/109943592-a56a0880-7cd5-11eb-97c0-a899d167d6e7.gif)](https://www.shadertoy.com/view/3sGXRy)
 [![InteractiveThinks](https://user-images.githubusercontent.com/78935215/110646914-aad4c080-81b7-11eb-80eb-6562a27cf929.gif)](https://www.shadertoy.com/view/Xt3SR4)
@@ -220,4 +223,4 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 
 Someday / maybe
 
-[![Shaders/Abstract/VoxelEdges.fuse](Shaders/Abstract/VoxelEdges_320x180.png)](Shaders/Abstract/VoxelEdges.md)
+[![Shaders/Abstract/VoxelEdges.fuse](WorkInProgress\nmbr73\VoxelEdges_320x180.png)](Shaders/Abstract/VoxelEdges.md)
