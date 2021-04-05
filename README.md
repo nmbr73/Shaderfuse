@@ -197,8 +197,8 @@ Work in Progress
 
 Coming Soon (Conversion is finished, the DCTL code still has to be provided with parameters and placed in a fuse.)
 
-[![Working](WorkInProgress\JiPi\LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
-[![Working](WorkInProgress\JiPi\Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
+[![Working](WorkInProgress/JiPi/LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
+[![Working](WorkInProgress/JiPi/Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
 [![TransparentDistortion](https://user-images.githubusercontent.com/78935215/109943088-19f07780-7cd5-11eb-8183-31ecafe9f446.gif)](https://www.shadertoy.com/view/ttBBRK)
 [![DiffuisonGathering](https://user-images.githubusercontent.com/78935215/109943592-a56a0880-7cd5-11eb-97c0-a899d167d6e7.gif)](https://www.shadertoy.com/view/3sGXRy)
 [![InteractiveThinks](https://user-images.githubusercontent.com/78935215/110646914-aad4c080-81b7-11eb-80eb-6562a27cf929.gif)](https://www.shadertoy.com/view/Xt3SR4)
@@ -223,4 +223,4 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 
 Someday / maybe
 
-[![Shaders/Abstract/VoxelEdges.fuse](WorkInProgress\nmbr73\VoxelEdges_320x180.png)](Shaders/Abstract/VoxelEdges.md)
+[![Shaders/Abstract/VoxelEdges.fuse](WorkInProgress/nmbr73/VoxelEdges_320x180.png)](Shaders/Abstract/VoxelEdges.md)
