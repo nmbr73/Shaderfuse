@@ -143,13 +143,12 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 Work in Progress
 ----------------
 
-- [Voxel Edges](Shaders/Abstract/VoxelEdges.md) currently under construction by [nmbr73](Site/Profiles/nmbr73.md)
+- [Voxel Edges](WorkInProgress/nmbr73/VoxelEdges.md) currently under construction by [nmbr73](Site/Profiles/nmbr73.md)
 - [FbmWarp](Shaders/Abstract/FbmWarp.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
-- [InteractiveThinks](Working/InteractiveThinks.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
-- [AncientTemple](Working/AncientTemple.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
+- [InteractiveThinks](WorkInProgress/JiPi/InteractiveThinks.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
+- [AncientTemple](WorkInProgress/JiPi/AncientTemple.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
 - [Physically-BasedSoapBubble](WorkInProgress/JiPi/Physically-BasedSoapBubble.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
-
-
+- [Dual3DTruchetTiles](WorkInProgress/JiPi/Dual3DTruchetTiles.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :exclamation:
 
 Overview
 ========
@@ -223,4 +222,4 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 
 Someday / maybe
 
-[![Shaders/Abstract/VoxelEdges.fuse](WorkInProgress/nmbr73/VoxelEdges_320x180.png)](Shaders/Abstract/VoxelEdges.md)
+[![Shaders/Abstract/VoxelEdges.fuse](WorkInProgress/nmbr73/VoxelEdges_320x180.png)](WorkInProgress/nmbr73/VoxelEdges.md)
