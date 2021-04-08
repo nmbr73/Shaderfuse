@@ -113,6 +113,7 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [TorturedBlob](Shaders/Blob/TorturedBlob.md) ported by [JiPi](Site/Profiles/JiPi.md)
 - Distortion
   - [FbmWarp](Shaders/Distortion/FbmWarp.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [DisplacementShader](Shaders/Distortion/DisplacementShader.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
 - Miscellaneous
   - [BuoyantBalls](Shaders/Misc/BuoyantBalls.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
   - [Fire_Water](Shaders/Misc/Fire_Water.md) ported by [JiPi](Site/Profiles/JiPi.md)
@@ -126,6 +127,8 @@ Okay, so far there's not much here, which of course seems a bit silly after that
   - [FractalRadioBase](Shaders/Object/FractalRadioBase.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
   - [Lonely Voxel](Shaders/Object/LonelyVoxel.md) ported by [JiPi](Site/Profiles/JiPi.md)
   - [HW3Swing](Shaders/Object/HW3Swing.md) ported by [JiPi](Site/Profiles/JiPi.md)
+  - [WalkingCubes](Shaders/Object/WalkingCubes.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+
 - [Planet Shaders](Shaders/Planet/)
   - [Cracker Cars](Shaders/Planet/CrackerCars.md) ported by [JiPi](Site/Profiles/JiPi.md)
   - [EARF](Shaders/Planet/EARF.md) ported by [JiPi](Site/Profiles/JiPi.md)
@@ -186,7 +189,8 @@ Overview
 [![EggHunt](https://user-images.githubusercontent.com/78935215/112955107-6053bd80-913f-11eb-8407-da1100e60da4.gif)](Shaders/Object/EggHunt.md)
 [![WindingMengerTunnel](https://user-images.githubusercontent.com/78935215/113430326-44b81380-93da-11eb-9581-0569c1567694.gif)](Shaders/Tunnel/WindingMengerTunnel.md)
 [![BuoyantBalls](https://user-images.githubusercontent.com/78935215/113590215-ab376e80-9632-11eb-9cf2-c632d25069df.gif)](Shaders/Misc/BuoyantBalls.md)
-
+[![DisplacementShader](https://user-images.githubusercontent.com/78935215/114025552-854ddc00-9875-11eb-996b-6799996bdf7b.gif)](Shaders/Distortion/DisplacementShader.md)
+[![WalkingCubes](https://user-images.githubusercontent.com/78935215/114034649-a961eb00-987e-11eb-8be4-de55b8dd1e6c.gif)](Shaders/Object/WalkingCubes.md)
 
 
 Work in Progress
