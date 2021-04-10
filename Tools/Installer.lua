@@ -1,4 +1,188 @@
+
+Okay, das Ding hier habe ich jetzt komplett geschrottet - das ganze Zeug zieht gerade um in andere Dateien und nach dem Ausschlachten wird diese hier geschreddert.
+
+-- ----------------------------------------------------------------------
+-- WORK WITH A FUSE FILE
+-- ----------------------------------------------------------------------
+local Fuse = {
+  file_filepath='',
+  file_basepath='',
+  file_category='',
+  file_fusename='',
+  file_filename='',
+
+  error = nil,
+
+  shadertoy_name = '',
+  shadertoy_author = '',
+  shadertoy_id = '',
+  shadertoy_license = '',
+  dctlfuse_category = '',
+  dctlfuse_name = '',
+  dctlfuse_author = '',
+
+  fuse_sourceCode = nil,
+}
+
+
+-- function Fuse:clear()
+--   self.file_filepath=''
+--   self.file_basepath=''
+--   self.file_category=''
+--   self.file_name=''
+
+--   self.error = nil
+
+--   self.shadertoy_name = ''
+--   self.shadertoy_author = ''
+--   self.shadertoy_id = ''
+--   self.shadertoy_license = ''
+--   self.dctlfuse_category = ''
+--   self.dctlfuse_name = ''
+--   self.dctlfuse_author = ''
+
+--   self.fuse_sourceCode = nil
+-- end
+
+
+
+function Fuse:new(filepath)
+local o = {}
+setmetatable(o, self)
+self.__index = self
+o:init(filepath)
+
+return o
+end
+
+
+function Fuse:purge()
+self.fuse_sourceCode = ''
+end
+
+
+function Fuse:init(filepath)
+assert(filepath~=nil)
+
+self.file_filepath=filepath
+
+self.file_basepath, self.file_category, self.file_fusename =
+  filepath:match('^(.+/Shaders/)([^/]+)/([^%.]+)%.fuse$')
+
+if self.file_basepath==nil or self.file_category==nil or self.file_fusename==nil then
+  self.error="filepath '"..self.file_filepath.."' does not match the expected schema"
+end
+
+self.file_filename=self.file_fusename..'.fuse'
+
+end
+
+
+function Fuse:setError(txt,rv)
+assert(txt~=nil and txt~='')
+assert(self.file_fusename~=nil and self.file_fusename~='')
+self.error="in '"..self.file_category..'/'..self.file_fusename..".fuse': "..txt
+return rv
+end
+
+
+function Fuse:hasErrors()
+assert(self ~= nil)
+if self.error ~= nil and self.error ~='' then
+  return true
+end
+return false
+end
+
+function Fuse:isValid()
+assert(self ~= nil)
+if self:hasErrors() or self.file_filepath==nil or self.file_filepath=='' then
+  return false
+end
+return true
+end
+
+
+function Fuse:getErrorText()
+assert(self ~= nil)
+if self.error ~= nil then
+  return self.error
+end
+return ''
+end
+
+
+function Fuse:read()
+assert(self.fuse_sourceCode==nil)
+
+if not self:isValid() then return false end
+
+local f = io.open(self.file_filepath, "rb")
+
+if not f then return self:setError("failed to read '"..self.file_filepath.."'",false) end
+
+self.fuse_sourceCode = f:read("*all")
+f:close()
+
+if self.fuse_sourceCode==nil or self.fuse_sourceCode=='' then return self:setError("failed to read content of file '"..self.file_filepath.."'",false) end
+
+local fields = {'shadertoy_name', 'shadertoy_author', 'shadertoy_id','shadertoy_license','dctlfuse_category','dctlfuse_name','dctlfuse_author'}
+
+for i, name in ipairs(fields) do
+  local value=self.fuse_sourceCode:match('\n%s*local%s+'..name..'%s*=%s*"([^"]+)"') or self.fuse_sourceCode:match('^%s*local%s+'..name.."%s*=%s*'([^']+)'") or ''
+
+  if value==''and name=='dctlfuse_name' and self.fuse_sourceCode:match('\n%s*local%s+dctlfuse_name%s*=%s*shadertoy_name') then
+    value = self.shadertoy_name
+  end
+
+  if value=='' then return self:setError("'"..name.."' could not be determined",false) end
+
+  self[name]=value
+end
+
+if not self.dctlfuse_name:match('^[A-Za-z][A-Za-z0-9_]*[A-Za-z0-9]$') then return self:setError("invalid fuse name '"..self.dctlfuse_name.."'",false) end
+if self.dctlfuse_name ~= self.file_fusename then return self:setError("fuse name '"..self.dctlfuse_name.."' does not match filename",false) end
+if not self.dctlfuse_category:match('^[A-Z][A-Za-z]+$') then return self:setError("invalid category name '"..self.dctlfuse_category.."'",false) end
+if self.dctlfuse_category ~= self.file_category then return self:setError("fuse category '"..self.dctlfuse_category.."' does not match fuse's subdirectory",false) end
+
+return true
+
+end
+
+
+return Fuse
+
+
+
 require("string")
+require("Shadertoys/Fuse")
+
+
+-- Installation:
+--
+-- In your DaFusions 'Scripts/Comp/' folder
+-- create a directory 'Shadertoys' and
+-- copy this file into it.
+--
+-- Put the full path to your working copy
+-- of the git reposity into the following
+-- variable:
+
+local PATH_TO_REPOSITORY='/Users/nmbr73/Projects/Shadertoys'
+
+
+if PATH_TO_REPOSITORY==nil or PATH_TO_REPOSITORY=='' then
+  PATH_TO_REPOSITORY=getOwnPath()..'../'
+  if not(directoryExists(PATH_TO_REPOSITORY,".git")) then
+    PATH_TO_REPOSITORY=nil
+    print("repo not found")
+    os.exit(10)
+  end
+end
+
+
+
+
 
 local g_ui                = fu.UIManager
 local g_disp              = bmd.UIDispatcher(g_ui)
@@ -55,6 +239,29 @@ end
 
 
 
+function directoryExists(path, dir)
+
+  -- Returns true, if path exists and is a directory; false otherwise.
+  -- Instead of missusing the bmd.readdir() function there probably is
+  --- a better way to do this!?!
+
+  assert(path~=nil and path~="" and dir~=nil and dir~="")
+
+	path = string.gsub(path,"\\","/")
+
+	local handle = bmd.readdir(path..dir)
+
+	for k, v in pairs(handle) do
+		if v.Name~=nil and v.Name==dir and v.IsDir then
+			return true;
+		end
+	end
+	return false;
+end
+
+
+
+
 function printERR(message)
 
   -- Just because I have no clue how to print to stderr in a way that the
@@ -64,102 +271,6 @@ function printERR(message)
 		print("ERR " .. message)
 	end
 end
-
-
-
--- ----------------------------------------------------------------------
--- INSTALL MODES
--- ----------------------------------------------------------------------
-
-function initInstallModeOptions(params)
-
-
-  assert(g_chosenInstallModeOption == nil)
-  assert(params ~= nil)
-  assert(params.TargetIsGitRepo ~= nil)
-
-  local options=
-  {
-    { -- Mode        = MODE_NONE,
-      Label       = "- chose installation mode -",
-      Enabled     = false,
-      Procedure   = doNothing,
-      Text        = [[
-        <p>This script is menat to install the shader fuses, or to create installation scripts to install the shader fuses.
-        Use the select box on top to chose an installation mode and to see further details on the respective method.</p>
-      ]],
-    },
-
-    { -- Mode        = MODE_LOCALCOPY,
-      Label       = "Local Copy",
-      Enabled     = not(params.TargetIsGitRepo),
-      Procedure   = doLocalCopy,
-      Text        = [[
-        <p>If you have downloaded and extracted(!) the whole repository as a ZIP file, then this mode should help you to
-        create a local copy of the fuses in the correct target directory. In this case the script creates the <em>Shadertoys<em>
-        subdirectories in your DaVinci Resolve's / Fusion's <em>Fuses</em> directory and copies all the .fuse files and only
-        these to that directory.</p>
-      ]]..(params.TargetIsGitRepo and [[
-        <p style="color:#ff9090; ">
-        This option is not available ...
-        </p>
-        <p style="color:#ffffff; ">
-          It seems that you are managing our Shadertoy Fuses using Git already. That's awesome! Forking and/or cloning us
-          on GitHub obviously is the right and more pro way of doing things. Just use a 'git pull' in your 'Shadertoys'
-          directory and you are up to date and good to go. Looking forward to your pull requests maybe contributing some
-          beatutiful shaderstoys?!!
-        </p>
-      ]] or ""),
-    },
-
-    { -- Mode        = MODE_SINGLEINSTALLERS,
-      Label       = "Single Installers",
-      Enabled     = true,
-      Procedure   = doSingleInstallers,
-      Text        = [[
-        <p>This options generates a separate, fully self contained '<tt>*-Installer.lua</tt>' script for each fuse.
-        This allows the fuses to be distributed independently of the repository,
-        whilst still providing the convenience of not having to copy the Fuse to the specific pathes manually.
-        Just drag and drop such an installer script onto your DaFusion's working area and the script will guide
-        you through the installation.</p>
-        <p style="color:#ffffff; ">
-        Please note that hereby any such installer is overwritten. Just run this option from time to time
-        on the repository to make the installers contain the most recent versions of the fuses.
-        </p>
-      ]],
-    },
-
-    { -- Mode        = MODE_CREATEINSTALLER,
-      Label       = "Create Installer",
-      Enabled     = false,
-      Procedure   = doCreateInstaller,
-      Text        = [[
-        <p>The 'Create Installer' is to create a single Lua script that can be used to install all the fuses.
-        It is intended to be provided in particular as a separate download with no need to copy the ZIP or
-        clone the repository.</p>
-        <p style=\"color:#ff9090; \">This option hasn't been implemented yet!</p>
-      ]],
-    },
-
-    { -- Mode        = MODE_PREPARESUGGESTION,
-      Label       = "Prepare WSL Suggestion",
-      Enabled     = false,
-      Procedure   = doPrepareSuggestion,
-      Text        = [[
-        <p>Idea is to have the installer create copies of the Fuses without all the prefixes, debug settings,
-        additinal files, etc. This to end up with a directory structure that can be used in preparation of a
-        suggestion for integration into the WSL Reactor.</p>
-        <p style=\"color:#ff9090; \">This option hasn't been implemented yet!</p>
-      ]],
-    },
-  }
-
-  g_chosenInstallModeOption = options[1]
-
-  return options
-end
-
-
 
 -- ----------------------------------------------------------------------
 -- WINDOW TO JUST SHOW A SIMPLE MESSAGE
@@ -221,14 +332,301 @@ end
 
 
 -- ----------------------------------------------------------------------
+-- LIST OF FUSE FILES
+-- ----------------------------------------------------------------------
+
+
+--[[
+Fuses = {
+  head = nil,
+  tail = nil,
+  len = 0,
+  Root = ''
+}
+
+
+
+function Fuses:new(o)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+
+  return o
+end
+
+
+
+function Fuses:fetch(path)
+
+  self.head = nil
+  self.tail = nil
+  self.len = 0
+  self.Root = ''
+
+  assert(path~=nil)
+
+  if path==nil or path=='' then
+    return 0
+  end
+
+  if path:sub(-1) ~= '/' then
+    path = path..'/'
+  end
+
+  local suffix = suffix or ""
+
+  fetchFuses_rec(path, "", self )
+
+  return self.len
+end
+
+
+
+function fetchFuses_rec(path, subpath, fuses)
+
+	local handle	= bmd.readdir(path .. subpath .. '*')
+  local suffix  = '.fuse'
+
+  for k, v in pairs(handle) do
+    if (v.Name ~= nil and string.sub(v.Name,0,1) ~= ".") then
+      if (v.IsDir == false) then
+        if string.sub(v.Name,-5) == '.fuse' then
+
+          fuses.head = {
+            next = fuses.head, File = v.Name, Path = subpath,
+            Install = true,
+            }
+
+          fuses.len  = fuses.len +1
+
+        end
+      else
+        fetchFuses_rec(path, subpath..v.Name.."/", fuses )
+      end
+    end
+  end
+
+end
+
+
+
+function Fuses:foreach_do(cb)
+
+  local listItem=self.head
+
+  while listItem do
+
+    cb( {Root=self.Root,Path=listItem.Path,File=listItem.File,Install=listItem.Install})
+    listItem=listItem.next
+  end
+end
+
+]]
+
+
+
+ -- ----------------------------------
+
+-- function fetchFuses(path)
+
+--   -- Traverses the directory 'path' and adds all files with the suffix
+--   -- 'suffix' to the 'list'. Files and directories stating with '.' are
+--   -- omitted!
+
+--   assert(path)
+
+--   local list = { head = nil, tail = nil, len = 0, Root = path }
+
+--   if path==nil or path=="" then
+--     return list
+--   end
+
+--   if string.sub(path,-1) ~= "/" then
+--     path = path.."/"
+--   end
+
+--   suffix = suffix or ""
+
+--   return fetchFuses_rec(path, "", list )
+-- end
+
+
+-- function fetchFuses_rec(path, subpath, list)
+
+--   local tail 		= head;
+-- 	local handle	= bmd.readdir(path .. subpath .. "*")
+--   local suffix  = ".fuse"
+
+--   for k, v in pairs(handle) do
+--     if (v.Name ~= nil and string.sub(v.Name,0,1) ~= ".") then
+--       if (v.IsDir == false) then
+--         if suffix=="" or string.sub(v.Name,-string.len(suffix)) == suffix then
+
+--           list.head = {
+--             next = list.head, File = v.Name, Path = subpath,
+--             Install = true, -- string.sub( v.Name,-(4+string.len(suffix)) ) ~= "_wip"..suffix and true or false
+--             }
+
+--           list.len  = list.len +1
+
+--         end
+--       else
+--         list = fetchFuses_rec(path, subpath..v.Name.."/", list )
+--       end
+--     end
+--   end
+
+--   return list
+-- end
+
+
+
+
+
+
+
+
+
+-- ----------------------------------------------------------------------
+
+
+
+function nothingSelected()
+  g_disp:ExitLoop()
+--  os.exit()
+end
+
+function localCopySelected()
+  g_disp:ExitLoop()
+--  os.exit()
+end
+
+function refreshOverviewsSelected()
+  print("refreshOverviewsSelected")
+  g_disp:ExitLoop()
+--  os.exit()
+end
+
+function singleInstallersSelected()
+  g_disp:ExitLoop()
+--  os.exit()
+end
+
+function createInstallerSelected()
+  g_disp:ExitLoop()
+--  os.exit()
+end
+
+function prepareSuggestionSelected()
+  g_disp:ExitLoop()
+--  os.exit()
+end
+
+
+
+-- ----------------------------------------------------------------------
 -- WINDOWN TO SELECT THE INSTALLATION PROCEDURE
 -- ----------------------------------------------------------------------
 
-function initInstallSelectWindow(params)
+function chooseInstallOption(s)
 
-  assert(params~=nil)
-  assert(params.InstallModeOptions~=nil)
-  assert(params.NextWindow~=nil)
+  local targetIsGitRepo     = directoryExists(getTargetDirectory(),".git")
+
+  local options=
+  {
+    { -- Mode        = MODE_NONE,
+      Label       = "- chose installation mode -",
+      Enabled     = false,
+      Procedure   = nothingSelected,
+      Text        = [[
+        <p>This script is menat to install the shader fuses, or to create installation scripts to install the shader fuses.
+        Use the select box on top to chose an installation mode and to see further details on the respective method.</p>
+      ]],
+    },
+
+    { -- Mode        = MODE_LOCALCOPY,
+      Label       = "Local Copy",
+      Enabled     = not(targetIsGitRepo),
+      Procedure   = localCopySelected,
+      Text        = [[
+        <p>If you have downloaded and extracted(!) the whole repository as a ZIP file, then this mode should help you to
+        create a local copy of the fuses in the correct target directory. In this case the script creates the <em>Shadertoys<em>
+        subdirectories in your DaVinci Resolve's / Fusion's <em>Fuses</em> directory and copies all the .fuse files and only
+        these to that directory.</p>
+      ]]..(targetIsGitRepo and [[
+        <p style="color:#ff9090; ">
+        This option is not available ...
+        </p>
+        <p style="color:#ffffff; ">
+          It seems that you are managing our Shadertoy Fuses using Git already. That's awesome! Forking and/or cloning us
+          on GitHub obviously is the right and more pro way of doing things. Just use a 'git pull' in your 'Shadertoys'
+          directory and you are up to date and good to go. Looking forward to your pull requests maybe contributing some
+          beatutiful shaderstoys?!!
+        </p>
+      ]] or ""),
+    },
+
+    {
+      Label       = "Refresh Overviews",
+      Enabled     = targetIsGitRepo,
+      Procedure   = refreshOverviewsSelected,
+      Text        = [[
+        <p>This one is to update the markdown files showing overview lists for all the fuses.</p>
+      ]]..(not(targetIsGitRepo) and [[
+        <p style="color:#ff9090; ">
+        This option is not available ...
+        </p>
+        <p style="color:#ffffff; ">
+          This is meant to refresh the repository's overviews - so it makes only sense to call it on the repsotory itself.
+        </p>
+      ]] or ""),
+    },
+
+
+    { -- Mode        = MODE_SINGLEINSTALLERS,
+      Label       = "Single Installers",
+      Enabled     = true,
+      Procedure   = singleInstallersSelected,
+      Text        = [[
+        <p>This options generates a separate, fully self contained '<tt>*-Installer.lua</tt>' script for each fuse.
+        This allows the fuses to be distributed independently of the repository,
+        whilst still providing the convenience of not having to copy the Fuse to the specific pathes manually.
+        Just drag and drop such an installer script onto your DaFusion's working area and the script will guide
+        you through the installation.</p>
+        <p style="color:#ffffff; ">
+        Please note that hereby any such installer is overwritten. Just run this option from time to time
+        on the repository to make the installers contain the most recent versions of the fuses.
+        </p>
+      ]],
+    },
+
+    { -- Mode        = MODE_CREATEINSTALLER,
+      Label       = "Create Installer",
+      Enabled     = false,
+      Procedure   = createInstallerSelected,
+      Text        = [[
+        <p>The 'Create Installer' is to create a single Lua script that can be used to install all the fuses.
+        It is intended to be provided in particular as a separate download with no need to copy the ZIP or
+        clone the repository.</p>
+        <p style=\"color:#ff9090; \">This option hasn't been implemented yet!</p>
+      ]],
+    },
+
+    { -- Mode        = MODE_PREPARESUGGESTION,
+      Label       = "Prepare WSL Suggestion",
+      Enabled     = false,
+      Procedure   = prepareSuggestionSelected,
+      Text        = [[
+        <p>Idea is to have the installer create copies of the Fuses without all the prefixes, debug settings,
+        additinal files, etc. This to end up with a directory structure that can be used in preparation of a
+        suggestion for integration into the WSL Reactor.</p>
+        <p style=\"color:#ff9090; \">This option hasn't been implemented yet!</p>
+      ]],
+    },
+  }
+
+  g_chosenInstallModeOption = options[1]
+
 
   local win = g_disp:AddWindow({
 
@@ -278,15 +676,15 @@ function initInstallSelectWindow(params)
 
   local itm=win:GetItems()
 
-  for i=1, 5 do
-    itm.ModeSelection:AddItem(params.InstallModeOptions[i].Label)
+  for i, option in ipairs(options) do
+    itm.ModeSelection:AddItem(option.Label)
   end
 
 
   function win.On.ModeSelection.CurrentIndexChanged(ev)
 
     local index = itm.ModeSelection.CurrentIndex+1
-    local entry = params.InstallModeOptions[index]
+    local entry = options[index]
 
     assert(entry ~= nil)
 
@@ -298,8 +696,9 @@ function initInstallSelectWindow(params)
 
   function win.On.Continue.Clicked(ev)
     win:Hide()
-    --showInstallMainWindow()
-    params.NextWindow:Show()
+    -- showInstallMainWindow()
+    -- params.NextWindow:Show()
+    g_chosenInstallModeOption.Procedure()
   end
 
 
@@ -314,7 +713,9 @@ function initInstallSelectWindow(params)
     os.exit()
   end
 
-  return win
+
+
+  win:Show()
 
 end
 
@@ -439,79 +840,8 @@ end
 
 
 
-function directoryExists(path, dir)
-
-  -- Returns true, if path exists and is a directory; false otherwise.
-  -- Instead of missusing the bmd.readdir() function there probably is
-  --- a better way to do this!?!
-
-  assert(path~=nil and path~="" and dir~=nil and dir~="")
-
-	path = string.gsub(path,"\\","/")
-
-	local handle = bmd.readdir(path..dir)
-
-	for k, v in pairs(handle) do
-		if v.Name~=nil and v.Name==dir and v.IsDir then
-			return true;
-		end
-	end
-	return false;
-end
 
 
-
-function fetchFuses(path)
-
-  -- Traverses the directory 'path' and adds all files with the suffix
-  -- 'suffix' to the 'list'. Files and directories stating with '.' are
-  -- omitted!
-
-  assert(path)
-
-  local list = { head = nil, tail = nil, len = 0, Root = path }
-
-  if path==nil or path=="" then
-    return list
-  end
-
-  if string.sub(path,-1) ~= "/" then
-    path = path.."/"
-  end
-
-  suffix = suffix or ""
-
-  return fetchFuses_rec(path, "", list )
-end
-
-
-function fetchFuses_rec(path, subpath, list)
-
-  local tail 		= head;
-	local handle	= bmd.readdir(path .. subpath .. "*")
-  local suffix  = ".fuse"
-
-  for k, v in pairs(handle) do
-    if (v.Name ~= nil and string.sub(v.Name,0,1) ~= ".") then
-      if (v.IsDir == false) then
-        if suffix=="" or string.sub(v.Name,-string.len(suffix)) == suffix then
-
-          list.head = {
-            next = list.head, File = v.Name, Path = subpath,
-            Install = string.sub( v.Name,-(4+string.len(suffix)) ) ~= "_wip"..suffix and true or false
-            }
-
-          list.len  = list.len +1
-
-        end
-      else
-        list = fetchFuses_rec(path, subpath..v.Name.."/", list )
-      end
-    end
-  end
-
-  return list
-end
 
 
 
@@ -667,6 +997,52 @@ function doLocalCopy(fuses)
   end
 end
 
+-- -------------------------------------
+
+-- -------------------------------------
+
+
+function getFuseInformation(fuseSourceCode)
+
+  assert(fuseSourceCode~=nil)
+
+  -- Mandatory
+
+  local shadertoy_name         = fuseSourceCode:match('local%s+shadertoy_name%s*=%s*"([^"]+)"') or nil
+  local shadertoy_author       = fuseSourceCode:match('local%s+shadertoy_author%s*=%s*"([^"]+)"') or nil
+  local shadertoy_id           = fuseSourceCode:match('local%s+shadertoy_id%s*=%s*"(%w+)"') or nil
+  local shadertoy_license      = fuseSourceCode:match('local%s+shadertoy_license%s*=%s*"([^"]+)"') or nil
+
+  local dctlfuse_category      = fuseSourceCode:match('local%s+dctlfuse_category%s*=%s*"([^"]+)"') or nil
+  local dctlfuse_name          = fuseSourceCode:match('local%s+dctlfuse_name%s*=%s*"([^"]+)"') or nil
+  local dctlfuse_author        = fuseSourceCode:match('local%s+dctlfuse_author%s*=%s*"([^"]+)"') or nil
+
+  -- Optional
+
+  -- local dctlfuse_versionNo
+  -- local dctlfuse_versionDate
+  -- local dctlfuse_authorurl
+  -- local dctlfuse_authorlogo
+  -- local dctlfuse_company
+  -- local dctlfuse_infourl
+  -- local dctlfuse_shortcut (unused)
+
+
+
+  local FUSE_PATH       = targetSubDirectory.."/"..listItem.Path
+  local FUSE_FILENAME   = listItem.File
+
+
+
+  local FUSE_AUTHORURL  = fuseSourceCode:match('local%s+dctlfuse_authorurl%s*=%s*"([^"]+)"') or 'https://nmbr73.github.io/Shadertoys/'
+  local FUSE_VERSION    = fuseSourceCode:match('local%s+dctlfuse_versionNo%s*=%s*(%d+)') or nil
+  local FUSE_THUMB      = readThumbnail(path..baseFilename .. '_320x180.png')
+
+
+
+
+
+end
 
 
 function doSingleInstallers(fuses)
@@ -834,16 +1210,292 @@ end
 
 
 
+
+
+
+
 -- ----------------------------------------------------------------------
-showMessageBoxWindow("Installer does curretly nor work!")
+-- WORK WITH A FUSE FILE
+-- ----------------------------------------------------------------------
+Fuse = {
+    file_filepath='',
+    file_basepath='',
+    file_category='',
+    file_fusename='',
+    file_filename='',
+
+    error = nil,
+
+    shadertoy_name = '',
+    shadertoy_author = '',
+    shadertoy_id = '',
+    shadertoy_license = '',
+    dctlfuse_category = '',
+    dctlfuse_name = '',
+    dctlfuse_author = '',
+
+    fuse_sourceCode = nil,
+}
+
+
+-- function Fuse:clear()
+--   self.file_filepath=''
+--   self.file_basepath=''
+--   self.file_category=''
+--   self.file_name=''
+
+--   self.error = nil
+
+--   self.shadertoy_name = ''
+--   self.shadertoy_author = ''
+--   self.shadertoy_id = ''
+--   self.shadertoy_license = ''
+--   self.dctlfuse_category = ''
+--   self.dctlfuse_name = ''
+--   self.dctlfuse_author = ''
+
+--   self.fuse_sourceCode = nil
+-- end
 
 
 
--- local listOfFuses         = fetchFuses(getOwnPath())
+function Fuse:new(filepath)
+  local o = {}
+  setmetatable(o, self)
+  self.__index = self
+  o:init(filepath)
+
+  return o
+end
+
+
+function Fuse:purge()
+  self.fuse_sourceCode = ''
+end
+
+
+function Fuse:init(filepath)
+  assert(filepath~=nil)
+
+  self.file_filepath=filepath
+
+  self.file_basepath, self.file_category, self.file_fusename =
+    filepath:match('^(.+/Shaders/)([^/]+)/([^%.]+)%.fuse$')
+
+  if self.file_basepath==nil or self.file_category==nil or self.file_fusename==nil then
+    self.error="filepath '"..self.file_filepath.."' does not match the expected schema"
+  end
+
+  self.file_filename=self.file_fusename..'.fuse'
+
+end
+
+
+function Fuse:setError(txt,rv)
+  assert(txt~=nil and txt~='')
+  assert(self.file_fusename~=nil and self.file_fusename~='')
+  self.error="in '"..self.file_category..'/'..self.file_fusename..".fuse': "..txt
+  return rv
+end
+
+
+function Fuse:hasErrors()
+  assert(self ~= nil)
+  if self.error ~= nil and self.error ~='' then
+    return true
+  end
+  return false
+end
+
+function Fuse:isValid()
+  assert(self ~= nil)
+  if self:hasErrors() or self.file_filepath==nil or self.file_filepath=='' then
+    return false
+  end
+  return true
+end
+
+
+function Fuse:getErrorText()
+  assert(self ~= nil)
+  if self.error ~= nil then
+    return self.error
+  end
+  return ''
+end
+
+
+function Fuse:read()
+	assert(self.fuse_sourceCode==nil)
+
+  if not self:isValid() then return false end
+
+  local f = io.open(self.file_filepath, "rb")
+
+  if not f then return self:setError("failed to read '"..self.file_filepath.."'",false) end
+
+  self.fuse_sourceCode = f:read("*all")
+  f:close()
+
+  if self.fuse_sourceCode==nil or self.fuse_sourceCode=='' then return self:setError("failed to read content of file '"..self.file_filepath.."'",false) end
+
+  local fields = {'shadertoy_name', 'shadertoy_author', 'shadertoy_id','shadertoy_license','dctlfuse_category','dctlfuse_name','dctlfuse_author'}
+
+  for i, name in ipairs(fields) do
+    local value=self.fuse_sourceCode:match('\n%s*local%s+'..name..'%s*=%s*"([^"]+)"') or self.fuse_sourceCode:match('^%s*local%s+'..name.."%s*=%s*'([^']+)'") or ''
+
+    if value==''and name=='dctlfuse_name' and self.fuse_sourceCode:match('\n%s*local%s+dctlfuse_name%s*=%s*shadertoy_name') then
+      value = self.shadertoy_name
+    end
+
+    if value=='' then return self:setError("'"..name.."' could not be determined",false) end
+
+    self[name]=value
+  end
+
+  if not self.dctlfuse_name:match('^[A-Za-z][A-Za-z0-9_]*[A-Za-z0-9]$') then return self:setError("invalid fuse name '"..self.dctlfuse_name.."'",false) end
+  if self.dctlfuse_name ~= self.file_fusename then return self:setError("fuse name '"..self.dctlfuse_name.."' does not match filename",false) end
+  if not self.dctlfuse_category:match('^[A-Z][A-Za-z]+$') then return self:setError("invalid category name '"..self.dctlfuse_category.."'",false) end
+  if self.dctlfuse_category ~= self.file_category then return self:setError("fuse category '"..self.dctlfuse_category.."' does not match fuse's subdirectory",false) end
+
+  return true
+
+end
+
+
+
+
+
+function fetchFuses(path)
+
+  -- Traverses the directory 'path' and adds all files with the suffix
+  -- 'suffix' to the 'list'. Files and directories stating with '.' are
+  -- omitted!
+
+  assert(path)
+
+
+  local fuses = {}
+
+  if path==nil or path=="" then
+    return fuses
+  end
+
+  if string.sub(path,-1) ~= "/" then
+    path = path.."/"
+  end
+
+  fetchFuses_rec(path, fuses)
+
+  return fuses
+end
+
+
+function fetchFuses_rec(path, list)
+
+	local handle	= bmd.readdir(path .. "*")
+
+  for k, v in pairs(handle) do
+    if (v.Name ~= nil and string.sub(v.Name,0,1) ~= ".") then
+      if (v.IsDir == false) then
+        if string.sub(v.Name,-5) == '.fuse' then
+          table.insert(list,Fuse:new(path..v.Name))
+        end
+      else
+        fetchFuses_rec(path..v.Name.."/", list )
+      end
+    end
+  end
+
+end
+
+
+
+
+print("Here we go..."..getOwnPath())
+os.exit(0)
+
+-- fusea=Fuse:new(getOwnPath()..'../Shaders/'..'Abstract/CrossDistance.fuse')
+-- fuseb=Fuse:new(getOwnPath()..'../Shaders/'..'Abstract/Kali3D.fuse')
+
+-- print("a: Cat: '"..fusea.file_category.."', Fuse: '"..fusea.file_name.."'")
+-- print("b: Cat: '"..fuseb.file_category.."', Fuse: '"..fuseb.file_name.."'")
+
+
+-- os.exit(0)
+
+
+fuses=fetchFuses(getOwnPath()..'../Shaders/')
+
+
+
+for i, f in ipairs(fuses) do
+  f:read()
+  f:purge()
+  print(i..":")
+  print(" file_filepath='"..f.file_filepath.."'")
+  print(" file_basepath='"..f.file_basepath.."'")
+  print(" file_category='"..f.file_category.."'")
+  print(" file_fusename='"..f.file_fusename.."'")
+  print(" file_filename='"..f.file_filename.."'")
+
+  if f:hasErrors() then
+    print(" error: ".. f:getErrorText())
+  else
+    print(" shadertoy_name='"..f.shadertoy_name.."'")
+    print(" shadertoy_author='"..f.shadertoy_author.."'")
+    print(" shadertoy_id='"..f.shadertoy_id.."'")
+    print(" shadertoy_license='"..f.shadertoy_license.."'")
+    print(" dctlfuse_category='"..f.dctlfuse_category.."'")
+    print(" dctlfuse_name='"..f.dctlfuse_name.."'")
+    print(" dctlfuse_author='"..f.dctlfuse_author.."'")
+  end
+
+end
+
+
+os.exit(0)
+
+
+
+-- Text("Dies ist Frame "..time.." von " ..comp.RenderEnd..".\n".."In der realen Welt ist es gerade\n"..os.date("%H Uhr %M und %S Sekunden")..".\nIch laufe hier unter\n"..jit.os.." auf einer "..jit.arch.." Architektur.\nMeine Font-Size liegt aktuell bei "..self.Size..".")
+
+
+-- function foo(params)
+--   print("Fuse name='"..params.File.."', Path='"..params.Path.."'")
+-- end
+
+
+-- fuses=Fuses:new()
+-- fuses:fetch(getOwnPath()..'../Shaders/')
+-- fuses:foreach_do(foo)
+
+-- os.exit(0)
+
+-- chooseInstallOption()
+-- print("entering RunLoop()")
+-- g_disp:RunLoop()
+-- print("RunLoop() finished")
+
+
+-- ----------------------------------------------------------------------
+-- showMessageBoxWindow("Installer does curretly nor work!")
+
+-- fuse=Fuse:new(nil,'/Users/nmbr73/Projects/Shadertoys/Shaders/Abstract/Favela.fuse')
+
+-- fuse:read()
+
+-- if fuse:hasErrors() then
+--   print(fuse:getErrorText())
+-- end
+
+-- os.exit(0)
+
+-- local listOfFuses         = fetchFuses(getOwnPath()..'../Shaders/')
 -- local targetIsGitRepo     = directoryExists(getTargetDirectory(),".git")
 -- local installModeOptions  = initInstallModeOptions( { TargetIsGitRepo = targetIsGitRepo, } )
 -- local installMainWindow   = initMainWindow( { InstallModeOptions = installModeOptions, ListOfFuses=listOfFuses, })
 -- local installSelectWindow = initInstallSelectWindow( { InstallModeOptions = installModeOptions, NextWindow = installMainWindow })
 
 -- installSelectWindow:Show()
-g_disp:RunLoop()
+-- g_disp:RunLoop()
