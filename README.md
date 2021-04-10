@@ -159,6 +159,11 @@ Work in Progress
 - [AncientTemple](WorkInProgress/JiPi/AncientTemple.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
 - [Physically-BasedSoapBubble](WorkInProgress/JiPi/Physically-BasedSoapBubble.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
 - [Dual3DTruchetTiles](WorkInProgress/JiPi/Dual3DTruchetTiles.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :exclamation:
+- [FragStar](WorkInProgress/JiPi/FragStar.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :strawberry:
+- [Trypophobia](WorkInProgress/JiPi/Trypophobia.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :lemon:
+- [SmallPlanet](WorkInProgress/JiPi/SmallPlanet.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :banana:
+- [MarchingGlassCubes](WorkInProgress/JiPi/MarchingGlassCubes.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :peach:
+- [RoboticArmHuntingLights](WorkInProgress/JiPi/RoboticArmHuntingLights.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :grapes:
 
 Overview
 ========
@@ -198,10 +203,10 @@ Overview
 [![BuoyantBalls](https://user-images.githubusercontent.com/78935215/113590215-ab376e80-9632-11eb-9cf2-c632d25069df.gif)](Shaders/Misc/BuoyantBalls.md)
 [![DisplacementShader](https://user-images.githubusercontent.com/78935215/114025552-854ddc00-9875-11eb-996b-6799996bdf7b.gif)](Shaders/Distortion/DisplacementShader.md)
 [![WalkingCubes](https://user-images.githubusercontent.com/78935215/114034649-a961eb00-987e-11eb-8be4-de55b8dd1e6c.gif)](Shaders/Object/WalkingCubes.md)
-[![FractalEngine](https://user-images.githubusercontent.com/78935215/111883188-11c55700-89ba-11eb-89fe-163f55daf831.gif)](https://www.shadertoy.com/view/ttSBRm)
-[![Fractal03_gaz](https://user-images.githubusercontent.com/78935215/111883240-55b85c00-89ba-11eb-9629-5543465c4de7.gif)](https://www.shadertoy.com/view/3lKcDV)
-[![FractalGutter](https://user-images.githubusercontent.com/78935215/111883269-7f718300-89ba-11eb-8ef9-27aa8a16c7dc.gif)](https://www.shadertoy.com/view/ttjBD1)
-[![EnergyPlant2](https://user-images.githubusercontent.com/78935215/114272288-e1e7fd00-9a15-11eb-9134-8cd8c8dcb2ad.gif)](https://www.shadertoy.com/view/WdjBWc)
+[![FractalEngine](https://user-images.githubusercontent.com/78935215/111883188-11c55700-89ba-11eb-89fe-163f55daf831.gif)](Shaders/Fractals/FractalEngine.md)
+[![Fractal03_gaz](https://user-images.githubusercontent.com/78935215/111883240-55b85c00-89ba-11eb-9629-5543465c4de7.gif)](Shaders/Fractals/Fractal03.md)
+[![FractalGutter](https://user-images.githubusercontent.com/78935215/111883269-7f718300-89ba-11eb-8ef9-27aa8a16c7dc.gif)](Shaders/Fractals/FractalGutter.md)
+[![EnergyPlant](https://user-images.githubusercontent.com/78935215/114272288-e1e7fd00-9a15-11eb-9134-8cd8c8dcb2ad.gif)](Shaders/Fractals/EnergyPlant.md)
 
 Work in Progress
 ----------------
@@ -225,7 +230,11 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![GoldFrame](https://user-images.githubusercontent.com/78935215/112769665-7fa8f880-9022-11eb-8a01-085b0c00725a.gif)](https://www.shadertoy.com/view/lstXRr)
 [![SurfaceOfTheVoid](https://user-images.githubusercontent.com/78935215/112769715-bf6fe000-9022-11eb-820e-04ac2ae64a3f.gif)](https://www.shadertoy.com/view/WtGBDG)
 [![PseudoKnightyan](https://user-images.githubusercontent.com/78935215/113430783-096a1480-93db-11eb-8559-191926128f13.gif)](https://www.shadertoy.com/view/lls3Wf)
-
+[![FragStar2](https://user-images.githubusercontent.com/78935215/114275018-380e6d80-9a21-11eb-831b-cd46428211b1.gif)](https://www.shadertoy.com/view/wlXBWH)
+[![Trypophobia](https://user-images.githubusercontent.com/78935215/114274665-df8aa080-9a1f-11eb-9ac2-132f2f167f0a.gif)](https://www.shadertoy.com/view/WddXDf)
+[![SmallPlanet](https://user-images.githubusercontent.com/78935215/114281976-a6632800-9a41-11eb-9f75-ea3365dc3a50.gif)](https://www.shadertoy.com/view/XssyDM)
+[![MarchingGlassCubes](https://user-images.githubusercontent.com/78935215/114272316-017f2580-9a16-11eb-9425-cc9fa76a6bab.gif)](https://www.shadertoy.com/view/MdlXDX)
+[![RoboticArmHuntingLights](https://user-images.githubusercontent.com/78935215/114272639-3c358d80-9a17-11eb-86ce-50ff2d60fd99.gif)](https://www.shadertoy.com/view/lls3Wf)
 
 
 ### nmbr73
