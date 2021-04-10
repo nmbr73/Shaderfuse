@@ -3,6 +3,8 @@
 [![YouTube Demo1](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
 [![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws&t)
 [![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)](https://youtu.be/ntrp6BfVk0k)
+[![YouTube Demo4](https://img.shields.io/youtube/views/QE6--iYtikk?style=social)](https://youtu.be/QE6--iYtikk)
+
 
 <!-- WebbHook anyone -->
 
@@ -114,6 +116,11 @@ Okay, so far there's not much here, which of course seems a bit silly after that
 - Distortion
   - [FbmWarp](Shaders/Distortion/FbmWarp.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
   - [DisplacementShader](Shaders/Distortion/DisplacementShader.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+- Fractals
+  - [EnergyPlant](Shaders/Fractals/EnergyPlant.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [Fractal03](Shaders/Fractals/Fractal03.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [FractalEngine](Shaders/Fractals/FractalEngine.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
+  - [FractalGutter](Shaders/Fractals/FractalGutter.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
 - Miscellaneous
   - [BuoyantBalls](Shaders/Misc/BuoyantBalls.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
   - [Fire_Water](Shaders/Misc/Fire_Water.md) ported by [JiPi](Site/Profiles/JiPi.md)
@@ -191,7 +198,10 @@ Overview
 [![BuoyantBalls](https://user-images.githubusercontent.com/78935215/113590215-ab376e80-9632-11eb-9cf2-c632d25069df.gif)](Shaders/Misc/BuoyantBalls.md)
 [![DisplacementShader](https://user-images.githubusercontent.com/78935215/114025552-854ddc00-9875-11eb-996b-6799996bdf7b.gif)](Shaders/Distortion/DisplacementShader.md)
 [![WalkingCubes](https://user-images.githubusercontent.com/78935215/114034649-a961eb00-987e-11eb-8be4-de55b8dd1e6c.gif)](Shaders/Object/WalkingCubes.md)
-
+[![FractalEngine](https://user-images.githubusercontent.com/78935215/111883188-11c55700-89ba-11eb-89fe-163f55daf831.gif)](https://www.shadertoy.com/view/ttSBRm)
+[![Fractal03_gaz](https://user-images.githubusercontent.com/78935215/111883240-55b85c00-89ba-11eb-9629-5543465c4de7.gif)](https://www.shadertoy.com/view/3lKcDV)
+[![FractalGutter](https://user-images.githubusercontent.com/78935215/111883269-7f718300-89ba-11eb-8ef9-27aa8a16c7dc.gif)](https://www.shadertoy.com/view/ttjBD1)
+[![EnergyPlant2](https://user-images.githubusercontent.com/78935215/114272288-e1e7fd00-9a15-11eb-9134-8cd8c8dcb2ad.gif)](https://www.shadertoy.com/view/WdjBWc)
 
 Work in Progress
 ----------------
@@ -207,10 +217,6 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![InteractiveThinks](https://user-images.githubusercontent.com/78935215/110646914-aad4c080-81b7-11eb-80eb-6562a27cf929.gif)](https://www.shadertoy.com/view/Xt3SR4)
 [![Pendulum](https://user-images.githubusercontent.com/78935215/111521453-73d35180-8759-11eb-8f52-259612de94a2.gif)](https://www.shadertoy.com/view/wtdyDn)
 [![Soul22](https://user-images.githubusercontent.com/78935215/111699010-d733b100-8837-11eb-8565-b05b7d068551.gif)](https://www.shadertoy.com/view/3tcBWN)
-[![FractalEngine](https://user-images.githubusercontent.com/78935215/111883188-11c55700-89ba-11eb-89fe-163f55daf831.gif)](https://www.shadertoy.com/view/ttSBRm)
-[![Fractal03_gaz](https://user-images.githubusercontent.com/78935215/111883240-55b85c00-89ba-11eb-9629-5543465c4de7.gif)](https://www.shadertoy.com/view/3lKcDV)
-[![FractalGutter](https://user-images.githubusercontent.com/78935215/111883269-7f718300-89ba-11eb-8ef9-27aa8a16c7dc.gif)](https://www.shadertoy.com/view/ttjBD1)
-[![EnergyPlant](https://user-images.githubusercontent.com/78935215/111883788-c44ae900-89bd-11eb-85d6-0bb84f59f19b.gif)](https://www.shadertoy.com/view/WdjBWc)
 [![Circuits](https://user-images.githubusercontent.com/78935215/111883288-a3cd5f80-89ba-11eb-9eb3-5722e3090e29.gif)](https://www.shadertoy.com/view/XlX3Rj)
 [![ChocolatePackage](https://user-images.githubusercontent.com/78935215/111883950-a5992200-89be-11eb-9d04-cdd1cf3dbc54.gif)](https://www.shadertoy.com/view/tllyDj)
 [![TrippyHappyJumper](https://user-images.githubusercontent.com/78935215/112180355-c7331d00-8bfb-11eb-9769-71b551174b8d.gif)](https://www.shadertoy.com/view/3dVSRD)
