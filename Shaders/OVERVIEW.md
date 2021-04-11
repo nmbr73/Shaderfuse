@@ -188,45 +188,57 @@
 <td><img src="Fractals/EnergyPlant_320x180.png" alt="Fractals/EnergyPlant" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [EnergyPlant](Fractals/EnergyPlant.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
+<nobr>Shadertoy: [EnergyPlant](https://www.shadertoy.com/view/ttjBD1)</nobr><br />
+<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Fractals/Fractal03_320x180.png" alt="Fractals/Fractal03" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [Fractal03](Fractals/Fractal03.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
+<nobr>Shadertoy: [Fractal03](https://www.shadertoy.com/view/3lKcDV)</nobr><br />
+<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Fractals/FractalEngine_320x180.png" alt="Fractals/FractalEngine" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [FractalEngine](Fractals/FractalEngine.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
+<nobr>Shadertoy: [FractalEngine](https://www.shadertoy.com/view/ttSBRm)</nobr><br />
+<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Fractals/FractalGutter_320x180.png" alt="Fractals/FractalGutter" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [FractalGutter](Fractals/FractalGutter.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
+<nobr>Shadertoy: [FractalGutter](https://www.shadertoy.com/view/ttjBD1)</nobr><br />
+<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 </table>
 
@@ -236,12 +248,15 @@
 <td><img src="Misc/BuoyantBalls_320x180.png" alt="Misc/BuoyantBalls" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [BuoyantBalls](Misc/BuoyantBalls.md)</nobr><br />
 <nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse category 'Abstract' does not match fuse's subdirectory</p>
+<nobr>Shadertoy: [BuoyantBalls](https://www.shadertoy.com/view/MtsBW8)</nobr><br />
+<nobr>Author: [dr2](https://www.shadertoy.com/user/dr2)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Misc/Fire_Water_320x180.png" alt="Misc/Fire_Water" width="320" height="180" /></td>
