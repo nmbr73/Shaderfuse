@@ -162,12 +162,15 @@
 <td><img src="Distortion/DisplacementShader_320x180.png" alt="Distortion/DisplacementShader" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [DisplacementShader](Distortion/DisplacementShader.md)</nobr><br />
 <nobr>Category: [Distortion](Distortion/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
+<nobr>Shadertoy: [DisplacementShader](https://www.shadertoy.com/view/MtBfR3)</nobr><br />
+<nobr>Author: [Coolok](https://www.shadertoy.com/user/Coolok)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Distortion/FbmWarp_320x180.png" alt="Distortion/FbmWarp" width="320" height="180" /></td>
@@ -284,12 +287,15 @@
 <td><img src="Misc/IHeartFourier_320x180.png" alt="Misc/IHeartFourier" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [IHeartFourier](Misc/IHeartFourier.md)</nobr><br />
 <nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">Fuse name does not correspond to filename´</p>
+<nobr>Shadertoy: [IHeartFourier](https://www.shadertoy.com/view/tltSWr)</nobr><br />
+<nobr>Author: [harry7557558](https://www.shadertoy.com/user/harry7557558)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Misc/WildKifs4D_320x180.png" alt="Misc/WildKifs4D" width="320" height="180" /></td>
@@ -300,7 +306,7 @@
 
 <nobr>Fuse: [WildKifs4D](Misc/WildKifs4D.md)</nobr><br />
 <nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">Fuse name does not correspond to filename´</p>
+</p><p style="color:red; font-weight:bold; ">'dctlfuse_category' could not be determined</p>
 </td></tr>
 </table>
 
@@ -379,12 +385,15 @@
 <td><img src="Object/WalkingCubes_320x180.png" alt="Object/WalkingCubes" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [WalkingCubes](Object/WalkingCubes.md)</nobr><br />
 <nobr>Category: [Object](Object/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
+<nobr>Shadertoy: [WalkingCubes](https://www.shadertoy.com/view/Xl3XR4)</nobr><br />
+<nobr>Author: [xorxor](https://www.shadertoy.com/user/xorxor)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 </table>
 
