@@ -159,15 +159,15 @@
 ## Distortion Shaders
 
 <table><tr>
-<td><img src="Distortion/DsiplacementShader_320x180.png" alt="Distortion/DsiplacementShader" width="320" height="180" /></td>
+<td><img src="Distortion/DisplacementShader_320x180.png" alt="Distortion/DisplacementShader" width="320" height="180" /></td>
 <td><p>
 
 :boom:</p>
 <p>
 
-<nobr>Fuse: [DsiplacementShader](Distortion/DsiplacementShader.md)</nobr><br />
+<nobr>Fuse: [DisplacementShader](Distortion/DisplacementShader.md)</nobr><br />
 <nobr>Category: [Distortion](Distortion/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">thumbnail does not exists</p>
+</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
 </td></tr>
 <tr>
 <td><img src="Distortion/FbmWarp_320x180.png" alt="Distortion/FbmWarp" width="320" height="180" /></td>
@@ -193,7 +193,7 @@
 
 <nobr>Fuse: [EnergyPlant](Fractals/EnergyPlant.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'shadertoy_license' could not be determined</p>
+</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
 </td></tr>
 <tr>
 <td><img src="Fractals/Fractal03_320x180.png" alt="Fractals/Fractal03" width="320" height="180" /></td>
@@ -204,7 +204,7 @@
 
 <nobr>Fuse: [Fractal03](Fractals/Fractal03.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'shadertoy_license' could not be determined</p>
+</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
 </td></tr>
 <tr>
 <td><img src="Fractals/FractalEngine_320x180.png" alt="Fractals/FractalEngine" width="320" height="180" /></td>
@@ -215,7 +215,7 @@
 
 <nobr>Fuse: [FractalEngine](Fractals/FractalEngine.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'shadertoy_license' could not be determined</p>
+</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
 </td></tr>
 <tr>
 <td><img src="Fractals/FractalGutter_320x180.png" alt="Fractals/FractalGutter" width="320" height="180" /></td>
@@ -226,7 +226,7 @@
 
 <nobr>Fuse: [FractalGutter](Fractals/FractalGutter.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'shadertoy_license' could not be determined</p>
+</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
 </td></tr>
 </table>
 
@@ -241,7 +241,7 @@
 
 <nobr>Fuse: [BuoyantBalls](Misc/BuoyantBalls.md)</nobr><br />
 <nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
+</p><p style="color:red; font-weight:bold; ">fuse category 'Abstract' does not match fuse's subdirectory</p>
 </td></tr>
 <tr>
 <td><img src="Misc/Fire_Water_320x180.png" alt="Misc/Fire_Water" width="320" height="180" /></td>
@@ -274,7 +274,7 @@
 
 <nobr>Fuse: [IHeartFourier](Misc/IHeartFourier.md)</nobr><br />
 <nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">thumbnail does not exists</p>
+</p><p style="color:red; font-weight:bold; ">Fuse name does not correspond to filename´</p>
 </td></tr>
 <tr>
 <td><img src="Misc/WildKifs4D_320x180.png" alt="Misc/WildKifs4D" width="320" height="180" /></td>
@@ -317,12 +317,15 @@
 <td><img src="Object/EggHunt_320x180.png" alt="Object/EggHunt" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [EggHunt](Object/EggHunt.md)</nobr><br />
 <nobr>Category: [Object](Object/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'shadertoy_license' could not be determined</p>
+<nobr>Shadertoy: [EggHunt](https://www.shadertoy.com/view/ttyfDV)</nobr><br />
+<nobr>Author: [sylvain69780](https://www.shadertoy.com/user/sylvain69780)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Object/FractalRadioBase_320x180.png" alt="Object/FractalRadioBase" width="320" height="180" /></td>
@@ -366,7 +369,7 @@
 
 <nobr>Fuse: [WalkingCubes](Object/WalkingCubes.md)</nobr><br />
 <nobr>Category: [Object](Object/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">thumbnail does not exists</p>
+</p><p style="color:red; font-weight:bold; ">fuse category 'AbstractShader' does not match fuse's subdirectory</p>
 </td></tr>
 </table>
 
@@ -424,23 +427,29 @@
 <td><img src="Recursive/FallingCuteBombs_320x180.png" alt="Recursive/FallingCuteBombs" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [FallingCuteBombs](Recursive/FallingCuteBombs.md)</nobr><br />
 <nobr>Category: [Recursive](Recursive/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'shadertoy_license' could not be determined</p>
+<nobr>Shadertoy: [FallingCuteBombs](https://www.shadertoy.com/view/ldy3Rw)</nobr><br />
+<nobr>Author: [Emil](https://www.shadertoy.com/user/Emil)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Recursive/Spilled_320x180.png" alt="Recursive/Spilled" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [Spilled](Recursive/Spilled.md)</nobr><br />
 <nobr>Category: [Recursive](Recursive/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'shadertoy_license' could not be determined</p>
+<nobr>Shadertoy: [spilled](https://www.shadertoy.com/view/MsGSRd)</nobr><br />
+<nobr>Author: [flockaroo](https://www.shadertoy.com/user/flockaroo)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Recursive/TDSOTM_Nebula_320x180.png" alt="Recursive/TDSOTM_Nebula" width="320" height="180" /></td>
@@ -483,11 +492,14 @@
 <td><img src="Tunnel/WindingMengerTunnel_320x180.png" alt="Tunnel/WindingMengerTunnel" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [WindingMengerTunnel](Tunnel/WindingMengerTunnel.md)</nobr><br />
 <nobr>Category: [Tunnel](Tunnel/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'shadertoy_license' could not be determined</p>
+<nobr>Shadertoy: [WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn)</nobr><br />
+<nobr>Author: [Shane](https://www.shadertoy.com/user/Shane)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 </table>
