@@ -1,428 +1,9 @@
-local ui = {
-    chosenInstallModeOption = nil,
-    windowGeometry       = { 100, 100, 800, 400 },
-    targetIsGitRepo = nil,
-}
+local ui = {}
 
-ui.manager    = fu.UIManager
-ui.dispatcher = bmd.UIDispatcher(ui.manager)
 
 
-function ui.selectFusesDialog(params)
-
-  assert(params~=nil)
-  assert(params.fuses~=nil)
-
-  local thumbWidth=107 -- 160
-  local thumbHeight=60 -- 90
-
-  local win = ui.dispatcher:AddWindow({
-
-    ID = "ShaderInstallMain",
-    WindowTitle = params.windowTitle,
-    Geometry = { 100, 100, 700, 400 },
-    -- Composition = comp,
-
-    ui.manager:VGroup {
-      -- ID = "root",
-
-      ui.manager:HGroup {
-        Weight = 0,
-        ui.logo(),
-
-        ui.manager:HGap(0,1),
-
-        ui.manager:Label{
-          ID = "Thumbnail",
-          WordWrap = false,
-          Weight = 0,
-          MinimumSize = {thumbWidth, thumbHeight},
-          ReadOnly = true,
-          Flat = true,
-          Alignment = { AlignHCenter = false, AlignTop = true, },
-          Text = '<img src="file:/Users/nmbr73/Projects/Shadertoys/Shaders/Abstract/Crazyness_320x180.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />',
-        },
-
-      },
-
-
-      --https://nmbr73.github.io/Shadertoys/Shaders/Abstract/Crazyness_320x180.png
-
-      -- ui.manager:TabBar {
-      -- },
-
-      ui.manager:VGap(5),
-
-
-      ui.manager:Tree {
-        ID = 'Files',
-        Weight = 2,
-        SortingEnabled=true,
-        Events = {  ItemDoubleClicked=true, ItemClicked=true,  },
-        MinimumSize = {600, 200},
-
-      },
-
-
-
-
-
-      -- g_ui:VGap(5),
-
-      -- g_ui:VGroup {
-      --     Weight = 0,
-      --     g_ui:CheckBox{ID = 'UseShortcutPrefix', Text = "Use prefix not only for Fuse name, but also for its OpIconString",  Checked=false },
-      --     g_ui:CheckBox{ID = 'UseShadertoyID',    Text = "Use Shadertoy IDs as Identifiers instead of shortcuts ",            Checked=true  },
-      --     g_ui:CheckBox{ID = 'UseCategoryPathes', Text = "Use pathes as categrory for 'Add Tool ...' menu",                   Checked=true  },
-      -- },
-
-      ui.manager:VGap(5),
-
-      ui.manager:HGroup{
-        Weight = 0,
-
-        ui.manager:Label {
-          ID = 'Error',
-          Weight = 3.0,
-          Alignment = { AlignHCenter = false, AlignVTop = true, },
-          WordWrap = false,
-        },
-
-        ui.manager:HGap(0,1),
-        ui.manager:Button{ ID = "Install",  Text = "Install" },
-        ui.manager:Button{ ID = "Cancel",   Text = "Cancel" },
-      },
-
-    },
-  })
-
-
-  local itm = win:GetItems()
-
-
-  function win.On.Install.Clicked(ev)
-    win:Hide()
-    params.onInstall(params.fuses)
-    -- g_chosenInstallModeOption.Procedure(params.ListOfFuses)
-  end
-
-
-  function win.On.Cancel.Clicked(ev)
-    win:Hide()
-    ui.ExitLoop()
-  end
-
-
-  function win.On.ShaderInstallMain.Close(ev)
-    win:Hide()
-    ui.ExitLoop()
-  end
-
-  function win.On.Files.ItemDoubleClicked(ev)
-    local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
-
-    if fuse~=nil then
-      -- bmd.openurl("https://www.shadertoy.com/view/"..fuse.shadertoy_id)
-      bmd.openurl('https://nmbr73.github.io/Shadertoys/Shaders/'..fuse.file_category..'/'..fuse.file_fusename..'.html')
-    end
-  end
-
-  local defaultInfoText=""
-
-  function win.On.Files.ItemClicked(ev)
-    local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
-
-    if fuse==nil then return end
-
-    itm.Thumbnail.Text='<img src="file:/Users/nmbr73/Projects/Shadertoys/Shaders/'
-      ..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
-
-    itm.Error.Text = fuse.error and '<span style="color:#ff9090; ">'..fuse.error.."</span>" or defaultInfoText
-  end
-
-
-  local hdr = itm.Files:NewItem()
-  hdr.Text[0] = 'Category'
-  hdr.Text[1] = 'Fuse Name'
-  hdr.Text[2] = 'Author'
-  hdr.Text[3] = 'Port'
-  itm.Files:SetHeaderItem(hdr)
-  itm.Files.ColumnCount = 4
-
-  itm.Files.ColumnWidth[0] = 120
-  itm.Files.ColumnWidth[1] = 400
-  itm.Files.ColumnWidth[2] = 80
-  itm.Files.ColumnWidth[3] = 60
-
-  -- g_useShortcutPrefix = itm.UseShortcutPrefix
-  -- g_useShadertoyID    = itm.UseShadertoyID
-  -- g_useCategoryPathes = itm.UseCategoryPathes
-
-  local numFuses=0
-
-  for i, f in ipairs(params.fuses.list) do
-
-    -- print("add "..f.file_category.."/"..f.file_fusename)
-    local newitem = itm.Files:NewItem()
-    newitem.Text[0] = f.file_category
-    newitem.Text[1] = f.file_fusename
-    newitem.Text[2] = f.shadertoy_author
-    newitem.Text[3] = (f.error and '🚫 ' or '')..f.dctlfuse_author
-    itm.Files:AddTopLevelItem(newitem)
-
-    if f.error==nil then
-      numFuses=numFuses+1
-    end
-  end
-
-  defaultInfoText=numFuses.." valid fuses found"
-
-  -- local entry       = params.ListOfFuses.head -- LIST_OF_FUSES.head
-  -- local num_wip = 0
-
-  -- while entry do
-  --   if entry.Install then
-  --     local newitem = itm.Files:NewItem()
-  --     newitem.Text[0] = entry.File
-  --     itm.Files:AddTopLevelItem(newitem)
-  --   else
-  --     num_wip = num_wip +1
-  --   end
-  --   entry=entry.next
-  -- end
-
-  -- itm.NumberOfFusesLabel.Text= (params.ListOfFuses.len - num_wip) .." Fuses to be installed".. (num_wip and " ("..num_wip.." ignored)" or "")
-
-  return win
-
-
-end
-
-
-
-
-
--- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-function ui.chooseInstallOption(params)
-
-  assert(params.targetIsGitRepo ~= nil)
-  -- local targetIsGitRepo=false
-  if params==nil then params={} end
-
-
-  local optionNotImplemented=[[
-    <p style="color:#ffffff; ">
-      <span style="color:#ff9090; ">This option has not been implemented yet.</span>
-      The whole thing is work in progress. And this option is only here as a reminder.
-    </p>
-  ]]
-
-  local options=
-  {
-    { -- Mode        = MODE_NONE,
-      Label       = "- chose installation mode -",
-      Enabled     = false,
-      Procedure   = nil,
-      Text        = [[
-        <p>This script is menat to install the shader fuses, or to create installation scripts to install the shader fuses.
-        Use the select box on top to chose an installation mode and to see further details on the respective method.</p>
-      ]]
-      .."<p>"..(params.targetIsGitRepo and 'Accessing the Git repo' or 'Working on the ZIP').."</p>"
-      ,
-    },
-
-    { -- Mode        = MODE_LOCALCOPY,
-      Label       = "Local Copy",
-      Enabled     = not(params.targetIsGitRepo) and params.localCopySelected~=nil,
-      Procedure   = params.localCopySelected,
-      Text        = [[
-        <p>If you have downloaded and extracted(!) the whole repository as a ZIP file, then this mode should help you to
-        create a local copy of the fuses in the correct target directory. In this case the script creates the <em>Shadertoys<em>
-        subdirectories in your DaVinci Resolve's / Fusion's <em>Fuses</em> directory and copies all the .fuse files and only
-        these to that directory.</p>
-      ]]..(params.targetIsGitRepo and [[
-        <p style="color:#ffffff; ">
-          <span style="color:#ff9090; ">This option is not available ...</span>
-          It seems that you are managing our Shadertoy Fuses using Git already. That's awesome! Forking and/or cloning us
-          on GitHub obviously is the right and more pro way of doing things. Just use a 'git pull' in your 'Shadertoys'
-          directory and you are up to date and good to go. Looking forward to your pull requests maybe contributing some
-          beatutiful shaderstoys?!!
-        </p>
-      ]] or "")
-      .. (params.localCopySelected==nil and optionNotImplemented or ''),
-
-    },
-
-    {
-      Label       = "Refresh Overviews",
-      Enabled     = params.targetIsGitRepo and params.refreshOverviewsSelected~=nil,
-      Procedure   = params.refreshOverviewsSelected,
-      Text        = [[
-        <p>This one is to update the markdown files showing overview lists for all the fuses.</p>
-      ]]..(not(params.targetIsGitRepo) and [[
-        <p style="color:#ffffff; ">
-          <span style="color:#ff9090; ">This option is not available ...</span>
-          This is meant to refresh the repository's overviews - so it makes only sense to call it on the repsotory itself.
-        </p>
-      ]] or "")
-      .. (params.refreshOverviewsSelected==nil and optionNotImplemented or ''),
-
-    },
-
-
-    { -- Mode        = MODE_SINGLEINSTALLERS,
-      Label       = "Single Installers",
-      Enabled     = params.onSingleInstallersSelected~=nil,
-      Procedure   = params.onSingleInstallersSelected,
-      Text        = [[
-        <p>This options generates a separate, fully self contained '<tt>*-Installer.lua</tt>' script for each fuse.
-        This allows the fuses to be distributed independently of the repository,
-        whilst still providing the convenience of not having to copy the Fuse to the specific pathes manually.
-        Just drag and drop such an installer script onto your DaFusion's working area and the script will guide
-        you through the installation.</p>
-        <p style="color:#ffffff; ">
-        Please note that hereby any such installer is overwritten. Just run this option from time to time
-        on the repository to make the installers contain the most recent versions of the fuses.
-        </p>
-      ]]
-      .. (params.onSingleInstallersSelected==nil and optionNotImplemented or ''),
-
-    },
-
-    { -- Mode        = MODE_CREATEINSTALLER,
-      Label       = "Create Installer",
-      Enabled     = params.createInstallerSelected~=nil,
-      Procedure   = params.createInstallerSelected,
-      Text        = [[
-        <p>The 'Create Installer' is to create a single Lua script that can be used to install all the fuses.
-        It is intended to be provided in particular as a separate download with no need to copy the ZIP or
-        clone the repository.</p>
-      ]]
-      .. (params.refreshOverviewsSelected==nil and optionNotImplemented or ''),
-
-    },
-
-    { -- Mode        = MODE_PREPARESUGGESTION,
-      Label       = "Prepare WSL Suggestion",
-      Enabled     = params.prepareSuggestionSelected~=nil,
-      Procedure   = params.prepareSuggestionSelected,
-      Text        = [[
-        <p>Idea is to have the installer create copies of the Fuses without all the prefixes, debug settings,
-        additinal files, etc. This to end up with a directory structure that can be used in preparation of a
-        suggestion for integration into the WSL Reactor.</p>
-      ]]
-      .. (params.prepareSuggestionSelected==nil and optionNotImplemented or ''),
-    },
-  }
-
-  ui.chosenInstallModeOption = options[1]
-
-
-  local win = ui.dispatcher:AddWindow({
-
-    ID = "ShaderInstallSelect",
-    WindowTitle = "Shadertoys Installer - Select Installation mode ...",
-    Geometry = ui.windowGeometry,
-    -- Composition = comp,
-
-    ui.manager:VGroup {
-      -- ID = "root",
-      Weight=1,
-
-      ui.logo(),
-
-      ui.manager:VGap(10),
-
-      ui.manager:ComboBox{
-        ID = "ModeSelection",
-        Text = 'Install Mode Selection',
-        Weight = 0,
-        Events = { CurrentIndexChanged = true, Activated = true },
-        Items = { 'Foo' , 'Bar'},
-      },
-
-      ui.manager:VGap(10),
-
-      ui.manager:Label{
-        ID = "Description",
-        WordWrap = true,
-        Weight = 1,
-        ReadOnly = true,
-        Flat = true,
-        Alignment = { AlignHCenter = false, AlignTop = true, },
-        Text = ""
-      },
-
-      ui.manager:HGroup {
-        Weight = 0,
-        ui.manager:HGap(0,1),
-        ui.manager:Button{ ID = "Continue",   Text = "Continue ..." },
-        ui.manager:HGap(5),
-        ui.manager:Button{ ID = "Cancel",   Text = "Cancel" },
-      },
-    },
-  })
-
-
-  local itm=win:GetItems()
-
-  for i, option in ipairs(options) do
-    itm.ModeSelection:AddItem(option.Label)
-  end
-
-
-  function win.On.ModeSelection.CurrentIndexChanged(ev)
-
-    local index = itm.ModeSelection.CurrentIndex+1
-    local entry = options[index]
-
-    assert(entry ~= nil)
-
-    ui.chosenInstallModeOption=entry
-    itm.Continue.Enabled=entry.Enabled
-    itm.Description.Text=entry.Text
-  end
-
-
-  function win.On.Continue.Clicked(ev)
-    win:Hide()
-    -- showInstallMainWindow()
-    -- params.NextWindow:Show()
-    ui.chosenInstallModeOption.Procedure()
-  end
-
-
-  function win.On.Cancel.Clicked(ev)
-    ui.dispatcher:ExitLoop()
-    os.exit()
-  end
-
-
-  function win.On.ShaderInstallSelect.Close(ev)
-    ui.dispatcher:ExitLoop()
-    os.exit()
-  end
-
-
-
-  win:Show()
-
-end
-
-function ui.RunLoop()
-  print("ui Run ...")
-  ui.dispatcher:RunLoop()
-end
-
-function ui.ExitLoop()
-  print(".. ui Exit")
-  ui.dispatcher:ExitLoop()
-end
-
-
-function ui.logo()
-  return ui.manager:Label{
+function ui.logo(uiManager)
+  return uiManager:Label{
     ID = "",
     WordWrap = false,
     Weight = 0,
@@ -437,5 +18,445 @@ function ui.logo()
 end
 
 
-
 return ui
+
+
+
+
+-- ui.manager    = fu.UIManager
+-- ui.dispatcher = bmd.UIDispatcher(ui.manager)
+
+-- function ui.RunLoop()
+--   print("ui Run ...")
+--   ui.dispatcher:RunLoop()
+-- end
+
+-- function ui.ExitLoop()
+--   print(".. ui Exit")
+--   ui.dispatcher:ExitLoop()
+-- end
+
+
+-- local ui = {
+--   chosenInstallModeOption = nil,
+--   windowGeometry       = { 100, 100, 800, 400 },
+--   targetIsGitRepo = nil,
+-- }
+
+
+-- function ui.selectFusesDialog(params)
+
+--   assert(params~=nil)
+--   assert(params.fuses~=nil)
+
+--   local thumbWidth=107 -- 160
+--   local thumbHeight=60 -- 90
+
+--   local win = ui.dispatcher:AddWindow({
+
+--     ID = "ShaderInstallMain",
+--     WindowTitle = params.windowTitle,
+--     Geometry = { 100, 100, 700, 400 },
+
+--     ui.manager:VGroup {
+
+--       ui.manager:HGroup {
+--         Weight = 0,
+--         ui.logo(),
+
+--         ui.manager:HGap(0,1),
+
+--         ui.manager:Label{
+--           Weight = 0,
+--           ID = "Thumbnail",
+--           MinimumSize = {thumbWidth, thumbHeight},
+--           Alignment = { AlignHCenter = false, AlignTop = true, },
+--           WordWrap = false, ReadOnly = true, Flat = true, Text = '',
+
+--         },
+--       },
+
+
+--       ui.manager:VGap(5),
+
+
+--       ui.manager:Tree {
+--         ID = 'Files',
+--         Weight = 2,
+--         SortingEnabled=true,
+--         -- UpdatesEnabled=true,
+--         Events = {
+--           -- ItemClicked=true,
+--           ItemDoubleClicked=true,
+--           -- ItemActivated=true,
+--           CurrentItemChanged = true,
+--         },
+--         MinimumSize = {600, 200},
+
+--       },
+
+
+--       ui.manager:VGap(5),
+
+--       ui.manager:HGroup{
+--         Weight = 0,
+
+--         ui.manager:Label {
+--           ID = 'Error',
+--           Weight = 3.0,
+--           Alignment = { AlignHCenter = false, AlignVTop = true, },
+--           WordWrap = false,
+--         },
+
+--         ui.manager:HGap(0,1),
+--         ui.manager:Button{ ID = "Install",  Text = "Install" },
+--         ui.manager:Button{ ID = "Cancel",   Text = "Cancel" },
+--       },
+
+--     },
+--   })
+
+
+--   local itm = win:GetItems()
+
+
+--   function win.On.Install.Clicked(ev)
+--     win:Hide()
+--     params.onInstall(params.fuses)
+--     -- g_chosenInstallModeOption.Procedure(params.ListOfFuses)
+--   end
+
+
+--   function win.On.Cancel.Clicked(ev)
+--     win:Hide()
+--     ui.ExitLoop()
+--   end
+
+
+--   function win.On.ShaderInstallMain.Close(ev)
+--     win:Hide()
+--     ui.ExitLoop()
+--   end
+
+--   function win.On.Files.ItemDoubleClicked(ev)
+--     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
+
+--     if fuse~=nil then
+--       -- bmd.openurl("https://www.shadertoy.com/view/"..fuse.shadertoy_id)
+--       bmd.openurl('https://nmbr73.github.io/Shadertoys/Shaders/'..fuse.file_category..'/'..fuse.file_fusename..'.html')
+--     end
+--   end
+
+--   local defaultInfoText=""
+
+--   function win.On.Files.CurrentItemChanged(ev)
+--     print("CurrentItemChanged "..ev.item.Text[1])
+
+
+--     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
+
+--     if fuse==nil then return end
+
+--     itm.Thumbnail.Text='<img src="file:/Users/nmbr73/Projects/Shadertoys/Shaders/'
+--       ..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
+
+--     itm.Error.Text = fuse.error and '<span style="color:#ff9090; ">'..fuse.error.."</span>" or defaultInfoText
+--   end
+
+--   function win.On.Files.ItemClicked(ev)
+--     print("clicked")
+--     -- local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
+
+--     -- if fuse==nil then return end
+
+--     -- itm.Thumbnail.Text='<img src="file:/Users/nmbr73/Projects/Shadertoys/Shaders/'
+--     --   ..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
+
+--     -- itm.Error.Text = fuse.error and '<span style="color:#ff9090; ">'..fuse.error.."</span>" or defaultInfoText
+--   end
+
+
+--   function win.On.Files.ItemActivated(ev)
+--     print("activated")
+--     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
+
+--     if fuse==nil then return end
+
+--     itm.Thumbnail.Text='<img src="file:/Users/nmbr73/Projects/Shadertoys/Shaders/'
+--       ..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
+
+--     itm.Error.Text = fuse.error and '<span style="color:#ff9090; ">'..fuse.error.."</span>" or defaultInfoText
+--   end
+
+
+--   local hdr = itm.Files:NewItem()
+--   hdr.Text[0] = 'Category'
+--   hdr.Text[1] = 'Fuse Name'
+--   hdr.Text[2] = 'Author'
+--   hdr.Text[3] = 'Port'
+--   itm.Files:SetHeaderItem(hdr)
+--   itm.Files.ColumnCount = 4
+
+--   itm.Files.ColumnWidth[0] = 120
+--   itm.Files.ColumnWidth[1] = 400
+--   itm.Files.ColumnWidth[2] = 80
+--   itm.Files.ColumnWidth[3] = 60
+
+--   -- g_useShortcutPrefix = itm.UseShortcutPrefix
+--   -- g_useShadertoyID    = itm.UseShadertoyID
+--   -- g_useCategoryPathes = itm.UseCategoryPathes
+
+--   local numFuses=0
+
+--   for i, f in ipairs(params.fuses.list) do
+
+--     -- print("add "..f.file_category.."/"..f.file_fusename)
+--     local newitem = itm.Files:NewItem()
+--     newitem.Text[0] = f.file_category
+--     newitem.Text[1] = f.file_fusename
+--     newitem.Text[2] = f.shadertoy_author
+--     newitem.Text[3] = (f.error and '🚫 ' or '')..f.dctlfuse_author
+--     itm.Files:AddTopLevelItem(newitem)
+
+--     if f.error==nil then
+--       numFuses=numFuses+1
+--     end
+--   end
+
+--   itm.Files:SortByColumn(1, "AscendingOrder")
+--   itm.Files:SortByColumn(0, "AscendingOrder")
+
+--   defaultInfoText=numFuses.." valid fuses found"
+
+--   -- local entry       = params.ListOfFuses.head -- LIST_OF_FUSES.head
+--   -- local num_wip = 0
+
+--   -- while entry do
+--   --   if entry.Install then
+--   --     local newitem = itm.Files:NewItem()
+--   --     newitem.Text[0] = entry.File
+--   --     itm.Files:AddTopLevelItem(newitem)
+--   --   else
+--   --     num_wip = num_wip +1
+--   --   end
+--   --   entry=entry.next
+--   -- end
+
+--   -- itm.NumberOfFusesLabel.Text= (params.ListOfFuses.len - num_wip) .." Fuses to be installed".. (num_wip and " ("..num_wip.." ignored)" or "")
+
+--   return win
+
+
+-- end
+
+
+
+
+
+-- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- function ui.chooseInstallOption(params)
+
+--   assert(params.targetIsGitRepo ~= nil)
+--   -- local targetIsGitRepo=false
+--   if params==nil then params={} end
+
+
+--   local optionNotImplemented=[[
+--     <p style="color:#ffffff; ">
+--       <span style="color:#ff9090; ">This option has not been implemented yet.</span>
+--       The whole thing is work in progress. And this option is only here as a reminder.
+--     </p>
+--   ]]
+
+--   local options=
+--   {
+--     { -- Mode        = MODE_NONE,
+--       Label       = "- chose installation mode -",
+--       Enabled     = false,
+--       Procedure   = nil,
+--       Text        = [[
+--         <p>This script is menat to install the shader fuses, or to create installation scripts to install the shader fuses.
+--         Use the select box on top to chose an installation mode and to see further details on the respective method.</p>
+--       ]]
+--       .."<p>"..(params.targetIsGitRepo and 'Accessing the Git repo' or 'Working on the ZIP').."</p>"
+--       ,
+--     },
+
+--     { -- Mode        = MODE_LOCALCOPY,
+--       Label       = "Local Copy",
+--       Enabled     = not(params.targetIsGitRepo) and params.localCopySelected~=nil,
+--       Procedure   = params.localCopySelected,
+--       Text        = [[
+--         <p>If you have downloaded and extracted(!) the whole repository as a ZIP file, then this mode should help you to
+--         create a local copy of the fuses in the correct target directory. In this case the script creates the <em>Shadertoys<em>
+--         subdirectories in your DaVinci Resolve's / Fusion's <em>Fuses</em> directory and copies all the .fuse files and only
+--         these to that directory.</p>
+--       ]]..(params.targetIsGitRepo and [[
+--         <p style="color:#ffffff; ">
+--           <span style="color:#ff9090; ">This option is not available ...</span>
+--           It seems that you are managing our Shadertoy Fuses using Git already. That's awesome! Forking and/or cloning us
+--           on GitHub obviously is the right and more pro way of doing things. Just use a 'git pull' in your 'Shadertoys'
+--           directory and you are up to date and good to go. Looking forward to your pull requests maybe contributing some
+--           beatutiful shaderstoys?!!
+--         </p>
+--       ]] or "")
+--       .. (params.localCopySelected==nil and optionNotImplemented or ''),
+
+--     },
+
+--     {
+--       Label       = "Refresh Overviews",
+--       Enabled     = params.targetIsGitRepo and params.refreshOverviewsSelected~=nil,
+--       Procedure   = params.refreshOverviewsSelected,
+--       Text        = [[
+--         <p>This one is to update the markdown files showing overview lists for all the fuses.</p>
+--       ]]..(not(params.targetIsGitRepo) and [[
+--         <p style="color:#ffffff; ">
+--           <span style="color:#ff9090; ">This option is not available ...</span>
+--           This is meant to refresh the repository's overviews - so it makes only sense to call it on the repsotory itself.
+--         </p>
+--       ]] or "")
+--       .. (params.refreshOverviewsSelected==nil and optionNotImplemented or ''),
+
+--     },
+
+
+--     { -- Mode        = MODE_SINGLEINSTALLERS,
+--       Label       = "Single Installers",
+--       Enabled     = params.onSingleInstallersSelected~=nil,
+--       Procedure   = params.onSingleInstallersSelected,
+--       Text        = [[
+--         <p>This options generates a separate, fully self contained '<tt>*-Installer.lua</tt>' script for each fuse.
+--         This allows the fuses to be distributed independently of the repository,
+--         whilst still providing the convenience of not having to copy the Fuse to the specific pathes manually.
+--         Just drag and drop such an installer script onto your DaFusion's working area and the script will guide
+--         you through the installation.</p>
+--         <p style="color:#ffffff; ">
+--         Please note that hereby any such installer is overwritten. Just run this option from time to time
+--         on the repository to make the installers contain the most recent versions of the fuses.
+--         </p>
+--       ]]
+--       .. (params.onSingleInstallersSelected==nil and optionNotImplemented or ''),
+
+--     },
+
+--     { -- Mode        = MODE_CREATEINSTALLER,
+--       Label       = "Create Installer",
+--       Enabled     = params.createInstallerSelected~=nil,
+--       Procedure   = params.createInstallerSelected,
+--       Text        = [[
+--         <p>The 'Create Installer' is to create a single Lua script that can be used to install all the fuses.
+--         It is intended to be provided in particular as a separate download with no need to copy the ZIP or
+--         clone the repository.</p>
+--       ]]
+--       .. (params.refreshOverviewsSelected==nil and optionNotImplemented or ''),
+
+--     },
+
+--     { -- Mode        = MODE_PREPARESUGGESTION,
+--       Label       = "Prepare WSL Suggestion",
+--       Enabled     = params.prepareSuggestionSelected~=nil,
+--       Procedure   = params.prepareSuggestionSelected,
+--       Text        = [[
+--         <p>Idea is to have the installer create copies of the Fuses without all the prefixes, debug settings,
+--         additinal files, etc. This to end up with a directory structure that can be used in preparation of a
+--         suggestion for integration into the WSL Reactor.</p>
+--       ]]
+--       .. (params.prepareSuggestionSelected==nil and optionNotImplemented or ''),
+--     },
+--   }
+
+--   ui.chosenInstallModeOption = options[1]
+
+
+--   local win = ui.dispatcher:AddWindow({
+
+--     ID = "ShaderInstallSelect",
+--     WindowTitle = "Shadertoys Installer - Select Installation mode ...",
+--     Geometry = ui.windowGeometry,
+--     -- Composition = comp,
+
+--     ui.manager:VGroup {
+--       -- ID = "root",
+--       Weight=1,
+
+--       ui.logo(),
+
+--       ui.manager:VGap(10),
+
+--       ui.manager:ComboBox{
+--         ID = "ModeSelection",
+--         Text = 'Install Mode Selection',
+--         Weight = 0,
+--         Events = { CurrentIndexChanged = true, Activated = true },
+--         Items = { 'Foo' , 'Bar'},
+--       },
+
+--       ui.manager:VGap(10),
+
+--       ui.manager:Label{
+--         ID = "Description",
+--         WordWrap = true,
+--         Weight = 1,
+--         ReadOnly = true,
+--         Flat = true,
+--         Alignment = { AlignHCenter = false, AlignTop = true, },
+--         Text = ""
+--       },
+
+--       ui.manager:HGroup {
+--         Weight = 0,
+--         ui.manager:HGap(0,1),
+--         ui.manager:Button{ ID = "Continue",   Text = "Continue ..." },
+--         ui.manager:HGap(5),
+--         ui.manager:Button{ ID = "Cancel",   Text = "Cancel" },
+--       },
+--     },
+--   })
+
+
+--   local itm=win:GetItems()
+
+--   for i, option in ipairs(options) do
+--     itm.ModeSelection:AddItem(option.Label)
+--   end
+
+
+--   function win.On.ModeSelection.CurrentIndexChanged(ev)
+
+--     local index = itm.ModeSelection.CurrentIndex+1
+--     local entry = options[index]
+
+--     assert(entry ~= nil)
+
+--     ui.chosenInstallModeOption=entry
+--     itm.Continue.Enabled=entry.Enabled
+--     itm.Description.Text=entry.Text
+--   end
+
+
+--   function win.On.Continue.Clicked(ev)
+--     win:Hide()
+--     -- showInstallMainWindow()
+--     -- params.NextWindow:Show()
+--     ui.chosenInstallModeOption.Procedure()
+--   end
+
+
+--   function win.On.Cancel.Clicked(ev)
+--     ui.dispatcher:ExitLoop()
+--     os.exit()
+--   end
+
+
+--   function win.On.ShaderInstallSelect.Close(ev)
+--     ui.dispatcher:ExitLoop()
+--     os.exit()
+--   end
+
+
+
+--   win:Show()
+
+-- end

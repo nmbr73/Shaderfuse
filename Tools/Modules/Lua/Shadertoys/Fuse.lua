@@ -10,6 +10,9 @@ local Fuse = {
     file_fusename='',
     file_filename='',
 
+    thumbnail_exists = false,
+    markdown_exists = false,
+
     error = nil,
 
     shadertoy_name = '',
@@ -70,10 +73,27 @@ function Fuse:init(filepath)
 
   if self.file_basepath==nil or self.file_category==nil or self.file_fusename==nil then
     self.error="filepath '"..self.file_filepath.."' does not match the expected schema"
+    return false
   end
 
   self.file_filename=self.file_fusename..'.fuse'
 
+  if bmd.fileexists(self.file_basepath..self.file_category..'/'..self.file_fusename..'.md') then
+    self.markdown_exists=true
+  else
+    self.markdown_exists=true
+    self.error="markdown does not exists"
+  end
+
+  if bmd.fileexists(self.file_basepath..self.file_category..'/'..self.file_fusename..'_320x180.png') then
+    self.thumbnail_exists=true
+  else
+    self.thumbnail_exists=true
+    self.error="thumbnail does not exists"
+  end
+
+
+  return true
 end
 
 
@@ -126,16 +146,18 @@ function Fuse:read()
 
   if self.fuse_sourceCode==nil or self.fuse_sourceCode=='' then return self:setError("failed to read content of file '"..self.file_filepath.."'",false) end
 
-  local fields = {'shadertoy_name', 'shadertoy_author', 'shadertoy_id','shadertoy_license','dctlfuse_category','dctlfuse_name','dctlfuse_author'}
+  local fields = {'shadertoy_name', 'shadertoy_author', 'shadertoy_id', 'dctlfuse_author', 'dctlfuse_name', 'dctlfuse_category', 'shadertoy_license'}
 
   for i, name in ipairs(fields) do
     local value=self.fuse_sourceCode:match('\n%s*local%s+'..name..'%s*=%s*"([^"]+)"') or self.fuse_sourceCode:match('^%s*local%s+'..name.."%s*=%s*'([^']+)'") or ''
 
-    if value==''and name=='dctlfuse_name' and self.fuse_sourceCode:match('\n%s*local%s+dctlfuse_name%s*=%s*shadertoy_name') then
+    if value=='' and name=='dctlfuse_name' and self.fuse_sourceCode:match('\n%s*local%s+dctlfuse_name%s*=%s*shadertoy_name') then
       value = self.shadertoy_name
     end
 
     if value=='' then return self:setError("'"..name.."' could not be determined",false) end
+
+    if name=='dctlfuse_name' and value~=self.file_fusename then return self:setError("Fuse name does not correspond to filename´",false) end
 
     self[name]=value
   end
