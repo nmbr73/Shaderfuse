@@ -26,7 +26,6 @@ handle:write([[
 <!--  ALL CHANGES WILL BE OVERWRITTEN WITHOUT ANY FURTHER NOTICE -->
 <!--                                                             -->
 
-<style type="text/css">p.error {color:red;}</style>
 
 ]])
 
@@ -41,24 +40,22 @@ for i, fuse in ipairs(fuses.list) do
   if fuse.file_category ~= currentCategory then
 
     if currentCategory~='' then
-      handle:write('</table>\n')
+      handle:write('</table>\n\n')
     end
 
     currentCategory=fuse.file_category
 
     handle:write(
-      "\n\n## "..fuse.file_category.." Shaders\n\n<table>"
---      .."Preview  | Information\n"
---      .."---------|------------\n"
+      "## "..fuse.file_category.." Shaders\n\n<table>"
     )
 
   end
 
   handle:write(
-      '<tr>\n  <td>'
-    ..'<a href="'..fuse.file_category..'/'..fuse.file_filename..'.md)">'
-    ..'<img src="'..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" alt="'..fuse.file_category..'/'..fuse.file_fusename..'" />'
-    ..'</a></td>\n  <td>\n    <p>\n\n'..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'</p>\n      <p>\n\n'
+      '<tr>\n'
+    ..'<td>'
+    ..'<img src="'..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" alt="'..fuse.file_category..'/'..fuse.file_fusename..'" width="320" height="180" />'
+    ..'</td>\n<td><p>\n\n'..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'</p>\n<p>\n\n'
     ..'<nobr>Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md)</nobr><br />\n'
     ..'<nobr>Category: ['..fuse.file_category..']('..fuse.file_category..'/OVERVIEW.md)</nobr><br />\n'
     )
@@ -68,13 +65,13 @@ for i, fuse in ipairs(fuses.list) do
     handle:write(
         '<nobr>Shadertoy: ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')</nobr><br />\n'
       ..'<nobr>Author: ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')</nobr><br />\n'
-      ..'<nobr>Ported by: ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)</nobr><br />    \n'
+      ..'<nobr>Ported by: ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)</nobr><br />\n'
       )
   else
-    handle:write('    </p>\n    <p class="error">'..fuse.error)
+    handle:write('</p><p style="color:red; font-weight:bold; ">'..fuse.error)
   end
 
-  handle:write('</p>  </td>\n</tr>\n')
+  handle:write('</p>\n</td></tr>\n')
 
 end
 
