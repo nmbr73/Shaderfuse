@@ -7,9 +7,7 @@
 <!--  ALL CHANGES WILL BE OVERWRITTEN WITHOUT ANY FURTHER NOTICE -->
 <!--                                                             -->
 
-<style type="text/css">
-  p.error {color:red;}
-</style>
+<style type="text/css">p.error {color:red;}</style>
 
 # Shaders
 
