@@ -155,7 +155,7 @@ function Fuse:read()
       value = self.shadertoy_name
     end
 
-    if value=='' then return self:setError("'"..name.."' could not be determined",false) end
+    if value=='' and name~='shadertoy_license' then return self:setError("'"..name.."' could not be determined",false) end
 
     if name=='dctlfuse_name' and value~=self.file_fusename then return self:setError("Fuse name does not correspond to filename´",false) end
 
