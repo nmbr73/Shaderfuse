@@ -24,16 +24,29 @@ cd into your working copy ... in my case I cloned the repository into ‘~/Proje
 cd ~/Projects/Shadertoys/
 ````
 
-then set symbolic links for Fusion to point into your working copy:
-
+Persist the information on where to find the repository ...
 ```
 REPO=`pwd`
 
 echo "local user_config = { pathToRepository = '$REPO/' }\nreturn user_config" \
  > $REPO/Tools/Modules/Lua/Shadertoys/\~user_config.lua
 
-cd ~/Library/Application\ Support/Blackmagic\ Design/Fusion/Modules/Lua
+BMD=~/Library/Application\ Support/Blackmagic\ Design
+```
+
+... and in the same shell set symbolic links for Fusion to point into your working copy:
+
+```
+cd "$BMD/Fusion/Modules/Lua"
 ln -s "$REPO/Tools/Modules/Lua/Shadertoys" Shadertoys
-cd ~/Library/Application\ Support/Blackmagic\ Design/Fusion/Scripts/Comp
+cd "$BMD/Fusion/Scripts/Comp"
+ln -s "$REPO/Tools/Scripts/Comp/Shadertoys" Shadertoys
+````
+
+... resp. do so for Resolve:
+```
+cd "$BMD/DaVinci Resolve/Fusion/Modules/Lua"
+ln -s "$REPO/Tools/Modules/Lua/Shadertoys" Shadertoys
+cd "$BMD/DaVinci Resolve/Fusion/Scripts/Comp"
 ln -s "$REPO/Tools/Scripts/Comp/Shadertoys" Shadertoys
 ````
