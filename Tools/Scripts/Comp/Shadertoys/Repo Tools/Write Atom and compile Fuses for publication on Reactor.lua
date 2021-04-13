@@ -75,7 +75,10 @@ for i, fuse in ipairs(fuses.list) do
     OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li>'..fuse.file_fusename..'</li>\n'
 
 
-    local target_filename=fuse.file_category..'-'..fuse.file_fusename..'_'..fuse.shadertoy_id..'.fuse'
+    local target_filename=
+        -- fuse.file_category..'-'..
+        -- fuse.file_fusename..'_'..
+        fuse.shadertoy_id..'.fuse'
 
     -- quick hack:
     fuse.fuse_sourceCode=[[
