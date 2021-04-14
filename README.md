@@ -98,73 +98,12 @@ Fuses
 
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
+See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far. In particular you may want to have a look at [WorkInProgress/](WorkInProgress/README.md) to see what's coming next!
 
-- [Abstract Shaders](Shaders/Abstract/)
-  - [BumpyReflectingBalls](Shaders/Abstract/BumpyReflectingBalls.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [Crazyness](Shaders/Abstract/Crazyness.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
-  - [Cross Distance](Shaders/Abstract/CrossDistance.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
-  - [Favela](Shaders/Abstract/Favela.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
-  - [FlightThroughANebula](Shaders/Abstract/FlightThroughANebula.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [Kali 3D](Shaders/Abstract/Kali3D.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [Mosaic](Shaders/Abstract/Mosaic.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [Noisecube](Shaders/Abstract/Noisecube.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [Rainbow Slices](Shaders/Abstract/RainbowSlices.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
-  - [Vine](Shaders/Abstract/Vine.md) ported by [JiPi](Site/Profiles/JiPi.md)
-- Blob
-  - [FunWithMetaballs](Shaders/Blob/FunWithMetaballs.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [TorturedBlob](Shaders/Blob/TorturedBlob.md) ported by [JiPi](Site/Profiles/JiPi.md)
-- Distortion
-  - [FbmWarp](Shaders/Distortion/FbmWarp.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [DisplacementShader](Shaders/Distortion/DisplacementShader.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-- Fractals
-  - [EnergyPlant](Shaders/Fractals/EnergyPlant.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [Fractal03](Shaders/Fractals/Fractal03.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [FractalEngine](Shaders/Fractals/FractalEngine.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [FractalGutter](Shaders/Fractals/FractalGutter.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-- Miscellaneous
-  - [BuoyantBalls](Shaders/Misc/BuoyantBalls.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [Fire_Water](Shaders/Misc/Fire_Water.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [FractalLand](Shaders/Misc/FractalLand.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
-  - [IHeartFourier](Shaders/Misc/IHeartFourier.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [WildKifs4D](Shaders/Misc/WildKifs4D.md) ported by [JiPi](Site/Profiles/JiPi.md)
-- Object
-  - [Dancy Tree Doodle](Shaders/Object/DancyTreeDoodle.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [Dancy Tree Doodle 3D](Shaders/Object/DancyTreeDoodle3D.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [EggHunt](Shaders/Object/EggHunt.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [FractalRadioBase](Shaders/Object/FractalRadioBase.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [Lonely Voxel](Shaders/Object/LonelyVoxel.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [HW3Swing](Shaders/Object/HW3Swing.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [WalkingCubes](Shaders/Object/WalkingCubes.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
 
-- [Planet Shaders](Shaders/Planet/)
-  - [Cracker Cars](Shaders/Planet/CrackerCars.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [EARF](Shaders/Planet/EARF.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [Fake3DScene](Shaders/Planet/Fake3DScene.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [RayCastSphere](Shaders/Planet/RayCastSphere.md) ported by [JiPi](Site/Profiles/JiPi.md)
-- Recursive
-  - [FallingCuteBombs](Shaders/Recursive/FallingCuteBombs.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
-  - [Spilled](Shaders/Recursive/Spilled.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [TDSOTM_Nebula](Shaders/Recursive/TDSOTM_Nebula.md) ported by [JiPi](Site/Profiles/JiPi.md)
-- Tunnel
-  - [Try Not To Hit The Walls](Shaders/Tunnel/TNTHTW.md) ported by [JiPi](Site/Profiles/JiPi.md)
-  - [Velocibox.fuse](Shaders/Tunnel/Velocibox.md) ported by [nmbr73](Site/Profiles/nmbr73.md)
-  - [WindingMengerTunnel](Shaders/Tunnel/WindingMengerTunnel.md) ported by [JiPi](Site/Profiles/JiPi.md) :new:
 
-Work in Progress
-----------------
 
-- [Voxel Edges](WorkInProgress/nmbr73/VoxelEdges.md) currently under construction by [nmbr73](Site/Profiles/nmbr73.md)
-- [FbmWarp](Shaders/Abstract/FbmWarp.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
-- [InteractiveThinks](WorkInProgress/JiPi/InteractiveThinks.md) currently under construction by [JiPi](Site/Profiles/JiPi.md)
-- [AncientTemple](WorkInProgress/JiPi/AncientTemple.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
-- [Physically-BasedSoapBubble](WorkInProgress/JiPi/Physically-BasedSoapBubble.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :collision:
-- [Dual3DTruchetTiles](WorkInProgress/JiPi/Dual3DTruchetTiles.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :exclamation:
-- [FragStar](WorkInProgress/JiPi/FragStar.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :strawberry:
-- [Trypophobia](WorkInProgress/JiPi/Trypophobia.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :lemon:
-- [SmallPlanet](WorkInProgress/JiPi/SmallPlanet.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :banana:
-- [MarchingGlassCubes](WorkInProgress/JiPi/MarchingGlassCubes.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :peach:
-- [RoboticArmHuntingLights](WorkInProgress/JiPi/RoboticArmHuntingLights.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :grapes:
-- [Matheads](WorkInProgress/JiPi/Matheads.md) currently under construction by [JiPi](Site/Profiles/JiPi.md) :rose:
+
 
 Overview
 ========
@@ -208,38 +147,3 @@ Overview
 [![Fractal03_gaz](https://user-images.githubusercontent.com/78935215/111883240-55b85c00-89ba-11eb-9629-5543465c4de7.gif)](Shaders/Fractals/Fractal03.md)
 [![FractalGutter](https://user-images.githubusercontent.com/78935215/111883269-7f718300-89ba-11eb-8ef9-27aa8a16c7dc.gif)](Shaders/Fractals/FractalGutter.md)
 [![EnergyPlant](https://user-images.githubusercontent.com/78935215/114272288-e1e7fd00-9a15-11eb-9134-8cd8c8dcb2ad.gif)](Shaders/Fractals/EnergyPlant.md)
-
-Work in Progress
-----------------
-
-### JiPi
-
-Coming Soon (Conversion is finished, the DCTL code still has to be provided with parameters and placed in a fuse.)
-
-[![Working](WorkInProgress/JiPi/LiquidXstals_320x180.png)](https://www.shadertoy.com/view/ldG3WR)
-[![Working](WorkInProgress/JiPi/Bonzomatic8_320x180.png)](https://www.shadertoy.com/view/tlsXWf)
-[![TransparentDistortion](https://user-images.githubusercontent.com/78935215/109943088-19f07780-7cd5-11eb-8183-31ecafe9f446.gif)](https://www.shadertoy.com/view/ttBBRK)
-[![DiffuisonGathering](https://user-images.githubusercontent.com/78935215/109943592-a56a0880-7cd5-11eb-97c0-a899d167d6e7.gif)](https://www.shadertoy.com/view/3sGXRy)
-[![InteractiveThinks](https://user-images.githubusercontent.com/78935215/110646914-aad4c080-81b7-11eb-80eb-6562a27cf929.gif)](https://www.shadertoy.com/view/Xt3SR4)
-[![Pendulum](https://user-images.githubusercontent.com/78935215/111521453-73d35180-8759-11eb-8f52-259612de94a2.gif)](https://www.shadertoy.com/view/wtdyDn)
-[![Soul22](https://user-images.githubusercontent.com/78935215/111699010-d733b100-8837-11eb-8565-b05b7d068551.gif)](https://www.shadertoy.com/view/3tcBWN)
-[![Circuits](https://user-images.githubusercontent.com/78935215/111883288-a3cd5f80-89ba-11eb-9eb3-5722e3090e29.gif)](https://www.shadertoy.com/view/XlX3Rj)
-[![ChocolatePackage](https://user-images.githubusercontent.com/78935215/111883950-a5992200-89be-11eb-9d04-cdd1cf3dbc54.gif)](https://www.shadertoy.com/view/tllyDj)
-[![TrippyHappyJumper](https://user-images.githubusercontent.com/78935215/112180355-c7331d00-8bfb-11eb-9769-71b551174b8d.gif)](https://www.shadertoy.com/view/3dVSRD)
-[![GridOfCylinders](https://user-images.githubusercontent.com/78935215/112716612-a1519500-8ee7-11eb-9868-8d709202a1df.gif)
-](https://www.shadertoy.com/view/4dSGW1)
-[![GoldFrame](https://user-images.githubusercontent.com/78935215/112769665-7fa8f880-9022-11eb-8a01-085b0c00725a.gif)](https://www.shadertoy.com/view/lstXRr)
-[![SurfaceOfTheVoid](https://user-images.githubusercontent.com/78935215/112769715-bf6fe000-9022-11eb-820e-04ac2ae64a3f.gif)](https://www.shadertoy.com/view/WtGBDG)
-[![PseudoKnightyan](https://user-images.githubusercontent.com/78935215/113430783-096a1480-93db-11eb-8559-191926128f13.gif)](https://www.shadertoy.com/view/lls3Wf)
-[![FragStar2](https://user-images.githubusercontent.com/78935215/114275018-380e6d80-9a21-11eb-831b-cd46428211b1.gif)](https://www.shadertoy.com/view/wlXBWH)
-[![Trypophobia](https://user-images.githubusercontent.com/78935215/114274665-df8aa080-9a1f-11eb-9ac2-132f2f167f0a.gif)](https://www.shadertoy.com/view/WddXDf)
-[![SmallPlanet](https://user-images.githubusercontent.com/78935215/114281976-a6632800-9a41-11eb-9f75-ea3365dc3a50.gif)](https://www.shadertoy.com/view/XssyDM)
-[![MarchingGlassCubes](https://user-images.githubusercontent.com/78935215/114272316-017f2580-9a16-11eb-9425-cc9fa76a6bab.gif)](https://www.shadertoy.com/view/MdlXDX)
-[![RoboticArmHuntingLights](https://user-images.githubusercontent.com/78935215/114272639-3c358d80-9a17-11eb-86ce-50ff2d60fd99.gif)](https://www.shadertoy.com/view/lls3Wf)
-[![Matheads](https://user-images.githubusercontent.com/78935215/114322433-88b8c000-9b20-11eb-8bdd-8187e565d6dc.gif)](https://www.shadertoy.com/view/tsSyWD)
-
-### nmbr73
-
-Someday / maybe
-
-[![Shaders/Abstract/VoxelEdges.fuse](WorkInProgress/nmbr73/VoxelEdges_320x180.png)](WorkInProgress/nmbr73/VoxelEdges.md)
