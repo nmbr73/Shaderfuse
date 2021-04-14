@@ -12,7 +12,11 @@
 - [MarchingGlassCubes](JiPi/MarchingGlassCubes.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :peach:
 - [RoboticArmHuntingLights](JiPi/RoboticArmHuntingLights.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :grapes:
 - [Matheads](JiPi/Matheads.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :rose:
-
+- [HeritableXenobiotic](JiPi/HeritableXenobiotic.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :mushroom:
+- [DropletSplash](JiPi/DropletSplash.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :tulip:
+- [CubicTruchetPattern](JiPi/CubicTruchetPattern.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :eggplant:
+- [VoxelFlyThrough](JiPi/VoxelFlyThrough.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :cherries:
+- [Veyerus](JiPi/Veyerus.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :watermelon:
 
 # Teaser
 
@@ -41,6 +45,11 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![MarchingGlassCubes](https://user-images.githubusercontent.com/78935215/114272316-017f2580-9a16-11eb-9425-cc9fa76a6bab.gif)](https://www.shadertoy.com/view/MdlXDX)
 [![RoboticArmHuntingLights](https://user-images.githubusercontent.com/78935215/114272639-3c358d80-9a17-11eb-86ce-50ff2d60fd99.gif)](https://www.shadertoy.com/view/lls3Wf)
 [![Matheads](https://user-images.githubusercontent.com/78935215/114322433-88b8c000-9b20-11eb-8bdd-8187e565d6dc.gif)](https://www.shadertoy.com/view/tsSyWD)
+[![HeritableXenobiotic](https://user-images.githubusercontent.com/78935215/114781246-b9933200-9d78-11eb-85da-b6ed074ad369.gif)](https://www.shadertoy.com/view/tdlyD2)
+[![DropletSplash2](https://user-images.githubusercontent.com/78935215/114780133-46d58700-9d77-11eb-9041-1fe1484fcbc0.gif)](https://www.shadertoy.com/view/Ndl3R2)
+[![CubicTruchetPattern2](https://user-images.githubusercontent.com/78935215/114780835-3540af00-9d78-11eb-9f82-1f0605242cc6.gif)](https://www.shadertoy.com/view/4lfcRl)
+[![VoxelFlythrough](https://user-images.githubusercontent.com/78935215/114780463-b9defd80-9d77-11eb-9a05-bb90851f0611.gif)](https://www.shadertoy.com/view/MdGXWG)
+[![Veyerus](https://user-images.githubusercontent.com/78935215/114778884-b77ba400-9d75-11eb-9137-be28f748260e.gif)](https://www.shadertoy.com/view/WltXDn)
 
 ## nmbr73
 
