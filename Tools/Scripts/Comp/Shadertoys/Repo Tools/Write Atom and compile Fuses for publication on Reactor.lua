@@ -1,4 +1,7 @@
 require("string")
+-- local ui = require "Tools.Modules.Lua.Shadertoys.ui"
+local ui          = require("Shadertoys/ui")
+
 
 local user_config = require("Shadertoys/~user_config")
 local fuses       = require("Shadertoys/fuses")
@@ -72,7 +75,7 @@ for i, fuse in ipairs(fuses.list) do
 
     end
 
-    OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li>'..fuse.file_fusename..'</li>\n'
+    OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.file_fusename..'</strong></li>\n'
 
 
     local target_filename=
@@ -82,6 +85,20 @@ for i, fuse in ipairs(fuses.list) do
 
     -- quick hack:
     fuse.fuse_sourceCode=[[
+
+--
+--       _____        _   _       _   ______    _ _ _
+--      |  __ \      | \ | |     | | |  ____|  | (_) |
+--      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+--      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+--      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+--      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+--
+--   ... this File is managed by some scripts and can be
+--    overwritten at any time and without further notice!
+--         pls. see https://github.com/nmbr73/Shadertoys
+--                                           for details
+--
 
       local FC_PREFIX=""
       local FC_AUTHBASEDLAYOUT=false
@@ -128,21 +145,29 @@ if handle then
     )
 
 
-  handle:write('[[\n')
+  handle:write('[[\n        <center>\n')
 
-  handle:write([[
-        <center>
+
+    if true then
+      handle:write('          <br />')
+      handle:write(ui.logo_string)
+      handle:write('<br /><br />\n')
+    else
+      handle:write([[
           <span style="color:#c0a050; font-size:x-large; font-weight:bold; ">Shaderfuse</span><br />
           <span style="color:#a0c050; font-size:large; font-style:italic; ">... welcome to the shaderverse</span><br />
           ]])
+    end
 
   handle:write(
-          YourPackageName..[[ adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
+          '          The package <font color="white">'..
+          YourPackageName..[[</font> adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
           See our repository on <a href="https://github.com/nmbr73/Shadertoys">GitHub</a> for some insights and to maybe constribute to this project.<br />
           Find tons of example videos on what you can do with it on this <a href="https://www.youtube.com/c/JiPi_YT/videos">YouTube Channel</a>.<br />
           Please note that - unless stated otherwise - all these Fuses fall under Creative Commond 'CC BY-NC-SA 3.0 unported'.<br />
-          This means that in particular any commercial use is strictliy prohibited!
-        </center>]])
+          For most shaders this regrettably means that in particular <font color="#ff6060">any commercial use is strictliy prohibited!</font>
+        </center>
+        ]])
 
   handle:write(OurPackageDescription)
 

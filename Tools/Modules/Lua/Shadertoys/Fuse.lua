@@ -167,6 +167,21 @@ function Fuse:read()
   if not self.dctlfuse_category:match('^[A-Z][A-Za-z]+$') then return self:setError("invalid category name '"..self.dctlfuse_category.."'",false) end
   if self.dctlfuse_category ~= self.file_category then return self:setError("fuse category '"..self.dctlfuse_category.."' does not match fuse's subdirectory",false) end
 
+  local markers={
+      '-- >>> SCHNIPP::FUREGISTERCLASS',
+      '-- <<< SCHNAPP::FUREGISTERCLASS',
+      '-- >>> SCHNIPP.SCHADERFUSECONTROLS',
+      '-- <<< SCHNAPP.SCHADERFUSECONTROLS',
+    }
+
+  for i, marker in ipairs(markers) do
+    if string.find(self.fuse_sourceCode, marker) == nil then
+      return self:setError('fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks',false)
+    end
+  end
+
+
+
   return true
 
 end
