@@ -118,6 +118,20 @@
 </p><p style="color:red; font-weight:bold; ">'dctlfuse_category' could not be determined</p>
 </td></tr>
 <tr>
+<td><img src="Abstract/StainedLights_320x180.png" alt="Abstract/StainedLights" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [StainedLights](Abstract/StainedLights.md)</nobr><br />
+<nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [Stained Lights](https://www.shadertoy.com/view/WlsSzM)</nobr><br />
+<nobr>Author: [104](https://www.shadertoy.com/user/104)</nobr><br />
+<nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="Abstract/Vine_320x180.png" alt="Abstract/Vine" width="320" height="180" /></td>
 <td><p>
 
