@@ -17,10 +17,10 @@
 - *'dctlfuse_category' could not be determined*
 
 ## **[CrossDistance](CrossDistance.md)**
-based on the [Cross - distance](https://www.shadertoy.com/view/XtGfzw) written by [iq](https://www.shadertoy.com/user/iq)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
+based on [Cross - distance](https://www.shadertoy.com/view/XtGfzw) written by [iq](https://www.shadertoy.com/user/iq)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
 
 ## **[Favela](Favela.md)**
-based on the [Favela](https://www.shadertoy.com/view/ldGcDh) written by [duvengar](https://www.shadertoy.com/user/duvengar)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
+based on [Favela](https://www.shadertoy.com/view/ldGcDh) written by [duvengar](https://www.shadertoy.com/user/duvengar)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
 
 ## **[FlightThroughANebula](FlightThroughANebula.md)** :boom:
 - *'dctlfuse_category' could not be determined*
@@ -38,7 +38,7 @@ based on the [Favela](https://www.shadertoy.com/view/ldGcDh) written by [duvenga
 - *'dctlfuse_category' could not be determined*
 
 ## **[StainedLights](StainedLights.md)**
-based on the [Stained Lights](https://www.shadertoy.com/view/WlsSzM) written by [104](https://www.shadertoy.com/user/104)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
+based on [Stained Lights](https://www.shadertoy.com/view/WlsSzM) written by [104](https://www.shadertoy.com/user/104)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
 
 ## **[Vine](Vine.md)** :boom:
 - *'dctlfuse_category' could not be determined*
