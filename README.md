@@ -98,7 +98,7 @@ Fuses
 
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
-See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far. In particular you may want to have a look at [WorkInProgress/](WorkInProgress/README.md) to see what's coming next!
+See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far - resp. the [Overview](Shaders/OVERVIEW.md) to have with thumbnails a more 'visual experience'. In particular you may want to have a look at [WorkInProgress/](WorkInProgress/README.md) to see what's coming next!
 
 
 
