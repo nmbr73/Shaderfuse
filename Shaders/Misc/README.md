@@ -8,17 +8,20 @@
   <!--                                                             -->
 
 
-  # Planet Shaders
+  # Misc Shaders
 
-## **[CrackerCars](CrackerCars.md)** :boom:
+## **[BuoyantBalls](BuoyantBalls.md)**
+based on the [BuoyantBalls](https://www.shadertoy.com/view/MtsBW8) written by [dr2](https://www.shadertoy.com/user/dr2)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+
+## **[Fire_Water](Fire_Water.md)** :boom:
 - *'dctlfuse_category' could not be determined*
 
-## **[EARF](EARF.md)** :boom:
+## **[FractalLand](FractalLand.md)** :boom:
 - *'dctlfuse_category' could not be determined*
 
-## **[Fake3DScene](Fake3DScene.md)** :boom:
-- *'dctlfuse_category' could not be determined*
+## **[IHeartFourier](IHeartFourier.md)**
+based on the [IHeartFourier](https://www.shadertoy.com/view/tltSWr) written by [harry7557558](https://www.shadertoy.com/user/harry7557558)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[RayCastSphere](RayCastSphere.md)** :boom:
+## **[WildKifs4D](WildKifs4D.md)** :boom:
 - *'dctlfuse_category' could not be determined*
 

@@ -8,17 +8,11 @@
   <!--                                                             -->
 
 
-  # Planet Shaders
+  # Blob Shaders
 
-## **[CrackerCars](CrackerCars.md)** :boom:
+## **[FunWithMetaballs](FunWithMetaballs.md)** :boom:
 - *'dctlfuse_category' could not be determined*
 
-## **[EARF](EARF.md)** :boom:
-- *'dctlfuse_category' could not be determined*
-
-## **[Fake3DScene](Fake3DScene.md)** :boom:
-- *'dctlfuse_category' could not be determined*
-
-## **[RayCastSphere](RayCastSphere.md)** :boom:
+## **[TorturedBlob](TorturedBlob.md)** :boom:
 - *'dctlfuse_category' could not be determined*
 
