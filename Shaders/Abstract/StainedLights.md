@@ -7,5 +7,5 @@ Based on '_[Stained Lights](https://www.shadertoy.com/view/WlsSzM)_' by [104](ht
 ## Compability
 - [x] Tested on macOS/Metal
 - [x] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL
