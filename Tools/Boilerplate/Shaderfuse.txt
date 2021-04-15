@@ -1,0 +1,256 @@
+--[[--/*
+
+    Favela.fuse
+
+    Based on https://www.shadertoy.com/view/>>SHADERTOY_ID<< a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion.
+
+    Shader created by >>SHADERTOY_AUTHOR<<
+
+*/--]]--
+
+
+
+-- MANDATORY -----------------------------------------------------------------
+local shadertoy_name       = ">>SHADERTOY_NAME<<"
+local shadertoy_author     = ">>SHADERTOY_AUTHOR<<"
+local shadertoy_id         = ">>SHADERTOY_ID<<"
+local shadertoy_license    = "unknown - please update!"
+local dctlfuse_category    = ">>DCTLFUSE_CATEFORY<<"
+local dctlfuse_name        = ">>DCTLFUSE_NAME<<"
+local dctlfuse_author      = ">>DCTLFUSE_AUTHOR<<"
+-- OPTIONAL ------------------------------------------------------------------
+-- local dctlfuse_versionNo   = 1
+-- local dctlfuse_versionDate = "April 2021"
+-- local dctlfuse_authorurl   = "https://www.youtube.com/c/nmbr73"
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(
+
+  >>FUREGISTERCLASS_CODEBLOCK<<
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+ST_>>SHADERTOY_NAME<<Params =
+[[
+  float freq;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+ST_>>SHADERTOY_NAME<<Kernel =
+    [[
+
+
+
+//############################################################################
+
+
+__KERNEL__ void ST_>>SHADERTOY_NAME<<Kernel(
+    __CONSTANTREF__ ST_>>SHADERTOY_NAME<<Params*  params,
+    __TEXTURE2D__                  iChannel0,
+    __TEXTURE2D_WRITE__            dst
+    )
+{
+
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  float2 fragCoord   = to_float2(x, y);
+  float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+  float4 fragColor   = to_float4_s(0.0f);
+
+  //##########################################################################
+
+
+  fragColor   = to_float4(0.0f,1.0f,0.0f,0.0f);
+
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+
+}
+
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  StandardShaderFuseTopControls();
+
+  ----- In/Out
+
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+   InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 2.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+  })
+
+  -- and your controlls here ...
+
+  StandardShaderFuseBottomControls();
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+
+    -- Extern Texture or create a new one
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+    else
+        src1 = Image(imgattrs)
+        local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+        src1:Fill(p)
+    end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+    -- Interface for running DCTL-Code
+
+    node = DVIPComputeNode(req, "ST_>>SHADERTOY_NAME<<Kernel", ST_>>SHADERTOY_NAME<<Kernel, "ST_>>SHADERTOY_NAME<<Params", ST_>>SHADERTOY_NAME<<Params)
+
+
+    if not pcall(function ()  -- necessary to avoid memory leakage
+        params.freq         = InFreq:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        node:SetParamBlock(params)
+    end) then
+        params              = node:GetParamBlock(ST_>>SHADERTOY_NAME<<Params)
+        params.freq         = InFreq:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        node:SetParamBlock(params)
+    end
+
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst",      dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+    end
+    OutImage:Set(req, dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- **/
+
+-- /* ====================== DO NOT TOUCH OR APPEND ANY CODE HERE ===========================================
+>>SHADERFUSECONTROLS_CODEBLOCK<<
+-- */
