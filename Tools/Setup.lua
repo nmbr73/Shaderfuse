@@ -6,45 +6,84 @@
 
 ]]
 
-local ui            = fu.UIManager
-local ui_dispatcher = bmd.UIDispatcher(ui)
 
 
-local paths     = {}
-local exists    = {}
-local checked   = {}
+
+
+local icon            = nil
+local repositorypath  = nil
+local usrcfg_filename = nil
+local paths           = {}
+local exists          = {}
+local checked         = {}
+local ui              = fu.UIManager
+local ui_dispatcher   = bmd.UIDispatcher(ui)
+
+
+
+
+function init()
+
+  local pathseparator     = package.config:sub(1,1)
+  local fusepath          = fusion:MapPath("Fuses:/")
+        repositorypath    = debug.getinfo(2, "S").source:sub(2):match("(.*[/\\])Tools[/\\]")
+
+  icon=assert(loadfile(repositorypath.."Tools/Modules/Lua/Shadertoys/icon.lua"))()
+
+  assert(bmd.direxists(repositorypath..'.git/'))
+
+  paths.bmddir_mods= fusion:MapPath("LuaModules:/")..'Shadertoys'
+  paths.bmddir_comp= fusion:MapPath("Scripts:/")..'Comp'..pathseparator..'Shadertoys'
+  paths.gitdir_mods= repositorypath.. ('Tools/Modules/Lua/Shadertoys'):gsub('/',pathseparator)
+  paths.gitdir_comp= repositorypath.. ('Tools/Scripts/Comp/Shadertoys'):gsub('/',pathseparator)
+  paths.bmddir_atom= fusepath.. 'Shadertoys_wsl'
+  paths.gitdir_atom= repositorypath.. ('Atom/com.JiPi.Shadertoys/Fuses/Shadertoys_wsl/'):gsub('/',pathseparator)
+  paths.bmddir_fuse= fusepath.. 'Shadertoys_dev'
+  paths.gitdir_fuse= repositorypath.. ('Shaders/'):gsub('/',pathseparator)
+
+  usrcfg_filename  = repositorypath.. ('Tools/Modules/Lua/Shadertoys/'):gsub('/',pathseparator)..'~user_config.lua'
+
+  for key, path in pairs(paths) do
+    exists[key]  = bmd.direxists(path)
+  end
+
+  assert( exists['bmddir_comp'] ==  exists['bmddir_mods'] )
+
+  for i, key in ipairs( {'bmddir_mods', 'bmddir_comp', 'bmddir_atom', 'bmddir_fuse', }) do
+    checked[key]  = exists[key]
+  end
+
+end
+
 
 function config_changed()
-  return   checked.bmddir_tools~= exists.bmddir_tools
+  return   checked.bmddir_comp ~= exists.bmddir_comp
         or checked.bmddir_fuse ~= exists.bmddir_fuse
         or checked.bmddir_atom ~= exists.bmddir_atom
 end
 
 
-function do_install(k)
-  return checked['bmddir_'..k] == true and exists['bmddir_'..k] == false
-end
-
-function do_uninstall(k)
-  return checked['bmddir_'..k] == false and exists['bmddir_'..k] == true
-end
 
 function cmd_ln(target_folder,link_name)
 
   if FuPLATFORM_MAC then
     os.execute("ln -s '"..target_folder.."' '"..link_name.."'")
+  else
+    assert(false)
   end
 
-  assert(false)
 end
+
+
 
 function cmd_rm(link_name)
 
   if FuPLATFORM_MAC then
     os.execute("rm '"..link_name.."'")
+  else
+    assert(false)
   end
 
-  assert(false)
 end
 
 
@@ -63,59 +102,129 @@ function setup()
   -- /J softlink to folder
   -- rmdir ... to remove
 
+  assert( checked['bmddir_comp'] == checked['bmddir_mods'] )
 
-  if do_install('tools') then
-    cmd_ln( paths.gitdir_comp, paths.bmddir_comp )
-    cmd_ln( paths.gitdir_mods, paths.bmddir_mods )
-  elseif do_uninstall('tools') then
-    cmd_rm( paths.bmddir_comp )
-    cmd_rm( paths.bmddir_mods )
+  for i, key in ipairs( {'mods', 'comp', 'atom', 'fuse', }) do
+    if checked['bmddir_'..key] == true and exists['bmddir_'..key] == false then
+        -- install
+        cmd_ln( paths['gitdir_'..key], paths['bmddir_'..key] )
+    elseif checked['bmddir_'..key] == false and exists['bmddir_'..key] == true then
+        -- uninstall
+       cmd_rm( paths['bmddir_'..key] )
+    end
   end
-
-  if do_install('fuse') then
-    cmd_ln( paths.gitdir_fuse, paths.bmddir_fuse )
-  elseif do_uninstall('fuse') then
-    cmd_rm( paths.bmddir_fuse )
-  end
-
-  if do_install('atom') then
-    cmd_ln( paths.gitdir_atom, paths.bmddir_atom )
-  elseif do_uninstall('atom') then
-    cmd_rm( paths.bmddir_atom )
-  end
-
 
 end
 
+-- function dialog(content,button_text,button_callback)
 
-function dialog()
+--   local buttons
+
+--   if button_callback then
+--     buttons=ui:HGroup {
+--       Weight = 0,
+--       ui:HGap(0,1),
+--       ui:Button{ ID = "Button",     Text = button_text   },
+--       ui:HGap(5),
+--       ui:Button{ ID = "Cancel",   Text = "Cancel" },
+--       ui:HGap(5),
+--     }
+--   else
+--     buttons=ui:HGroup {
+--       Weight = 0,
+--       ui:HGap(0,1),
+--       ui:Button{ ID = "Cancel",   Text = button_text },
+--       ui:HGap(0,1),
+--     }
+--   end
+
+--   local win = ui_dispatcher:AddWindow({
+
+--     ID = "Dialog",
+--     WindowTitle = "Shadertoys Setup",
+--     Geometry = { 100, 100, 500, 180 },
+
+--     ui:VGroup {
+
+--       ui:VGap(5),
+
+--       ui:HGroup {
+
+--         ui:HGap(5),
+
+--         icon.label(ui),
+
+--         ui:HGap(10),
+
+--         content,
+
+--         ui:HGap(5),
+
+--       },
+
+--       ui:VGap(0,1),
+
+--       buttons,
+
+--   })
+
+
+
+--   function win.On.Button.Clicked(ev)
+--     win:Hide()
+--     button_callback()
+--   end
+
+
+--   function win.On.Cancel.Clicked(ev)
+--     ui_dispatcher:ExitLoop()
+--   end
+
+
+--   function win.On.Dialog.Close(ev)
+--     ui_dispatcher:ExitLoop()
+--   end
+
+
+--   win:Show()
+
+-- end
+
+
+function usrcfg_dialog()
 
   local win = ui_dispatcher:AddWindow({
 
     ID = "Dialog",
-    WindowTitle = "Shadertoys Megalinkomania",
-    Geometry = { 100, 100, 400, 200 },
+    WindowTitle = "Shadertoys Setup",
+    Geometry = { 100, 100, 500, 180 },
 
     ui:VGroup {
 
-      Weight=1,
-
-      ui:VGap(0,1),
-
-      ui:VGroup {
-        Weight=0,
-        ui:CheckBox{ID = 'Tools',   Text = "Integrate the repository Tools into Script menu",           Checked=checked.bmddir_tools, Enabled=exists.gitdir_tools, },
-        ui:CheckBox{ID = 'Fuse',    Text = "Use Fuses under Shaders straight out of the repository",    Checked=checked.bmddir_fuse,  Enabled=exists.gitdir_fuse,  },
-        ui:CheckBox{ID = 'Atom',    Text = "Make Atom Fuses available to test them",                    Checked=checked.bmddir_atom,  Enabled=exists.gitdir_atom,   },
-      },
-
       ui:VGap(5),
 
-      ui:Label {
-        Weight = 0,
-        Alignment = { AlignHCenter = false, AlignVTop = flase, },
-        WordWrap = false,
-        Text = '<font color="#ff9090">Use at your own risk ...</font>',
+      ui:HGroup {
+
+        ui:HGap(5),
+
+        icon.label(ui),
+
+        ui:HGap(10),
+
+        ui:Label {
+          Weight = 1,
+          Alignment = { AlignHCenter = false, AlignVTop = false, },
+          WordWrap = false,
+          Text = [[<font color="white"><strong>Create user config file?</strong></font>
+            <p>There is no user config file in your git repository.<br />
+            This file is needed to store some individual configuration.<br />
+            In particular it is a prerequisite for this steup to work properly.<br />
+            Okay for you to let this script create the user config file?</p>
+            ]],
+        },
+
+        ui:HGap(5),
+
       },
 
       ui:VGap(0,1),
@@ -123,11 +232,99 @@ function dialog()
       ui:HGroup {
         Weight = 0,
         ui:HGap(0,1),
-        ui:Button{ ID = "Save",     Text = "Save", Enabled = false   },
+        ui:Button{ ID = "Okay",     Text = "Okay"   },
         ui:HGap(5),
         ui:Button{ ID = "Cancel",   Text = "Cancel" },
+        ui:HGap(5),
       },
+
     },
+
+  })
+
+
+
+  function win.On.Okay.Clicked(ev)
+    win:Hide()
+
+    local f = io.open(usrcfg_filename,"wb")
+
+    assert(f)
+
+    if f then
+      f:write([[
+        local user_config = { pathToRepository = ']]..repositorypath..[[' }
+        return user_config
+      ]])
+      f:close()
+    end
+
+    setup_dialog()
+  end
+
+
+  function win.On.Cancel.Clicked(ev)
+    ui_dispatcher:ExitLoop()
+  end
+
+
+  function win.On.Dialog.Close(ev)
+    ui_dispatcher:ExitLoop()
+  end
+
+
+  win:Show()
+end
+
+
+
+
+function setup_dialog()
+
+  local win = ui_dispatcher:AddWindow({
+
+    ID = "Dialog",
+    WindowTitle = "Shadertoys Setup",
+    Geometry = { 100, 100, 500, 180 },
+
+    ui:HGroup {
+
+      icon.label(ui),
+
+      ui:HGap(5),
+
+      ui:VGroup {
+
+        Weight=1,
+
+
+        ui:VGroup {
+          Weight=0,
+          ui:CheckBox{ID = 'Tools',   Text = "Integrate the repository Tools into Script menu",           Checked=checked.bmddir_comp,  Enabled=exists.gitdir_comp and exists.gitdir_mods, },
+          ui:CheckBox{ID = 'Fuse',    Text = "Use Fuses under Shaders straight out of the repository",    Checked=checked.bmddir_fuse,  Enabled=exists.gitdir_fuse,  },
+          ui:CheckBox{ID = 'Atom',    Text = "Make Atom Fuses available to test them",                    Checked=checked.bmddir_atom,  Enabled=exists.gitdir_atom,   },
+        },
+
+        ui:VGap(5),
+
+        ui:Label {
+          Weight = 0,
+          Alignment = { AlignHCenter = false, AlignVTop = false, },
+          WordWrap = false,
+          Text = '<font color="#ff9090">Use at your own risk ...</font>',
+        },
+
+        ui:VGap(0,1),
+
+        ui:HGroup {
+          Weight = 0,
+          ui:HGap(0,1),
+          ui:Button{ ID = "Save",     Text = "Save", Enabled = false   },
+          ui:HGap(5),
+          ui:Button{ ID = "Cancel",   Text = "Cancel" },
+        },
+      },
+    }
   })
 
 
@@ -135,7 +332,8 @@ function dialog()
 
 
   function win.On.Tools.Clicked(ev)
-    checked.bmddir_tools=ev.On
+    checked.bmddir_comp=ev.On
+    checked.bmddir_mods=checked.bmddir_comp
     itm.Save.Enabled = config_changed()
   end
 
@@ -164,7 +362,7 @@ function dialog()
   end
 
 
-  function win.On.ShaderInstallMain.Close(ev)
+  function win.On.Dialog.Close(ev)
     ui_dispatcher:ExitLoop()
   end
 
@@ -173,46 +371,12 @@ function dialog()
 end
 
 
-
-
-
-
-function init()
-
-  local pathseparator     = package.config:sub(1,1)
-  local repositorypath    = debug.getinfo(2, "S").source:sub(2):match("(.*[/\\])Tools[/\\]")
-  local fusepath          = fusion:MapPath("Fuses:/")
-
-  assert(bmd.direxists(repositorypath..'.git/'))
-
-  paths.bmddir_mods= fusion:MapPath("LuaModules:/")..'Shadertoys'
-  paths.bmddir_comp= fusion:MapPath("Scripts:/")..'Comp'..pathseparator..'Shadertoys'
-  paths.gitdir_mods= repositorypath.. ('Tools/Modules/Lua/Shadertoys'):gsub('/',pathseparator)
-  paths.gitdir_comp= repositorypath.. ('Tools/Scripts/Comp/Shadertoys'):gsub('/',pathseparator)
-  paths.bmddir_atom= fusepath.. 'Shadertoys_wsl'
-  paths.gitdir_atom= repositorypath.. ('Atom/com.JiPi.Shadertoys/Fuses/Shadertoys_wsl/'):gsub('/',pathseparator)
-  paths.bmddir_fuse= fusepath.. 'Shadertoys_dev'
-  paths.gitdir_fuse= repositorypath.. ('Shaders/'):gsub('/',pathseparator)
-
-
-  for key, path in pairs(paths) do
-    exists[key]  = bmd.direxists(path)
-  end
-
-  for i, key in ipairs( {'bmddir_mods', 'bmddir_comp', 'bmddir_atom', 'bmddir_fuse', }) do
-    checked[key]  = exists[key]
-  end
-
-
-  exists['bmddir_tools']         = exists.bmddir_mods and exists.bmddir_comp
-  checked['bmddir_tools']        = exists.bmddir_tools
-  exists['gitdir_tools']         = exists.gitdir_mods and exists.gitdir_comp
-
-end
-
-
-
 init()
-dialog()
+
+if bmd.fileexists(usrcfg_filename) then
+  setup_dialog()
+else
+  usrcfg_dialog()
+end
 
 ui_dispatcher:RunLoop()
