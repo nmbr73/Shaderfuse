@@ -68,6 +68,8 @@ function cmd_ln(target_folder,link_name)
 
   if FuPLATFORM_MAC then
     os.execute("ln -s '"..target_folder.."' '"..link_name.."'")
+  elseif FuPLATFORM_WINDOWS then
+    os.execute("mklink /D '"..link_name.."' '"..target_folder.."'")
   else
     assert(false)
   end
@@ -78,8 +80,10 @@ end
 
 function cmd_rm(link_name)
 
-  if FuPLATFORM_MAC then
+  if FuPLATFORM_MAC or FuPLATFORM_LINUX then
     os.execute("rm '"..link_name.."'")
+  elseif FuPLATFORM_WINDOWS then
+    os.execute("rmdir '"..link_name.."'")
   else
     assert(false)
   end
@@ -90,17 +94,7 @@ end
 
 function setup()
 
-
-  assert(FuPLATFORM_MAC)
-
-  -- https://www.giga.de/downloads/windows-10/tipps/symlinks-in-windows-erstellen-mit-mklink-so-gehts/
-  -- https://www.pcwelt.de/tipps/Profi-Wissen-Hardlinks-Symlinks-und-Softlinks-Windows-und-Software-496098.html
-  -- https://krausens-online.de/hard-softlinks-teil-1-theorie-laaaangweilig/
-  -- windows:
-  -- mklink 'LINK' 'TARGET'
-  -- /D softlink to folder
-  -- /J softlink to folder
-  -- rmdir ... to remove
+  assert(FuPLATFORM_MAC) -- not tested on windows!
 
   assert( checked['bmddir_comp'] == checked['bmddir_mods'] )
 
@@ -116,79 +110,6 @@ function setup()
 
 end
 
--- function dialog(content,button_text,button_callback)
-
---   local buttons
-
---   if button_callback then
---     buttons=ui:HGroup {
---       Weight = 0,
---       ui:HGap(0,1),
---       ui:Button{ ID = "Button",     Text = button_text   },
---       ui:HGap(5),
---       ui:Button{ ID = "Cancel",   Text = "Cancel" },
---       ui:HGap(5),
---     }
---   else
---     buttons=ui:HGroup {
---       Weight = 0,
---       ui:HGap(0,1),
---       ui:Button{ ID = "Cancel",   Text = button_text },
---       ui:HGap(0,1),
---     }
---   end
-
---   local win = ui_dispatcher:AddWindow({
-
---     ID = "Dialog",
---     WindowTitle = "Shadertoys Setup",
---     Geometry = { 100, 100, 500, 180 },
-
---     ui:VGroup {
-
---       ui:VGap(5),
-
---       ui:HGroup {
-
---         ui:HGap(5),
-
---         icon.label(ui),
-
---         ui:HGap(10),
-
---         content,
-
---         ui:HGap(5),
-
---       },
-
---       ui:VGap(0,1),
-
---       buttons,
-
---   })
-
-
-
---   function win.On.Button.Clicked(ev)
---     win:Hide()
---     button_callback()
---   end
-
-
---   function win.On.Cancel.Clicked(ev)
---     ui_dispatcher:ExitLoop()
---   end
-
-
---   function win.On.Dialog.Close(ev)
---     ui_dispatcher:ExitLoop()
---   end
-
-
---   win:Show()
-
--- end
 
 
 function usrcfg_dialog()
@@ -218,7 +139,7 @@ function usrcfg_dialog()
           Text = [[<font color="white"><strong>Create user config file?</strong></font>
             <p>There is no user config file in your git repository.<br />
             This file is needed to store some individual configuration.<br />
-            In particular it is a prerequisite for this steup to work properly.<br />
+            In particular it is a prerequisite for this setup to work properly.<br />
             Okay for you to let this script create the user config file?</p>
             ]],
         },
@@ -232,14 +153,12 @@ function usrcfg_dialog()
       ui:HGroup {
         Weight = 0,
         ui:HGap(0,1),
-        ui:Button{ ID = "Okay",     Text = "Okay"   },
+        ui:Button{ ID = "Okay",   Text = "Okay"   },
         ui:HGap(5),
         ui:Button{ ID = "Cancel",   Text = "Cancel" },
         ui:HGap(5),
-      },
-
-    },
-
+      }
+    }
   })
 
 
@@ -281,22 +200,24 @@ end
 
 function setup_dialog()
 
+
   local win = ui_dispatcher:AddWindow({
 
     ID = "Dialog",
     WindowTitle = "Shadertoys Setup",
-    Geometry = { 100, 100, 500, 180 },
+    Geometry = { 100, 100, 500, 160 },
 
-    ui:HGroup {
+    ui:VGroup {
 
-      icon.label(ui),
+      ui:VGap(5),
 
-      ui:HGap(5),
+      ui:HGroup {
 
-      ui:VGroup {
+        ui:HGap(5),
 
-        Weight=1,
+        icon.label(ui),
 
+        ui:HGap(10),
 
         ui:VGroup {
           Weight=0,
@@ -305,27 +226,23 @@ function setup_dialog()
           ui:CheckBox{ID = 'Atom',    Text = "Make Atom Fuses available to test them",                    Checked=checked.bmddir_atom,  Enabled=exists.gitdir_atom,   },
         },
 
-        ui:VGap(5),
+        ui:HGap(5),
 
-        ui:Label {
-          Weight = 0,
-          Alignment = { AlignHCenter = false, AlignVTop = false, },
-          WordWrap = false,
-          Text = '<font color="#ff9090">Use at your own risk ...</font>',
-        },
-
-        ui:VGap(0,1),
-
-        ui:HGroup {
-          Weight = 0,
-          ui:HGap(0,1),
-          ui:Button{ ID = "Save",     Text = "Save", Enabled = false   },
-          ui:HGap(5),
-          ui:Button{ ID = "Cancel",   Text = "Cancel" },
-        },
       },
+
+      ui:VGap(0,1),
+
+      ui:HGroup {
+        Weight = 0,
+        ui:HGap(0,1),
+        ui:Button{ ID = "Save",     Text = "Save", Enabled = false     },
+        ui:HGap(5),
+        ui:Button{ ID = "Cancel",   Text = "Cancel" },
+        ui:HGap(5),
+      }
     }
   })
+
 
 
   local itm = win:GetItems()
@@ -353,7 +270,8 @@ function setup_dialog()
   function win.On.Save.Clicked(ev)
     win:Hide()
     setup()
-    ui_dispatcher:ExitLoop()
+    restart_dialog()
+    -- ui_dispatcher:ExitLoop()
   end
 
 
@@ -366,6 +284,67 @@ function setup_dialog()
     ui_dispatcher:ExitLoop()
   end
 
+
+  win:Show()
+end
+
+
+
+function restart_dialog()
+
+  local win = ui_dispatcher:AddWindow({
+
+    ID = "Dialog",
+    WindowTitle = "Shadertoys Setup",
+    Geometry = { 100, 100, 500, 150 },
+
+    ui:VGroup {
+
+      ui:VGap(5),
+
+      ui:HGroup {
+
+        ui:HGap(5),
+
+        icon.label(ui),
+
+        ui:HGap(10),
+
+        ui:Label {
+          Weight = 1,
+          Alignment = { AlignHCenter = false, AlignVTop = false, },
+          WordWrap = false,
+          Text = [[<font color="white"><strong>Restart the application!</strong></font>
+            <p>
+              For the applied changes to take effect, but in particular for<br />
+              the application to run properly, please quit and reopen!
+            </p>
+            ]],
+        },
+
+        ui:HGap(5),
+
+      },
+
+      ui:VGap(0,1),
+
+      ui:HGroup {
+        Weight =0 ,
+        ui:HGap(0,1),
+        ui:Button{ ID = "Okay",   Text = "Okay"   },
+        ui:HGap(0,1),
+      }
+    }
+  })
+
+  function win.On.Okay.Clicked(ev)
+    ui_dispatcher:ExitLoop()
+  end
+
+
+  function win.On.Dialog.Close(ev)
+    ui_dispatcher:ExitLoop()
+  end
 
   win:Show()
 end
