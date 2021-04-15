@@ -21,47 +21,69 @@ function config_changed()
 end
 
 
-function install(k)
+function do_install(k)
   return checked['bmddir_'..k] == true and exists['bmddir_'..k] == false
 end
 
-function uninstall(k)
+function do_uninstall(k)
   return checked['bmddir_'..k] == false and exists['bmddir_'..k] == true
 end
 
+function cmd_ln(target_folder,link_name)
+
+  if FuPLATFORM_MAC then
+    os.execute("ln -s '"..target_folder.."' '"..link_name.."'")
+  end
+
+  assert(false)
+end
+
+function cmd_rm(link_name)
+
+  if FuPLATFORM_MAC then
+    os.execute("rm '"..link_name.."'")
+  end
+
+  assert(false)
+end
+
+
+
 function setup()
 
-  local operatingsysstem  = (FuPLATFORM_WINDOWS and "Windows") or (FuPLATFORM_MAC and "Mac") or (FuPLATFORM_LINUX and "Linux") or "Unknown"
 
-  assert(operatingsysstem~="")
-  assert(operatingsysstem=="Mac")
+  assert(FuPLATFORM_MAC)
 
-  local commands={}
+  -- https://www.giga.de/downloads/windows-10/tipps/symlinks-in-windows-erstellen-mit-mklink-so-gehts/
+  -- https://www.pcwelt.de/tipps/Profi-Wissen-Hardlinks-Symlinks-und-Softlinks-Windows-und-Software-496098.html
+  -- https://krausens-online.de/hard-softlinks-teil-1-theorie-laaaangweilig/
+  -- windows:
+  -- mklink 'LINK' 'TARGET'
+  -- /D softlink to folder
+  -- /J softlink to folder
+  -- rmdir ... to remove
 
-  if install('tools') then
-    table.insert(commands,"ln -s '"..paths.gitdir_comp.."' '"..paths.bmddir_comp.."'")
-    table.insert(commands,"ln -s '"..paths.gitdir_mods.."' '"..paths.bmddir_mods.."'")
-  elseif uninstall('tools') then
-    table.insert(commands,"rm '"..paths.bmddir_comp.."'")
-    table.insert(commands,"rm '"..paths.bmddir_mods.."'")
+
+  if do_install('tools') then
+    cmd_ln( paths.gitdir_comp, paths.bmddir_comp )
+    cmd_ln( paths.gitdir_mods, paths.bmddir_mods )
+  elseif do_uninstall('tools') then
+    cmd_rm( paths.bmddir_comp )
+    cmd_rm( paths.bmddir_mods )
   end
 
-  if install('fuse') then
-    table.insert(commands,"ln -s '"..paths.gitdir_fuse.."' '"..paths.bmddir_fuse.."'")
-  elseif uninstall('fuse') then
-    table.insert(commands,"rm '"..paths.bmddir_fuse.."'")
+  if do_install('fuse') then
+    cmd_ln( paths.gitdir_fuse, paths.bmddir_fuse )
+  elseif do_uninstall('fuse') then
+    cmd_rm( paths.bmddir_fuse )
   end
 
-  if install('atom') then
-    table.insert(commands,"ln -s '"..paths.gitdir_atom.."' '"..paths.bmddir_atom.."'")
-  elseif uninstall('atom') then
-    table.insert(commands,"rm '"..paths.bmddir_atom.."'")
+  if do_install('atom') then
+    cmd_ln( paths.gitdir_atom, paths.bmddir_atom )
+  elseif do_uninstall('atom') then
+    cmd_rm( paths.bmddir_atom )
   end
 
-
-  for i, command in ipairs(commands) do
-    os.execute(command)
-  end
 
 end
 
@@ -108,17 +130,21 @@ function dialog()
     },
   })
 
+
   local itm = win:GetItems()
+
 
   function win.On.Tools.Clicked(ev)
     checked.bmddir_tools=ev.On
     itm.Save.Enabled = config_changed()
   end
 
+
   function win.On.Fuse.Clicked(ev)
     checked.bmddir_fuse=ev.On
     itm.Save.Enabled = config_changed()
   end
+
 
   function win.On.Atom.Clicked(ev)
     checked.bmddir_atom=ev.On
@@ -142,7 +168,8 @@ function dialog()
     ui_dispatcher:ExitLoop()
   end
 
-  return win
+
+  win:Show()
 end
 
 
@@ -168,12 +195,12 @@ function init()
   paths.gitdir_fuse= repositorypath.. ('Shaders/'):gsub('/',pathseparator)
 
 
-  for k, v in pairs(paths) do
-    exists[k]  = bmd.direxists(v)
+  for key, path in pairs(paths) do
+    exists[key]  = bmd.direxists(path)
   end
 
-  for i, k in ipairs( {'bmddir_mods', 'bmddir_comp', 'bmddir_atom', 'bmddir_fuse', }) do
-    checked[k]  = exists[k]
+  for i, key in ipairs( {'bmddir_mods', 'bmddir_comp', 'bmddir_atom', 'bmddir_fuse', }) do
+    checked[key]  = exists[key]
   end
 
 
@@ -181,14 +208,11 @@ function init()
   checked['bmddir_tools']        = exists.bmddir_tools
   exists['gitdir_tools']         = exists.gitdir_mods and exists.gitdir_comp
 
-
-  -- dump({e=exists,c=checked,p=paths})
-
-
 end
 
 
 
 init()
-dialog():Show()
+dialog()
+
 ui_dispatcher:RunLoop()
