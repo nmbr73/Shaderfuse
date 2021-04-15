@@ -143,7 +143,7 @@ function createInstallWindow()
 
   function g_installWindow.On.Install.Clicked(ev)
     g_installWindow:Hide()
-    do_install()
+    install()
   end
 
   function g_installWindow.On.Cancel.Clicked(ev)
@@ -223,7 +223,7 @@ end
 
 
 
-function do_install()
+function install()
 
   bmd.createdir(fusion:MapPath('Fuses:/'..FUSE_PATH));
 
