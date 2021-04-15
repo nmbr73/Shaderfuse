@@ -10,8 +10,8 @@
 
   # Abstract Shaders
 
-## **[BumpyReflectingBalls](BumpyReflectingBalls.md)** :boom:
-- *'dctlfuse_category' could not be determined*
+## **[BumpyReflectingBalls](BumpyReflectingBalls.md)**
+based on [BumpyReflectingBalls](https://www.shadertoy.com/view/Xdl3Dj) written by [metabog](https://www.shadertoy.com/user/metabog)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
 ## **[Crazyness](Crazyness.md)** :boom:
 - *'dctlfuse_category' could not be determined*

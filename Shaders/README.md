@@ -13,7 +13,7 @@
 
 
 **[Abstract Shaders](Abstract/)**
-- [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) :boom:
+- [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) (Shadertoy ID `[Xdl3Dj](https://www.shadertoy.com/view/Xdl3Dj)`) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Crazyness](Abstract/Crazyness.md) :boom:
 - [CrossDistance](Abstract/CrossDistance.md) (Shadertoy ID `[XtGfzw](https://www.shadertoy.com/view/XtGfzw)`) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [Favela](Abstract/Favela.md) (Shadertoy ID `[ldGcDh](https://www.shadertoy.com/view/ldGcDh)`) ported by [nmbr73](../Site/Profiles/nmbr73.md)

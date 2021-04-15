@@ -16,12 +16,15 @@
 <td><img src="Abstract/BumpyReflectingBalls_320x180.png" alt="Abstract/BumpyReflectingBalls" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md)</nobr><br />
 <nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">'dctlfuse_category' could not be determined</p>
+<nobr>Shadertoy: [BumpyReflectingBalls](https://www.shadertoy.com/view/Xdl3Dj)</nobr><br />
+<nobr>Author: [metabog](https://www.shadertoy.com/user/metabog)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Abstract/Crazyness_320x180.png" alt="Abstract/Crazyness" width="320" height="180" /></td>
