@@ -16,6 +16,6 @@ based on [Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG) writt
 ## **[Velocibox](Velocibox.md)**
 based on [Velocibox](https://www.shadertoy.com/view/lsdXD8) written by [zackpudil](https://www.shadertoy.com/user/zackpudil)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
 
-## **[WindingMengerTunnel](WindingMengerTunnel.md)**
-based on [WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn) written by [Shane](https://www.shadertoy.com/user/Shane)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+## **[WindingMengerTunnel](WindingMengerTunnel.md)** :boom:
+- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
 

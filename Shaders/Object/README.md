@@ -16,8 +16,8 @@ based on [DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7) written by [wy
 ## **[DancyTreeDoodle3D](DancyTreeDoodle3D.md)**
 based on [DancyTreeDoodle3D](https://www.shadertoy.com/view/4lVyzh) written by [wyatt](https://www.shadertoy.com/user/wyatt)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[EggHunt](EggHunt.md)**
-based on [EggHunt](https://www.shadertoy.com/view/ttyfDV) written by [sylvain69780](https://www.shadertoy.com/user/sylvain69780)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+## **[EggHunt](EggHunt.md)** :boom:
+- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
 
 ## **[FractalRadioBase](FractalRadioBase.md)**
 based on [FractalRadioBase](https://www.shadertoy.com/view/WlcczS) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
@@ -31,6 +31,6 @@ based on [Legos](https://www.shadertoy.com/view/Xdl3Dj) written by [morgan3d](ht
 ## **[LonelyVoxel](LonelyVoxel.md)**
 based on [LonelyVoxel](https://www.shadertoy.com/view/Mslczn) written by [SudoNhim](https://www.shadertoy.com/user/SudoNhim)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[WalkingCubes](WalkingCubes.md)**
-based on [WalkingCubes](https://www.shadertoy.com/view/Xl3XR4) written by [xorxor](https://www.shadertoy.com/user/xorxor)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+## **[WalkingCubes](WalkingCubes.md)** :boom:
+- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
 

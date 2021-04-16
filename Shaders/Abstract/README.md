@@ -16,8 +16,8 @@ based on [BumpyReflectingBalls](https://www.shadertoy.com/view/Xdl3Dj) written b
 ## **[Crazyness](Crazyness.md)**
 based on [craziness](https://www.shadertoy.com/view/wdjSRc) written by [spsherk_](https://www.shadertoy.com/user/spsherk_)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
 
-## **[CrossDistance](CrossDistance.md)**
-based on [Cross - distance](https://www.shadertoy.com/view/XtGfzw) written by [iq](https://www.shadertoy.com/user/iq)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
+## **[CrossDistance](CrossDistance.md)** :boom:
+- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
 
 ## **[Favela](Favela.md)**
 based on [Favela](https://www.shadertoy.com/view/ldGcDh) written by [duvengar](https://www.shadertoy.com/user/duvengar)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
