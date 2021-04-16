@@ -10,11 +10,11 @@
 
   # Tunnel Shaders
 
-## **[TNTHTW](TNTHTW.md)** :boom:
-- *'dctlfuse_category' could not be determined*
+## **[TNTHTW](TNTHTW.md)**
+based on [Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG) written by [hisojarvi](https://www.shadertoy.com/user/hisojarvi)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[Velocibox](Velocibox.md)** :boom:
-- *'dctlfuse_category' could not be determined*
+## **[Velocibox](Velocibox.md)**
+based on [Velocibox](https://www.shadertoy.com/view/lsdXD8) written by [zackpudil](https://www.shadertoy.com/user/zackpudil)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
 
 ## **[WindingMengerTunnel](WindingMengerTunnel.md)**
 based on [WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn) written by [Shane](https://www.shadertoy.com/user/Shane)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)

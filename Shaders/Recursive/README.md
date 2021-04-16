@@ -16,6 +16,6 @@ based on [FallingCuteBombs](https://www.shadertoy.com/view/ldy3Rw) written by [E
 ## **[Spilled](Spilled.md)**
 based on [spilled](https://www.shadertoy.com/view/MsGSRd) written by [flockaroo](https://www.shadertoy.com/user/flockaroo)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[TDSOTM_Nebula](TDSOTM_Nebula.md)** :boom:
-- *'dctlfuse_category' could not be determined*
+## **[TDSOTM_Nebula](TDSOTM_Nebula.md)**
+based on [The dark side of the moon](https://www.shadertoy.com/view/4dBSDV) written by [bytewave](https://www.shadertoy.com/user/bytewave)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 

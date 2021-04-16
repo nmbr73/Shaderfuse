@@ -10,9 +10,9 @@
 
   # Blob Shaders
 
-## **[FunWithMetaballs](FunWithMetaballs.md)** :boom:
-- *'dctlfuse_category' could not be determined*
+## **[FunWithMetaballs](FunWithMetaballs.md)**
+based on [FunWithMetaballs](https://www.shadertoy.com/view/MlyXWV) written by [fwilliams](https://www.shadertoy.com/user/fwilliams)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[TorturedBlob](TorturedBlob.md)** :boom:
-- *'dctlfuse_category' could not be determined*
+## **[TorturedBlob](TorturedBlob.md)**
+based on [TorturedBlob](https://www.shadertoy.com/view/MlKGDK) written by [roywig](https://www.shadertoy.com/user/roywig)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 

@@ -13,6 +13,6 @@
 ## **[DisplacementShader](DisplacementShader.md)**
 based on [DisplacementShader](https://www.shadertoy.com/view/MtBfR3) written by [Coolok](https://www.shadertoy.com/user/Coolok)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[FbmWarp](FbmWarp.md)** :boom:
-- *'dctlfuse_category' could not be determined*
+## **[FbmWarp](FbmWarp.md)**
+based on [Fbm Warp](https://www.shadertoy.com/view/ttGyzG) written by [hanker](https://www.shadertoy.com/user/hanker)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
