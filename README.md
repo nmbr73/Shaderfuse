@@ -47,7 +47,11 @@ Installation
 
 
 ### Repository
-Just copy the whole folder resp. clone the repository into your `Fusion/Fuses/` directory, or pick and choose only the `.fuse` files you are interested in and copy them into the target folder. If you don't know how to clone a repository or if you don't know where to find the `Fusion/Fuses/` folder, don't bother - in this case it's just not the right kind of installation for you and we have other options to offer.
+
+Just clone the whole repository into a folder where it can reside. Drag'n'drop the `Tools/Setup.lua` onto your DaFusions working area. Select 'Uses Fuses under Shaders':
+![Setup](Site/Setup.png)
+See the [Tools/README.md](Tools/README.md) for further information.
+
 
 ### ZIP-File
 
