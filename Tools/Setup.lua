@@ -69,7 +69,8 @@ function cmd_ln(target_folder,link_name)
   if FuPLATFORM_MAC then
     os.execute("ln -s '"..target_folder.."' '"..link_name.."'")
   elseif FuPLATFORM_WINDOWS then
-    print("mklink /D '"..link_name.."' '"..target_folder.."'")
+    -- print("mklink /J '"..link_name.."' '"..target_folder.."'")
+    print("mklink /J '"..link_name.."' '"..target_folder.."'")
   else
     assert(false)
   end
@@ -93,13 +94,8 @@ end
 
 
 function setup()
- 
-  assert(FuPLATFORM_MAC)
 
--- PS C:\Users\nmbr73> mklink /D 'C:\Users\nmbr73\AppData\Roaming\Blackmagic Design\DaVinci Resolve\Support\Fusion\Fuses\Shadertoys_dev' 'C:\Users\nmbr73\OneDrive\Desktop\Shadertpys\Shaders\'
--- mklink : Die Benennung "mklink" wurde nicht als Name eines Cmdlet, einer Funktion, einer Skriptdatei oder eines ausführbaren Programms erkannt.
--- Überprüfen Sie die Schreibweise des Namens, oder ob der Pfad korrekt ist (sofern enthalten), und wiederholen Sie den Vorgang.
--- In Zeile:1 Zeichen:1
+  assert(FuPLATFORM_MAC)
 
 
   assert( checked['bmddir_comp'] == checked['bmddir_mods'] )
