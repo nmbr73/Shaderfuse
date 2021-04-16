@@ -66,25 +66,25 @@ end
 
 function cmd_ln(target_folder,link_name)
 
+  -- local command=nil
+
   if FuPLATFORM_MAC then
     os.execute("ln -s '"..target_folder.."' '"..link_name.."'")
   elseif FuPLATFORM_WINDOWS then
-    -- print("mklink /J '"..link_name.."' '"..target_folder.."'")
-    print("mklink /J '"..link_name.."' '"..target_folder.."'")
+    os.execute('mklink /J "'..link_name..'" "'..target_folder..'"')
   else
     assert(false)
   end
-
 end
 
-
+-- CONSOLE: os.execute('mklink /J "C:\\Users\\nmbr73\\AppData\\Roaming\\Blackmagic Design\\DaVinci Resolve\\Support\\Fusion\\Fuses\\Shadertoys_dev" "C:\\Users\\nmbr73\\OneDrive\\Desktop\\Shadertoys\\Shaders\\"')
 
 function cmd_rm(link_name)
 
   if FuPLATFORM_MAC or FuPLATFORM_LINUX then
     os.execute("rm '"..link_name.."'")
   elseif FuPLATFORM_WINDOWS then
-    os.execute("rmdir '"..link_name.."'")
+    os.execute('rmdir "'..link_name..'"')
   else
     assert(false)
   end
@@ -95,7 +95,7 @@ end
 
 function setup()
 
-  assert(FuPLATFORM_MAC)
+  -- assert(FuPLATFORM_MAC)
 
 
   assert( checked['bmddir_comp'] == checked['bmddir_mods'] )
@@ -174,7 +174,7 @@ function usrcfg_dialog()
 
     if f then
       f:write([[
-        local user_config = { pathToRepository = ']]..repositorypath..[[' }
+        local user_config = { pathToRepository = ]]..'[['..repositorypath..']]'..[[ }
         return user_config
       ]])
       f:close()
