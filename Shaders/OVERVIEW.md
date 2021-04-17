@@ -44,12 +44,15 @@
 <td><img src="Abstract/CrossDistance_320x180.png" alt="Abstract/CrossDistance" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
 <nobr>Fuse: [CrossDistance](Abstract/CrossDistance.md)</nobr><br />
 <nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
+<nobr>Shadertoy: [Cross - distance](https://www.shadertoy.com/view/XtGfzw)</nobr><br />
+<nobr>Author: [iq](https://www.shadertoy.com/user/iq)</nobr><br />
+<nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
+</p>
 </td></tr>
 <tr>
 <td><img src="Abstract/Favela_320x180.png" alt="Abstract/Favela" width="320" height="180" /></td>

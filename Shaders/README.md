@@ -15,7 +15,7 @@
 **[Abstract Shaders](Abstract/)**
 - [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) (Shadertoy ID [Xdl3Dj](https://www.shadertoy.com/view/Xdl3Dj)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Crazyness](Abstract/Crazyness.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
-- [CrossDistance](Abstract/CrossDistance.md) :boom:
+- [CrossDistance](Abstract/CrossDistance.md) (Shadertoy ID [XtGfzw](https://www.shadertoy.com/view/XtGfzw)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [Favela](Abstract/Favela.md) (Shadertoy ID [ldGcDh](https://www.shadertoy.com/view/ldGcDh)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [FlightThroughANebula](Abstract/FlightThroughANebula.md) (Shadertoy ID [tsK3Rd](https://www.shadertoy.com/view/tsK3Rd)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Kali3D](Abstract/Kali3D.md) (Shadertoy ID [MdB3DK](https://www.shadertoy.com/view/MdB3DK)) ported by [JiPi](../Site/Profiles/JiPi.md)
