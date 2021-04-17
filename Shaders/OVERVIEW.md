@@ -206,15 +206,12 @@
 <td><img src="Distortion/DisplacementShader_320x180.png" alt="Distortion/DisplacementShader" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [DisplacementShader](Distortion/DisplacementShader.md)</nobr><br />
 <nobr>Category: [Distortion](Distortion/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [DisplacementShader](https://www.shadertoy.com/view/MtBfR3)</nobr><br />
-<nobr>Author: [Coolok](https://www.shadertoy.com/user/Coolok)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 <tr>
 <td><img src="Distortion/FbmWarp_320x180.png" alt="Distortion/FbmWarp" width="320" height="180" /></td>
@@ -238,15 +235,12 @@
 <td><img src="Fractals/EnergyPlant_320x180.png" alt="Fractals/EnergyPlant" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [EnergyPlant](Fractals/EnergyPlant.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [EnergyPlant](https://www.shadertoy.com/view/ttjBD1)</nobr><br />
-<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 <tr>
 <td><img src="Fractals/Fractal03_320x180.png" alt="Fractals/Fractal03" width="320" height="180" /></td>
@@ -266,29 +260,23 @@
 <td><img src="Fractals/FractalEngine_320x180.png" alt="Fractals/FractalEngine" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [FractalEngine](Fractals/FractalEngine.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [FractalEngine](https://www.shadertoy.com/view/ttSBRm)</nobr><br />
-<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 <tr>
 <td><img src="Fractals/FractalGutter_320x180.png" alt="Fractals/FractalGutter" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [FractalGutter](Fractals/FractalGutter.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [FractalGutter](https://www.shadertoy.com/view/ttjBD1)</nobr><br />
-<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 </table>
 
@@ -298,15 +286,12 @@
 <td><img src="Misc/BuoyantBalls_320x180.png" alt="Misc/BuoyantBalls" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [BuoyantBalls](Misc/BuoyantBalls.md)</nobr><br />
 <nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [BuoyantBalls](https://www.shadertoy.com/view/MtsBW8)</nobr><br />
-<nobr>Author: [dr2](https://www.shadertoy.com/user/dr2)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 <tr>
 <td><img src="Misc/Fire_Water_320x180.png" alt="Misc/Fire_Water" width="320" height="180" /></td>
@@ -340,15 +325,12 @@
 <td><img src="Misc/IHeartFourier_320x180.png" alt="Misc/IHeartFourier" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [IHeartFourier](Misc/IHeartFourier.md)</nobr><br />
 <nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [IHeartFourier](https://www.shadertoy.com/view/tltSWr)</nobr><br />
-<nobr>Author: [harry7557558](https://www.shadertoy.com/user/harry7557558)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 <tr>
 <td><img src="Misc/Legofield_320x180.png" alt="Misc/Legofield" width="320" height="180" /></td>
@@ -414,15 +396,12 @@
 <td><img src="Object/EggHunt_320x180.png" alt="Object/EggHunt" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [EggHunt](Object/EggHunt.md)</nobr><br />
 <nobr>Category: [Object](Object/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [EggHunt](https://www.shadertoy.com/view/ttyfDV)</nobr><br />
-<nobr>Author: [sylvain69780](https://www.shadertoy.com/user/sylvain69780)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 <tr>
 <td><img src="Object/FractalRadioBase_320x180.png" alt="Object/FractalRadioBase" width="320" height="180" /></td>
@@ -484,15 +463,12 @@
 <td><img src="Object/WalkingCubes_320x180.png" alt="Object/WalkingCubes" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [WalkingCubes](Object/WalkingCubes.md)</nobr><br />
 <nobr>Category: [Object](Object/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [WalkingCubes](https://www.shadertoy.com/view/Xl3XR4)</nobr><br />
-<nobr>Author: [xorxor](https://www.shadertoy.com/user/xorxor)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 </table>
 
@@ -562,29 +538,23 @@
 <td><img src="Recursive/FallingCuteBombs_320x180.png" alt="Recursive/FallingCuteBombs" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [FallingCuteBombs](Recursive/FallingCuteBombs.md)</nobr><br />
 <nobr>Category: [Recursive](Recursive/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [FallingCuteBombs](https://www.shadertoy.com/view/ldy3Rw)</nobr><br />
-<nobr>Author: [Emil](https://www.shadertoy.com/user/Emil)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 <tr>
 <td><img src="Recursive/Spilled_320x180.png" alt="Recursive/Spilled" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [Spilled](Recursive/Spilled.md)</nobr><br />
 <nobr>Category: [Recursive](Recursive/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [spilled](https://www.shadertoy.com/view/MsGSRd)</nobr><br />
-<nobr>Author: [flockaroo](https://www.shadertoy.com/user/flockaroo)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 <tr>
 <td><img src="Recursive/TDSOTM_Nebula_320x180.png" alt="Recursive/TDSOTM_Nebula" width="320" height="180" /></td>
@@ -636,14 +606,11 @@
 <td><img src="Tunnel/WindingMengerTunnel_320x180.png" alt="Tunnel/WindingMengerTunnel" width="320" height="180" /></td>
 <td><p>
 
-:four_leaf_clover:</p>
+:boom:</p>
 <p>
 
 <nobr>Fuse: [WindingMengerTunnel](Tunnel/WindingMengerTunnel.md)</nobr><br />
 <nobr>Category: [Tunnel](Tunnel/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn)</nobr><br />
-<nobr>Author: [Shane](https://www.shadertoy.com/user/Shane)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
+</p><p style="color:red; font-weight:bold; ">fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks</p>
 </td></tr>
 </table>
