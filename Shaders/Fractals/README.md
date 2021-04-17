@@ -10,15 +10,15 @@
 
   # Fractals Shaders
 
-## **[EnergyPlant](EnergyPlant.md)** :boom:
-- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
+## **[EnergyPlant](EnergyPlant.md)**
+based on [EnergyPlant](https://www.shadertoy.com/view/ttjBD1) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
 ## **[Fractal03](Fractal03.md)**
 based on [Fractal03](https://www.shadertoy.com/view/3lKcDV) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[FractalEngine](FractalEngine.md)** :boom:
-- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
+## **[FractalEngine](FractalEngine.md)**
+based on [FractalEngine](https://www.shadertoy.com/view/ttSBRm) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[FractalGutter](FractalGutter.md)** :boom:
-- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
+## **[FractalGutter](FractalGutter.md)**
+based on [FractalGutter](https://www.shadertoy.com/view/ttjBD1) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 

@@ -10,8 +10,8 @@
 
   # Misc Shaders
 
-## **[BuoyantBalls](BuoyantBalls.md)** :boom:
-- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
+## **[BuoyantBalls](BuoyantBalls.md)**
+based on [BuoyantBalls](https://www.shadertoy.com/view/MtsBW8) written by [dr2](https://www.shadertoy.com/user/dr2)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
 ## **[Fire_Water](Fire_Water.md)**
 based on [ComplementaryElements](https://www.shadertoy.com/view/tdsBz4) written by [izutionix](https://www.shadertoy.com/user/izutionix)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
@@ -19,11 +19,11 @@ based on [ComplementaryElements](https://www.shadertoy.com/view/tdsBz4) written 
 ## **[FractalLand](FractalLand.md)**
 based on [Fractal Land](https://www.shadertoy.com/view/XsBXWt) written by [Kali](https://www.shadertoy.com/user/Kali)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
 
-## **[IHeartFourier](IHeartFourier.md)** :boom:
-- *fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks*
+## **[IHeartFourier](IHeartFourier.md)**
+based on [IHeartFourier](https://www.shadertoy.com/view/tltSWr) written by [harry7557558](https://www.shadertoy.com/user/harry7557558)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[Legofield](Legofield.md)**
-based on [Legofield](https://www.shadertoy.com/view/wdjSRc) written by [spsherk_](https://www.shadertoy.com/user/spsherk_)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+## **[Legofied](Legofied.md)**
+based on [Legofied](https://www.shadertoy.com/view/XtBSzy) written by [Gijs](https://www.shadertoy.com/user/Gijs)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
 ## **[WildKifs4D](WildKifs4D.md)**
 based on [WildKifs4D](https://www.shadertoy.com/view/wttBzM) written by [iapafoto](https://www.shadertoy.com/user/iapafoto)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
