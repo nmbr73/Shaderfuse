@@ -70,6 +70,7 @@ FuRegisterClass(
 ST_StainedLightsParams =
 [[
   float freq;
+  float noise;
   int   width;
   int   height;
   float iTime;
@@ -126,9 +127,7 @@ ST_StainedLightsKernel = [[
   #define swiyzz(V) to_float3((V).y,(V).z,(V).z)
   #define swizyx(V) to_float3((V).z,(V).y,(V).x)
 
-
   __DEVICE__ inline float3 fract_float3(float3 v)          { return to_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z)                   ); }
-//  __DEVICE__ inline float4 fract_float4(float4 a, float4 b) { return to_float4( _fpow(a.x,b.x),_fpow(a.y,b.y),_fpow(a.z,b.z),_fpow(a.w,b.w) ); }
   __DEVICE__ inline float4 pow_float4(float4 a, float4 b) { return to_float4( pow(a.x,b.x),pow(a.y,b.y),pow(a.z,b.z),pow(a.w,b.w) ); }
 
 #endif
@@ -136,34 +135,23 @@ ST_StainedLightsKernel = [[
 
 
 
-// credits: Dave_Hoskins Hash functions: https://www.shadertoy.com/view/4djSRW
 
 __DEVICE__ float3 hash32(float2 p)
-{
-  //float3 p3 = fract_float3(to_float3(p.xyx) * to_float3(0.1031f, 0.1030f, 0.0973f));
+{ // credits: Dave_Hoskins Hash functions: https://www.shadertoy.com/view/4djSRW
   float3 p3 = fract_float3( swixyx(p) * to_float3(0.1031f, 0.1030f, 0.0973f));
   p3 += dot(p3, swiyxz(p3)+19.19f);
   return fract_float3((swixxy(p3)+swiyzz(p3))*swizyx(p3));
 }
-// returns { RGB, dist to edge (0 = edge, 1 = center) }
-__DEVICE__ float4 disco(float2 uv) {
+
+__DEVICE__ float4 disco(float2 uv)
+{ // returns { RGB, dist to edge (0 = edge, 1 = center) }
   float v = _fabs(cos(uv.x * M_PI * 2.0f) + cos(uv.y *M_PI * 2.0f)) * 0.5f;
   uv.x -= 0.5f;
   float3 cid2 = hash32(to_float2(floor(uv.x - uv.y), floor(uv.x + uv.y))); // generate a color
   return to_float4_aw(cid2, v);
 }
 
-/*
-void mainImage( out float4 o, in float2 fragCoord)
-{
-  ...
-}
-*/
-
-
-
 //############################################################################
-
 
 __KERNEL__ void ST_StainedLightsKernel(
     __CONSTANTREF__ ST_StainedLightsParams*   params,
@@ -209,17 +197,13 @@ __KERNEL__ void ST_StainedLightsKernel(
   o = clamp(o,0.0f,1.0f);
   float2 N = (fragCoord / R )- 0.5f;
   o = to_float4_s(1.0f)-pow_float4(to_float4_s(1.0f)-o, to_float4_s(30.0f));// curve
+
   //o.rgb += hash32(fragCoord + iTime).x*0.07f;//noise
-  o.x += hash32(fragCoord + iTime).x*0.07f;//noise
-  o.y += hash32(fragCoord + iTime).x*0.07f;//noise
-  o.z += hash32(fragCoord + iTime).x*0.07f;//noise
-<<<<<<< HEAD
-  
-  
-=======
+  float noise=hash32(fragCoord + iTime).x*  (params->noise / 10.0f); //0.07f
+  o.x += noise;
+  o.y += noise;
+  o.z += noise;
 
-
->>>>>>> 5a59df914d874f950efe9a38d00294def6f526ec
   o *= 1.1f-smoothstep(0.4f,0.405f,_fabs(N.y));
   o *= 1.0f-dot(N,N*1.7f);// vingette
   o.w = 1.0f;
@@ -263,11 +247,19 @@ function Create()
   ----- Inspector Panel Controls
 
    InFreq = self:AddInput("Frequency", "Frequency", {
-    LINKID_DataType    = "Number",
-    INPID_InputControl = "SliderControl",
-    INP_Default        = 2.0,
-    INP_MinScale 	   = 0.0,
-    INP_MaxScale 	   = 5.0,
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "SliderControl",
+    INP_Default         = 2.0,
+    INP_MinScale 	      = 0.0,
+    INP_MaxScale 	      = 5.0,
+  })
+
+   InNoise = self:AddInput("Noise", "Noise", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "SliderControl",
+    INP_Default         = 0.7,
+    INP_MinScale 	      = 0.0,
+    INP_MaxScale 	      = 4.0,
   })
 
   -- and your controlls here ...
@@ -331,6 +323,7 @@ function Process(req)
 
     if not pcall(function ()  -- necessary to avoid memory leakage
         params.freq         = InFreq:GetValue(req).Value
+        params.noise        = InNoise:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
@@ -339,6 +332,7 @@ function Process(req)
     end) then
         params              = node:GetParamBlock(ST_StainedLightsParams)
         params.freq         = InFreq:GetValue(req).Value
+        params.noise        = InNoise:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
