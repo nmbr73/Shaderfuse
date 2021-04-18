@@ -2,6 +2,7 @@
 
 # Tools
 
+WARNING! Setup.lua can be used, but all the other stuff in `Tools/` is very fragile and to be handled with great care.
 ## Install
 
 * Drag and drop `Tools/Setup.lua` from your working copy on your DaFusions working area

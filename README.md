@@ -116,35 +116,10 @@ See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far 
 
 
 
-Overview
-========
+### Overview
 
-[![Shaders/Abstract/Crazyness.fuse](Shaders/Abstract/Crazyness_320x180.png)](Shaders/Abstract/Crazyness.md)
-[![Shaders/Abstract/CrossDistance.fuse](Shaders/Abstract/CrossDistance_320x180.png)](Shaders/Abstract/CrossDistance.md)
-[![Shaders/Abstract/Favela.fuse](Shaders/Abstract/Favela_320x180.png)](Shaders/Abstract/Favela.md)
-[![Shaders/Abstract/Kali3D.fuse](Shaders/Abstract/Kali3D_320x180.png)](Shaders/Abstract/Kali3D.md)
-[![Shaders/Abstract/Noisecube.fuse](Shaders/Abstract/Noisecube_320x180.png)](Shaders/Abstract/Noisecube.md)
-[![Shaders/Abstract/RainbowSlices.fuse](Shaders/Abstract/RainbowSlices_320x180.png)](Shaders/Abstract/RainbowSlices.md)
-[![Shaders/Object/DancyTreeDoodle.fuse](Shaders/Object/DancyTreeDoodle_320x180.png)](Shaders/Object/DancyTreeDoodle.md)
-[![Shaders/Object/DancyTreeDoodle3D.fuse](Shaders/Object/DancyTreeDoodle3D_320x180.png)](Shaders/Object/DancyTreeDoodle3D.md)
-[![Shaders/Object/LonelyVoxel.fuse](Shaders/Object/LonelyVoxel_320x180.png)](Shaders/Object/LonelyVoxel.md)
-[![Shaders/Planet/CrackerCars.fuse](Shaders/Planet/CrackerCars_320x180.png)](Shaders/Planet/CrackerCars.md)
-[![Shaders/Planet/Fake3DScene.fuse](Shaders/Planet/Fake3DScene_320x180.png)](Shaders/Planet/Fake3DScene.md)
-[![Shaders/Blob/TorturedBlob.fuse](Shaders/Blob/TorturedBlob_320x180.png)](Shaders/Blob/TorturedBlob.md)
-[![Shaders/Planet/RayCastSphere.fuse](Shaders/Planet/RayCastSphere_320x180.png)](Shaders/Planet/RayCastSphere.md)
-[![Shaders/Planet/EARF.fuse](Shaders/Planet/EARF_320x180.png)](Shaders/Planet/EARF.md)
-[![Shaders/Tunnel/Velocibox.fuse](Shaders/Tunnel/Velocibox_320x180.png)](Shaders/Tunnel/Velocibox.md)
-[![FunWithMetaballs](Shaders/Blob/FunWithMetaballs_320x180.png)](Shaders/Blob/FunWithMetaballs.md)
-[![HW3Swing](Shaders/Object/HW3Swing_320x180.png)](Shaders/Object/HW3Swing.md)
-[![Vine](Shaders/Abstract/Vine_320x180.png)](Shaders/Abstract/Vine.md)
-[![BumpyReflectingBalls](Shaders/Abstract/BumpyReflectingBalls_320x180.png)](Shaders/Abstract/BumpyReflectingBalls.md)
-[![Fire_Water](Shaders/Misc/Fire_Water_320x180.png)](Shaders/Misc/Fire_Water.md)
-[![WildKifs4D](Shaders/Misc/WildKifs4D_320x180.png)](Shaders/Misc/WildKifs4D.md)
-[![Shaders/Misc/FractalLand.fuse](Shaders/Misc/FractalLand_320x180.png)](Shaders/Misc/FractalLand.md)
-[![Spilled](Shaders/Recursive/Spilled_320x180.png)](Shaders/Recursive/Spilled.md)
-[![TDSOTM_Nebula](Shaders/Recursive/TDSOTM_Nebula_320x180.png)](Shaders/Recursive/TDSOTM_Nebula.md)
-[![FlightThroughANebula](Shaders/Abstract/FlightThroughANebula_320x180.png)](Shaders/Abstract/FlightThroughANebula.md)
-[![FbmWarp](Shaders/Distortion/FbmWarp_320x180.png)](Shaders/Distortion/FbmWarp.md)
+See the full [Overview](Shaders/OVERVIEW.md) (but without GIF anims).
+
 [![Shaders/Abstract/Mosaic.fuse](https://user-images.githubusercontent.com/78935215/111024004-98879c00-83dc-11eb-9152-cd0ad2fd8a54.gif)](Shaders/Abstract/Mosaic.md)
 [![FractalRadioBase](https://user-images.githubusercontent.com/78935215/111519940-e2afab00-8757-11eb-883a-e8578422e648.gif)](Shaders/Object/FractalRadioBase.md)
 [![IHEartFourier](https://user-images.githubusercontent.com/78935215/112179345-e67d7a80-8bfa-11eb-9670-d338dfe01382.gif)](Shaders/Misc/IHeartFourier.md)
