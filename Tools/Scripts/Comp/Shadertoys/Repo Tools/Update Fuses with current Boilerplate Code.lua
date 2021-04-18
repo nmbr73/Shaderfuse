@@ -16,7 +16,7 @@ end
 function replace_snippet(fuse,marker,snippet)
 
   local mark_begin  = "-- >>> SCHNIPP::"..marker
-  local mark_end    = "-- >>> SCHNIPP::"..marker
+  local mark_end    = "-- <<< SCHNAPP::"..marker
 
   local pos1 = string.find(fuse.fuse_sourceCode, mark_begin )
   local pos2 = string.find(fuse.fuse_sourceCode, mark_end )
@@ -58,8 +58,12 @@ fuses.fetch(user_config.pathToRepository..'Shaders/',false)
 for i, fuse in ipairs(fuses.list) do
   fuse:read()
   if fuse.error==nil then
-    if replace_snippet(fuse,marker_a,snippet_a) or replace_snippet(fuse,marker_b,snippet_b) then
-      -- fuse:write()
+
+    local changed_a = replace_snippet(fuse,marker_a,snippet_a)
+    local changed_b = replace_snippet(fuse,marker_b,snippet_b)
+
+    if changed_a or changed_b then
+      fuse:write()
     end
     fuse:purge()
   end

@@ -170,8 +170,8 @@ function Fuse:read()
   local markers={
       '-- >>> SCHNIPP::FUREGISTERCLASS',
       '-- <<< SCHNAPP::FUREGISTERCLASS',
-      '-- >>> SCHNIPP::SCHADERFUSECONTROLS.v2',
-      '-- <<< SCHNAPP::SCHADERFUSECONTROLS',
+      '-- >>> SCHNIPP::SHADERFUSECONTROLS.v2',
+      '-- <<< SCHNAPP::SHADERFUSECONTROLS',
     }
 
   for i, marker in ipairs(markers) do
