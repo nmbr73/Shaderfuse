@@ -55,6 +55,10 @@ local snippet_b = read_snippet(path,marker_b)
 
 fuses.fetch(user_config.pathToRepository..'Shaders/',false)
 
+local count_changed=0
+local count_unchanged=0
+
+
 for i, fuse in ipairs(fuses.list) do
   fuse:read()
   if fuse.error==nil then
@@ -64,7 +68,13 @@ for i, fuse in ipairs(fuses.list) do
 
     if changed_a or changed_b then
       fuse:write()
+      count_changed=count_changed+1
+    else
+      count_unchanged=count_unchanged+1
     end
     fuse:purge()
   end
 end
+
+print("changed: "..count_changed)
+print("unchanged: "..count_unchanged)
