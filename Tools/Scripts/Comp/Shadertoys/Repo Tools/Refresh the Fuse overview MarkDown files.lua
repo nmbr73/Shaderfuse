@@ -41,6 +41,9 @@ local readme_cat=nil
 
 local currentCategory=''
 
+local boom=0
+local okay=0
+
 for i, fuse in ipairs(fuses.list) do
 
   if fuse.file_category ~= currentCategory then
@@ -63,6 +66,12 @@ for i, fuse in ipairs(fuses.list) do
     readme_cat:write("# "..fuse.file_category.." Shaders\n\n")
 
 
+  end
+
+  if fuse.error then
+    boom=boom+1
+  else
+    okay=okay+1
   end
 
   overview:write(
@@ -103,6 +112,14 @@ end
 
 if currentCategory~='' then
   overview:write('</table>\n')
+end
+
+if okay > 0 then
+  overview:write(":four_leaf_clover: "..okay.."<br />\n")
+end
+
+if boom > 0 then
+  overview:write(":boom: "..boom.."<br />\n")
 end
 
 
