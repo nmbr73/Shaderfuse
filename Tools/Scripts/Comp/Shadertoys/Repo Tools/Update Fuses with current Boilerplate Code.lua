@@ -21,6 +21,10 @@ function replace_snippet(fuse,marker,snippet)
   local pos1 = string.find(fuse.fuse_sourceCode, mark_begin )
   local pos2 = string.find(fuse.fuse_sourceCode, mark_end )
 
+  if pos1==nil then print("begin"..marker.." not found in "..fuse.file_fusename) end
+  if pos2==nil then print("end"..marker.." not found in "..fuse.file_fusename) end
+
+
   if pos1 == nil or pos2==nil then return false end
 
   pos2 = pos2+string.len(mark_end)
@@ -29,8 +33,6 @@ function replace_snippet(fuse,marker,snippet)
        string.sub(fuse.fuse_sourceCode,1,pos1)
     .. snippet
     .. string.sub(fuse.fuse_sourceCode,pos2)
-
-  if fuse.fuse_sourceCode == new_sourceCode then return false end
 
   fuse.fuse_sourceCode=new_sourceCode
   return true
@@ -73,6 +75,8 @@ for i, fuse in ipairs(fuses.list) do
       count_unchanged=count_unchanged+1
     end
     fuse:purge()
+  else
+    print(fuse.file_fusename.." has error "..fuse.error)
   end
 end
 

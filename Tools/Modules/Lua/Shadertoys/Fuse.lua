@@ -168,9 +168,9 @@ function Fuse:read()
   if self.dctlfuse_category ~= self.file_category then return self:setError("fuse category '"..self.dctlfuse_category.."' does not match fuse's subdirectory",false) end
 
   local markers={
-      '-- >>> SCHNIPP::FUREGISTERCLASS',
+      '-- >>> SCHNIPP::FUREGISTERCLASS.version="MonumentsAndSites"',
       '-- <<< SCHNAPP::FUREGISTERCLASS',
-      '-- >>> SCHNIPP::SHADERFUSECONTROLS.v2',
+      '-- >>> SCHNIPP::SHADERFUSECONTROLS.version="MonumentsAndSites"',
       '-- <<< SCHNAPP::SHADERFUSECONTROLS',
     }
 
