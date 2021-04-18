@@ -30,9 +30,13 @@ function replace_snippet(fuse,marker,snippet)
   pos2 = pos2+string.len(mark_end)
 
   local new_sourceCode =
-       string.sub(fuse.fuse_sourceCode,1,pos1)
+       string.sub(fuse.fuse_sourceCode,1,pos1-1)
     .. snippet
     .. string.sub(fuse.fuse_sourceCode,pos2)
+
+  if fuse.fuse_sourceCode==new_sourceCode then
+    return false
+  end
 
   fuse.fuse_sourceCode=new_sourceCode
   return true
@@ -62,7 +66,9 @@ local count_unchanged=0
 
 
 for i, fuse in ipairs(fuses.list) do
-  fuse:read()
+
+  fuse:read({CheckMarkers=false})
+
   if fuse.error==nil then
 
     local changed_a = replace_snippet(fuse,marker_a,snippet_a)

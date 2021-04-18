@@ -132,7 +132,7 @@ function Fuse:getErrorText()
 end
 
 
-function Fuse:read()
+function Fuse:read(options)
 	assert(self.fuse_sourceCode==nil)
 
 --  if not self:isValid() then return false end
@@ -174,12 +174,16 @@ function Fuse:read()
       '-- <<< SCHNAPP::SHADERFUSECONTROLS',
     }
 
-  for i, marker in ipairs(markers) do
-    if string.find(self.fuse_sourceCode, marker) == nil then
-      return self:setError('fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks',false)
+
+  if options ~= nil and options.CheckMarkers ~= nil and options.CheckMarkers==false then
+
+  else
+    for i, marker in ipairs(markers) do
+      if string.find(self.fuse_sourceCode, marker) == nil then
+        return self:setError('fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks',false)
+      end
     end
   end
-
 
 
   return true
