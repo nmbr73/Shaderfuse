@@ -188,9 +188,10 @@ end
 
 function Fuse:write(path,filename)
 
+  path = path and path or self.file_basepath..self.file_category..'/'
+
   filename = filename and filename or self.file_filename
 
-  assert(path~=nil)
   assert(self.fuse_sourceCode~=nil)
   assert(self.fuse_sourceCode~='')
 
