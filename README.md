@@ -7,8 +7,12 @@
 [![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)](https://youtu.be/ntrp6BfVk0k)
 [![YouTube Demo4](https://img.shields.io/youtube/views/QE6--iYtikk?style=social)](https://youtu.be/QE6--iYtikk)
 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=oyndG0pLEQQ" target="_blank"><img src="http://img.youtube.com/vi/oyndG0pLEQQ/0.jpg" alt="Demo 1" width="60" height="45" border="10" /></a>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=GJz8Vgi8Qws" target="_blank"><img src="http://img.youtube.com/vi/GJz8Vgi8Qws/0.jpg" alt="Demo 2" width="60" height="45" border="10" /></a>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=ntrp6BfVk0k" target="_blank"><img src="http://img.youtube.com/vi/ntrp6BfVk0k/0.jpg" alt="Demo 3" width="60" height="45" border="10" /></a>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=QE6--iYtikk" target="_blank"><img src="http://img.youtube.com/vi/QE6--iYtikk/0.jpg" alt="Demo 4" width="60" height="45" border="10" /></a>
 
-[![The Shader Cut](http://img.youtube.com/vi/GJz8Vgi8Qws/0.jpg)](https://youtu.be/GJz8Vgi8Qws)
+
 </center>
 
 Shadertoys
