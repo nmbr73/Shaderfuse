@@ -1,12 +1,15 @@
+<center>
+
 [![Shadertoyparade](Site/img_subscribe.png)](https://youtu.be/oyndG0pLEQQ "WebGL to DCTL")
 
 [![YouTube Demo1](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
-[![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws&t)
+[![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws)
 [![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)](https://youtu.be/ntrp6BfVk0k)
 [![YouTube Demo4](https://img.shields.io/youtube/views/QE6--iYtikk?style=social)](https://youtu.be/QE6--iYtikk)
 
 
-<!-- WebbHook anyone -->
+[![The Shader Cut](http://img.youtube.com/vi/GJz8Vgi8Qws/0.jpg)](https://youtu.be/GJz8Vgi8Qws)
+</center>
 
 Shadertoys
 ==========
