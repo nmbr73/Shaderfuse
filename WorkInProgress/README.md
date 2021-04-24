@@ -18,6 +18,8 @@
 - [VoxelFlyThrough](JiPi/VoxelFlyThrough.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :cherries:
 - [Veyerus](JiPi/Veyerus.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :watermelon:
 - [PigSquad](JiPi/PigSquad.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :pig:
+- [GoGoLegoMan](JiPi/GoGoLegoMan.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :walking:
+
 # Teaser
 
 ## JiPi
@@ -51,7 +53,7 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![VoxelFlythrough](https://user-images.githubusercontent.com/78935215/114780463-b9defd80-9d77-11eb-9a05-bb90851f0611.gif)](https://www.shadertoy.com/view/MdGXWG)
 [![Veyerus](https://user-images.githubusercontent.com/78935215/114778884-b77ba400-9d75-11eb-9137-be28f748260e.gif)](https://www.shadertoy.com/view/WltXDn)
 [![PiqSquad](https://user-images.githubusercontent.com/78935215/115626298-98dd5600-a2fd-11eb-8832-3032812c58f7.gif)](https://www.shadertoy.com/view/WdBcRh)
-
+[![GoLegoManGo](https://user-images.githubusercontent.com/78935215/115949015-178aec80-a4d2-11eb-86f7-59e0b03878c4.gif)](https://www.shadertoy.com/view/MsB3zK)
 
 ## nmbr73
 
