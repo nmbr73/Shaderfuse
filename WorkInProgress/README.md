@@ -19,7 +19,8 @@
 - [Veyerus](JiPi/Veyerus.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :watermelon:
 - [PigSquad](JiPi/PigSquad.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :pig:
 - [GoGoLegoMan](JiPi/GoGoLegoMan.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :walking:
-
+- [GlassDuck2](JiPi/GlassDuck2.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :duck:
+- [FibonaccisFugu](JiPi/FibonaccisFugu.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :fish:
 # Teaser
 
 ## JiPi
@@ -54,6 +55,9 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![Veyerus](https://user-images.githubusercontent.com/78935215/114778884-b77ba400-9d75-11eb-9137-be28f748260e.gif)](https://www.shadertoy.com/view/WltXDn)
 [![PiqSquad](https://user-images.githubusercontent.com/78935215/115626298-98dd5600-a2fd-11eb-8832-3032812c58f7.gif)](https://www.shadertoy.com/view/WdBcRh)
 [![GoLegoManGo](https://user-images.githubusercontent.com/78935215/115949015-178aec80-a4d2-11eb-86f7-59e0b03878c4.gif)](https://www.shadertoy.com/view/MsB3zK)
+[![QuietscheEntchen](https://user-images.githubusercontent.com/78935215/116908337-0dd85600-ac43-11eb-8679-2ad2e3fdac34.gif)](https://www.shadertoy.com/view/MtlyRf)
+[![FibonaccisFugu](https://user-images.githubusercontent.com/78935215/116908797-9c4cd780-ac43-11eb-929b-7fd796defc3f.gif)](https://www.shadertoy.com/view/Mltfzf)
+
 
 ## nmbr73
 
