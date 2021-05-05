@@ -19,8 +19,11 @@
 - [Veyerus](JiPi/Veyerus.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :watermelon:
 - [PigSquad](JiPi/PigSquad.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :pig:
 - [GoGoLegoMan](JiPi/GoGoLegoMan.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :walking:
-- [GlassDuck2](JiPi/GlassDuck2.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :duck:
-- [FibonaccisFugu](JiPi/FibonaccisFugu.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :fish:
+- [DigitDebugger](JiPi/DigitDebugger.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :memo:
+- [JFIG_Bubbles](JiPi/JFIG_Bubbles.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :fountain:
+- [Ekranoplan](JiPi/Ekranoplan.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :airplane:
+
+
 # Teaser
 
 ## JiPi
@@ -57,8 +60,9 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![GoLegoManGo](https://user-images.githubusercontent.com/78935215/115949015-178aec80-a4d2-11eb-86f7-59e0b03878c4.gif)](https://www.shadertoy.com/view/MsB3zK)
 [![QuietscheEntchen](https://user-images.githubusercontent.com/78935215/116908337-0dd85600-ac43-11eb-8679-2ad2e3fdac34.gif)](https://www.shadertoy.com/view/MtlyRf)
 [![FibonaccisFugu](https://user-images.githubusercontent.com/78935215/116908797-9c4cd780-ac43-11eb-929b-7fd796defc3f.gif)](https://www.shadertoy.com/view/Mltfzf)
-
-
+[![DigitDebugger](https://user-images.githubusercontent.com/78935215/117165279-a4348500-adc5-11eb-9e52-8ae25d1bc1da.gif)](https://www.shadertoy.com/view/tdcBDN)
+[![JFIG_Bubbles](https://user-images.githubusercontent.com/78935215/117162557-2a030100-adc3-11eb-863a-22d30399cd13.gif)](https://www.shadertoy.com/view/wd3fz7)
+[![Ekranoplan1](https://user-images.githubusercontent.com/78935215/117162665-43a44880-adc3-11eb-9ef0-61aea62e0cec.gif)](https://www.shadertoy.com/view/Wd3fDH)
 ## nmbr73
 
 Someday / maybe
