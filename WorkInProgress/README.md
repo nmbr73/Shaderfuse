@@ -24,6 +24,8 @@
 - [Ekranoplan](JiPi/Ekranoplan.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :airplane:
 - [RoundedBox](JiPi/RoundedBox.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :white_square_button:
 - [RoomsFromCubeMap](JiPi/RoomsFromCubeMap.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :office:
+- [Cuvoid](JiPi/Cuvoid.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :rocket:
+- [SatisfactionMachine](JiPi/SatisfactionMachine.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :slot_machine:
 
 # Teaser
 
@@ -66,6 +68,8 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![Ekranoplan1](https://user-images.githubusercontent.com/78935215/117162665-43a44880-adc3-11eb-9ef0-61aea62e0cec.gif)](https://www.shadertoy.com/view/Wd3fDH)
 [![RoundedBox](https://user-images.githubusercontent.com/78935215/117371695-9ca9d480-aec8-11eb-9ce2-68aa8f5ddea9.gif)](https://www.shadertoy.com/view/WlSXRW)
 [![RoomsFromCube](https://user-images.githubusercontent.com/78935215/117412288-e6b8a780-af14-11eb-81eb-67ebad77cff3.gif)](https://www.shadertoy.com/view/WsGcRm)
+[![Cuvoid](https://user-images.githubusercontent.com/78935215/117588029-37045500-b121-11eb-92ca-142d5a346985.gif)](https://www.shadertoy.com/view/WdVyzh)
+[![SatifactionMachine](https://user-images.githubusercontent.com/78935215/117588117-b8f47e00-b121-11eb-9202-a250ada3d523.gif)](https://www.shadertoy.com/view/tdGfDy)
 ## nmbr73
 
 Someday / maybe

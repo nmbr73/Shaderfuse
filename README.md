@@ -11,7 +11,9 @@
 [![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws)
 [![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)](https://youtu.be/ntrp6BfVk0k)
 [![YouTube Demo4](https://img.shields.io/youtube/views/QE6--iYtikk?style=social)](https://youtu.be/QE6--iYtikk)
-[![YouTube Demo5](https://img.shields.io/youtube/views/OYOar65omeM?style=social)](https://youtu.be/OYOar65omeM)
+[![YouTube Demo5](https://img.shields.io/youtube/views/WGWCrhPNmdg?style=social)](https://youtu.be/WGWCrhPNmdg)
+[![YouTube Demo6](https://img.shields.io/youtube/views/OYOar65omeM?style=social)](https://youtu.be/OYOar65omeM)
+[![YouTube Demo7](https://img.shields.io/youtube/views/8sUu5GcDako?style=social)](https://youtu.be/8sUu5GcDako)
 -->
 
 
@@ -20,11 +22,12 @@
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=oyndG0pLEQQ" target="_blank"><img src="http://img.youtube.com/vi/oyndG0pLEQQ/0.jpg" alt="Demo 1" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=GJz8Vgi8Qws" target="_blank"><img src="http://img.youtube.com/vi/GJz8Vgi8Qws/0.jpg" alt="Demo 2" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ntrp6BfVk0k" target="_blank"><img src="http://img.youtube.com/vi/ntrp6BfVk0k/0.jpg" alt="Demo 3" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=QE6--iYtikk" target="_blank"><img src="http://img.youtube.com/vi/QE6--iYtikk/0.jpg" alt="Demo 4" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/QE6--iYtikk?style=social" /></a></td>
 </tr>
 <tr>
-<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=QE6--iYtikk" target="_blank"><img src="http://img.youtube.com/vi/QE6--iYtikk/0.jpg" alt="Demo 4" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/QE6--iYtikk?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=WGWCrhPNmdg" target="_blank"><img src="http://img.youtube.com/vi/WGWCrhPNmdg/0.jpg" alt="Demo 5" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/WGWCrhPNmdg?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=OYOar65omeM" target="_blank"><img src="http://img.youtube.com/vi/OYOar65omeM/0.jpg" alt="Demo 6" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/OYOar65omeM?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=8sUu5GcDako" target="_blank"><img src="http://img.youtube.com/vi/8sUu5GcDako/0.jpg" alt="Demo 6" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/8sUu5GcDako?style=social" /></a></td>
 </tr>
 </table>
 
