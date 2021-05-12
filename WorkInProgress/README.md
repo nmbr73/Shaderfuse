@@ -26,6 +26,10 @@
 - [RoomsFromCubeMap](JiPi/RoomsFromCubeMap.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :office:
 - [Cuvoid](JiPi/Cuvoid.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :rocket:
 - [SatisfactionMachine](JiPi/SatisfactionMachine.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :slot_machine:
+- [SimpleUFO](JiPi/SimpleUFO.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :stars:
+- [MistakeNot](JiPi/MistakeNot.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :helicopter:
+- [RoboWalk](JiPi/RoboWalk.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :robot:
+- [Futuristic3DCircle](JiPi/Futuristic3DCircle.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :white_circle:
 
 # Teaser
 
@@ -70,6 +74,10 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![RoomsFromCube](https://user-images.githubusercontent.com/78935215/117412288-e6b8a780-af14-11eb-81eb-67ebad77cff3.gif)](https://www.shadertoy.com/view/WsGcRm)
 [![Cuvoid](https://user-images.githubusercontent.com/78935215/117588029-37045500-b121-11eb-92ca-142d5a346985.gif)](https://www.shadertoy.com/view/WdVyzh)
 [![SatifactionMachine](https://user-images.githubusercontent.com/78935215/117588117-b8f47e00-b121-11eb-9202-a250ada3d523.gif)](https://www.shadertoy.com/view/tdGfDy)
+[![SimpleUFO](https://user-images.githubusercontent.com/78935215/118020786-ccd6f480-b35a-11eb-92c7-3ef646eebce5.gif)](https://www.shadertoy.com/view/Wt2cRt)
+[![MistakeNot](https://user-images.githubusercontent.com/78935215/118020455-6356e600-b35a-11eb-9cc9-e767b5da8319.gif)](https://www.shadertoy.com/view/4llfDl)
+[![RoboWalk](https://user-images.githubusercontent.com/78935215/118018523-2f7ac100-b358-11eb-8a24-25c35e56545e.gif)](https://www.shadertoy.com/view/WlyGDt)
+[![Futuristic3DCircle](https://user-images.githubusercontent.com/78935215/118017964-80d68080-b357-11eb-9ed9-88f09e196575.gif)](https://www.shadertoy.com/view/WsG3D3)
 ## nmbr73
 
 Someday / maybe
