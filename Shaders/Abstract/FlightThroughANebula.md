@@ -11,7 +11,7 @@ In the original, `Texelfetch()` and GreyNoise-Volumes are used. But even without
 Have fun playing
 
 ## Compability
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

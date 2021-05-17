@@ -12,3 +12,9 @@ The surface of the balls can be influenced by a texture, so you can achieve very
 Tested with Cuda, OpenCl and Metal.
 
 Have fun playing
+
+## Compability
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL

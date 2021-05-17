@@ -13,7 +13,7 @@ In addition to the mosaic size and the joint width, the joint color can also be 
 Have fun playing
 
 ## Compability
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

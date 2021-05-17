@@ -11,3 +11,9 @@ This shader consists of an image buffer that recursively processes the image. It
 This shader has been tested under Cuda, OpenCL, and Metal.
 
 Have fun playing
+
+## Compability
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL
