@@ -9,4 +9,4 @@ Based on '_[Crazyness](https://www.shadertoy.com/view/wdjSRc)_' by [spsherk_](ht
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/OpenCL

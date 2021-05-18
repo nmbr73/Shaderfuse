@@ -9,4 +9,4 @@ Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](h
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/OpenCL
