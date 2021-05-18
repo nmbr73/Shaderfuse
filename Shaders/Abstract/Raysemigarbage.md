@@ -18,7 +18,7 @@ Have fun playing
 
 
 
-## Compability
+## Compatibility
 - [ ] Tested on macOS/Metal :question::question::question:
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda

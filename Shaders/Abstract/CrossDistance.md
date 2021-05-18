@@ -5,7 +5,7 @@ Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](h
 
 ![screenshot](CrossDistance_screenshot.png "CrossDistance.fuse in DaVinci Resolve")
 
-## Compability
+## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda

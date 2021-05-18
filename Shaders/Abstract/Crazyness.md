@@ -5,7 +5,7 @@ Based on '_[Crazyness](https://www.shadertoy.com/view/wdjSRc)_' by [spsherk_](ht
 
 ![thumb](Crazyness_320x180.png "Crazyness.fuse")
 
-## Compability
+## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda

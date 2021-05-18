@@ -12,7 +12,7 @@ This shader has been tested under Cuda, OpenCL, and Metal.
 
 Have fun playing
 
-## Compability
+## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda

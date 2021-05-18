@@ -6,7 +6,7 @@ Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer]
 
 ![screenshot](RainbowSlices_screenshot.png "RainbowSlices.fuse in DaVinci Resolve")
 
-## Compability
+## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda

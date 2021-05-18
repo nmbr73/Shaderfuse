@@ -5,7 +5,7 @@ Based on '_[Favela](https://www.shadertoy.com/view/ldGcDh)_' by [duvengar](https
 
 ![screenshot](Favela_screenshot.png "Favela.fuse in DaVinci Resolve")
 
-## Compability
+## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda

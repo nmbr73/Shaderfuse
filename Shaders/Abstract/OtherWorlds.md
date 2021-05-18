@@ -65,7 +65,7 @@ I hope you enjoy playing with this shader as much as I do.
 
 
 
-## Compability
+## Compatibility
 - [ ] Tested on macOS/Metal :bomb::bomb::bomb:
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda

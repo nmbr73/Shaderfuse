@@ -11,7 +11,7 @@ Have fun playing
 
 [![Noisecube](https://user-images.githubusercontent.com/78935215/107973701-d64bfd00-6fb5-11eb-8052-5b9cb0e6ea43.gif)](https://www.shadertoy.com/embed/4sGBD1?gui=true&t=10&paused=true&muted=false)
 
-## Compability
+## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda

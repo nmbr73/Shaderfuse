@@ -13,7 +13,7 @@ Tested with Cuda, OpenCl and Metal.
 
 Have fun playing
 
-## Compability
+## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
