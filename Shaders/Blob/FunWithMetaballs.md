@@ -9,3 +9,9 @@ Based on '_[FunWithMetaballs](https://www.shadertoy.com/view/MlyXWV)_' by [fwill
 Have fun
 
 [![FunWithMetaballs](FunWithMetaballs.gif)](FunWithMetaballs.fuse)
+
+## Compatibility
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL
