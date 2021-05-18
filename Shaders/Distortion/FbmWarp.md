@@ -10,8 +10,8 @@ This shader obviously takes advantage of a trick in WebGL that doesn't quite wor
 
 Have fun playing
 
-## Compability
-- [ ] Tested on macOS/Metal
+## Compatibility
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
