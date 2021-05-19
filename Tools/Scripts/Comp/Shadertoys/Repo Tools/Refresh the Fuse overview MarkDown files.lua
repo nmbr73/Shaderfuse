@@ -7,6 +7,7 @@ local fuses       = require("Shadertoys/fuses")
 
 fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
+-- print("go ...") ; dump(fuses) ; os.exit()
 
 local overview = io.open(user_config.pathToRepository..'Shaders/OVERVIEW.md',"wb")
 local readme   = io.open(user_config.pathToRepository..'Shaders/README.md',"wb")

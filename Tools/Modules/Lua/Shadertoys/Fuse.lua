@@ -69,7 +69,7 @@ function Fuse:init(filepath)
   self.file_filepath=filepath
 
   self.file_basepath, self.file_category, self.file_fusename =
-    filepath:match('^(.+/Shaders/)([^/]+)/([^%.]+)%.fuse$')
+    filepath:match('^(.+[/\\]Shaders/)([^/]+)/([^%.]+)%.fuse$')
 
   if self.file_basepath==nil or self.file_category==nil or self.file_fusename==nil then
     self.error="filepath '"..self.file_filepath.."' does not match the expected schema"
