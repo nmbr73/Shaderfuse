@@ -21,7 +21,7 @@
 
 <nobr>Fuse: [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md)</nobr><br />
 <nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [BumpyReflectingBalls](https://www.shadertoy.com/view/Xdl3Dj)</nobr><br />
+<nobr>Shadertoy: [BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB)</nobr><br />
 <nobr>Author: [metabog](https://www.shadertoy.com/user/metabog)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
@@ -125,6 +125,34 @@
 </p>
 </td></tr>
 <tr>
+<td><img src="Abstract/OtherWorlds_320x180.png" alt="Abstract/OtherWorlds" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [OtherWorlds](Abstract/OtherWorlds.md)</nobr><br />
+<nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [Other Worlds\bump experiment](https://www.shadertoy.com/view/Ns2XzR)</nobr><br />
+<nobr>Author: [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="Abstract/OverstimulatedNeurons_320x180.png" alt="Abstract/OverstimulatedNeurons" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [OverstimulatedNeurons](Abstract/OverstimulatedNeurons.md)</nobr><br />
+<nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [Overstimulated Neurons](https://www.shadertoy.com/view/NdlSD8)</nobr><br />
+<nobr>Author: [Chaotnix](https://www.shadertoy.com/user/Chaotnix)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="Abstract/RainbowSlices_320x180.png" alt="Abstract/RainbowSlices" width="320" height="180" /></td>
 <td><p>
 
@@ -136,6 +164,20 @@
 <nobr>Shadertoy: [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)</nobr><br />
 <nobr>Author: [fizzer](https://www.shadertoy.com/user/fizzer)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="Abstract/Raysemigarbage_320x180.png" alt="Abstract/Raysemigarbage" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [Raysemigarbage](Abstract/Raysemigarbage.md)</nobr><br />
+<nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [raysemigarbage#3 but hilly](https://www.shadertoy.com/view/3tdSW8)</nobr><br />
+<nobr>Author: [supastav](https://www.shadertoy.com/user/supastav)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
 <tr>
@@ -198,6 +240,20 @@
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
+<tr>
+<td><img src="Blob/XRaymarching_320x180.png" alt="Blob/XRaymarching" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [XRaymarching](Blob/XRaymarching.md)</nobr><br />
+<nobr>Category: [Blob](Blob/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [XRaymarching](https://www.shadertoy.com/view/XtByWW)</nobr><br />
+<nobr>Author: [Aeless](https://www.shadertoy.com/user/Aeless)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
 </table>
 
 ## Distortion Shaders
@@ -243,7 +299,7 @@
 
 <nobr>Fuse: [EnergyPlant](Fractals/EnergyPlant.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [EnergyPlant](https://www.shadertoy.com/view/ttjBD1)</nobr><br />
+<nobr>Shadertoy: [EnergyPlant](https://www.shadertoy.com/view/WdjBWc)</nobr><br />
 <nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
@@ -361,6 +417,20 @@
 <nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
 <nobr>Shadertoy: [Legofied](https://www.shadertoy.com/view/XtBSzy)</nobr><br />
 <nobr>Author: [Gijs](https://www.shadertoy.com/user/Gijs)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="Misc/TruePinballPhysics_320x180.png" alt="Misc/TruePinballPhysics" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [TruePinballPhysics](Misc/TruePinballPhysics.md)</nobr><br />
+<nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [True Pinball Physics](https://www.shadertoy.com/view/4tBGRm)</nobr><br />
+<nobr>Author: [archee](https://www.shadertoy.com/user/archee)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
@@ -647,4 +717,4 @@
 </p>
 </td></tr>
 </table>
-:four_leaf_clover: 43<br />
+:four_leaf_clover: 48<br />

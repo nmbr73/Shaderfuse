@@ -11,7 +11,7 @@
   # Abstract Shaders
 
 ## **[BumpyReflectingBalls](BumpyReflectingBalls.md)**
-based on [BumpyReflectingBalls](https://www.shadertoy.com/view/Xdl3Dj) written by [metabog](https://www.shadertoy.com/user/metabog)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+based on [BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB) written by [metabog](https://www.shadertoy.com/user/metabog)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
 ## **[Crazyness](Crazyness.md)**
 based on [craziness](https://www.shadertoy.com/view/wdjSRc) written by [spsherk_](https://www.shadertoy.com/user/spsherk_)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
@@ -34,8 +34,17 @@ based on [voronoi solid with borders](https://www.shadertoy.com/view/XtySRc) wri
 ## **[Noisecube](Noisecube.md)**
 based on [Noisecube](https://www.shadertoy.com/view/4sGBD1) written by [flimshaw](https://www.shadertoy.com/user/flimshaw)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
+## **[OtherWorlds](OtherWorlds.md)**
+based on [Other Worlds\bump experiment](https://www.shadertoy.com/view/Ns2XzR) written by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+
+## **[OverstimulatedNeurons](OverstimulatedNeurons.md)**
+based on [Overstimulated Neurons](https://www.shadertoy.com/view/NdlSD8) written by [Chaotnix](https://www.shadertoy.com/user/Chaotnix)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+
 ## **[RainbowSlices](RainbowSlices.md)**
 based on [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
+
+## **[Raysemigarbage](Raysemigarbage.md)**
+based on [raysemigarbage#3 but hilly](https://www.shadertoy.com/view/3tdSW8) written by [supastav](https://www.shadertoy.com/user/supastav)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
 ## **[StainedLights](StainedLights.md)**
 based on [Stained Lights](https://www.shadertoy.com/view/WlsSzM) written by [104](https://www.shadertoy.com/user/104)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)

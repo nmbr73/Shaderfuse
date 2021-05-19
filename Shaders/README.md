@@ -13,7 +13,7 @@
 
 
 **[Abstract Shaders](Abstract/)**
-- [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) (Shadertoy ID [Xdl3Dj](https://www.shadertoy.com/view/Xdl3Dj)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) (Shadertoy ID [ltsXDB](https://www.shadertoy.com/view/ltsXDB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Crazyness](Abstract/Crazyness.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [CrossDistance](Abstract/CrossDistance.md) (Shadertoy ID [XtGfzw](https://www.shadertoy.com/view/XtGfzw)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [Favela](Abstract/Favela.md) (Shadertoy ID [ldGcDh](https://www.shadertoy.com/view/ldGcDh)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
@@ -21,7 +21,10 @@
 - [Kali3D](Abstract/Kali3D.md) (Shadertoy ID [MdB3DK](https://www.shadertoy.com/view/MdB3DK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Mosaic](Abstract/Mosaic.md) (Shadertoy ID [XtySRc](https://www.shadertoy.com/view/XtySRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Noisecube](Abstract/Noisecube.md) (Shadertoy ID [4sGBD1](https://www.shadertoy.com/view/4sGBD1)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [OtherWorlds](Abstract/OtherWorlds.md) (Shadertoy ID [Ns2XzR](https://www.shadertoy.com/view/Ns2XzR)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [OverstimulatedNeurons](Abstract/OverstimulatedNeurons.md) (Shadertoy ID [NdlSD8](https://www.shadertoy.com/view/NdlSD8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RainbowSlices](Abstract/RainbowSlices.md) (Shadertoy ID [XdsGD4](https://www.shadertoy.com/view/XdsGD4)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
+- [Raysemigarbage](Abstract/Raysemigarbage.md) (Shadertoy ID [3tdSW8](https://www.shadertoy.com/view/3tdSW8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [StainedLights](Abstract/StainedLights.md) (Shadertoy ID [WlsSzM](https://www.shadertoy.com/view/WlsSzM)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [Vine](Abstract/Vine.md) (Shadertoy ID [XldSz7](https://www.shadertoy.com/view/XldSz7)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
@@ -29,6 +32,7 @@
 **[Blob Shaders](Blob/)**
 - [FunWithMetaballs](Blob/FunWithMetaballs.md) (Shadertoy ID [MlyXWV](https://www.shadertoy.com/view/MlyXWV)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TorturedBlob](Blob/TorturedBlob.md) (Shadertoy ID [MlKGDK](https://www.shadertoy.com/view/MlKGDK)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [XRaymarching](Blob/XRaymarching.md) (Shadertoy ID [XtByWW](https://www.shadertoy.com/view/XtByWW)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
 **[Distortion Shaders](Distortion/)**
@@ -37,7 +41,7 @@
 
 
 **[Fractals Shaders](Fractals/)**
-- [EnergyPlant](Fractals/EnergyPlant.md) (Shadertoy ID [ttjBD1](https://www.shadertoy.com/view/ttjBD1)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [EnergyPlant](Fractals/EnergyPlant.md) (Shadertoy ID [WdjBWc](https://www.shadertoy.com/view/WdjBWc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Fractal03](Fractals/Fractal03.md) (Shadertoy ID [3lKcDV](https://www.shadertoy.com/view/3lKcDV)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalEngine](Fractals/FractalEngine.md) (Shadertoy ID [ttSBRm](https://www.shadertoy.com/view/ttSBRm)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalGutter](Fractals/FractalGutter.md) (Shadertoy ID [ttjBD1](https://www.shadertoy.com/view/ttjBD1)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -49,6 +53,7 @@
 - [FractalLand](Misc/FractalLand.md) (Shadertoy ID [XsBXWt](https://www.shadertoy.com/view/XsBXWt)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [IHeartFourier](Misc/IHeartFourier.md) (Shadertoy ID [tltSWr](https://www.shadertoy.com/view/tltSWr)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Legofied](Misc/Legofied.md) (Shadertoy ID [XtBSzy](https://www.shadertoy.com/view/XtBSzy)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [TruePinballPhysics](Misc/TruePinballPhysics.md) (Shadertoy ID [4tBGRm](https://www.shadertoy.com/view/4tBGRm)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [WildKifs4D](Misc/WildKifs4D.md) (Shadertoy ID [wttBzM](https://www.shadertoy.com/view/wttBzM)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
