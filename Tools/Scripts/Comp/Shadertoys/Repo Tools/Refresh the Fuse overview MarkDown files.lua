@@ -50,7 +50,10 @@ for i, fuse in ipairs(fuses.list) do
 
     if currentCategory~='' then
       overview:write('</table>\n\n')
-      if readme_cat~=nil then readme_cat:close() end
+      if readme_cat~=nil then
+        readme_cat:close()
+        readme_cat=nil
+      end
     end
 
     currentCategory=fuse.file_category
@@ -73,6 +76,12 @@ for i, fuse in ipairs(fuses.list) do
   else
     okay=okay+1
   end
+
+  if readme_cat==nil then
+    print("Okay '"..fuse.file_fusename.."' causing some trouble!")
+    print("Categiry is '"..fuse.file_category.."'")
+  end
+
 
   overview:write(
       '<tr>\n'
