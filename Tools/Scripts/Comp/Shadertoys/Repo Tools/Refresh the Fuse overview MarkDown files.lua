@@ -9,8 +9,8 @@ fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
 -- print("go ...") ; dump(fuses) ; os.exit()
 
-local overview = io.open(user_config.pathToRepository..'Shaders/OVERVIEW.md',"wb")
-local readme   = io.open(user_config.pathToRepository..'Shaders/README.md',"wb")
+local overview = io.open(user_config.pathToRepository..'Shaders/OVERVIEW.md',"w")
+local readme   = io.open(user_config.pathToRepository..'Shaders/README.md',"w")
 
 if not(overview) or not(readme) then
   print("We have a Problem")
@@ -30,7 +30,7 @@ local header=[[
   <!--                                                             -->
 
 
-  ]]
+]]
 
 overview:write(header)
 readme:write(header)
@@ -65,7 +65,7 @@ for i, fuse in ipairs(fuses.list) do
 
     readme:write('\n\n**['..fuse.file_category..' Shaders]('..fuse.file_category..'/)**\n')
 
-    readme_cat   = io.open(user_config.pathToRepository..'Shaders/'..fuse.file_category..'/README.md',"wb")
+    readme_cat   = io.open(user_config.pathToRepository..'Shaders/'..fuse.file_category..'/README.md',"w")
     readme_cat:write(header)
     readme_cat:write("# "..fuse.file_category.." Shaders\n\n")
 

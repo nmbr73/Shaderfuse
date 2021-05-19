@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-  # Fractals Shaders
+# Fractals Shaders
 
 ## **[EnergyPlant](EnergyPlant.md)**
 based on [EnergyPlant](https://www.shadertoy.com/view/WdjBWc) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
