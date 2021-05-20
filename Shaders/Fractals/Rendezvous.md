@@ -36,6 +36,10 @@ float Map( vec3 p )
 ```
 [![Rendezvous](Rendezvous.png)](Rendezvous.fuse)
 
-
+## Compatibility
+- [ ] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL
 
 
