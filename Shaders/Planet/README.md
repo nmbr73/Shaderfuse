@@ -22,3 +22,6 @@ based on [Fake3DScene](https://www.shadertoy.com/view/MddSWB) written by [LaBodi
 ## **[RayCastSphere](RayCastSphere.md)**
 based on [RayCastSphere](https://www.shadertoy.com/view/XdjBDG) written by [diroru](https://www.shadertoy.com/user/diroru)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
+## **[WildKifs4D](WildKifs4D.md)**
+based on [WildKifs4D](https://www.shadertoy.com/view/wttBzM) written by [iapafoto](https://www.shadertoy.com/user/iapafoto)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+

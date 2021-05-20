@@ -83,20 +83,6 @@
 </p>
 </td></tr>
 <tr>
-<td><img src="Abstract/Kali3D_320x180.png" alt="Abstract/Kali3D" width="320" height="180" /></td>
-<td><p>
-
-:four_leaf_clover:</p>
-<p>
-
-<nobr>Fuse: [Kali3D](Abstract/Kali3D.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [Kali3D](https://www.shadertoy.com/view/MdB3DK)</nobr><br />
-<nobr>Author: [guil](https://www.shadertoy.com/user/guil)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
-</td></tr>
-<tr>
 <td><img src="Abstract/Mosaic_320x180.png" alt="Abstract/Mosaic" width="320" height="180" /></td>
 <td><p>
 
@@ -192,20 +178,6 @@
 <nobr>Shadertoy: [Stained Lights](https://www.shadertoy.com/view/WlsSzM)</nobr><br />
 <nobr>Author: [104](https://www.shadertoy.com/user/104)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
-</p>
-</td></tr>
-<tr>
-<td><img src="Abstract/Vine_320x180.png" alt="Abstract/Vine" width="320" height="180" /></td>
-<td><p>
-
-:four_leaf_clover:</p>
-<p>
-
-<nobr>Fuse: [Vine](Abstract/Vine.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [Vine](https://www.shadertoy.com/view/XldSz7)</nobr><br />
-<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
 </table>
@@ -346,6 +318,34 @@
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
+<tr>
+<td><img src="Fractals/FractalRadioBase_320x180.png" alt="Fractals/FractalRadioBase" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [FractalRadioBase](Fractals/FractalRadioBase.md)</nobr><br />
+<nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [FractalRadioBase](https://www.shadertoy.com/view/WlcczS)</nobr><br />
+<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="Fractals/Kali3D_320x180.png" alt="Fractals/Kali3D" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [Kali3D](Fractals/Kali3D.md)</nobr><br />
+<nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [Kali3D](https://www.shadertoy.com/view/MdB3DK)</nobr><br />
+<nobr>Author: [guil](https://www.shadertoy.com/user/guil)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
 </table>
 
 ## Misc Shaders
@@ -434,20 +434,6 @@
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
-<tr>
-<td><img src="Misc/WildKifs4D_320x180.png" alt="Misc/WildKifs4D" width="320" height="180" /></td>
-<td><p>
-
-:four_leaf_clover:</p>
-<p>
-
-<nobr>Fuse: [WildKifs4D](Misc/WildKifs4D.md)</nobr><br />
-<nobr>Category: [Misc](Misc/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [WildKifs4D](https://www.shadertoy.com/view/wttBzM)</nobr><br />
-<nobr>Author: [iapafoto](https://www.shadertoy.com/user/iapafoto)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
-</td></tr>
 </table>
 
 ## Object Shaders
@@ -491,20 +477,6 @@
 <nobr>Category: [Object](Object/OVERVIEW.md)</nobr><br />
 <nobr>Shadertoy: [EggHunt](https://www.shadertoy.com/view/ttyfDV)</nobr><br />
 <nobr>Author: [sylvain69780](https://www.shadertoy.com/user/sylvain69780)</nobr><br />
-<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
-</p>
-</td></tr>
-<tr>
-<td><img src="Object/FractalRadioBase_320x180.png" alt="Object/FractalRadioBase" width="320" height="180" /></td>
-<td><p>
-
-:four_leaf_clover:</p>
-<p>
-
-<nobr>Fuse: [FractalRadioBase](Object/FractalRadioBase.md)</nobr><br />
-<nobr>Category: [Object](Object/OVERVIEW.md)</nobr><br />
-<nobr>Shadertoy: [FractalRadioBase](https://www.shadertoy.com/view/WlcczS)</nobr><br />
-<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
@@ -624,6 +596,20 @@
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
+<tr>
+<td><img src="Planet/WildKifs4D_320x180.png" alt="Planet/WildKifs4D" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [WildKifs4D](Planet/WildKifs4D.md)</nobr><br />
+<nobr>Category: [Planet](Planet/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [WildKifs4D](https://www.shadertoy.com/view/wttBzM)</nobr><br />
+<nobr>Author: [iapafoto](https://www.shadertoy.com/user/iapafoto)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
 </table>
 
 ## Recursive Shaders
@@ -667,6 +653,20 @@
 <nobr>Category: [Recursive](Recursive/OVERVIEW.md)</nobr><br />
 <nobr>Shadertoy: [The dark side of the moon](https://www.shadertoy.com/view/4dBSDV)</nobr><br />
 <nobr>Author: [bytewave](https://www.shadertoy.com/user/bytewave)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="Recursive/Vine_320x180.png" alt="Recursive/Vine" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [Vine](Recursive/Vine.md)</nobr><br />
+<nobr>Category: [Recursive](Recursive/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [Vine](https://www.shadertoy.com/view/XldSz7)</nobr><br />
+<nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>

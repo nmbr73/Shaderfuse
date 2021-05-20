@@ -28,6 +28,3 @@ based on [Legofied](https://www.shadertoy.com/view/XtBSzy) written by [Gijs](htt
 ## **[TruePinballPhysics](TruePinballPhysics.md)**
 based on [True Pinball Physics](https://www.shadertoy.com/view/4tBGRm) written by [archee](https://www.shadertoy.com/user/archee)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[WildKifs4D](WildKifs4D.md)**
-based on [WildKifs4D](https://www.shadertoy.com/view/wttBzM) written by [iapafoto](https://www.shadertoy.com/user/iapafoto)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
-

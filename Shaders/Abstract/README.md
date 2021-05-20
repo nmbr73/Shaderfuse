@@ -25,9 +25,6 @@ based on [Favela](https://www.shadertoy.com/view/ldGcDh) written by [duvengar](h
 ## **[FlightThroughANebula](FlightThroughANebula.md)**
 based on [Flight Through A Nebula V3](https://www.shadertoy.com/view/tsK3Rd) written by [morgan3d](https://www.shadertoy.com/user/morgan3d)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
-## **[Kali3D](Kali3D.md)**
-based on [Kali3D](https://www.shadertoy.com/view/MdB3DK) written by [guil](https://www.shadertoy.com/user/guil)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
-
 ## **[Mosaic](Mosaic.md)**
 based on [voronoi solid with borders](https://www.shadertoy.com/view/XtySRc) written by [Darksecond](https://www.shadertoy.com/user/Darksecond)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
@@ -48,7 +45,4 @@ based on [raysemigarbage#3 but hilly](https://www.shadertoy.com/view/3tdSW8) wri
 
 ## **[StainedLights](StainedLights.md)**
 based on [Stained Lights](https://www.shadertoy.com/view/WlsSzM) written by [104](https://www.shadertoy.com/user/104)<br />and ported to DaFusion by [nmbr73](....//Site/Profiles/nmbr73.md)
-
-## **[Vine](Vine.md)**
-based on [Vine](https://www.shadertoy.com/view/XldSz7) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 

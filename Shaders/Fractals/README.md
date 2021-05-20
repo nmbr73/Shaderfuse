@@ -22,3 +22,9 @@ based on [FractalEngine](https://www.shadertoy.com/view/ttSBRm) written by [gaz]
 ## **[FractalGutter](FractalGutter.md)**
 based on [FractalGutter](https://www.shadertoy.com/view/ttjBD1) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
+## **[FractalRadioBase](FractalRadioBase.md)**
+based on [FractalRadioBase](https://www.shadertoy.com/view/WlcczS) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+
+## **[Kali3D](Kali3D.md)**
+based on [Kali3D](https://www.shadertoy.com/view/MdB3DK) written by [guil](https://www.shadertoy.com/user/guil)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+
