@@ -70,7 +70,7 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 [![TruePinballPhysics2](https://user-images.githubusercontent.com/78935215/116098822-a7d05980-a6ab-11eb-9e85-4ebd128ba09a.gif)](Shaders/Misc/TruePinballPhysics.md)
 [![OtherWorlds](https://user-images.githubusercontent.com/78935215/116747985-fd379e00-a9fe-11eb-8e3a-554837e2516e.gif)
 ](Shaders/Abstract/OtherWorlds.md)
-
+[![Rendezvous](https://user-images.githubusercontent.com/78935215/119050128-b74c7500-b9c1-11eb-84cc-9fe267e2432a.gif)](Shaders/Fractals/Rendezvous.md)
 ---
 
 Installation
