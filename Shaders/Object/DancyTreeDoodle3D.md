@@ -8,6 +8,6 @@ Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/4lVyzh)_' by [wyatt]
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
