@@ -346,6 +346,17 @@
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
+<tr>
+<td><img src="Fractals/Rendevous_320x180.png" alt="Fractals/Rendevous" width="320" height="180" /></td>
+<td><p>
+
+:boom:</p>
+<p>
+
+<nobr>Fuse: [Rendevous](Fractals/Rendevous.md)</nobr><br />
+<nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
+</p><p style="color:red; font-weight:bold; ">Fuse name does not correspond to filename´</p>
+</td></tr>
 </table>
 
 ## Misc Shaders
@@ -718,3 +729,4 @@
 </td></tr>
 </table>
 :four_leaf_clover: 48<br />
+:boom: 1<br />
