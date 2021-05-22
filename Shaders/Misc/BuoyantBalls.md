@@ -14,8 +14,8 @@ Have fun playing
 ![BuoyantBalls](https://user-images.githubusercontent.com/78935215/113590215-ab376e80-9632-11eb-9cf2-c632d25069df.gif)
 
 
-## Compability
-- [ ] Tested on macOS/Metal
+## Compatibility
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

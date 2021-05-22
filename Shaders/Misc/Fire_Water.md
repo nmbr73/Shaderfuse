@@ -19,7 +19,7 @@ The Fuse is tested with Cuda, OpenCL and Metal.
 
 Have fun
 
-## Compability
+## Compatibility
 - [x] Tested on macOS/Metal
 - [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
