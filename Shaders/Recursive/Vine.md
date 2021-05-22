@@ -1,7 +1,7 @@
 # Vine.fuse
 
 
-Based on '_[Vine](https://www.shadertoy.com/view/XldSz7)_' by [gaz](https://www.shadertoy.com/user/gaz) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[Vine](https://www.shadertoy.com/view/XldSz7)_' by [gaz](https://www.shadertoy.com/user/gaz) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Colorful lines entwine and fade across the screen
 

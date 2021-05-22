@@ -1,7 +1,7 @@
 HW3Swing.fuse
 ====================
 
-Based on '_[HW3Swing](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https://www.shadertoy.com/user/wyatt) and ported by [JiPi](../Profiles/JiPi.md)
+Based on '_[HW3Swing](https://www.shadertoy.com/view/wslGz7)_' by [wyatt](https://www.shadertoy.com/user/wyatt) and ported by [JiPi](../../Site/Profiles/JiPi.md)
 
 I love these Wannerstedt videos and here I found one in the Shadertoy. The challenge was to resolve the global variables. It is also a nice example of using mat4.
 

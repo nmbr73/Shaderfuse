@@ -1,6 +1,6 @@
 # Fake3DScene.fuse
 
-Based on '_[Fake3DScene](https://www.shadertoy.com/embed/MddSWB?gui=true&t=10&paused=true&muted=false)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [JiPi](../Profiles/JiPi.md). A little Shader for occasionally.
+Based on '_[Fake3DScene](https://www.shadertoy.com/embed/MddSWB?gui=true&t=10&paused=true&muted=false)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [JiPi](../../Site/Profiles/JiPi.md). A little Shader for occasionally.
 
 [![screenshot](Fake3DScene_screenshot.png "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/Fake3DScene.fuse)
 

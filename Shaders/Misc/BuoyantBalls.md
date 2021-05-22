@@ -1,6 +1,6 @@
 # BuoyantBalls.fuse :new:
 
-Based on '_[BuoyantBalls](https://www.shadertoy.com/view/MtsBW8)_' by [dr2](https://www.shadertoy.com/user/dr2) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[BuoyantBalls](https://www.shadertoy.com/view/MtsBW8)_' by [dr2](https://www.shadertoy.com/user/dr2) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Balls that rise weightlessly in the water. There aren't too many parameters yet. In addition to the number of balls, the color of the scene, the background color and the color of the balls can be changed.
 During the conversion, the greatest effort was also here in resolving the global variables for OpenCL.

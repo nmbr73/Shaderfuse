@@ -1,6 +1,6 @@
 # WindingMengerTunnel.fuse :new:
 
-Based on '_[WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn)_' by [Shane](https://www.shadertoy.com/user/Shane) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn)_' by [Shane](https://www.shadertoy.com/user/Shane) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 I had already tried a Menger shader without success. This time no error crept in and no incompatibilities occurred.
 The individual objects are controlled by a global variable (objID). In order to get the shader to work under OpenCL, this variable would have to be looped through all functions. This is not implemented here, so that the fuse can "only" run under Cuda.

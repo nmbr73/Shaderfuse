@@ -1,6 +1,6 @@
 # RayCastSphere.fuse
 
-Based on '_[RayCastSphere](https://www.shadertoy.com/embed/XdjBDG?gui=true&t=10&paused=true&muted=false)_' by [diroru](https://www.shadertoy.com/user/diroru) and ported by [JiPi](../Profiles/JiPi.md). A good example of displacement.
+Based on '_[RayCastSphere](https://www.shadertoy.com/embed/XdjBDG?gui=true&t=10&paused=true&muted=false)_' by [diroru](https://www.shadertoy.com/user/diroru) and ported by [JiPi](../../Site/Profiles/JiPi.md). A good example of displacement.
 
 [![screenshot](RayCastSphere.png "RayCastSphere.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/RayCastSphere.fuse)
 

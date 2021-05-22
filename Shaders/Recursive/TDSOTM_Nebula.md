@@ -1,6 +1,6 @@
 # TDSOTM_Nebula.fuse :new:
 
-Based on '_[TDSOTM_Nebula](https://www.shadertoy.com/view/4dBSDV)_' by [flockaroo](https://www.shadertoy.com/user/bytewave) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[TDSOTM_Nebula](https://www.shadertoy.com/view/4dBSDV)_' by [flockaroo](https://www.shadertoy.com/user/bytewave) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 As a Pink Floyd fan, I couldn't resist turning the toy into a fuse.
 

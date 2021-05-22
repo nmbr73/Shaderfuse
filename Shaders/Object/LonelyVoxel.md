@@ -1,6 +1,6 @@
 # LonelyVoxel.fuse
 
-Based on '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](https://www.shadertoy.com/user/SudoNhim) and ported by [JiPi](../Profiles/JiPi.md). A cube with rounded corners and a very nice bump map.
+Based on '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](https://www.shadertoy.com/user/SudoNhim) and ported by [JiPi](../../Site/Profiles/JiPi.md). A cube with rounded corners and a very nice bump map.
 
 [![LonelyVoxel](https://user-images.githubusercontent.com/78935215/108084988-2211ab80-7075-11eb-911d-b24996b84a65.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/ObjektShader/LonelyVoxel.md)
 

@@ -1,7 +1,7 @@
 # Fire_Water.fuse
 
 
-Based on '_[Fire_Water](https://www.shadertoy.com/view/tdsBz4)_' by [izutionix](https://www.shadertoy.com/user/izutionix) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[Fire_Water](https://www.shadertoy.com/view/tdsBz4)_' by [izutionix](https://www.shadertoy.com/user/izutionix) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Two tailed comets "Fire" and "Water" circle around each other
 

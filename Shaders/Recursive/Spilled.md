@@ -1,7 +1,7 @@
 # Spilled.fuse
 
 
-Based on '_[Spilled](https://www.shadertoy.com/view/MsGSRd)_' by [flockaroo](https://www.shadertoy.com/user/flockaroo) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[Spilled](https://www.shadertoy.com/view/MsGSRd)_' by [flockaroo](https://www.shadertoy.com/user/flockaroo) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 A nice example for "computational flockarooid dynamics"
 

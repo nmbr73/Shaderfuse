@@ -1,7 +1,7 @@
 TorturedBlob.fuse
 ================
 
-Based on '_[TorturedBlob](https://www.shadertoy.com/view/MlKGDK)_' by [roywig](https://www.shadertoy.com/user/roywig) and ported by [JiPi](../Profiles/JiPi.md). A classic blob with a lot of deformations. Tested under Cuda and OpenCL, test under metal is pending
+Based on '_[TorturedBlob](https://www.shadertoy.com/view/MlKGDK)_' by [roywig](https://www.shadertoy.com/user/roywig) and ported by [JiPi](../../Site/Profiles/JiPi.md). A classic blob with a lot of deformations. Tested under Cuda and OpenCL, test under metal is pending
 
 [![screenshot](TorturedBlob.png)](https://github.com/nmbr73/Shadertoys/blob/main/BlobShader/TorturedBlob.fuse)
 

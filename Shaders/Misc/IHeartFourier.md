@@ -1,6 +1,6 @@
 # IHeartFourier.fuse :new:
 
-Based on '_[IHeartFourier](https://www.shadertoy.com/view/tltSWr)_' by [harry7557558](https://www.shadertoy.com/user/harry7557558) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[IHeartFourier](https://www.shadertoy.com/view/tltSWr)_' by [harry7557558](https://www.shadertoy.com/user/harry7557558) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 An interesting Fourier series of 18 points results in a curved line. Unfortunately I didn't get this fuse to work under OpenCL. Compilable, but unfortunately no line.
 

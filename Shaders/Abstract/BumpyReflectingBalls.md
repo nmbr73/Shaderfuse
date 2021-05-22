@@ -1,7 +1,7 @@
 # BumpyReflectingBalls.fuse
 
 
-Based on '_[BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB)_' by [metabog](https://www.shadertoy.com/user/metabog) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB)_' by [metabog](https://www.shadertoy.com/user/metabog) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Flight through a colorful ball grid
 

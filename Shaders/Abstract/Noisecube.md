@@ -1,7 +1,7 @@
 # Noisecube.fuse
 
 
-Based on '_[Noisecube](https://www.shadertoy.com/view/4sGBD1)_' by [flimshaw](https://www.shadertoy.com/user/flimshaw) and ported by [JiPi](../Profiles/JiPi.md). A flight through a Phongshader
+Based on '_[Noisecube](https://www.shadertoy.com/view/4sGBD1)_' by [flimshaw](https://www.shadertoy.com/user/flimshaw) and ported by [JiPi](../../Site/Profiles/JiPi.md). A flight through a Phongshader
 
 [![Noisecube](https://user-images.githubusercontent.com/78935215/107971617-fded9600-6fb2-11eb-82dd-7630ff3c34bd.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/AbstractShader/Noisecube.fuse)
 

@@ -1,7 +1,7 @@
 # WildKifs4D.fuse
 
 
-Based on '_[WildKifs4D](https://www.shadertoy.com/view/wttBzM)_' by [iapafoto](https://www.shadertoy.com/user/iapafoto) and ported by [JiPi](../Profiles/JiPi.md).
+Based on '_[WildKifs4D](https://www.shadertoy.com/view/wttBzM)_' by [iapafoto](https://www.shadertoy.com/user/iapafoto) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 A very changing lump with great surface effects
 

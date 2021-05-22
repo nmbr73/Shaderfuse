@@ -1,6 +1,6 @@
 # Kali3D.fuse
 
-Based on '_[Kali3D](https://www.shadertoy.com/view/MdB3DK)_' by [guil](https://www.shadertoy.com/user/guil) and ported by [JiPi](../Profiles/JiPi.md). A flight through an abstract universe - colorful and very changeable
+Based on '_[Kali3D](https://www.shadertoy.com/view/MdB3DK)_' by [guil](https://www.shadertoy.com/user/guil) and ported by [JiPi](../../Site/Profiles/JiPi.md). A flight through an abstract universe - colorful and very changeable
 
 [![Kali3D](https://user-images.githubusercontent.com/78935215/108375469-464ec300-7202-11eb-829f-172e724172a5.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/AbstractShader/Kali3D.fuse)
 
