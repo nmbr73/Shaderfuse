@@ -1,20 +1,6 @@
 <center>
 
-<!-- a href="https://youtu.be/oyndG0pLEQQ"><img src="Site/img_subscribe.png" /></a> -->
-
-<!--
-
-[![Shadertoyparade](Site/img_subscribe.png)](https://youtu.be/oyndG0pLEQQ "WebGL to DCTL")
-
-
-[![YouTube Demo1](https://img.shields.io/youtube/views/oyndG0pLEQQ?style=social)](https://youtu.be/oyndG0pLEQQ)
-[![YouTube Demo2](https://img.shields.io/youtube/views/GJz8Vgi8Qws?style=social)](https://youtu.be/GJz8Vgi8Qws)
-[![YouTube Demo3](https://img.shields.io/youtube/views/ntrp6BfVk0k?style=social)](https://youtu.be/ntrp6BfVk0k)
-[![YouTube Demo4](https://img.shields.io/youtube/views/QE6--iYtikk?style=social)](https://youtu.be/QE6--iYtikk)
-[![YouTube Demo5](https://img.shields.io/youtube/views/WGWCrhPNmdg?style=social)](https://youtu.be/WGWCrhPNmdg)
-[![YouTube Demo6](https://img.shields.io/youtube/views/OYOar65omeM?style=social)](https://youtu.be/OYOar65omeM)
-[![YouTube Demo7](https://img.shields.io/youtube/views/8sUu5GcDako?style=social)](https://youtu.be/8sUu5GcDako)
--->
+<a href="https://youtu.be/oyndG0pLEQQ"><img src="Site/img_subscribe.png" /></a>
 
 
 <table>
@@ -32,10 +18,6 @@
 </table>
 
 
-
-
-
-
 </center>
 
 # Shadertoys
@@ -44,37 +26,31 @@
 
 DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion"). These are based on WebGL shaders released on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each Fuse's source code for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are obviously and definitely huge fans of this amazing website!
 
-Furthermore must be mentioned that this repository is only an incubator to develop such fuses and to exchange on experiences, approaches and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right and de facto go to place for you. As soon as an implementation in this repo achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in Reactor under the same name but without any of the annoying '`ST_`', '`BETA_`', whatsoever prefixes.
-
 <!--
-[![Shadertoyparade](https://img.shields.io/badge/-subscribe-ff0000?style=for-the-badge&logo=youtube)](https://youtu.be/oyndG0pLEQQ "WebGL to DCTL")
+[![Shadertoy](https://img.shields.io/badge/-Shadertoy-ff801f)](https://www.shadertoy.com/ "Visit Shadertoy") [![WSL](https://img.shields.io/badge/-WeSuckLess-7e6a3f)](https://www.steakunderwater.com/wesuckless/index.php "Visit 'We Suck Less")
 -->
 
-
-# Background
-
-[![Shadertoy](https://img.shields.io/badge/-Shadertoy-ff801f)](https://www.shadertoy.com/ "Visit Shadertoy") [![WSL](https://img.shields.io/badge/-WeSuckLess-7e6a3f)](https://www.steakunderwater.com/wesuckless/index.php "Visit 'We Suck Less")
+Furthermore must be mentioned that this repository is only an incubator to develop such fuses and to exchange on experiences, approaches and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right and de facto go to place for you. As soon as an implementation in this repo achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in Reactor under the same name but without any of the annoying '`ST_`', '`BETA_`', whatsoever prefixes.
 
 This code is mainly based on the work of **Chris Ridings** and his *[Guide to Writing Fuses for Resolve/fusion](https://www.chrisridings.com/guide-to-writing-fuses-for-resolve-fusion-part-1/)* and the [FragmentShader.fuse](https://www.chrisridings.com/wp-content/uploads/2020/05/FragmentShader.fuse) from his *[Davinci Resolve Page Curl Transition](https://www.chrisridings.com/page-curl/)* article; **Bryan Ray**, who did a whole series of blog posts on *[OpenCL Fuses](http://www.bryanray.name/wordpress/opencl-fuses-index/)*; **JiPi**, who did an excellent post on how to *[Convert a Shadertoy WebGL Code to DCTL](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=17&t=4460)* accompanied by a (German) [DCTL Tutorial](https://youtu.be/dbrPWRldmbs) video. As an introduction and if you want to know more about shaders in general, a look into *[The Book of Shaders](https://thebookofshaders.com)* is highly recommended. Again the [We Suck Less](https://www.steakunderwater.com/wesuckless/index.php) forum is the place where you will find tons of information and all the experts. And last but not least are all these fuses based on work shared by those wonderful people on [Shadertoy.com](https://www.shadertoy.com/).
 
 
-# TODO
+<center>
 
-Does not work on macOS/Metal:
+[![JiPi](https://img.shields.io/badge/-JiPi-ff0000?style=for-the-badge&logo=youtube)](https://youtu.be/oyndG0pLEQQ "WebGL to DCTL: Shadertoyparade") [![nmbr73](https://img.shields.io/badge/-nmbr73-ff0000?style=for-the-badge&logo=youtube)](https://youtu.be/GJz8Vgi8Qws "The Shader Cut")
 
-* Abstract/OtherWorlds
-* Blob/TorturedBlob
-* Misc/TruePinBallPhysics
-* Object/HW3Swing
-* Object/WalkingCubes
-* Tunnel/WindingMengerTunnel
+</center>
 
-Does not work on Windows/OpenCL:
 
-* IHeartFourier
-* WindingMengerTunnel
 
-# The latest conversion
+
+
+
+# Fuses
+
+See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far - resp. the [Overview](Shaders/OVERVIEW.md) to have with thumbnails a more 'visual experience'. In particular you may want to have a look at [WorkInProgress/](WorkInProgress/README.md) to see what's coming next!
+
+## Latest Conversion
 
 [![Legos](https://user-images.githubusercontent.com/78935215/114916381-02082980-9e25-11eb-9b1d-2c23272ea6ac.gif)](Shaders/Object/Legos.md)
 [![Legofied](Shaders/Misc/Legofied_320x180.png)](Shaders/Misc/Legofied.md)
@@ -85,7 +61,10 @@ Does not work on Windows/OpenCL:
 [![OtherWorlds](https://user-images.githubusercontent.com/78935215/116747985-fd379e00-a9fe-11eb-8e3a-554837e2516e.gif)
 ](Shaders/Abstract/OtherWorlds.md)
 [![Rendezvous](https://user-images.githubusercontent.com/78935215/119050128-b74c7500-b9c1-11eb-84cc-9fe267e2432a.gif)](Shaders/Fractals/Rendezvous.md)
----
+
+
+
+
 
 # Installation
 
@@ -132,7 +111,24 @@ In the Fusion page of DaVinci Resolve right click into the working area. In the 
 Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and start typing "ST-" to filter for all our shadertoy fuses.
 
 
-# Connect
+# Development
+## Open Action Items
+
+Does not work on macOS/Metal:
+
+* Abstract/OtherWorlds
+* Blob/TorturedBlob
+* Misc/TruePinBallPhysics
+* Object/HW3Swing
+* Object/WalkingCubes
+* Tunnel/WindingMengerTunnel
+
+Does not work on Windows/OpenCL:
+
+* IHeartFourier
+* WindingMengerTunnel
+
+## Connect
 [![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/Zb48E4z3Pg)
 
 <!--
@@ -144,7 +140,7 @@ Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and star
 <!-- regrettably the iframe works on github pages bit not on github :-/ ...  iframe src="https://discord.com/widget?id=793508729785155594&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe -->
 
 
-# Contribute
+## Contribute
 
 [![GitHub Watchers](https://img.shields.io/github/watchers/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Stars](https://img.shields.io/github/stars/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Forks](https://img.shields.io/github/forks/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys)
 
@@ -153,11 +149,6 @@ Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and star
 See also the [Wiki](https://github.com/nmbr73/Shadertoys/wiki) (under construction) for some more details on how to port GLSL to DCTL.
 
 
-# Fuses
-
-Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
-
-See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far - resp. the [Overview](Shaders/OVERVIEW.md) to have with thumbnails a more 'visual experience'. In particular you may want to have a look at [WorkInProgress/](WorkInProgress/README.md) to see what's coming next!
 
 
 
