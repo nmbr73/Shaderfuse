@@ -69,6 +69,11 @@ Does not work on macOS/Metal:
 * Object/WalkingCubes
 * Tunnel/WindingMengerTunnel
 
+Does not work on Windows/OpenCL:
+
+* IHeartFourier
+* WindingMengerTunnel
+
 # The latest conversion
 
 [![Legos](https://user-images.githubusercontent.com/78935215/114916381-02082980-9e25-11eb-9b1d-2c23272ea6ac.gif)](Shaders/Object/Legos.md)

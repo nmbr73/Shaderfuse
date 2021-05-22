@@ -21,4 +21,4 @@ Have fun playing
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [ ] Tested on Windows/OpenCL :bomb::bomb::bomb:
