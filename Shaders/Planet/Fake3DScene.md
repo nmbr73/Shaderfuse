@@ -38,6 +38,6 @@ Have fun
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

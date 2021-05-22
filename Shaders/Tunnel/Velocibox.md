@@ -8,6 +8,6 @@ Based on '_[Velocibox](https://www.shadertoy.com/view/lsdXD8)_' by [zackpudil](h
 [![thumb](Velocibox_320x180.png "Velocibox.fuse")](Velocibox.fuse)
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [ ] Tested on Windows/OpenCL

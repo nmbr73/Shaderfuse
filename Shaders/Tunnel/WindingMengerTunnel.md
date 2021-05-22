@@ -30,6 +30,6 @@ Have fun playing
 
 ## Compatibility
 - [ ] Tested on macOS/Metal :bomb::bomb::bomb:
-- [ ] Tested on macOS/OpenCL
+- [ ] Tested on macOS/OpenCL :bomb::bomb::bomb:
 - [x] Tested on Windows/Cuda
 - [ ] Tested on Windows/OpenCL :bomb::bomb::bomb:
