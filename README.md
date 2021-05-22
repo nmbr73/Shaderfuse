@@ -1,6 +1,6 @@
 <center>
 
-<a href="https://youtu.be/oyndG0pLEQQ"><img src="Site/img_subscribe.png" /></a>
+<!-- a href="https://youtu.be/oyndG0pLEQQ"><img src="Site/img_subscribe.png" /></a> -->
 
 <!--
 
@@ -38,8 +38,8 @@
 
 </center>
 
-Shadertoys
-==========
+# Shadertoys
+
 [![GitHub release](https://img.shields.io/github/v/release/nmbr73/Shadertoys?include_prereleases)](https://github.com/nmbr73/Shadertoys/releases/latest) [![License](https://img.shields.io/badge/license-various-critical)](LICENSE)
 
 DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion"). These are based on WebGL shaders released on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each Fuse's source code for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are obviously and definitely huge fans of this amazing website!
@@ -51,16 +51,25 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 -->
 
 
+# Background
 
-Background
-----------
 [![Shadertoy](https://img.shields.io/badge/-Shadertoy-ff801f)](https://www.shadertoy.com/ "Visit Shadertoy") [![WSL](https://img.shields.io/badge/-WeSuckLess-7e6a3f)](https://www.steakunderwater.com/wesuckless/index.php "Visit 'We Suck Less")
 
 This code is mainly based on the work of **Chris Ridings** and his *[Guide to Writing Fuses for Resolve/fusion](https://www.chrisridings.com/guide-to-writing-fuses-for-resolve-fusion-part-1/)* and the [FragmentShader.fuse](https://www.chrisridings.com/wp-content/uploads/2020/05/FragmentShader.fuse) from his *[Davinci Resolve Page Curl Transition](https://www.chrisridings.com/page-curl/)* article; **Bryan Ray**, who did a whole series of blog posts on *[OpenCL Fuses](http://www.bryanray.name/wordpress/opencl-fuses-index/)*; **JiPi**, who did an excellent post on how to *[Convert a Shadertoy WebGL Code to DCTL](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=17&t=4460)* accompanied by a (German) [DCTL Tutorial](https://youtu.be/dbrPWRldmbs) video. As an introduction and if you want to know more about shaders in general, a look into *[The Book of Shaders](https://thebookofshaders.com)* is highly recommended. Again the [We Suck Less](https://www.steakunderwater.com/wesuckless/index.php) forum is the place where you will find tons of information and all the experts. And last but not least are all these fuses based on work shared by those wonderful people on [Shadertoy.com](https://www.shadertoy.com/).
 
----
 
-## The latest conversion
+# TODO
+
+Does not work on macOS/Metal:
+
+* Abstract/OtherWorlds
+* Blob/TorturedBlob
+* Misc/TruePinBallPhysics
+* Object/HW3Swing
+* Object/WalkingCubes
+* Tunnel/WindingMengerTunnel
+
+# The latest conversion
 
 [![Legos](https://user-images.githubusercontent.com/78935215/114916381-02082980-9e25-11eb-9b1d-2c23272ea6ac.gif)](Shaders/Object/Legos.md)
 [![Legofied](Shaders/Misc/Legofied_320x180.png)](Shaders/Misc/Legofied.md)
@@ -73,8 +82,8 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 [![Rendezvous](https://user-images.githubusercontent.com/78935215/119050128-b74c7500-b9c1-11eb-84cc-9fe267e2432a.gif)](Shaders/Fractals/Rendezvous.md)
 ---
 
-Installation
-------------
+# Installation
+
 <!--
 [![Download](https://img.shields.io/badge/download-installer-blue)](https://github.com/nmbr73/Shadertoys/releases/download/v0.1-alpha.1/Shadertoys_Installer.lua "Installer")
 -->
@@ -82,18 +91,18 @@ Installation
 
 
 
-### Repository
+## Repository
 
 Just clone the whole repository into a folder where it can reside. Drag'n'drop the `Tools/Setup.lua` onto your DaFusions working area. Select 'Uses Fuses under Shaders':
 ![Setup](Site/Setup.png)
 See the [Tools/README.md](Tools/README.md) for further information.
 
 
-### ZIP-File
+## ZIP-File
 
 Find on [GitHub Pages](https://nmbr73.github.io/Shadertoys/) the Links to download the full `.tar.gz` or `.zip` archive. After unpacking you can again copy the whole `Shaders/`folder into you `Fuses` directory or keep only single `.fuse` files.
 
-### Fuse-Installers
+## Fuse-Installers
 
 You can drag'n'drop the `*-Installer.lua` files (which you find in the repo or the ZIP archive) into your Fusion working area to copy the corresponding fuse into the appropriate path. These Installers are currently under construction and not available for all fuses.
 
@@ -111,15 +120,14 @@ Alternatively you can also use the installer of the v0.1-alpha.1 release: drag'n
 [![Download](https://img.shields.io/badge/-download-60a0ff?style=for-the-badge&logo=github)](https://github.com/nmbr73/Shadertoys/releases/download/v0.1-alpha.1/Shadertoys_Installer.lua "Installer")
 -->
 
-Usage
------
+# Usage
+
 In the Fusion page of DaVinci Resolve right click into the working area. In the context menu under 'Add tool' you'll find a 'Shadertoys/' submenu. That submenu corresponds to the repository's directory structure and provides access to all fuses installed.
 
 Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and start typing "ST-" to filter for all our shadertoy fuses.
 
 
-Connect
--------
+# Connect
 [![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/Zb48E4z3Pg)
 
 <!--
@@ -131,8 +139,8 @@ Connect
 <!-- regrettably the iframe works on github pages bit not on github :-/ ...  iframe src="https://discord.com/widget?id=793508729785155594&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe -->
 
 
-Contribute
-----------
+# Contribute
+
 [![GitHub Watchers](https://img.shields.io/github/watchers/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Stars](https://img.shields.io/github/stars/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Forks](https://img.shields.io/github/forks/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys)
 
 ...
@@ -140,8 +148,7 @@ Contribute
 See also the [Wiki](https://github.com/nmbr73/Shadertoys/wiki) (under construction) for some more details on how to port GLSL to DCTL.
 
 
-Fuses
------
+# Fuses
 
 Okay, so far there's not much here, which of course seems a bit silly after that long and thorough introduction ... but hey: it's a start.
 
@@ -152,7 +159,7 @@ See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far 
 
 
 
-### Overview
+# Overview
 
 See the full [Overview](Shaders/OVERVIEW.md) (but without GIF anims).
 
