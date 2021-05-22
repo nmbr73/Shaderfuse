@@ -1,7 +1,7 @@
 MistakeNot
 ==================
 
-Based on '_[MistakeNot](https://www.shadertoy.com/view/4llfDl)_' by [shau](https://www.shadertoy.com/user/shau) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[MistakeNot](https://www.shadertoy.com/view/4llfDl)_' by [shau](https://www.shadertoy.com/user/shau) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 A cool spaceship from "Hydrogen Sonata" The lighting is a bit difficult to control. If the scene brightness is too great, then the blue and red lighted areas do not come into their own.
 

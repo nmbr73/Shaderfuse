@@ -1,7 +1,7 @@
 Veyerus
 ==================
 
-Based on '_[Veyerus](https://www.shadertoy.com/view/WltXDn)_' by [monsterkodi](https://www.shadertoy.com/user/monsterkodi) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[Veyerus](https://www.shadertoy.com/view/WltXDn)_' by [monsterkodi](https://www.shadertoy.com/user/monsterkodi) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Most extensive conversion yet. On the one hand, a solution had to be found for the structure arrays; on the other hand, a global structure led to a completely destroyed image structure. The conversion then took place in several stages. Now the corresponding parameterization for the animation is still missing.
 

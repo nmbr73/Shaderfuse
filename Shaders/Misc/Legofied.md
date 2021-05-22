@@ -1,7 +1,7 @@
 Legofied
 ==================
 
-Based on '_[Legofied](https://www.shadertoy.com/view/XtBSzy)_' by [Gijs](https://www.shadertoy.com/user/Gijs) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[Legofied](https://www.shadertoy.com/view/XtBSzy)_' by [Gijs](https://www.shadertoy.com/user/Gijs) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Here is a very simple and still very nice shader.
 

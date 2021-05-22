@@ -1,7 +1,7 @@
 RoboticArmHuntingLights
 ==================
 
-Based on '_[RoboticArmHuntingLights](https://www.shadertoy.com/view/tlSSDV)_' by [reinder](https://www.shadertoy.com/user/reinder) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[RoboticArmHuntingLights](https://www.shadertoy.com/view/tlSSDV)_' by [reinder](https://www.shadertoy.com/user/reinder) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 This shader really impressed me. So much physics is in there. It also took me three attempts to be successful.
 

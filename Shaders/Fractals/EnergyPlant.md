@@ -1,7 +1,7 @@
 EnergyPlant
 ==================
 
-Based on '_[EnergyPlant](https://www.shadertoy.com/view/WdjBWc)_' by [gaz](https://www.shadertoy.com/user/gaz) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[EnergyPlant](https://www.shadertoy.com/view/WdjBWc)_' by [gaz](https://www.shadertoy.com/user/gaz) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 One of four very beautiful fractal shaders
 

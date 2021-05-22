@@ -1,7 +1,7 @@
 Ancient Temple
 ==================
 
-Based on '_[Ancient Temple](https://www.shadertoy.com/view/4lX3Rj)_' by [Kali](https://www.shadertoy.com/user/kali) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[Ancient Temple](https://www.shadertoy.com/view/4lX3Rj)_' by [Kali](https://www.shadertoy.com/user/kali) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 When converting this shadertoy, there is a major difference between WebGL and DCTL.
 In the original, the superstructures and the ball are given a grain. This is not implemented under DCTL. I was able to identify the following line that is used for the calculation:

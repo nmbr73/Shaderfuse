@@ -1,7 +1,7 @@
 RoundedBox
 ==================
 
-Based on '_[Rounded Box - intersection](https://www.shadertoy.com/view/WlSXRW)_' by [iq](https://www.shadertoy.com/user/iq) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[Rounded Box - intersection](https://www.shadertoy.com/view/WlSXRW)_' by [iq](https://www.shadertoy.com/user/iq) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 A very interesting shader. The box is calculated using the inverse mat4. The calculation of the "normals" is also interesting.
 
@@ -29,4 +29,3 @@ vec3 ntransform( in mat4 mat, in vec3 v ) { return (mat*vec4(v,0.0)).xyz; }
 
 
 ![RoundedBox](https://user-images.githubusercontent.com/78935215/117371695-9ca9d480-aec8-11eb-9ce2-68aa8f5ddea9.gif)
-

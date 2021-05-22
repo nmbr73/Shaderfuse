@@ -1,7 +1,7 @@
 Legos
 ==================
 
-Based on '_[Legos](https://www.shadertoy.com/view/Xdl3Dj)_' by [morgan3d](https://www.shadertoy.com/user/morgan3d) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[Legos](https://www.shadertoy.com/view/Xdl3Dj)_' by [morgan3d](https://www.shadertoy.com/user/morgan3d) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Intense childhood memories come up. A great toy. The fuse still has very few parameters.
 

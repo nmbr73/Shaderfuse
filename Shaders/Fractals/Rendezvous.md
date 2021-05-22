@@ -1,7 +1,7 @@
 Rendezvous
 ==================
 
-Based on '_[Rendezvous](https://www.shadertoy.com/view/ldjGDw)_' by [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[Rendezvous](https://www.shadertoy.com/view/ldjGDw)_' by [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 
 A flight through a colorful fractal landscape that breathes and seems to be alive. An impressively compact code for the definition of the landscape and you don't necessarily need matrices to program a great camera flight, as you can see.

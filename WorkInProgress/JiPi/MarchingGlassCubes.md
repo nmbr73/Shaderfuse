@@ -1,7 +1,7 @@
 MarchingGlassCubes
 ==================
 
-Based on '_[MarchingGlassCubes](https://www.shadertoy.com/view/MdlXDX)_' by [CrassulaOvata](https://www.shadertoy.com/user/CrassulaOvata) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[MarchingGlassCubes](https://www.shadertoy.com/view/MdlXDX)_' by [CrassulaOvata](https://www.shadertoy.com/user/CrassulaOvata) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 I found the cubes running over a texture great. This now goes one better. The transparent cubes wander and the camera flies around them. Funnily enough, the cubes spin and the floor is pulled past them.
 

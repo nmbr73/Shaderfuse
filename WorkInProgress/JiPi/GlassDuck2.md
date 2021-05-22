@@ -1,7 +1,7 @@
 GlassDuck2
 ==================
 
-Based on '_[GlassDuck2](https://www.shadertoy.com/view/MtlyRf)_' by [dr2](https://www.shadertoy.com/user/dr2) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[GlassDuck2](https://www.shadertoy.com/view/MtlyRf)_' by [dr2](https://www.shadertoy.com/user/dr2) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 A duck made of glass. Here I had to adjust my conversion script slightly. And for non-inventive reasons, the coloring inside the duck is different in DCTL
 

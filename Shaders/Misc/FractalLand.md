@@ -1,7 +1,7 @@
 Fractal Land
 ============
 
-Based on '_[Fractal Land](https://www.shadertoy.com/view/XsBXWt)_' by [Kali](https://www.shadertoy.com/user/Kali) and ported by [nmbr73](../Profiles/nmbr73.md). In the meantime this Fuse's output is pretty close to the original Shader and it also runs on Win/Mac, Metal/OpenCL/Cuda now.
+Based on '_[Fractal Land](https://www.shadertoy.com/view/XsBXWt)_' by [Kali](https://www.shadertoy.com/user/Kali) and ported by [nmbr73](../../Site/Profiles/nmbr73.md). In the meantime this Fuse's output is pretty close to the original Shader and it also runs on Win/Mac, Metal/OpenCL/Cuda now.
 
 ![screenshot](FractalLand_screenshot.png "FractalLand.fuse in DaVinci Resolve")
 

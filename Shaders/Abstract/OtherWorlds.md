@@ -1,7 +1,7 @@
 OtherWorlds
 ==================
 
-Based on '_[Other worlds \ bump experiment](https://www.shadertoy.com/view/Ns2XzR)_' by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[Other worlds \ bump experiment](https://www.shadertoy.com/view/Ns2XzR)_' by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Asteroids float weightlessly through space. Bright lights dance in the middle of the asteroid swarm.
 A fascinating shader that took some work. I have implemented excessive parameters here.

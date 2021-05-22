@@ -1,7 +1,7 @@
 OverstimulatedNeurons
 ==================
 
-Based on '_[OverstimulatedNeurons](https://www.shadertoy.com/view/NdlSD8)_' by [Chaotnix](https://www.shadertoy.com/user/Chaotnix) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[OverstimulatedNeurons](https://www.shadertoy.com/view/NdlSD8)_' by [Chaotnix](https://www.shadertoy.com/user/Chaotnix) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 A nice variation of the "Abstract Glassy Field". The textures still have to be adapted, as they access the audio modules in the original.
 

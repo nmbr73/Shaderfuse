@@ -1,7 +1,7 @@
 XRaymarching
 ==================
 
-Based on '_[XRaymarching](https://www.shadertoy.com/view/XtByWW)_' by [Aeless](https://www.shadertoy.com/user/Aeless) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[XRaymarching](https://www.shadertoy.com/view/XtByWW)_' by [Aeless](https://www.shadertoy.com/user/Aeless) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Two funny dancing blobs. Extensive parameters invite you to play.
 

@@ -1,7 +1,7 @@
 DisplacementShader
 ==================
 
-Based on '_[DisplacementShader](https://www.shadertoy.com/view/4l2cD3)_' by [Coolok](https://www.shadertoy.com/user/Shane) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[DisplacementShader](https://www.shadertoy.com/view/4l2cD3)_' by [Coolok](https://www.shadertoy.com/user/Shane) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 Nothing special, but still a very nice effect. Possibly also useful for transitions.
 

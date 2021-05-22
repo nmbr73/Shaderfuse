@@ -1,7 +1,7 @@
 Simple UFO
 ==================
 
-Based on '_[SimpleUFO](https://www.shadertoy.com/view/Wt2cRt)_' by [CyanMARgh](https://www.shadertoy.com/user/CyanMARgh) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[SimpleUFO](https://www.shadertoy.com/view/Wt2cRt)_' by [CyanMARgh](https://www.shadertoy.com/user/CyanMARgh) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 
 A cute little spaceship that hovers staggering over its launch site.
@@ -17,7 +17,7 @@ The author plans a 3D printout and use as a keychain.
         lighting += getLight(pos, vec3(6., 8., -10.), n, vec3(1.,1.,1.), 50.,false);
         lighting += getLight(pos, vec3(-10., 10., -2.), n, vec3(1.,1.,1.), 30.,false);
         lighting += getLight(pos, vec3(2., 13., -10.), n, vec3(1.,.9,.9), 120.,true);
-        
+
         //lighting -= getOcc(pos, n);
 		col *= lighting;
     }else{

@@ -1,7 +1,7 @@
 DropletSplash
 ==================
 
-Based on '_[DropletSplash](https://www.shadertoy.com/view/Ndl3R2)_' by [gunthern](https://www.shadertoy.com/user/gunthern) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[DropletSplash](https://www.shadertoy.com/view/Ndl3R2)_' by [gunthern](https://www.shadertoy.com/user/gunthern) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 A very interesting shader. Compact code and with realistic shadow generation.
 

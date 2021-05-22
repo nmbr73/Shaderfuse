@@ -1,7 +1,7 @@
 Raysemigarbage
 ==================
 
-Based on '_[raysemigarbage#3 but hilly ](https://www.shadertoy.com/view/3tdSW8)_' by [supastav](https://www.shadertoy.com/user/supastav) and porting by [JiPi](Profiles/JiPi.md).
+Based on '_[raysemigarbage#3 but hilly ](https://www.shadertoy.com/view/3tdSW8)_' by [supastav](https://www.shadertoy.com/user/supastav) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
 
 A very small shader, but I found it very good for getting to know the basic principles.
 We have a raymarching function that can be set with the two parameters SampleCount & density. We have the two three-dimensional parameters Direction & Look (Camera) to set the view of the scene. The standard block scale, offset, angle and pivot relate to the scanning and are completely independent of raymarching.
