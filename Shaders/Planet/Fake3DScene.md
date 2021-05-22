@@ -35,3 +35,9 @@ This is a nice shader to explore the use of a 2 dimensional matrix. With the hel
 ```
 
 Have fun
+
+## Compatibility
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL

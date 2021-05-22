@@ -21,3 +21,9 @@ float displacement = texture(iChannel1, latlon).r*100.0;
 ```
 
 Have fun
+
+## Compatibility
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL

@@ -18,3 +18,9 @@ And OpenCL can have overloaded functions
 Have fun
 
 [![CrackerCars](https://user-images.githubusercontent.com/78935215/108132745-b00c8700-70b3-11eb-97f1-8b6e9dcec3ca.gif)](https://www.shadertoy.com/embed/4sdXzr?gui=true&t=10&paused=true&muted=false)
+
+## Compatibility
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL
