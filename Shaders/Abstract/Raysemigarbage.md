@@ -19,7 +19,7 @@ Have fun playing
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal :question::question::question:
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

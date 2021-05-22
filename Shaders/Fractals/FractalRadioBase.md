@@ -11,8 +11,8 @@ In the original, very nice details were added via BufferA, but this has been omi
 
 Have fun playing
 
-## Compability
-- [ ] Tested on macOS/Metal
+## Compatibility
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

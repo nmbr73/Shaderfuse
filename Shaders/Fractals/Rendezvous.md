@@ -31,15 +31,13 @@ float Map( vec3 p )
     float x = (1.+sin(iTime*2.));x =x*x*x*x*.5;
     float h = dot(sin(p*.013),(cos(p.zxy*.191)))*x;
 	return ((rxy+h) / abs(scale));
-    
+
 }
 ```
 [![Rendezvous](Rendezvous.png)](Rendezvous.fuse)
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
-
-
