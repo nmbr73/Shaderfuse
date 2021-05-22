@@ -7,6 +7,6 @@ Based on '_[Crazyness](https://www.shadertoy.com/view/wdjSRc)_' by [spsherk_](ht
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

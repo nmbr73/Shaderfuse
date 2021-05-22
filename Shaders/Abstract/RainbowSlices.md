@@ -8,6 +8,6 @@ Based on '_[Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)_' by [fizzer]
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

@@ -7,6 +7,6 @@ Based on '_[Cross - distance](https://www.shadertoy.com/view/XtGfzw)_' by [iq](h
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

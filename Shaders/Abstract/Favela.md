@@ -7,6 +7,6 @@ Based on '_[Favela](https://www.shadertoy.com/view/ldGcDh)_' by [duvengar](https
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
