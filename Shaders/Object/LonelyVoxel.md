@@ -17,3 +17,9 @@ One way of including a gif anim ...
 ![LonelyVoxel](LonelyVoxel.gif "LonelyVoxel.fuse")
 
 ... we'll have to see what's the advantage of one variant over the other?!?
+
+## Compatibility
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL

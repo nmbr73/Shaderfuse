@@ -5,3 +5,9 @@ Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/4lVyzh)_' by [wyatt]
 
 
 [![screenshot](DancyTreeDoodle3D_screenshot.png "DancyTreeDoodle3D.fuse in DaVinci Resolve")](https://www.shadertoy.com/embed/4lVyzh?gui=true&t=10&paused=true&muted=false)
+
+## Compatibility
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL
