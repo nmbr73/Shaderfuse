@@ -347,15 +347,18 @@
 </p>
 </td></tr>
 <tr>
-<td><img src="Fractals/Rendevous_320x180.png" alt="Fractals/Rendevous" width="320" height="180" /></td>
+<td><img src="Fractals/Rendezvous_320x180.png" alt="Fractals/Rendezvous" width="320" height="180" /></td>
 <td><p>
 
-:boom:</p>
+:four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Rendevous](Fractals/Rendevous.md)</nobr><br />
+<nobr>Fuse: [Rendezvous](Fractals/Rendezvous.md)</nobr><br />
 <nobr>Category: [Fractals](Fractals/OVERVIEW.md)</nobr><br />
-</p><p style="color:red; font-weight:bold; ">Fuse name does not correspond to filename´</p>
+<nobr>Shadertoy: [Rendezvous](https://www.shadertoy.com/view/ldjGDw)</nobr><br />
+<nobr>Author: [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
 </td></tr>
 </table>
 
@@ -728,5 +731,4 @@
 </p>
 </td></tr>
 </table>
-:four_leaf_clover: 48<br />
-:boom: 1<br />
+:four_leaf_clover: 49<br />
