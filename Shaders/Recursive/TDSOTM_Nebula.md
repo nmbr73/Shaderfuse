@@ -11,8 +11,8 @@ I had found a great toy before: https://www.youtube.com/watch?v=5bvwlcG9Cqo
 
 Have fun playing
 
-## Compability
-- [ ] Tested on macOS/Metal
+## Compatibility
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

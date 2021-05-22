@@ -9,3 +9,9 @@ The classic among shaders. The ray marching algorithm is implemented with a whil
 The parameters of the fuse allow the tube radius, the rendering depth, the fog brightness, the curves and the texture to be changed.
 
 Have fun playing
+
+## Compatibility
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL

@@ -28,8 +28,8 @@ The shader still contains some gimmicks that are currently commented out and are
 
 Have fun playing
 
-## Compability
-- [ ] Tested on macOS/Metal
+## Compatibility
+- [ ] Tested on macOS/Metal :bomb::bomb::bomb:
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [ ] Tested on Windows/OpenCL

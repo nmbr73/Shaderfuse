@@ -11,8 +11,8 @@ I've added a couple of parameters to play with.
 
 Have fun playing
 
-## Compability
-- [ ] Tested on macOS/Metal
+## Compatibility
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

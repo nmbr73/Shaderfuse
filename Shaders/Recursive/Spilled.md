@@ -17,3 +17,9 @@ Here is a little study with this fuse: https://www.youtube.com/watch?v=oyndG0pLE
 The Fuse is tested with Cuda, OpenCL. The test for Metal is pending.
 
 Have fun playing
+
+## Compatibility
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL
+- [x] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL
