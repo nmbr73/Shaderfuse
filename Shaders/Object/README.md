@@ -22,6 +22,9 @@ based on [EggHunt](https://www.shadertoy.com/view/ttyfDV) written by [sylvain697
 ## **[HW3Swing](HW3Swing.md)**
 based on [HW3Swing](https://www.shadertoy.com/view/4dtyz8) written by [ChloeSnyder](https://www.shadertoy.com/user/ChloeSnyder)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 
+## **[HeavenAndHell](HeavenAndHell.md)**
+based on [HeavenAndHell](https://www.shadertoy.com/view/wsKXDV) written by [adurdin](https://www.shadertoy.com/user/adurdin)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
+
 ## **[Legos](Legos.md)**
 based on [Legos](https://www.shadertoy.com/view/Xdl3Dj) written by [morgan3d](https://www.shadertoy.com/user/morgan3d)<br />and ported to DaFusion by [JiPi](....//Site/Profiles/JiPi.md)
 

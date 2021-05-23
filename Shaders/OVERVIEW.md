@@ -509,6 +509,20 @@
 </p>
 </td></tr>
 <tr>
+<td><img src="Object/HeavenAndHell_320x180.png" alt="Object/HeavenAndHell" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [HeavenAndHell](Object/HeavenAndHell.md)</nobr><br />
+<nobr>Category: [Object](Object/OVERVIEW.md)</nobr><br />
+<nobr>Shadertoy: [HeavenAndHell](https://www.shadertoy.com/view/wsKXDV)</nobr><br />
+<nobr>Author: [adurdin](https://www.shadertoy.com/user/adurdin)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="Object/Legos_320x180.png" alt="Object/Legos" width="320" height="180" /></td>
 <td><p>
 
@@ -731,4 +745,4 @@
 </p>
 </td></tr>
 </table>
-:four_leaf_clover: 49<br />
+:four_leaf_clover: 50<br />
