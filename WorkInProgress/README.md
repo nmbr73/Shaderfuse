@@ -32,6 +32,12 @@
 - [MistakeNot](JiPi/MistakeNot.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :helicopter:
 - [RoboWalk](JiPi/RoboWalk.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :robot:
 - [Futuristic3DCircle](JiPi/Futuristic3DCircle.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :white_circle:
+- [MagicMorphingCube](JiPi/MagicMorphingCube.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :white_square_button:
+- [RainbowSpaghetti](JiPi/RainbowSpaghetti.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :spaghetti:
+- [ReflectivBlockWall](JiPi/ReflectivBlockWall.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sunrise:
+- [VoxelCorridor](JiPi/VoxelCorridor.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :ferris_wheel:
+- [DottedPolyp](JiPi/DottedPolyp.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :tropical_fish:
+
 
 # Teaser
 
@@ -80,6 +86,13 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![MistakeNot](https://user-images.githubusercontent.com/78935215/118020455-6356e600-b35a-11eb-9cc9-e767b5da8319.gif)](https://www.shadertoy.com/view/4llfDl)
 [![RoboWalk](https://user-images.githubusercontent.com/78935215/118018523-2f7ac100-b358-11eb-8a24-25c35e56545e.gif)](https://www.shadertoy.com/view/WlyGDt)
 [![Futuristic3DCircle](https://user-images.githubusercontent.com/78935215/118017964-80d68080-b357-11eb-9ed9-88f09e196575.gif)](https://www.shadertoy.com/view/WsG3D3)
+[![MagicMorphingCube](https://user-images.githubusercontent.com/78935215/119269782-bf8ef500-bbf9-11eb-9b4e-63a89aceeaa6.gif)](https://www.shadertoy.com/view/Xd3cR7)
+[![RainbowSpaghetti](https://user-images.githubusercontent.com/78935215/119272025-65dff800-bc04-11eb-8150-396ea04bda63.gif)](https://www.shadertoy.com/view/lsjGRV)
+[![ReflectivBlockWall](https://user-images.githubusercontent.com/78935215/119272287-7f357400-bc05-11eb-845b-54dd9c36708a.gif)](https://www.shadertoy.com/view/WtffDS)
+[![VoxelCorridor](https://user-images.githubusercontent.com/78935215/119272531-a80a3900-bc06-11eb-8ed6-1591e9c02694.gif)](https://www.shadertoy.com/view/MdVSDh)
+[![DottedPolyp](https://user-images.githubusercontent.com/78935215/119269690-3c6d9f00-bbf9-11eb-86ef-36b514805429.gif)](https://www.shadertoy.com/view/3sBSWt)
+
+
 ## nmbr73
 
 Someday / maybe
