@@ -17,7 +17,7 @@ In the fuse, the camera pan in the X direction, which has already been prepared 
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/Metal
+- [ ] Tested on macOS/OpenCL :bomb::bomb:bomb:
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
