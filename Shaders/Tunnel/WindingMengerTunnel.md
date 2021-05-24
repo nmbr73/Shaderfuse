@@ -29,7 +29,7 @@ __DEVICE__ inline mat3 mat3_add_mat3 (mat3 A, mat3 B) {
 Have fun playing
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/Metal
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
