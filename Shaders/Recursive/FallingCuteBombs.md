@@ -7,7 +7,7 @@ I've added a couple of parameters to play with.
 
 [![FallingCuteBombs](FallingCuteBombs.png)](FallingCuteBombs.fuse)
 
-
+![FallingCuteBombs](https://user-images.githubusercontent.com/78935215/112716550-55065500-8ee7-11eb-8c67-a63abf1be8f7.gif)
 
 Have fun playing
 
