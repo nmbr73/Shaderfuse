@@ -36,8 +36,15 @@ local header=[[
 overview:write(header)
 readme:write(header)
 
-overview:write("[README](README.md) | **OVERVIEW**\n\n")
-readme:write("**README** | [OVERVIEW](OVERVIEW.md)\n\n")
+local links=''
+
+for i,cat in ipairs(fuses.categories) do
+  links=links..' | ['..cat..']('..cat..'/README.md)'
+end
+
+
+overview:write("[README](README.md) | **OVERVIEW**"..links.."\n\n")
+readme:write("**README** | [OVERVIEW](OVERVIEW.md)"..links.."\n\n")
 
 overview:write('# Shaders\n\n')
 readme:write('# Shaders\n\n')
