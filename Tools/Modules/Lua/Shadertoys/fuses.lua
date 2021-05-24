@@ -1,7 +1,7 @@
 
 Fuse = require("Shadertoys/Fuse")
 
-local fuses = { list = nil }
+local fuses = { list = nil, categories = {} }
 
 -- function Fuses:new()
 --   local o = {}
@@ -23,7 +23,7 @@ end
 
 function fuses.fetch(
   path,     -- Full filepath to the folder containing the fuses
-  details,  -- true, if the fuses shopuld be read for details; optional (default: false)
+  details,  -- true, if the fuses should be read for details; optional (default: false)
   list      -- must be nil
   )
 
@@ -59,6 +59,16 @@ function fuses.fetch(
 
     fuses.list = list
 
+    fuses.categories = {}
+    local cat = ''
+    for i, fuse in ipairs(fuses.list) do
+      if fuse.file_category~=cat then
+        cat=fuse.file_category
+        table.insert(fuses.categories,cat)
+      end
+    end
+
+    table.sort(fuses.categories)
 
   else
 

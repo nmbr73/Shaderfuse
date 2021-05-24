@@ -3,11 +3,12 @@ require("string")
 local user_config = require("Shadertoys/~user_config")
 local fuses       = require("Shadertoys/fuses")
 
--- Ruins the Text: Planet shaders are shaders that generally render planets. The following tasks should be mentioned: surface texture, moving atmosphere, the use of bump maps or displacement for the surface texture. Rotations and movements in relation to the background or additional planets or suns and their throwing of light or shadow represent further challenges. The boundary between some blobs and planets is fluid
 
 fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
--- print("go ...") ; dump(fuses) ; os.exit()
+-- dump(fuses); os.exit(0)
+
+
 
 local overview = io.open(user_config.pathToRepository..'Shaders/OVERVIEW.md',"w")
 local readme   = io.open(user_config.pathToRepository..'Shaders/README.md',"w")
@@ -34,6 +35,9 @@ local header=[[
 
 overview:write(header)
 readme:write(header)
+
+overview:write("[README](README.md) | **OVERVIEW**\n\n")
+readme:write("**README** | [OVERVIEW](OVERVIEW.md)\n\n")
 
 overview:write('# Shaders\n\n')
 readme:write('# Shaders\n\n')
@@ -63,10 +67,22 @@ for i, fuse in ipairs(fuses.list) do
 
     overview:write("## "..fuse.file_category.." Shaders\n\n<table>")
 
-    readme:write('\n\n**['..fuse.file_category..' Shaders]('..fuse.file_category..'/)**\n')
+    readme:write('\n\n**['..fuse.file_category..' Shaders]('..fuse.file_category..'/README.md)**\n')
 
     readme_cat   = io.open(user_config.pathToRepository..'Shaders/'..fuse.file_category..'/README.md',"w")
     readme_cat:write(header)
+
+    local links='[README](../README.md) | [OVERVIEW](../OVERVIEW.md)'
+
+    for i,cat in ipairs(fuses.categories) do
+        if cat==currentCategory then
+          links=links..' | **'..cat..'**'
+        else
+          links=links..' | ['..cat..'](../'..cat..'/README.md)'
+        end
+    end
+
+    readme_cat:write(links.."\n\n")
     readme_cat:write("# "..fuse.file_category.." Shaders\n\n")
 
 
@@ -80,7 +96,7 @@ for i, fuse in ipairs(fuses.list) do
 
   if readme_cat==nil then
     print("Okay '"..fuse.file_fusename.."' causing some trouble!")
-    print("Categiry is '"..fuse.file_category.."'")
+    print("Category is '"..fuse.file_category.."'")
   end
 
 
@@ -104,7 +120,7 @@ for i, fuse in ipairs(fuses.list) do
 
     readme:write('- ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) (Shadertoy ID ['..fuse.shadertoy_id..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')) ported by ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n')
 
-    readme_cat:write('## **['..fuse.file_fusename..']('..fuse.file_fusename..'.md)**\nbased on ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..') written by ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')<br />and ported to DaFusion by ['..fuse.dctlfuse_author..'](....//Site/Profiles/'..fuse.dctlfuse_author..'.md)\n\n')
+    readme_cat:write('## **['..fuse.file_fusename..']('..fuse.file_fusename..'.md)**\nbased on ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..') written by ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')<br />and ported to DaFusion by ['..fuse.dctlfuse_author..'](../../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n\n')
   else
 
 
