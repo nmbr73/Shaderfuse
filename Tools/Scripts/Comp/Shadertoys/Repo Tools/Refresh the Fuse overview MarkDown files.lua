@@ -113,7 +113,7 @@ for i, fuse in ipairs(fuses.list) do
     ..'<img src="'..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" alt="'..fuse.file_category..'/'..fuse.file_fusename..'" width="320" height="180" />'
     ..'</td>\n<td><p>\n\n'..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'</p>\n<p>\n\n'
     ..'<nobr>Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md)</nobr><br />\n'
-    ..'<nobr>Category: ['..fuse.file_category..']('..fuse.file_category..'/OVERVIEW.md)</nobr><br />\n'
+    ..'<nobr>Category: ['..fuse.file_category..']('..fuse.file_category..'/README.md)</nobr><br />\n'
     )
 
 
