@@ -34,6 +34,7 @@ for i, fuse in ipairs(fuses.list) do
       else
         print("changed "..fuse.file_fusename)
         count_changed=count_changed+1
+        fuse.fuse_sourceCode=sourceCode
         fuse:write()
       end
     end
