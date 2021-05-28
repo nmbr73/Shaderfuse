@@ -1,12 +1,13 @@
 require("string")
 -- local ui = require "Tools.Modules.Lua.Shadertoys.ui"
-local ui          = require("Shadertoys/ui")
-
+local ui          = require("Shadertoys/ui") -- for the logo
 
 local user_config = require("Shadertoys/~user_config")
+local snippet     = require("Shadertoys/snippet")
 local fuses       = require("Shadertoys/fuses")
 
 
+snippet.init(user_config.pathToRepository,'reactor',false)
 fuses.fetch(user_config.pathToRepository..'Shaders/',false)
 
 
@@ -16,7 +17,7 @@ local YourPackageName='Shadertoys'
 local PackageIdentifier='com.JiPi.Shadertoys'
 local TargetFilepath=user_config.pathToRepository..'Atom/'
 local YourPackageVersion='0.1'
-local YourPackageDate='1999-04-01'
+local YourPackageDate=os.date("%Y-%m-%d")
 
 
 -- com.YourCompanyName.YourPackageName (folder)
@@ -56,7 +57,9 @@ for i, fuse in ipairs(fuses.list) do
 
   fuse:read()
 
-  if fuse.error==nil then
+  fuse.fuse_sourceCode=snippet.replace(fuse.fuse_sourceCode)
+
+  if fuse.error==nil and fuse.fuse_sourceCode~=nil then
 
     if fuse.file_category ~= currentCategory then
 
@@ -83,7 +86,8 @@ for i, fuse in ipairs(fuses.list) do
         -- fuse.file_fusename..'_'..
         fuse.shadertoy_id..'.fuse'
 
-    -- quick hack:
+
+
     fuse.fuse_sourceCode=[[
 
 --
@@ -100,12 +104,10 @@ for i, fuse in ipairs(fuses.list) do
 --                                           for details
 --
 
-      local FC_PREFIX=""
-      local FC_AUTHBASEDLAYOUT=false
-      local FC_SUBMENU="Shadertoys"
-      local FC_DEVELOP=false
-
       ]]
+
+      .."local SHADERFUSES_REACTOR_PACKAGE_VERSION = '"..YourPackageVersion.."'\n"
+      .."local SHADERFUSES_REACTOR_PACKAGE_DATE    = '"..(os.date("%b %Y")).."'\n\n"
       ..fuse.fuse_sourceCode
 
 
