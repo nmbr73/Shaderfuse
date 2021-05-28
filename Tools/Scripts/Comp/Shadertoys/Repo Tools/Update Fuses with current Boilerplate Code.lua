@@ -3,7 +3,7 @@
 
 function read_snippet(path,marker)
                                                           ; assert(marker~=nil and marker~="")
-  local handle=io.open(path..marker..".snippet", "rb")    ; assert(handle)
+  local handle=io.open(path..marker..".snippet.lua", "rb")    ; assert(handle)
   local content = handle:read("*all")
   handle:close()                                          ; assert(content~=nil and content~="")
                                                             assert(string.find(content, "-- >>> SCHNIPP::"..marker) ~= nil)
