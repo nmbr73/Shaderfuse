@@ -1,37 +1,68 @@
-local snippet={}
+local snippet={
+  Snippets = {
+    FUREGISTERCLASS = '',
+    SHADERFUSECONTROLS = '',
+  },
+  Begin = '-- >>> SCHNIPP::',
+  End   = '-- <<< SCHNAPP::',
+
+}
 
 
-function snippet.read(path,marker)
-                                                    ; assert(marker~=nil and marker~="")
-  local handle=io.open(path..'Tools/Snippets/'..marker..".lua", "rb")  ; assert(handle)
-  local content = handle:read("*all")
-  handle:close()                                    ; assert(content~=nil and content~="")
-                                                      assert(string.find(content, "-- >>> SCHNIPP::"..marker) ~= nil)
-                                                      assert(string.find(content, "-- <<< SCHNAPP::"..marker) ~= nil)
-  return content
+function snippet.init(path,type,redoable)
+
+  assert(path   ~= nil)
+  assert(type   ~= nil)
+
+  if redoable == nil then
+    redoable=true
+  end
+
+  for marker, txt in pairs(snippet.Snippets) do
+
+    local handle=io.open(path..'Tools/Snippets/'..marker..'.'..type..'.lua', "r")  ;
+
+    if handle then
+      snippet.Snippets[marker]=handle:read("*all")
+      handle:close()
+    end
+
+    local content=snippet.Snippets[marker]
+    assert(content~=nil)
+    assert(content~='')
+
+    if redoable then
+      assert(string.find(content, snippet.Begin ..marker) ~= nil)
+      assert(string.find(content, snippet.End   ..marker) ~= nil)
+    end
+
+  end
 end
 
 
 
-function snippet.replace(txt,marker,snippet)
+function snippet.replace(source)
 
-  if txt == nil then return nil end
+  if source == nil then return nil end
 
-  local mark_begin  = "-- >>> SCHNIPP::"..marker
-  local mark_end    = "-- <<< SCHNAPP::"..marker
+  for marker, replacement in pairs(snippet.Snippets) do
+    local mark_begin  = snippet.Begin ..marker
+    local mark_end    = snippet.End   ..marker
 
-  local pos1 = string.find(txt, mark_begin )
-  local pos2 = string.find(txt, mark_end )
+    local pos1 = string.find(source, mark_begin )
+    local pos2 = string.find(source, mark_end )
 
-  if pos1 == nil or pos2==nil then return nil end
+    if pos1 == nil or pos2==nil then return nil end
 
-  pos2 = pos2+string.len(mark_end)
+    pos2 = pos2+string.len(mark_end)
 
-  return
-       string.sub(txt,1,pos1-1)
-    .. snippet
-    .. string.sub(txt,pos2)
+    source =
+        string.sub(source,1,pos1-1)
+      .. replacement
+      .. string.sub(source,pos2)
+  end
 
+  return source
 end
 
 

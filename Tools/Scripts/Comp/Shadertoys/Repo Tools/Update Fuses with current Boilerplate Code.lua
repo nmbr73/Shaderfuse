@@ -3,17 +3,11 @@ local user_config = require("Shadertoys/~user_config")
 local snippet     = require("Shadertoys/snippet")
 local fuses       = require("Shadertoys/fuses")
 
-local marker_a  = "FUREGISTERCLASS"
-local snippet_a = snippet.read(user_config.pathToRepository,marker_a)
-
-local marker_b  = "SHADERFUSECONTROLS"
-local snippet_b = snippet.read(user_config.pathToRepository,marker_b)
-
-
-
 -- Versioning in the snippets is set on the basis
 -- of https://en.wikipedia.org/wiki/List_of_minor_secular_observances
 
+
+snippet.init(user_config.pathToRepository,'development')
 fuses.fetch(user_config.pathToRepository..'Shaders/',false)
 
 local count_changed   = 0
@@ -29,8 +23,7 @@ for i, fuse in ipairs(fuses.list) do
 
     local sourceCode=fuse.fuse_sourceCode
 
-    sourceCode = snippet.replace(sourceCode,marker_a,snippet_a)
-    sourceCode = snippet.replace(sourceCode,marker_b,snippet_b)
+    sourceCode = snippet.replace(sourceCode)
 
     if sourceCode==nil then
       count_failed=count_failed+1

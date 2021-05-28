@@ -137,7 +137,7 @@ function Fuse:read(options)
 
 --  if not self:isValid() then return false end
 
-  local f = io.open(self.file_filepath, "rb")
+  local f = io.open(self.file_filepath, "r")
 
   if not f then return self:setError("failed to read '"..self.file_filepath.."'",false) end
 
@@ -199,7 +199,7 @@ function Fuse:write(path,filename)
   assert(self.fuse_sourceCode~=nil)
   assert(self.fuse_sourceCode~='')
 
-  local f = io.open(path..filename,"wb")
+  local f = io.open(path..filename,"w")
 
   if f then
     f:write(self.fuse_sourceCode)
