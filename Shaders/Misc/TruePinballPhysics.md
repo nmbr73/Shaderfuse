@@ -19,7 +19,7 @@ Oh, in addition to the adjustable repetition time, there is also the restriction
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal :bomb::bomb::bomb:
+- [x] Tested on macOS/Metal :bomb::bomb::bomb:
 - [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+- [ ] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL
