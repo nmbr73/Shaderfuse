@@ -106,7 +106,7 @@ for i, fuse in ipairs(fuses.list) do
 --                                           for details
 --
 
-      ]]
+]]
 
       .."local SHADERFUSES_REACTOR_PACKAGE_VERSION = '"..YourPackageVersion.."'\n"
       .."local SHADERFUSES_REACTOR_PACKAGE_DATE    = '"..(os.date("%b %Y")).."'\n\n"
