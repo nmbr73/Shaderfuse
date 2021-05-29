@@ -7,4 +7,5 @@
   REG_Fuse_NoReload  = true,
   REGS_Company       = dctlfuse_company==nil and dctlfuse_author or dctlfuse_company,
   REGS_URL           = dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl,
+--REGS_URL           = 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html',
   REG_Version        = dctlfuse_versionNo==nil and 1 or dctlfuse_versionNo,

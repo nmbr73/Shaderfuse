@@ -87,6 +87,8 @@ for i, fuse in ipairs(fuses.list) do
         fuse.shadertoy_id..'.fuse'
 
 
+    fuse.fuse_sourceCode=string.gsub(fuse.fuse_sourceCode, "%sdctlfuse_authorlogo%s*=%s*'([^']*)'", " dctlfuse_authorlogo=nil" )
+
 
     fuse.fuse_sourceCode=[[
 

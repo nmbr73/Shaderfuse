@@ -35,11 +35,13 @@ function StandardShaderFuseBottomControls()
     version_info=version_info..'<br />'
   end
 
+  -- self:BeginControlNest("Shaderfuse Info", "Shaderfuse_Info", true, {})
 
   -- Separator
   self:AddInput( '<br />',"DctlFuseSeparatorLabel",{LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
   -- Info Btn
-  self:AddInput(dctlfuse_name.." Info ...", "DctlFuseInfoButton", {ICS_ControlPage = (FC_INFOBTNPOS == 2 and 'Info' or nil),IC_ControlPage = (FC_INFOBTNPOS == 2 and 1 or FC_INFOBTNPOS),LINKID_DataType = "Text",INPID_InputControl = "ButtonControl",INP_DoNotifyChanged = false,INP_External = false,BTNCS_Execute = 'bmd.openurl("'..(dctlfuse_infourl~=nil and dctlfuse_infourl or 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html')..'")'})
+  self:AddInput(dctlfuse_name.." Info ...", "DctlFuseInfoButton", {IC_ControlPage = 1,LINKID_DataType = "Text",INPID_InputControl = "ButtonControl",INP_DoNotifyChanged = false,INP_External = false,BTNCS_Execute = 'bmd.openurl("'..(dctlfuse_infourl~=nil and dctlfuse_infourl or 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html')..'")'})
   -- Info Txt
   self:AddInput('<p align="left">'
     ..'Shadertoy <a href="https://www.shadertoy.com/view/'..shadertoy_id..'" style="color:white; text-decoration:none; ">'..shadertoy_name..'</a> by <a href="https://www.shadertoy.com/user/'..shadertoy_author..'" style="color:#a0a060; text-decoration:none; ">'..shadertoy_author..'</a><br />'
@@ -48,5 +50,8 @@ function StandardShaderFuseBottomControls()
     ..version_info
     ..'Reactor package v'..SHADERFUSES_REACTOR_PACKAGE_VERSION..' created '..SHADERFUSES_REACTOR_PACKAGE_DATE..'<br />'
     ,"DctlFuseInfoLabel", {IC_ControlPage = 1, LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+
+    -- self:EndControlNest()
 
   end
