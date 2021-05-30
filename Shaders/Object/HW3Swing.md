@@ -40,7 +40,7 @@ __DEVICE__ inline float4 mat4_multi_f4 (mat4 B, float4 A) {
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal :bomb::bomb::bomb:
+- [x] Tested on macOS/Metal
 - [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+- [ ] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL

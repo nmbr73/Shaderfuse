@@ -18,7 +18,7 @@ A nice example of the use of the mat3
 Have fun
 
 ## Compatibility
-- [ ] Tested on macOS/Metal :bomb::bomb::bomb:
-- [ ] Tested on macOS/OpenCL :bomb::bomb::bomb:
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+- [x] Tested on macOS/Metal
+- [x] Tested on macOS/OpenCL
+- [ ] Tested on Windows/Cuda
+- [ ] Tested on Windows/OpenCL

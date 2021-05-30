@@ -73,7 +73,14 @@ TitelParams =
 -- source of kernel
 TitelKernel =
     [[
- #define swixy(V) to_float2((V).x,(V).y)
+
+#if defined (DEVICE_IS_METAL)
+  #define address_space_qualifier thread
+#else
+  #define address_space_qualifier
+#endif
+
+#define swixy(V) to_float2((V).x,(V).y)
 #define swixx(V) to_float2((V).x,(V).x)
 #define swiyx(V) to_float2((V).y,(V).x)
 #define swiyy(V) to_float2((V).y,(V).y)
@@ -197,9 +204,9 @@ __DEVICE__ inline float4 mat4_multi_f4( mat4 B, float4 A) {
 
 // RAY MARCHING CODE SOURCE JAMIE WONG
 #define MAX_MARCHING_STEPS  400
-#define  MIN_DIST  0.0f
-#define  MAX_DIST  300.0f
-#define  EPSILON   0.0001f
+#define MIN_DIST  0.0f
+#define MAX_DIST  300.0f
+#define DEF_EPSILON   0.0001f
 
 //__DEVICE__ float3 K_d = {-1.0f, -1.0f, -1.0f}; // diffuse color
 //__DEVICE__ float shininess;
@@ -409,7 +416,7 @@ __DEVICE__ float sdCapsule( float3 p, float3 a, float3 b, float r )
     return length( pa - ba*h ) - r;
 }
 
-__DEVICE__ float pendulum (float3 p, float itime, float3 *K_d)
+__DEVICE__ float pendulum (float3 p, float itime, address_space_qualifier float3* K_d)
 {
 
     p = mat3_multi_f3(rotateX(90.0f * deg2rad) , p);
@@ -436,7 +443,7 @@ __DEVICE__ float pendulum (float3 p, float itime, float3 *K_d)
     float line = sdCapsule(p, -offset + to_float3(0.0f, 0.0f, -0.7f), to_float3(0.0f, 0.0f, -2.8f), 0.0099f);
 
     // set color
-    if(line < 0.0f + EPSILON)
+    if(line < 0.0f + DEF_EPSILON)
     {
         *K_d = to_float3(1.0f, 1.0f, 1.0f);
     }
@@ -448,7 +455,7 @@ __DEVICE__ float triangle_wave(float x, float freq, float amplitude)
 {
     return _fabs(mod_f((x*freq), amplitude) - (0.5f * amplitude)) - 1.5f;
 }
-__DEVICE__ float ball(float3 p, float itime, float3 *K_d)
+__DEVICE__ float ball(float3 p, float itime, address_space_qualifier float3* K_d)
 {
     //estimate circular motion as a pendulum so that I can match the period
     // of motion with the pendulum
@@ -483,14 +490,14 @@ __DEVICE__ float ball(float3 p, float itime, float3 *K_d)
     float stripe2 = cubeSDF(p_stripe2, to_float3(1.0f, 0.2f, 1.0f));
 
     // set color
-    if(stripe1 < 0.0f + EPSILON || stripe2 < 0.0f + EPSILON)
+    if(stripe1 < 0.0f + DEF_EPSILON || stripe2 < 0.0f + DEF_EPSILON)
     {
         *K_d = to_float3(1.0f, 1.0f, 1.0f);
     }
 
 
     float3 _K_d = *K_d;
-    if(ball < 0.0f + EPSILON && _K_d.x < 0.0f)
+    if(ball < 0.0f + DEF_EPSILON && _K_d.x < 0.0f)
     {
         *K_d = to_float3(0.5f, 0.5f, 0.2f);
     }
@@ -512,15 +519,15 @@ __DEVICE__ float sdPlane( float3 p, float4 n )
   return dot(p,swixyz(n)) + n.w;
 }
 
-__DEVICE__ float groundPlane(float3 p, float3 *K_d)
+__DEVICE__ float groundPlane(float3 p, address_space_qualifier float3* K_d)
 {
     float backrect = cubeSDF(p + to_float3(25.0f, 0.8f, 0.0f), to_float3(20.5f, 0.2f, 15.0f));
     float plane = sdPlane(p + to_float3(0.0f, 0.8f, 0.0f), to_float4(0.0f, 1.0f, 0.0f, 1.0f));
-    if(backrect < 0.0f + EPSILON)
+    if(backrect < 0.0f + DEF_EPSILON)
     {
         *K_d =  _cosf(perlinNoise(0.5f * p)) * to_float3(20, 55, 129) / 255.0f;
     }
-    if(plane < 0.0f + EPSILON)
+    if(plane < 0.0f + DEF_EPSILON)
     {
         *K_d =  to_float3(4, 45, 112) / 255.0f;
     }
@@ -528,13 +535,13 @@ __DEVICE__ float groundPlane(float3 p, float3 *K_d)
 }
 
 
-__DEVICE__ float sceneSDF(float3 samplePoint, float itime, float3 *K_d, float *shininess) {
+__DEVICE__ float sceneSDF(float3 samplePoint, float itime, address_space_qualifier float3* K_d, float* shininess) {
     float _ball = ball(samplePoint / 0.2f, itime, K_d) * 0.2f;
     float _ramp = ramp((samplePoint - to_float3(0.0f, -0.750f, 0.0f)) / 1.4f) * 1.4f;
     float pend = pendulum((samplePoint - to_float3(0.0f, 1.1f, 0.0f)) / 0.6f, itime, K_d) * 0.6f;
     *shininess = 10.0f;
 
-    if(_ramp < 0.0f + EPSILON)
+    if(_ramp < 0.0f + DEF_EPSILON)
     {
         // Woodgrain
         float pattern = samplePoint.x;
@@ -546,7 +553,7 @@ __DEVICE__ float sceneSDF(float3 samplePoint, float itime, float3 *K_d, float *s
         float3 a = to_float3(99.0f, 79.0f, 62.0f) / 255.0f;
         *K_d = palette(pattern, a, b, c, d) * c + d + to_float3(0.02f, 0.02f, 0.0f);
     }
-    if(pend < 0.0f + EPSILON)
+    if(pend < 0.0f + DEF_EPSILON)
     {
         float3 _K_d = *K_d;
         if(_K_d.x < 0.0f)
@@ -564,7 +571,7 @@ __DEVICE__ float sceneSDF(float3 samplePoint, float itime, float3 *K_d, float *s
     return unionSDF(scene, ground);
 }
 // Modified from iq
-__DEVICE__ float shadow(float3 ro, float3 rd, float mint, float maxt, float k, float itime, float3 *K_d, float *shininess)
+__DEVICE__ float shadow(float3 ro, float3 rd, float mint, float maxt, float k, float itime, address_space_qualifier float3* K_d, float* shininess)
 {
     float res = 1.0f;
     for( float t=mint; t < maxt; )
@@ -581,11 +588,11 @@ __DEVICE__ float shadow(float3 ro, float3 rd, float mint, float maxt, float k, f
 /** JW
  *
  */
-__DEVICE__ float shortestDistanceToSurface(float3 eye, float3 marchingDirection, float start, float end, float itime, float3 *K_d, float *shininess) {
+__DEVICE__ float shortestDistanceToSurface(float3 eye, float3 marchingDirection, float start, float end, float itime, address_space_qualifier float3* K_d, float* shininess) {
     float depth = start;
     for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
         float dist = sceneSDF(eye + depth * marchingDirection, itime, K_d, shininess);
-        if (dist < EPSILON) {
+        if (dist < DEF_EPSILON) {
            return depth;
         }
         depth += dist;
@@ -608,19 +615,19 @@ __DEVICE__ float3 rayDirection(float fieldOfView, float2 size, float2 fragCoord)
 /** JW
  * Using the gradient of the SDF, estimate the normal on the surface at point p.
  */
-__DEVICE__ float3 estimateNormal(float3 p, float itime, float3 *K_d, float *shininess) {
+__DEVICE__ float3 estimateNormal(float3 p, float itime, address_space_qualifier float3* K_d, float* shininess) {
     return normalize(to_float3(
-        sceneSDF(to_float3(p.x + EPSILON, p.y, p.z), itime, K_d, shininess) - sceneSDF(to_float3(p.x - EPSILON, p.y, p.z), itime, K_d, shininess),
-        sceneSDF(to_float3(p.x, p.y + EPSILON, p.z), itime, K_d, shininess) - sceneSDF(to_float3(p.x, p.y - EPSILON, p.z), itime, K_d, shininess),
-        sceneSDF(to_float3(p.x, p.y, p.z  + EPSILON), itime, K_d, shininess) - sceneSDF(to_float3(p.x, p.y, p.z - EPSILON), itime, K_d, shininess)
+        sceneSDF(to_float3(p.x + DEF_EPSILON, p.y, p.z), itime, K_d, shininess) - sceneSDF(to_float3(p.x - DEF_EPSILON, p.y, p.z), itime, K_d, shininess),
+        sceneSDF(to_float3(p.x, p.y + DEF_EPSILON, p.z), itime, K_d, shininess) - sceneSDF(to_float3(p.x, p.y - DEF_EPSILON, p.z), itime, K_d, shininess),
+        sceneSDF(to_float3(p.x, p.y, p.z  + DEF_EPSILON), itime, K_d, shininess) - sceneSDF(to_float3(p.x, p.y, p.z - DEF_EPSILON), itime, K_d, shininess)
     ));
 }
 
 /** JW
  *
  */
-__DEVICE__ float3 phongContribForLight(float3 *K_d, float3 k_s, float alpha, float3 p, float3 eye,
-                          float3 lightPos, float3 lightIntensity, float itime, float *shininess) {
+__DEVICE__ float3 phongContribForLight(address_space_qualifier float3* K_d, float3 k_s, float alpha, float3 p, float3 eye,
+                          float3 lightPos, float3 lightIntensity, float itime, float* shininess) {
     float3 N = estimateNormal(p, itime, K_d, shininess);
     float3 L = normalize(lightPos - p);
     float3 V = normalize(eye - p);
@@ -646,7 +653,7 @@ __DEVICE__ float3 phongContribForLight(float3 *K_d, float3 k_s, float alpha, flo
  *
  * See https://en.wikipedia.org/wiki/Phong_reflection_model#Description
  */
-__DEVICE__ float3 phongIllumination(float3 k_a, float3 *K_d, float3 k_s, float alpha, float3 p, float3 eye, float itime, float *shininess) {
+__DEVICE__ float3 phongIllumination(float3 k_a, address_space_qualifier float3* K_d, float3 k_s, float alpha, float3 p, float3 eye, float itime, float* shininess) {
     const float3 ambientLight = 0.5f * to_float3(1.0f, 1.0f, 1.0f);
     float3 color = ambientLight * k_a;
 
@@ -731,7 +738,7 @@ __KERNEL__ void TitelKernel(__CONSTANTREF__ TitelParams *params, __TEXTURE2D__ i
 
     float dist = shortestDistanceToSurface(eye, worldDir, MIN_DIST, MAX_DIST, itime, &K_d, &shininess);
 
-    if (dist > MAX_DIST - EPSILON) {
+    if (dist > MAX_DIST - DEF_EPSILON) {
         // Didn't hit anything
         fragColor = to_float4(0.0f, 0.0f, 0.0f, 0.0f);
         return;
