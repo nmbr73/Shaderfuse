@@ -7,6 +7,6 @@ Based on '_[DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)_' by [wyatt]
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL :bomb::bomb::bomb:
+- [x] Tested on macOS/OpenCL
 - [ ] Tested on Windows/Cuda
 - [ ] Tested on Windows/OpenCL
