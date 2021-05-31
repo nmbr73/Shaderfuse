@@ -21,5 +21,5 @@ Oh, in addition to the adjustable repetition time, there is also the restriction
 ## Compatibility
 - [x] Tested on macOS/Metal
 - [x] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL

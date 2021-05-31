@@ -42,5 +42,5 @@ __DEVICE__ inline float4 mat4_multi_f4 (mat4 B, float4 A) {
 ## Compatibility
 - [x] Tested on macOS/Metal
 - [x] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL
