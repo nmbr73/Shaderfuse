@@ -16,7 +16,7 @@ local YourCompanyName='JiPi'
 local YourPackageName='Shadertoys'
 local PackageIdentifier='com.JiPi.Shadertoys'
 local TargetFilepath=user_config.pathToRepository..'Atom/'
-local YourPackageVersion='0.1'
+local YourPackageVersion='1.0'
 local YourPackageDate=os.date("%Y-%m-%d")
 
 
@@ -166,8 +166,8 @@ if handle then
   handle:write(
           '          The package <font color="white">'..
           YourPackageName..[[</font> adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
-          See our repository on <a href="https://github.com/nmbr73/Shadertoys">GitHub</a> for some insights and to maybe constribute to this project.<br />
-          Find tons of example videos on what you can do with it on this <a href="https://www.youtube.com/c/JiPi_YT/videos">YouTube Channel</a>.<br />
+          See our repository on <a href="https://github.com/nmbr73/Shadertoys">GitHub</a> for some insights and to maybe constribute to this project?!?<br />
+          Find tons of example videos on what you can do with it on JiPi's <a href="https://www.youtube.com/c/JiPi_YT/videos">YouTube Channel</a>.<br />
           Please note that - unless stated otherwise - all these Fuses fall under Creative Commond 'CC BY-NC-SA 3.0 unported'.<br />
           For most shaders this regrettably means that in particular <font color="#ff6060">any commercial use is strictliy prohibited!</font>
         </center>
@@ -175,16 +175,21 @@ if handle then
 
   handle:write(OurPackageDescription)
 
+
+
   handle:write([[
         <p>
           See the following videos for some examples:
           <ul>
-            <li><a href="https://youtu.be/QE6--iYtikk">War of the Worlds</a> by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/JiPi.html">JiPi</a></li>
-            <li><a href="https://youtu.be/ktloT0pUaZg">HappyEastern</a> by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/JiPi.html">JiPi</a></li>
-            <li><a href="https://youtu.be/ntrp6BfVk0k">Shadertoy -Defilee</a> by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/JiPi.html">JiPi</a></li>
-            <li><a href="https://youtu.be/4R7ZVMyKLnY">Fire Water</a> by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/JiPi.html">JiPi</a></li>
-            <li><a href="https://youtu.be/oyndG0pLEQQ">Shadertoyparade</a> by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/JiPi.html">JiPi</a></li>
-            <li><a href="https://youtu.be/GJz8Vgi8Qws">The Shader Cut</a> by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/nmbr73.html">nmbr73</a></li>
+            <li><a href="https://youtu.be/GJz8Vgi8Qws">The Shader Cut</a> by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/nmbr73.html" style="color:#a05050; ">nmbr73</a> and</li>
+            <li><a href="https://youtu.be/8sUu5GcDako">Other Worlds</a>,</li>
+            <li><a href="https://youtu.be/OYOar65omeM">Lego</a>,</li>
+            <li><a href="https://youtu.be/WGWCrhPNmdg">Mahnah Mahnah</a>,</li>
+            <li><a href="https://youtu.be/QE6--iYtikk">War of the Worlds</a>,</li>
+            <li><a href="https://youtu.be/ktloT0pUaZg">HappyEastern</a>,</li>
+            <li><a href="https://youtu.be/ntrp6BfVk0k">Shadertoy -Defilee</a>,</li>
+            <li><a href="https://youtu.be/4R7ZVMyKLnY">Fire Water</a>,</li>
+            <li><a href="https://youtu.be/oyndG0pLEQQ">Shadertoyparade</a> all by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/JiPi.html" style="color:#a05050; ">JiPi</a></li>
           </ul>
         </p>]])
 
