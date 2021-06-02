@@ -17,7 +17,7 @@ local YourPackageName='Shadertoys'
 local PackageIdentifier='com.JiPi.Shadertoys'
 local TargetFilepath=user_config.pathToRepository..'Atom/'
 local YourPackageVersion='1.0'
-local YourPackageDate=os.date("%Y-%m-%d")
+local YourPackageDate=os.date("%Y,%m,%d")
 
 
 -- com.YourCompanyName.YourPackageName (folder)
