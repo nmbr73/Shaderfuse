@@ -37,8 +37,9 @@
 - [ReflectivBlockWall](JiPi/ReflectivBlockWall.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sunrise:
 - [VoxelCorridor](JiPi/VoxelCorridor.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :ferris_wheel:
 - [DottedPolyp](JiPi/DottedPolyp.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :tropical_fish:
-
-
+- [Primitives](JiPi/Primitives.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :zap:
+- [SphereGears](JiPi/SphereGears.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :high_brightness:
+- [MilkOcean](JiPi/MilkOcean.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
 # Teaser
 
 ## JiPi
@@ -91,6 +92,9 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![ReflectivBlockWall](https://user-images.githubusercontent.com/78935215/119272287-7f357400-bc05-11eb-845b-54dd9c36708a.gif)](https://www.shadertoy.com/view/WtffDS)
 [![VoxelCorridor](https://user-images.githubusercontent.com/78935215/119272531-a80a3900-bc06-11eb-8ed6-1591e9c02694.gif)](https://www.shadertoy.com/view/MdVSDh)
 [![DottedPolyp](https://user-images.githubusercontent.com/78935215/119269690-3c6d9f00-bbf9-11eb-86ef-36b514805429.gif)](https://www.shadertoy.com/view/3sBSWt)
+[![Primitives](https://user-images.githubusercontent.com/78935215/120663406-48275400-c48a-11eb-92d3-fb635cfcf276.gif)](https://www.shadertoy.com/view/ltyXD3)
+[![SphereGears](https://user-images.githubusercontent.com/78935215/120664114-f4693a80-c48a-11eb-84b2-9330f32bc6b9.gif)](https://www.shadertoy.com/view/tt2XzG)
+[![MilkOceanTex](https://user-images.githubusercontent.com/78935215/120662005-119d0980-c489-11eb-83e1-bc1d94edceb7.gif)](https://www.shadertoy.com/view/fll3RN)
 
 
 ## nmbr73
