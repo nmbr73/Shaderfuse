@@ -40,6 +40,20 @@
 - [Primitives](JiPi/Primitives.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :zap:
 - [SphereGears](JiPi/SphereGears.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :high_brightness:
 - [MilkOcean](JiPi/MilkOcean.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [Torus Pipes](JiPi/TorusPipes.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [Symmetric Origins](JiPi/SymmetricOrigins.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [DistoLines](JiPi/DistoLines.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [3DDotProduct](JiPi/3DDotProduct.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [NightCircuit](JiPi/NightCircuit.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [CrankAndShaft](JiPi/CrankAndShaft.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [ProceduralOctree](JiPi/ProceduralOctree.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [RibbonShellSculpture](JiPi/RibbonShellSculpture.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [ShadeADay3_17_2015](JiPi/ShadeADay3_17_2015.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [WetStone](JiPi/WetStone.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [IterationStripes](JiPi/IterationStripes.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [ForkSimplicity](JiPi/ForkSimplicity.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+- [CellDisplacementEffect](JiPi/CellDisplacementEffect.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :sweat_drops:
+
 # Teaser
 
 ## JiPi
@@ -95,8 +109,19 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![Primitives](https://user-images.githubusercontent.com/78935215/120663406-48275400-c48a-11eb-92d3-fb635cfcf276.gif)](https://www.shadertoy.com/view/ltyXD3)
 [![SphereGears](https://user-images.githubusercontent.com/78935215/120664114-f4693a80-c48a-11eb-84b2-9330f32bc6b9.gif)](https://www.shadertoy.com/view/tt2XzG)
 [![MilkOceanTex](https://user-images.githubusercontent.com/78935215/120662005-119d0980-c489-11eb-83e1-bc1d94edceb7.gif)](https://www.shadertoy.com/view/fll3RN)
-
-
+[![TorusPipes](https://user-images.githubusercontent.com/78935215/121504812-9684a780-c9e2-11eb-8454-4f53f6b6f1b2.gif)](https://www.shadertoy.com/view/wlj3zV)
+[![SymmetricOrigins](https://user-images.githubusercontent.com/78935215/121505711-5a057b80-c9e3-11eb-837f-33c75bf995cc.gif)](https://www.shadertoy.com/view/4dSXDd)
+[![DistoLines](https://user-images.githubusercontent.com/78935215/121495472-edd24a00-c9d9-11eb-9517-ab4ddc8d0ef8.gif)](https://www.shadertoy.com/view/tdKcDt)
+[![3DDotProduct](https://user-images.githubusercontent.com/78935215/121492596-494f0880-c9d7-11eb-9ffe-bb13a63a380e.gif)](https://www.shadertoy.com/view/NsfSzr)
+[![NightCircuit](https://user-images.githubusercontent.com/78935215/121489512-70f0a180-c9d4-11eb-8b23-57e70f2384ae.gif)](https://www.shadertoy.com/view/tdyBR1)
+[![CrankAndShaft](https://user-images.githubusercontent.com/78935215/121493339-07729200-c9d8-11eb-99e5-5e2f302b4cfb.gif)](https://www.shadertoy.com/view/NtX3Rj)
+[![Procedural Octree](https://user-images.githubusercontent.com/78935215/120807009-c990ec00-c547-11eb-8d7a-6d391293374c.gif)](https://www.shadertoy.com/view/tt2XzG)
+[![RibbonShellSculpture](https://user-images.githubusercontent.com/78935215/121496858-26265800-c9db-11eb-947f-bade79ae2548.gif)](https://www.shadertoy.com/view/XtyBDD)
+[![ShadeADay_3_17_2015](https://user-images.githubusercontent.com/78935215/121497792-16f3da00-c9dc-11eb-82d8-2fc49738e23d.gif)](https://www.shadertoy.com/view/llSGzz)
+[![WetStone](https://user-images.githubusercontent.com/78935215/121501342-70113d00-c9df-11eb-8597-9e0db9162785.gif)](https://www.shadertoy.com/view/ldSSzV)
+[![IterationStripes](https://user-images.githubusercontent.com/78935215/121498730-0001b780-c9dd-11eb-928b-08ac90ded900.gif)](https://www.shadertoy.com/view/wlsfRn)
+[![ForkSimplicity](https://user-images.githubusercontent.com/78935215/121521799-c2a92400-c9f4-11eb-9299-2827deb87607.gif)](https://www.shadertoy.com/view/7sSXDW)
+[![CellDisplacementEffect](https://user-images.githubusercontent.com/78935215/121520369-20d50780-c9f3-11eb-8882-70706ce2f3f2.gif)](https://www.shadertoy.com/view/tsl3Rs)
 ## nmbr73
 
 Someday / maybe

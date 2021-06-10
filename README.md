@@ -46,22 +46,12 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far - resp. the [Overview](Shaders/OVERVIEW.md) to have with thumbnails a more 'visual experience'. In particular you may want to have a look at [WorkInProgress/](WorkInProgress/README.md) to see what's coming next!
 
-## Latest Conversion
+## Latest Conversions
 
-[![Legos](https://user-images.githubusercontent.com/78935215/114916381-02082980-9e25-11eb-9b1d-2c23272ea6ac.gif)](Shaders/Object/Legos.md)
-[![Legofied](Shaders/Misc/Legofied_320x180.png)](Shaders/Misc/Legofied.md)
-[![OverstimulatedNeurons](https://user-images.githubusercontent.com/78935215/115569787-d91ce400-a2bd-11eb-97f9-c2b9b346f39f.gif)](Shaders/Abstract/OverstimulatedNeurons.md)
-[![XRaymarching](https://user-images.githubusercontent.com/78935215/115620418-6fb8c780-a2f5-11eb-9185-b008ff52f54f.gif)](Shaders/Blob/XRaymarching.md)
-[![Raysemigarbage](https://user-images.githubusercontent.com/78935215/115949042-5c168800-a4d2-11eb-95ef-cc63703e293c.gif)](Shaders/Abstract/Raysemigarbage.md)
-[![TruePinballPhysics2](https://user-images.githubusercontent.com/78935215/116098822-a7d05980-a6ab-11eb-9e85-4ebd128ba09a.gif)](Shaders/Misc/TruePinballPhysics.md)
-[![OtherWorlds](https://user-images.githubusercontent.com/78935215/116747985-fd379e00-a9fe-11eb-8e3a-554837e2516e.gif)
-](Shaders/Abstract/OtherWorlds.md)
-[![Rendezvous](https://user-images.githubusercontent.com/78935215/119050128-b74c7500-b9c1-11eb-84cc-9fe267e2432a.gif)](Shaders/Fractals/Rendezvous.md)
-[![HeavenAndHell](https://user-images.githubusercontent.com/78935215/119268704-72f4eb00-bbf4-11eb-91e0-4af4d2ca9ec0.gif)](Shaders/Object/HeavenAndHell.md)
+[![ProceduralWalkAnimation](https://user-images.githubusercontent.com/78935215/121263523-05181700-c8b6-11eb-98f5-aa44d178ce23.gif)](Shaders/Object/ProceduralWalkAnimation.md)
 [![MightyMorphingPowerSphere](https://user-images.githubusercontent.com/78935215/120659993-2e384200-c487-11eb-8918-f0f8957dc9d6.gif)](Shaders/Planet/MightyMorphingPowerSphere.md)
-
-
-
+[![HeavenAndHell](https://user-images.githubusercontent.com/78935215/119268704-72f4eb00-bbf4-11eb-91e0-4af4d2ca9ec0.gif)](Shaders/Object/HeavenAndHell.md)
+[![Rendezvous](https://user-images.githubusercontent.com/78935215/119050128-b74c7500-b9c1-11eb-84cc-9fe267e2432a.gif)](Shaders/Fractals/Rendezvous.md)
 
 # Installation
 
