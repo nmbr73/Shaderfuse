@@ -4,7 +4,6 @@ Based on '_[EARF](https://www.shadertoy.com/embed/ls3SDj?gui=true&t=10&paused=tr
 
 [![screenshot](EARF.png "EARF.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/EARF.fuse)
 
-This shader has not yet been tested under metal.
 
 
 Have fun

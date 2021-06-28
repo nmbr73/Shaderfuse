@@ -15,7 +15,6 @@ The parameters invite you to play.
 
 Here is a little study of this fuse: https://www.youtube.com/watch?v=4R7ZVMyKLnY
 
-The Fuse is tested with Cuda, OpenCL and Metal.
 
 Have fun
 

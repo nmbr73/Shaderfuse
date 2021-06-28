@@ -14,7 +14,6 @@ The use of this type of fuses is not very easy to handle, since a cycle must not
 
 Here is a little study with this fuse: https://www.youtube.com/watch?v=oyndG0pLEQQ
 
-The Fuse is tested with Cuda, OpenCL. The test for Metal is pending.
 
 Have fun playing
 

@@ -66,7 +66,7 @@ I hope you enjoy playing with this shader as much as I do.
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal (does not crash, but leads to wrong image)
+- [x] Tested on macOS/Metal
 - [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
