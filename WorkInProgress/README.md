@@ -135,7 +135,6 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![IterationStripes](https://user-images.githubusercontent.com/78935215/121498730-0001b780-c9dd-11eb-928b-08ac90ded900.gif)](https://www.shadertoy.com/view/wlsfRn)
 [![ForkSimplicity](https://user-images.githubusercontent.com/78935215/121521799-c2a92400-c9f4-11eb-9299-2827deb87607.gif)](https://www.shadertoy.com/view/7sSXDW)
 [![CellDisplacementEffect](https://user-images.githubusercontent.com/78935215/121520369-20d50780-c9f3-11eb-8882-70706ce2f3f2.gif)](https://www.shadertoy.com/view/tsl3Rs)
-
 [![MiniPlanet](https://user-images.githubusercontent.com/78935215/123690904-40728980-d855-11eb-80b9-cec65cd88c92.gif)](https://www.shadertoy.com/view/Nlj3Wy)
 [![Coronavirus2020](https://user-images.githubusercontent.com/78935215/123689112-26d04280-d853-11eb-9b4f-9c50f2f70fe7.gif)](https://www.shadertoy.com/view/tt3XR7)
 [![BubbleDistPlasma](https://user-images.githubusercontent.com/78935215/123684850-444edd80-d84e-11eb-8fb1-4763c9caff29.gif)](https://www.shadertoy.com/view/lt23Dt)
@@ -145,8 +144,8 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![BumpedSinusoidalWarp](https://user-images.githubusercontent.com/78935215/123668873-d6011f80-d83b-11eb-9180-086e7ed089c7.gif)](https://www.shadertoy.com/view/4l2XWK)
 [![AnotherCloudTunnel](https://user-images.githubusercontent.com/78935215/123654359-4b65f380-d82e-11eb-98eb-6c4efcc24201.gif)](https://www.shadertoy.com/view/4dtBD8)
 [![AlienCoccon](https://user-images.githubusercontent.com/78935215/123649354-fa540080-d829-11eb-8133-8c82b450556d.gif)](https://www.shadertoy.com/view/MsdGz2)
-[![TheRoadToHell](https://user-images.githubusercontent.com/78935215/123645773-e8249300-d826-11eb-9449-e8bd673f5715.gif))](https://www.shadertoy.com/view/Mds3Rn)
-[![AnotherKalisetMod](https://user-images.githubusercontent.com/78935215/123643059-4d2ab980-d824-11eb-8267-fb1432c218ad.gif))](https://www.shadertoy.com/view/Xls3z2)
+[![TheRoadToHell](https://user-images.githubusercontent.com/78935215/123645773-e8249300-d826-11eb-9449-e8bd673f5715.gif)](https://www.shadertoy.com/view/Mds3Rn)
+[![AnotherKalisetMod](https://user-images.githubusercontent.com/78935215/123643059-4d2ab980-d824-11eb-8267-fb1432c218ad.gif)](https://www.shadertoy.com/view/Xls3z2)
 [![Electron](https://user-images.githubusercontent.com/78935215/123640712-bbba4800-d821-11eb-810d-de791df82795.gif)](https://www.shadertoy.com/view/MslGRn)
 [![SmolderingEffect](https://user-images.githubusercontent.com/78935215/123635024-6bd88280-d81b-11eb-9daa-8f5a2c18fbd2.gif)](https://www.shadertoy.com/view/slj3DR)
 [![Rabbit](https://user-images.githubusercontent.com/78935215/123626968-b523d480-d811-11eb-91fd-bc1a72dece1d.gif)](https://www.shadertoy.com/view/XlccWH)
