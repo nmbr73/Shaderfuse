@@ -27,7 +27,8 @@ See the following videos to get an idea what these Fuses look like:
 <tr>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=WGWCrhPNmdg" target="_blank"><img src="http://img.youtube.com/vi/WGWCrhPNmdg/0.jpg" alt="Demo 5" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/WGWCrhPNmdg?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=OYOar65omeM" target="_blank"><img src="http://img.youtube.com/vi/OYOar65omeM/0.jpg" alt="Demo 6" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/OYOar65omeM?style=social" /></a></td>
-<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=8sUu5GcDako" target="_blank"><img src="http://img.youtube.com/vi/8sUu5GcDako/0.jpg" alt="Demo 6" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/8sUu5GcDako?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=8sUu5GcDako" target="_blank"><img src="http://img.youtube.com/vi/8sUu5GcDako/0.jpg" alt="Demo 7" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/8sUu5GcDako?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=OKpJbFisE4c" target="_blank"><img src="http://img.youtube.com/vi/OKpJbFisE4c/0.jpg" alt="Demo 8" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/OKpJbFisE4c?style=social" /></a></td>
 </tr>
 </table>
 </center>
@@ -47,7 +48,7 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far - resp. the [Overview](Shaders/OVERVIEW.md) to have with thumbnails a more 'visual experience'. In particular you may want to have a look at [WorkInProgress/](WorkInProgress/README.md) to see what's coming next!
 
 ## Latest Conversions
-
+[![Oblivion](https://user-images.githubusercontent.com/78935215/123615732-e0082b80-d805-11eb-9511-eefaadecb8be.gif)](Shaders/Object/Oblivion.md)
 [![ProceduralWalkAnimation](https://user-images.githubusercontent.com/78935215/121263523-05181700-c8b6-11eb-98f5-aa44d178ce23.gif)](Shaders/Object/ProceduralWalkAnimation.md)
 [![MightyMorphingPowerSphere](https://user-images.githubusercontent.com/78935215/120659993-2e384200-c487-11eb-8918-f0f8957dc9d6.gif)](Shaders/Planet/MightyMorphingPowerSphere.md)
 [![HeavenAndHell](https://user-images.githubusercontent.com/78935215/119268704-72f4eb00-bbf4-11eb-91e0-4af4d2ca9ec0.gif)](Shaders/Object/HeavenAndHell.md)
