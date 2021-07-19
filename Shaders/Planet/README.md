@@ -21,6 +21,9 @@ based on [EARF](https://www.shadertoy.com/view/ls3SDj) written by [zackpudil](ht
 ## **[Fake3DScene](Fake3DScene.md)**
 based on [Fake3DScene](https://www.shadertoy.com/view/MddSWB) written by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[MightyMorphingPowerSphere](MightyMorphingPowerSphere.md)**
+based on [MightyMorphingPowerSphere](https://www.shadertoy.com/view/MtGSzh) written by [Lallis](https://www.shadertoy.com/user/Lallis)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[RayCastSphere](RayCastSphere.md)**
 based on [RayCastSphere](https://www.shadertoy.com/view/XdjBDG) written by [diroru](https://www.shadertoy.com/user/diroru)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

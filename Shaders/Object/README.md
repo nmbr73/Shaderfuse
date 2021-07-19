@@ -33,6 +33,12 @@ based on [Legos](https://www.shadertoy.com/view/Xdl3Dj) written by [morgan3d](ht
 ## **[LonelyVoxel](LonelyVoxel.md)**
 based on [LonelyVoxel](https://www.shadertoy.com/view/Mslczn) written by [SudoNhim](https://www.shadertoy.com/user/SudoNhim)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[Oblivion](Oblivion.md)**
+based on [Oblivion](https://www.shadertoy.com/view/XtfXDN) written by [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[ProceduralWalkAnimation](ProceduralWalkAnimation.md)**
+based on [ProceduralWalkAnimation](https://www.shadertoy.com/view/WlsSWS) written by [TLC123](https://www.shadertoy.com/user/TLC123)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[WalkingCubes](WalkingCubes.md)**
 based on [WalkingCubes](https://www.shadertoy.com/view/Xl3XR4) written by [xorxor](https://www.shadertoy.com/user/xorxor)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

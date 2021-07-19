@@ -128,6 +128,7 @@ for i, fuse in ipairs(fuses.list) do
     readme:write('- ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) (Shadertoy ID ['..fuse.shadertoy_id..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')) ported by ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n')
 
     readme_cat:write('## **['..fuse.file_fusename..']('..fuse.file_fusename..'.md)**\nbased on ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..') written by ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')<br />and ported to DaFusion by ['..fuse.dctlfuse_author..'](../../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n\n')
+	--print("Okay '"..fuse.file_fusename.."' ")
   else
 
 

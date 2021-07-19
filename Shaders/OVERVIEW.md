@@ -553,6 +553,34 @@
 </p>
 </td></tr>
 <tr>
+<td><img src="Object/Oblivion_320x180.png" alt="Object/Oblivion" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [Oblivion](Object/Oblivion.md)</nobr><br />
+<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Shadertoy: [Oblivion](https://www.shadertoy.com/view/XtfXDN)</nobr><br />
+<nobr>Author: [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="Object/ProceduralWalkAnimation_320x180.png" alt="Object/ProceduralWalkAnimation" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [ProceduralWalkAnimation](Object/ProceduralWalkAnimation.md)</nobr><br />
+<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Shadertoy: [ProceduralWalkAnimation](https://www.shadertoy.com/view/WlsSWS)</nobr><br />
+<nobr>Author: [TLC123](https://www.shadertoy.com/user/TLC123)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="Object/WalkingCubes_320x180.png" alt="Object/WalkingCubes" width="320" height="180" /></td>
 <td><p>
 
@@ -613,6 +641,20 @@
 </p>
 </td></tr>
 <tr>
+<td><img src="Planet/MightyMorphingPowerSphere_320x180.png" alt="Planet/MightyMorphingPowerSphere" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [MightyMorphingPowerSphere](Planet/MightyMorphingPowerSphere.md)</nobr><br />
+<nobr>Category: [Planet](Planet/README.md)</nobr><br />
+<nobr>Shadertoy: [MightyMorphingPowerSphere](https://www.shadertoy.com/view/MtGSzh)</nobr><br />
+<nobr>Author: [Lallis](https://www.shadertoy.com/user/Lallis)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="Planet/RayCastSphere_320x180.png" alt="Planet/RayCastSphere" width="320" height="180" /></td>
 <td><p>
 
@@ -655,6 +697,20 @@
 <nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
 <nobr>Shadertoy: [FallingCuteBombs](https://www.shadertoy.com/view/ldy3Rw)</nobr><br />
 <nobr>Author: [Emil](https://www.shadertoy.com/user/Emil)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="Recursive/LearningReactionDiffusion_320x180.png" alt="Recursive/LearningReactionDiffusion" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [LearningReactionDiffusion](Recursive/LearningReactionDiffusion.md)</nobr><br />
+<nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
+<nobr>Shadertoy: [LearningReactionDiffusion](https://www.shadertoy.com/view/WlSGzy)</nobr><br />
+<nobr>Author: [TekF](https://www.shadertoy.com/user/TekF)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
@@ -747,4 +803,4 @@
 </p>
 </td></tr>
 </table>
-:four_leaf_clover: 50<br />
+:four_leaf_clover: 54<br />
