@@ -67,6 +67,8 @@
 - [Electron](JiPi/Electron.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :revolving_hearts:
 - [SmolderingEffect](JiPi/SmolderingEffect.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :revolving_hearts:
 - [Rabbit](JiPi/Rabbit.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :revolving_hearts:
+- [FireReaction](JiPi/FireReaction.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :fire:
+- [ContinuumMechanicsII](JiPi/ContinuumMechanicsII.md) currently under construction by [JiPi](../Site/Profiles/JiPi.md) :potable_water:
 # Teaser
 
 ## JiPi
@@ -149,6 +151,8 @@ Coming Soon (Conversion is finished, the DCTL code still has to be provided with
 [![Electron](https://user-images.githubusercontent.com/78935215/123640712-bbba4800-d821-11eb-810d-de791df82795.gif)](https://www.shadertoy.com/view/MslGRn)
 [![SmolderingEffect](https://user-images.githubusercontent.com/78935215/123635024-6bd88280-d81b-11eb-9daa-8f5a2c18fbd2.gif)](https://www.shadertoy.com/view/slj3DR)
 [![Rabbit](https://user-images.githubusercontent.com/78935215/123626968-b523d480-d811-11eb-91fd-bc1a72dece1d.gif)](https://www.shadertoy.com/view/XlccWH)
+[![FireReaction](https://user-images.githubusercontent.com/78935215/126151353-553fbee5-d068-4d90-95d5-075b7f962dc9.gif)](https://www.shadertoy.com/view/wtSGRc)
+[![ContinuumMechanicalII_JiPi](https://user-images.githubusercontent.com/78935215/126865141-be1473b1-9312-4225-b363-64caaad981ec.gif)](https://www.shadertoy.com/view/tdVcWR)
 ## nmbr73
 
 Someday / maybe
