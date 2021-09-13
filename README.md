@@ -43,6 +43,15 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 
 
+# Shader of the week
+
+On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here. 
+[Shader of the Week](ShaderOfTheWeek/README.md)
+
+**Current Shader of the Week:**
+![FractalFlythrough](https://user-images.githubusercontent.com/78935215/132952674-a03a41f7-5c7d-4baa-bb44-99208289dc43.gif)
+
+
 
 
 
