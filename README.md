@@ -49,7 +49,9 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 [Shader of the Week](ShaderOfTheWeek/README.md)
 
 **Current Shader of the Week:**
-![FractalFlythrough](https://user-images.githubusercontent.com/78935215/132952674-a03a41f7-5c7d-4baa-bb44-99208289dc43.gif)
+
+
+![Day94](https://user-images.githubusercontent.com/78935215/133500817-0a637f94-cb2d-48df-bb08-78aab1e10d0d.gif)
 
 
 

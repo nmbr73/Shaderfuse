@@ -7,3 +7,7 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 
 #### [Fractal Flythrough](FractalFlythrough.md) (Shadertoy ID [4s3SRN](https://www.shadertoy.com/view/4s3SRN))
 ---
+## 14th of September 2021
+
+#### [Day94](Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM))
+---
