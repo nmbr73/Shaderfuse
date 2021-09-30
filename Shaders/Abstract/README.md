@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](../README.md) | [OVERVIEW](../OVERVIEW.md) | **Abstract** | [Blob](../Blob/README.md) | [Distortion](../Distortion/README.md) | [Fractals](../Fractals/README.md) | [Misc](../Misc/README.md) | [Object](../Object/README.md) | [Planet](../Planet/README.md) | [Recursive](../Recursive/README.md) | [Tunnel](../Tunnel/README.md)
+[README](../README.md) | [OVERVIEW](../OVERVIEW.md) | **Abstract** | [Blob](../Blob/README.md) | [Distortion](../Distortion/README.md) | [Fractals](../Fractals/README.md) | [Misc](../Misc/README.md) | [Object](../Object/README.md) | [Planet](../Planet/README.md) | [Recursive](../Recursive/README.md) | [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) | [Tunnel](../Tunnel/README.md)
 
 # Abstract Shaders
 
@@ -20,6 +20,9 @@ based on [craziness](https://www.shadertoy.com/view/wdjSRc) written by [spsherk_
 
 ## **[CrossDistance](CrossDistance.md)**
 based on [Cross - distance](https://www.shadertoy.com/view/XtGfzw) written by [iq](https://www.shadertoy.com/user/iq)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+
+## **[Dynamism](Dynamism.md)**
+based on [Dynamism](https://www.shadertoy.com/view/MtKSWW) written by [nimitz](https://www.shadertoy.com/user/nimitz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[Favela](Favela.md)**
 based on [Favela](https://www.shadertoy.com/view/ldGcDh) written by [duvengar](https://www.shadertoy.com/user/duvengar)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)

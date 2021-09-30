@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](README.md) | **OVERVIEW** | [Abstract](Abstract/README.md) | [Blob](Blob/README.md) | [Distortion](Distortion/README.md) | [Fractals](Fractals/README.md) | [Misc](Misc/README.md) | [Object](Object/README.md) | [Planet](Planet/README.md) | [Recursive](Recursive/README.md) | [Tunnel](Tunnel/README.md)
+[README](README.md) | **OVERVIEW** | [Abstract](Abstract/README.md) | [Blob](Blob/README.md) | [Distortion](Distortion/README.md) | [Fractals](Fractals/README.md) | [Misc](Misc/README.md) | [Object](Object/README.md) | [Planet](Planet/README.md) | [Recursive](Recursive/README.md) | [ShaderOfTheWeek](ShaderOfTheWeek/README.md) | [Tunnel](Tunnel/README.md)
 
 # Shaders
 
@@ -54,6 +54,20 @@
 <nobr>Shadertoy: [Cross - distance](https://www.shadertoy.com/view/XtGfzw)</nobr><br />
 <nobr>Author: [iq](https://www.shadertoy.com/user/iq)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="Abstract/Dynamism_320x180.png" alt="Abstract/Dynamism" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [Dynamism](Abstract/Dynamism.md)</nobr><br />
+<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Shadertoy: [Dynamism](https://www.shadertoy.com/view/MtKSWW)</nobr><br />
+<nobr>Author: [nimitz](https://www.shadertoy.com/user/nimitz)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
 </td></tr>
 <tr>
@@ -581,6 +595,20 @@
 </p>
 </td></tr>
 <tr>
+<td><img src="Object/ShareX_320x180.png" alt="Object/ShareX" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [ShareX](Object/ShareX.md)</nobr><br />
+<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Shadertoy: [ShareX](https://www.shadertoy.com/view/WsKSRK)</nobr><br />
+<nobr>Author: [fre3k](https://www.shadertoy.com/user/fre3k)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="Object/WalkingCubes_320x180.png" alt="Object/WalkingCubes" width="320" height="180" /></td>
 <td><p>
 
@@ -701,6 +729,20 @@
 </p>
 </td></tr>
 <tr>
+<td><img src="Recursive/GrowingWeatheringRocks_320x180.png" alt="Recursive/GrowingWeatheringRocks" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [GrowingWeatheringRocks](Recursive/GrowingWeatheringRocks.md)</nobr><br />
+<nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
+<nobr>Shadertoy: [GrowingWeatheringRocks](https://www.shadertoy.com/view/ftSSDy)</nobr><br />
+<nobr>Author: [stb](https://www.shadertoy.com/user/stb)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="Recursive/LearningReactionDiffusion_320x180.png" alt="Recursive/LearningReactionDiffusion" width="320" height="180" /></td>
 <td><p>
 
@@ -758,6 +800,52 @@
 </td></tr>
 </table>
 
+## ShaderOfTheWeek Shaders
+
+<table><tr>
+<td><img src="ShaderOfTheWeek/Day94_320x180.png" alt="ShaderOfTheWeek/Day94" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [Day94](ShaderOfTheWeek/Day94.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Shadertoy: [Day94](https://www.shadertoy.com/view/tdXcWM)</nobr><br />
+<nobr>Author: [jeyko](https://www.shadertoy.com/user/jeyko)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="ShaderOfTheWeek/FractalFlythrough_320x180.png" alt="ShaderOfTheWeek/FractalFlythrough" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Shadertoy: [FractalFlythrough](https://www.shadertoy.com/view/4s3SRN)</nobr><br />
+<nobr>Author: [Shane](https://www.shadertoy.com/user/Shane)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="ShaderOfTheWeek/SimpleSphereRaymarching_320x180.png" alt="ShaderOfTheWeek/SimpleSphereRaymarching" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Shadertoy: [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc)</nobr><br />
+<nobr>Author: [drschizzo](https://www.shadertoy.com/user/drschizzo)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+</table>
+
 ## Tunnel Shaders
 
 <table><tr>
@@ -803,4 +891,4 @@
 </p>
 </td></tr>
 </table>
-:four_leaf_clover: 54<br />
+:four_leaf_clover: 60<br />

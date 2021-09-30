@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-**README** | [OVERVIEW](OVERVIEW.md) | [Abstract](Abstract/README.md) | [Blob](Blob/README.md) | [Distortion](Distortion/README.md) | [Fractals](Fractals/README.md) | [Misc](Misc/README.md) | [Object](Object/README.md) | [Planet](Planet/README.md) | [Recursive](Recursive/README.md) | [Tunnel](Tunnel/README.md)
+**README** | [OVERVIEW](OVERVIEW.md) | [Abstract](Abstract/README.md) | [Blob](Blob/README.md) | [Distortion](Distortion/README.md) | [Fractals](Fractals/README.md) | [Misc](Misc/README.md) | [Object](Object/README.md) | [Planet](Planet/README.md) | [Recursive](Recursive/README.md) | [ShaderOfTheWeek](ShaderOfTheWeek/README.md) | [Tunnel](Tunnel/README.md)
 
 # Shaders
 
@@ -18,6 +18,7 @@
 - [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) (Shadertoy ID [ltsXDB](https://www.shadertoy.com/view/ltsXDB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Crazyness](Abstract/Crazyness.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [CrossDistance](Abstract/CrossDistance.md) (Shadertoy ID [XtGfzw](https://www.shadertoy.com/view/XtGfzw)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
+- [Dynamism](Abstract/Dynamism.md) (Shadertoy ID [MtKSWW](https://www.shadertoy.com/view/MtKSWW)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Favela](Abstract/Favela.md) (Shadertoy ID [ldGcDh](https://www.shadertoy.com/view/ldGcDh)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [FlightThroughANebula](Abstract/FlightThroughANebula.md) (Shadertoy ID [tsK3Rd](https://www.shadertoy.com/view/tsK3Rd)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Mosaic](Abstract/Mosaic.md) (Shadertoy ID [XtySRc](https://www.shadertoy.com/view/XtySRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -69,6 +70,7 @@
 - [LonelyVoxel](Object/LonelyVoxel.md) (Shadertoy ID [Mslczn](https://www.shadertoy.com/view/Mslczn)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Oblivion](Object/Oblivion.md) (Shadertoy ID [XtfXDN](https://www.shadertoy.com/view/XtfXDN)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ProceduralWalkAnimation](Object/ProceduralWalkAnimation.md) (Shadertoy ID [WlsSWS](https://www.shadertoy.com/view/WlsSWS)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [ShareX](Object/ShareX.md) (Shadertoy ID [WsKSRK](https://www.shadertoy.com/view/WsKSRK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [WalkingCubes](Object/WalkingCubes.md) (Shadertoy ID [Xl3XR4](https://www.shadertoy.com/view/Xl3XR4)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -83,10 +85,17 @@
 
 **[Recursive Shaders](Recursive/README.md)**
 - [FallingCuteBombs](Recursive/FallingCuteBombs.md) (Shadertoy ID [ldy3Rw](https://www.shadertoy.com/view/ldy3Rw)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [GrowingWeatheringRocks](Recursive/GrowingWeatheringRocks.md) (Shadertoy ID [ftSSDy](https://www.shadertoy.com/view/ftSSDy)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [LearningReactionDiffusion](Recursive/LearningReactionDiffusion.md) (Shadertoy ID [WlSGzy](https://www.shadertoy.com/view/WlSGzy)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Spilled](Recursive/Spilled.md) (Shadertoy ID [MsGSRd](https://www.shadertoy.com/view/MsGSRd)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TDSOTM_Nebula](Recursive/TDSOTM_Nebula.md) (Shadertoy ID [4dBSDV](https://www.shadertoy.com/view/4dBSDV)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Vine](Recursive/Vine.md) (Shadertoy ID [XldSz7](https://www.shadertoy.com/view/XldSz7)) ported by [JiPi](../Site/Profiles/JiPi.md)
+
+
+**[ShaderOfTheWeek Shaders](ShaderOfTheWeek/README.md)**
+- [Day94](ShaderOfTheWeek/Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) (Shadertoy ID [4s3SRN](https://www.shadertoy.com/view/4s3SRN)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
 **[Tunnel Shaders](Tunnel/README.md)**
