@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](../README.md) | [OVERVIEW](../OVERVIEW.md) | [Abstract](../Abstract/README.md) | [Blob](../Blob/README.md) | [Distortion](../Distortion/README.md) | [Fractals](../Fractals/README.md) | [Misc](../Misc/README.md) | **Object** | [Planet](../Planet/README.md) | [Recursive](../Recursive/README.md) | [Tunnel](../Tunnel/README.md)
+[README](../README.md) | [OVERVIEW](../OVERVIEW.md) | [Abstract](../Abstract/README.md) | [Blob](../Blob/README.md) | [Distortion](../Distortion/README.md) | [Fractals](../Fractals/README.md) | [Misc](../Misc/README.md) | **Object** | [Planet](../Planet/README.md) | [Recursive](../Recursive/README.md) | [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) | [Tunnel](../Tunnel/README.md)
 
 # Object Shaders
 
@@ -38,6 +38,9 @@ based on [Oblivion](https://www.shadertoy.com/view/XtfXDN) written by [Dave_Hosk
 
 ## **[ProceduralWalkAnimation](ProceduralWalkAnimation.md)**
 based on [ProceduralWalkAnimation](https://www.shadertoy.com/view/WlsSWS) written by [TLC123](https://www.shadertoy.com/user/TLC123)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[ShareX](ShareX.md)**
+based on [ShareX](https://www.shadertoy.com/view/WsKSRK) written by [fre3k](https://www.shadertoy.com/user/fre3k)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[WalkingCubes](WalkingCubes.md)**
 based on [WalkingCubes](https://www.shadertoy.com/view/Xl3XR4) written by [xorxor](https://www.shadertoy.com/user/xorxor)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

@@ -46,7 +46,7 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 # Shader of the week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
-[Shader of the Week](ShaderOfTheWeek/README.md)
+[Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
 **Current Shader of the Week (5th of October 2021):**
 
