@@ -48,9 +48,9 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](ShaderOfTheWeek/README.md)
 
-**Current Shader of the Week:**
+**Current Shader of the Week (5th of October 2021):**
 
-![SimpleSphereRaymarching](https://user-images.githubusercontent.com/78935215/135231477-3c4d5792-8541-43b3-9771-aad9b2c21aa7.gif)
+[![20210930_CLUB-CAVE-09](https://user-images.githubusercontent.com/78935215/136195940-27b6d480-b0bf-479c-95be-dfa31060eba9.gif)](Shaders/ShaderOfTheWeek/20210930_CLUB-CAVE-09.md)
 
 
 
