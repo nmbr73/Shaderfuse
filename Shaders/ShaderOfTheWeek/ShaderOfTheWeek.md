@@ -4,6 +4,11 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 
 
 ---
+## 20th of October 2021
+#### [TasteOfNoise7](TasteOfNoise7.md) (Shadertoy ID [NddSWs](https://www.shadertoy.com/view/NddSWs))
+[![TasteOfNoise7](https://user-images.githubusercontent.com/78935215/138074392-90ea744c-82e5-4215-ae4c-f55c1a184a47.gif)](TasteOfNoise7.md)
+
+---
 ## 5th of October 2021
 #### [20210930_CLUB-CAVE-09](20210930_CLUB-CAVE-09.md) (Shadertoy ID [NdKGWV](https://www.shadertoy.com/view/NdKGWV))
 [![20210930_CLUB-CAVE-09](https://user-images.githubusercontent.com/78935215/136195940-27b6d480-b0bf-479c-95be-dfa31060eba9.gif)](20210930_CLUB-CAVE-09.md)

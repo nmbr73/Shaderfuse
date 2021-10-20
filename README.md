@@ -33,6 +33,7 @@ See the following videos to get an idea what these Fuses look like:
 <tr>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=wKhv1nPb2lk" target="_blank"><img src="http://img.youtube.com/vi/wKhv1nPb2lk/0.jpg" alt="Demo 9" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/wKhv1nPb2lk?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=dFqDDr7S_K0" target="_blank"><img src="http://img.youtube.com/vi/dFqDDr7S_K0/0.jpg" alt="Demo 10" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/dFqDDr7S_K0?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=f14cOuMq-vk" target="_blank"><img src="http://img.youtube.com/vi/f14cOuMq-vk/0.jpg" alt="Demo 11" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/f14cOuMq-vk?style=social" /></a></td>
 </table>
 </center>
 
@@ -48,9 +49,9 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (5th of October 2021):**
+**Current Shader of the Week (20th of October 2021):**
 
-[![20210930_CLUB-CAVE-09](https://user-images.githubusercontent.com/78935215/136195940-27b6d480-b0bf-479c-95be-dfa31060eba9.gif)](Shaders/ShaderOfTheWeek/20210930_CLUB-CAVE-09.md)
+[![TasteOfNoise7](https://user-images.githubusercontent.com/78935215/138074392-90ea744c-82e5-4215-ae4c-f55c1a184a47.gif)](Shaders/ShaderOfTheWeek/TasteOfNoise7.md)
 
 
 
