@@ -4,6 +4,11 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 
 
 ---
+## 29th of October 2021
+#### [SpiraledLayers](SpiraledLayers.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf))
+[![SpiraledLayers](https://user-images.githubusercontent.com/78935215/139493856-cdb40fd4-3040-462f-b457-3eba242202ca.gif)](SpiraledLayers.md)
+
+---
 ## 20th of October 2021
 #### [TasteOfNoise7](TasteOfNoise7.md) (Shadertoy ID [NddSWs](https://www.shadertoy.com/view/NddSWs))
 [![TasteOfNoise7](https://user-images.githubusercontent.com/78935215/138074392-90ea744c-82e5-4215-ae4c-f55c1a184a47.gif)](TasteOfNoise7.md)
