@@ -2,6 +2,10 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+---
+## 3th of November 2021
+#### [AlexanderHornedSphereZoom](AlexanderHornedSphereZoom.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf))
+[![Alexander](https://user-images.githubusercontent.com/78935215/140505472-a94508a6-5299-4090-98d0-d28151fcde3b.gif)](AlexanderHornedSphereZoom.md)
 
 ---
 ## 29th of October 2021

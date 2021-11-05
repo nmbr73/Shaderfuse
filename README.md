@@ -49,9 +49,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (29th of October 2021):**
+**Current Shader of the Week (3th of November 2021):**
 
-[![SpiraledLayers](https://user-images.githubusercontent.com/78935215/139493856-cdb40fd4-3040-462f-b457-3eba242202ca.gif)](Shaders/ShaderOfTheWeek/SpiraledLayers.md)
+[![Alexander](https://user-images.githubusercontent.com/78935215/140505472-a94508a6-5299-4090-98d0-d28151fcde3b.gif)
+](Shaders/ShaderOfTheWeek/AlexanderHornedSphereZoom.md)
 
 
 
