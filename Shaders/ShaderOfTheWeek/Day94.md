@@ -16,6 +16,6 @@ Have fun
 
 ## Compatibility
 - [ ] Tested on macOS/Metal ... crashes Fusion on a Mac! 💣
-- [ ] Tested on macOS/OpenCL
+- [ ] Tested on macOS/OpenCL ... at least it leads to an error that I can further investigate
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
