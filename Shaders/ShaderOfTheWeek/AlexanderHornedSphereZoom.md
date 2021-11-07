@@ -17,6 +17,6 @@ Have fun playing
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
+- [ ] Tested on macOS/OpenCL ... nope, does not crash but still looks not as expected :-/
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
