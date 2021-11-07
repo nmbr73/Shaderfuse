@@ -2,20 +2,28 @@
 
 # Tools
 
-WARNING! Setup.lua can be used, but all the other stuff in `Tools/` is very fragile and to be handled with great care.
-## Install
+
+**WARNING!** All the stuff in `Tools/` is very fragile and to be handled with great care!
+
+# Install
+
+Drag'n'drop `Setup.lua`on your Fuison working area - and you are done or nuked. For details proceed reading ...
+## Install via Setup-Script
 
 * Drag and drop `Tools/Setup.lua` from your working copy on your DaFusions working area
 * Check the 'Integrate the repository Tools into Script menu'  to - guess what - integrate the repository Tools into the Script menu
-* Do this at your very own risk!
-* Have fun and ignore the other 'Install Manually' sections in this readme file
 
 ![Setup](../Site/Setup.png)
 
-In particular if you are on Windows: don't forget to uncheck all options and to the save the configuration before moving or deleting your Shadertoys working copy!
+**IMPORTANT!** In particular if you are on Windows: don't forget to uncheck all options and to the save the configuration before moving or deleting your Shadertoys working copy!
 
 ## Install Manually
+
+You can ignore the following sections if you use the `Setup.lua` as described under 'Install'. The following instruction might help if you want to do the installation manually, if you want to understand what the setup script does, or if you want to get things right again, if the `Setup.lua`messed up your system.
+
 ### Install 'Tools' manually by copying the files
+
+Should work on macOS as well as on Windows (if you know where to find the corresponding DR and/or Fusion folders).
 
 * Copy the folder `Shadertoys` from `Shadertoys/Tools/Scripts/Comp/`to your `Scripts/Comp/` folder.
 * Copy the folder `Shadertoys` from `Shadertoys/Tools/Modules/Lua/`to your `Modules/Lua` folder.<br />
@@ -61,3 +69,43 @@ ln -s "$REPO/Tools/Modules/Lua/Shadertoys" Shadertoys
 cd "$BMD/DaVinci Resolve/Fusion/Scripts/Comp"
 ln -s "$REPO/Tools/Scripts/Comp/Shadertoys" Shadertoys
 ````
+
+
+# Repo Tools
+
+With `Setup.lua`'s *'Integrate the Repository tools into script menu'* option, the folder `Tools/Scripts/Comp/Shadertoys/` is linked into DaFusions `Fusion/Scripts/Comp/` folder. Thereby all the scripts in `Tools/Scripts/Comp/Shadertoys/` are accessible via the 'Workspace&#8594;Scrips&#8594;Shadertoys' menu in DaVinci Resolve, resp. the 'Script&#8594;Shadertoys' menu in Fusion.
+
+Mainly these make up the 'Rep Tools' submenu which are meant to perform one or the other action on the repository. This being said: these *Repo Tools* are only of interest for you, if you actively work on the repository and the Fuse's source code.
+
+## Create a single - Fat Boy - Installer containing all Fuses
+
+DOES NOT WORK YET! DOES NOTHING FOR THE TIME BEING!
+
+## Create a multiple Installers - one Installer per Fuse
+
+DOES NOT WORK YET! DOES NOTHING FOR THE TIME BEING!
+
+## Refresh the Fuse overview MarkDown files
+
+...
+
+## Update Fuses with current Boilerplate Code
+
+...
+
+## Write Atom and compile Fuses for publication on Reactor
+
+This copies all Fuses from `Shaders/` to the `Atom/com.JiPi.Shadertoys/Fuses/Shadertoys_wsl/` folder. Target filenames are the original Fuses' Shadertoy.com IDs to avoid any issues for the end user who installed the shaders via Reactor if a Fuse is renamed or moved within the repository. In each Fuse the FU register code and the code for the Fuse's Inspector controls is replaced by the respective `Tools/SNippets/*.reactor.lua` snipped (see the 'Snippets' section in this document for further information on these code snippets). After executing this script via the DaFusions script menu, the `Atom` folder should be ready to be zipped and shipped as a Reactor publication suggestion in the WSL forum.
+
+
+# Snippets
+
+Each Fuse contains a block of code to register the component with DaFusion - this block determines the Fuse's name, it shows an edit and a reload button for development purposes, etc. The `Tools/Snippets/FUREGISTERCLASS.development.lua` file contains that code block for all the Fuses under `Shaders/`. The `Tools/Snippets/FUREGISTERCLASS.reactor.lua` contains that exact block for Fuses that are supposed to be published to the WSL Reactor.
+
+Each Fuse contains some information that is displayed in the Inspector. That is e.g., a link to the webpage containing further information, the original name and author, etc. The `Tools/Snippets/SHADERFUSECONTROLS.*.lua` files contain the respective code block variants for the Fuses in the repository (`Shaders/`) as `*.development.lua` and those in case the Fuses are bundled for Reactor (`Atom/`) as `*.reactor.lua`.
+
+Calling the 'Update Fuses with current Boilerplate Code' menu item in the 'Repo Tools' submenu scans all Fuses under `Shaders/`and replaces the respective code blocks with those from the `*.development.lua` snippet files.
+
+When generating the Reactor package by calling 'Write Atom and compile Fuses for publication on Reactor' the script uses the `*.reactor.lua` snippets when writing the Fuses into the `Atom/` folder.
+
+Long story short: this way we have some consistent registration and information for each Fuse that, if needed, can be changed for all Fuses by simply editing the corresponding 'snippets'.
