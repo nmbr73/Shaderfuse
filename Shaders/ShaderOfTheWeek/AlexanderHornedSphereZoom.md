@@ -16,7 +16,7 @@ Have fun playing
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal :bomb::bomb::bomb: *... this one does instantly crash my DR*
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL ... interestingly enough it does not crash - but the result does look pretty strange
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
