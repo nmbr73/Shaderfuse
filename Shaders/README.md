@@ -93,9 +93,13 @@
 
 
 **[ShaderOfTheWeek Shaders](ShaderOfTheWeek/README.md)**
+- [20210930_CLUB-CAVE-09](ShaderOfTheWeek/20210930_CLUB-CAVE-09.md) :boom:
+- [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md) (Shadertoy ID [ttyGzW](https://www.shadertoy.com/view/ttyGzW)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Day94](ShaderOfTheWeek/Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) (Shadertoy ID [4s3SRN](https://www.shadertoy.com/view/4s3SRN)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) :boom:
+- [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) :boom:
 
 
 **[Tunnel Shaders](Tunnel/README.md)**

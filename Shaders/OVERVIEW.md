@@ -803,6 +803,31 @@
 ## ShaderOfTheWeek Shaders
 
 <table><tr>
+<td><img src="ShaderOfTheWeek/20210930_CLUB-CAVE-09_320x180.png" alt="ShaderOfTheWeek/20210930_CLUB-CAVE-09" width="320" height="180" /></td>
+<td><p>
+
+:boom:</p>
+<p>
+
+<nobr>Fuse: [20210930_CLUB-CAVE-09](ShaderOfTheWeek/20210930_CLUB-CAVE-09.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+</p><p style="color:red; font-weight:bold; ">Fuse name does not correspond to filename´</p>
+</td></tr>
+<tr>
+<td><img src="ShaderOfTheWeek/AlexanderHornedSphereZoom_320x180.png" alt="ShaderOfTheWeek/AlexanderHornedSphereZoom" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Shadertoy: [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW)</nobr><br />
+<nobr>Author: [tmst](https://www.shadertoy.com/user/tmst)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="ShaderOfTheWeek/Day94_320x180.png" alt="ShaderOfTheWeek/Day94" width="320" height="180" /></td>
 <td><p>
 
@@ -843,6 +868,28 @@
 <nobr>Author: [drschizzo](https://www.shadertoy.com/user/drschizzo)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
 </p>
+</td></tr>
+<tr>
+<td><img src="ShaderOfTheWeek/SpiraledLayers_320x180.png" alt="ShaderOfTheWeek/SpiraledLayers" width="320" height="180" /></td>
+<td><p>
+
+:boom:</p>
+<p>
+
+<nobr>Fuse: [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+</p><p style="color:red; font-weight:bold; ">fuse category 'Recursive' does not match fuse's subdirectory</p>
+</td></tr>
+<tr>
+<td><img src="ShaderOfTheWeek/TasteOfNoise7_320x180.png" alt="ShaderOfTheWeek/TasteOfNoise7" width="320" height="180" /></td>
+<td><p>
+
+:boom:</p>
+<p>
+
+<nobr>Fuse: [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+</p><p style="color:red; font-weight:bold; ">thumbnail does not exists</p>
 </td></tr>
 </table>
 
@@ -891,4 +938,5 @@
 </p>
 </td></tr>
 </table>
-:four_leaf_clover: 60<br />
+:four_leaf_clover: 61<br />
+:boom: 3<br />

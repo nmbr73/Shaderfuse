@@ -12,6 +12,12 @@
 
 # ShaderOfTheWeek Shaders
 
+## **[20210930_CLUB-CAVE-09](20210930_CLUB-CAVE-09.md)** :boom:
+- *Fuse name does not correspond to filename´*
+
+## **[AlexanderHornedSphereZoom](AlexanderHornedSphereZoom.md)**
+based on [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW) written by [tmst](https://www.shadertoy.com/user/tmst)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[Day94](Day94.md)**
 based on [Day94](https://www.shadertoy.com/view/tdXcWM) written by [jeyko](https://www.shadertoy.com/user/jeyko)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
@@ -20,4 +26,10 @@ based on [FractalFlythrough](https://www.shadertoy.com/view/4s3SRN) written by [
 
 ## **[SimpleSphereRaymarching](SimpleSphereRaymarching.md)**
 based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[SpiraledLayers](SpiraledLayers.md)** :boom:
+- *fuse category 'Recursive' does not match fuse's subdirectory*
+
+## **[TasteOfNoise7](TasteOfNoise7.md)** :boom:
+- *thumbnail does not exists*
 
