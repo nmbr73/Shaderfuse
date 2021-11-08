@@ -10,7 +10,7 @@ Have fun playing
 ![20210930_CLUB-CAVE-09](https://user-images.githubusercontent.com/78935215/136195940-27b6d480-b0bf-479c-95be-dfa31060eba9.gif)
 
 
-[![20210930_CLUB-CAVE-09](20210930_CLUB_CAVE_09.png)](20210930_CLUB-CAVE-09.fuse)
+[![20210930_CLUB-CAVE-09](ClubCave09.png)](20210930_CLUB-CAVE-09.fuse)
 
 
 
