@@ -12,11 +12,11 @@
 
 # ShaderOfTheWeek Shaders
 
-## **[20210930_CLUB-CAVE-09](20210930_CLUB-CAVE-09.md)** :boom:
-- *Fuse name does not correspond to filename´*
-
 ## **[AlexanderHornedSphereZoom](AlexanderHornedSphereZoom.md)**
 based on [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW) written by [tmst](https://www.shadertoy.com/user/tmst)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[ClubCave09](ClubCave09.md)**
+based on [20210930_CLUB-CAVE-09](https://www.shadertoy.com/view/ss3SD8) written by [0b5vr](https://www.shadertoy.com/user/0b5vr)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[Day94](Day94.md)**
 based on [Day94](https://www.shadertoy.com/view/tdXcWM) written by [jeyko](https://www.shadertoy.com/user/jeyko)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
@@ -27,9 +27,9 @@ based on [FractalFlythrough](https://www.shadertoy.com/view/4s3SRN) written by [
 ## **[SimpleSphereRaymarching](SimpleSphereRaymarching.md)**
 based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[SpiraledLayers](SpiraledLayers.md)** :boom:
-- *fuse category 'Recursive' does not match fuse's subdirectory*
+## **[SpiraledLayers](SpiraledLayers.md)**
+based on [Spiraled Layers](https://www.shadertoy.com/view/Ns3XWf) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[TasteOfNoise7](TasteOfNoise7.md)** :boom:
-- *thumbnail does not exists*
+## **[TasteOfNoise7](TasteOfNoise7.md)**
+based on [Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs) written by [leon](https://www.shadertoy.com/user/leon)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
