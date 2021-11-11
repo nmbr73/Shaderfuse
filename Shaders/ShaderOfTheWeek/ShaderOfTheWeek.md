@@ -2,6 +2,12 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+
+---
+## 11th of November 2021
+#### [FuturisticTunnel](FuturisticTunnel.md) (Shadertoy ID [wdScRd](https://www.shadertoy.com/view/wdScRd))
+[![FuturisticTunnel](https://user-images.githubusercontent.com/78935215/141265953-89f7042f-311a-4d84-9cdd-66bf12f2f5df.gif)](FuturisticTunnel.md)
+
 ---
 ## 3th of November 2021
 #### [AlexanderHornedSphereZoom](AlexanderHornedSphereZoom.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf))
