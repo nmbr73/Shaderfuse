@@ -2,6 +2,10 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+---
+## 18th of November 2021
+#### [RME4-Crater](RME4Crater.md) (Shadertoy ID [MlSBDt](https://www.shadertoy.com/view/MlSBDt))
+[![RME-Crater](https://user-images.githubusercontent.com/78935215/142388059-def0771b-7634-4a6b-ac4c-1db1ad505015.gif)](RME4Crater.md)
 
 ---
 ## 11th of November 2021

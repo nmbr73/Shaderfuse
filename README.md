@@ -49,10 +49,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (11th of November 2021):**
+**Current Shader of the Week (18th of November 2021):**
 
-[![FuturisticTunnel](https://user-images.githubusercontent.com/78935215/141265953-89f7042f-311a-4d84-9cdd-66bf12f2f5df.gif)
-](Shaders/ShaderOfTheWeek/FuturisticTunnel.md)
+[![RME-Crater](https://user-images.githubusercontent.com/78935215/142388059-def0771b-7634-4a6b-ac4c-1db1ad505015.gif)
+](Shaders/ShaderOfTheWeek/RME4Crater.md)
 
 
 
