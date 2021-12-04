@@ -80,20 +80,29 @@ See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far 
 -->
 [![Download ZIP](https://img.shields.io/badge/download-zip-blue)](https://github.com/nmbr73/Shadertoys/zipball/main "ZIP")
 
+## Reactor
 
+Best way to install the Fuses is to just use Reactor. Find the 'Shadertoys' package in the - guess what - 'Shaders' category. This is the most convenient and recommended way to if you just what to use them or have a quick look if they might be useful for you.
+
+Only thing to take into account is that this way you don't get the latest development versions. Stable toys are bundled from time to time and integrated in Reactor when reviewed.
 
 ## Repository
 
 Just clone the whole repository into a folder where it can reside. Drag'n'drop the `Tools/Setup.lua` onto your DaFusions working area. Select *'Use Fuses under Shaders straight out of the repository'*. Save this setting and restart the application. See the [Tools/README.md](Tools/README.md) for further information.
 
+This is the installation method recommended if you want to have with a single `git pull` all the latest development versions at hand. And in particular it is the way to go if you want to work on the code and contribute to the repository yourself.
 
 ## ZIP-File
 
-Find on [GitHub Pages](https://nmbr73.github.io/Shadertoys/) the Links to download the full `.tar.gz` or `.zip` archive. After unpacking you can again copy the whole `Shaders/`folder into your `Fuses` directory or pick and choose only single `.fuse` files you want to keep.
+Find on [GitHub Pages](https://nmbr73.github.io/Shadertoys/) the Links to download the full `.tar.gz` or `.zip` archive. After unpacking you can copy the whole `Shaders/` folder into your `Fuses` directory or pick and choose only single `.fuse` files you want to keep.
 
+<!--
 ## Fuse-Installers
 
-You can drag'n'drop the `*-Installer.lua` files (which you find in the repo or the ZIP archive) into your Fusion working area to copy the corresponding fuse into the appropriate path. These Installers are currently under construction and not available for all fuses.
+For this method you must have cloned the repository or downloaded and unpacked the ZIP file. You can then drag'n'drop the `*-Installer.lua` files (which you find in `Shaders/` folder's subdirectories of the repo or the ZIP archive) into your Fusion working area to copy the corresponding fuse into the appropriate path. These Installers are currently under construction and not available for all fuses.
+
+These installers are more meant to quickly try a single fuse or to share it via email, discord, etc.
+-->
 
 <!--
 ### Installer
