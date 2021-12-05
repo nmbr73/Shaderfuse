@@ -1,5 +1,5 @@
 # Modules/Lua/Shadertoys/
-These Lua files are just some (work in progress) helper modules to support the `Script/Comp/Shadertoys/Repository Tools/`.
+These Lua files are just some (work in progress) helper modules to support the `Script/Comp/Shadertoys/Repository Tools/`. Find the documentation on [/Tools/Documentation/](https://nmbr73.github.io/Shadertoys/Tools/Documentation/).
 
 ## Documentation
 
