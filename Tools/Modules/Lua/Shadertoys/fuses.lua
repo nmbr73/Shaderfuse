@@ -1,16 +1,51 @@
+--- A list of fuses.
+--
+-- This module scanns all the files in the repository and manages all
+-- the fuses found in a list of Fuse objects.
+--
+--    local fuses = require("Shadertoys/fuses")
+--    fuses.fetch(user_config.pathToRepository..'Shaders/',false)
+--    for i, fuse in ipairs(fuses.list) do
+--      fuse:read()
+--      ...
+--
+-- Dependencies: `bmd.readdir`
+-- @module fuses
+
+
 
 Fuse = require("Shadertoys/Fuse")
 
-local fuses = { list = nil, categories = {} }
-
--- function Fuses:new()
---   local o = {}
---   setmetatable(o, self)
---   self.__index = self
---   return o
--- end
 
 
+------------------------------------------------------------------------------
+-- Local strcuture to manage the Fuse objects.
+--
+-- This hash `fuses` contains a `list` structure with the valid Fuse object
+-- instances and with `categories` the names of the folders those Fuses
+-- were found in.
+--
+-- @table fuses
+-- @field list A structure to manage a list of fuses.
+-- @field categories Hash to look up categories.
+--
+local fuses = {
+  list = nil,
+  categories = {}
+}
+
+
+
+------------------------------------------------------------------------------
+-- Get a fuse object form the list of fuses.
+--
+-- Searches in the list of fuses for an object of category `category`
+-- and the name `fusename`.
+--
+-- @param category The category (folder name in the Shaders subdirectory) to search in
+-- @param fusename The name (file name without suffix) of the fuse to search for
+-- @return the Fuse object; `nil` if not found
+--
 function fuses.get_fuse(category,fusename)
   for i, f in ipairs(fuses.list) do
     if f.file_category == category and f.file_fusename == fusename then
@@ -21,19 +56,21 @@ function fuses.get_fuse(category,fusename)
   return nil
 end
 
-function fuses.fetch(
-  path,     -- Full filepath to the folder containing the fuses
-  details,  -- true, if the fuses should be read for details; optional (default: false)
-  list      -- must be nil
-  )
 
-  -- Traverses the directory 'path' and adds all files with the suffix
-  -- 'suffix' to the 'list'. Files and directories stating with '.' are
-  -- omitted!
+
+------------------------------------------------------------------------------
+-- Initialize the `fuses` structure.
+--
+-- Traverses the `path` and searches for Fuses to add them to the `fuses.list`.
+--
+-- @param path The path to search through for fuse files.
+-- @param details true, if the fuses should be read for details; optional (default: false)
+--
+function fuses.fetch(path, details, list)
+
+  -- 'list' parameter is only for internal use to recursively call 'fetch()''.
 
   assert(path)
-
-
 
   if list==nil then
     list = {}
@@ -79,7 +116,6 @@ function fuses.fetch(
         if (v.IsDir == false) then
           if string.sub(v.Name,-5) == '.fuse' then
             table.insert(list,Fuse:new(path..v.Name))
-
           end
         else
           fuses.fetch(path..v.Name.."/", false, list )
@@ -89,7 +125,6 @@ function fuses.fetch(
 
   end
 
-  --return {}
 end
 
 

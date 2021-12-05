@@ -1,8 +1,10 @@
+--- A Fuse class.
+--
+-- Class to help to work with a fuse file.
+--
+-- Dependencies: `bmd.fileexists`
+-- @classmod Fuse
 
-
--- ----------------------------------------------------------------------
--- WORK WITH A FUSE FILE
--- ----------------------------------------------------------------------
 local Fuse = {
     file_filepath='',
     file_basepath='',
@@ -48,6 +50,9 @@ local Fuse = {
 
 
 
+------------------------------------------------------------------------------
+-- Create an instance.
+--
 function Fuse:new(filepath)
   local o = {}
   setmetatable(o, self)
@@ -58,11 +63,19 @@ function Fuse:new(filepath)
 end
 
 
+
+------------------------------------------------------------------------------
+-- Save some memory.
+--
 function Fuse:purge()
   self.fuse_sourceCode = ''
 end
 
 
+
+------------------------------------------------------------------------------
+-- Initialize the object.
+--
 function Fuse:init(filepath)
   assert(filepath~=nil)
 
