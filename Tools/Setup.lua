@@ -10,7 +10,7 @@
 
 
 
-local icon            = nil
+local image           = nil
 local repositorypath  = nil
 local usrcfg_filename = nil
 local paths           = {}
@@ -21,6 +21,7 @@ local ui_dispatcher   = bmd.UIDispatcher(ui)
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
 
 function init()
 
@@ -28,7 +29,7 @@ function init()
   local fusepath          = fusion:MapPath("Fuses:/")
         repositorypath    = debug.getinfo(2, "S").source:sub(2):match("(.*[/\\])Tools[/\\]")
 
-  icon=assert(loadfile(repositorypath.."Tools/Modules/Lua/Shadertoys/icon.lua"))()
+  image=assert(loadfile(repositorypath.."Tools/Modules/Lua/Shadertoys/image.lua"))()
 
   assert(bmd.direxists(repositorypath..'.git/'))
 
@@ -130,7 +131,7 @@ function usrcfg_dialog()
 
         ui:HGap(5),
 
-        icon.label(ui),
+        image.icon_label(ui),
 
         ui:HGap(10),
 
@@ -217,7 +218,7 @@ function setup_dialog()
 
         ui:HGap(5),
 
-        icon.label(ui),
+        image.icon_label(ui),
 
         ui:HGap(10),
 
@@ -308,7 +309,7 @@ function restart_dialog()
 
         ui:HGap(5),
 
-        icon.label(ui),
+        image.icon_label(ui),
 
         ui:HGap(10),
 

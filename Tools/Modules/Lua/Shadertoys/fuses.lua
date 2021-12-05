@@ -18,12 +18,11 @@ Fuse = require("Shadertoys/Fuse")
 
 
 
-------------------------------------------------------------------------------
--- Local strcuture to manage the Fuse objects.
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Local structure to manage the Fuse objects.
 --
--- This hash `fuses` contains a `list` structure with the valid Fuse object
--- instances and with `categories` the names of the folders those Fuses
--- were found in.
+-- This hash `fuses` contains a `list` structure with the valid Fuse object instances and with `categories` the names of the folders those
+-- Fuses were found in.
 --
 -- @table fuses
 -- @field list A structure to manage a list of fuses.
@@ -36,15 +35,14 @@ local fuses = {
 
 
 
-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
 -- Get a fuse object form the list of fuses.
 --
--- Searches in the list of fuses for an object of category `category`
--- and the name `fusename`.
+-- Searches in the list of fuses for an object of category `category` and the name `fusename`.
 --
--- @param category The category (folder name in the Shaders subdirectory) to search in
--- @param fusename The name (file name without suffix) of the fuse to search for
--- @return the Fuse object; `nil` if not found
+-- @param[type=string] category The category (folder name in the Shaders subdirectory) to search in
+-- @param[type=string] fusename The name (file name without suffix) of the fuse to search for
+-- @return[type=Fuse] the Fuse object; `nil` if not found
 --
 function fuses.get_fuse(category,fusename)
   for i, f in ipairs(fuses.list) do
@@ -58,13 +56,13 @@ end
 
 
 
-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
 -- Initialize the `fuses` structure.
 --
 -- Traverses the `path` and searches for Fuses to add them to the `fuses.list`.
 --
--- @param path The path to search through for fuse files.
--- @param details true, if the fuses should be read for details; optional (default: false)
+-- @param[type=string] path The path to search through for fuse files.
+-- @param[type=bool,opt=false] details true, if the fuses should be read for details
 --
 function fuses.fetch(path, details, list)
 

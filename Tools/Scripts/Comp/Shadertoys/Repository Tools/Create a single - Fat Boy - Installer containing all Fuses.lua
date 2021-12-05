@@ -2,7 +2,7 @@ require("string")
 
 local user_config = require("Shadertoys/~user_config")
 local fuses       = require("Shadertoys/fuses")
-local ui          = require("Shadertoys/ui")
+local image       = require("Shadertoys/image")
 local selectFusesDialog = require("Shadertoys/selectFusesDialog")
 
 -- print("sep '"..util.path_separator.."'")
@@ -17,8 +17,8 @@ local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
 
-function createSingleInstallers(fuses)
-  print("create single installsers")
+function createFatty(fuses)
+  print("create a single installer - one containing all fuses")
   ui_dispatcher:ExitLoop()
 end
 
@@ -28,8 +28,8 @@ selectFusesDialog.window(
     {
       fuses=fuses,
       windowTitle='Create one Installer containing all Fuses',
-      onInstall=createSingleInstallers,
-      logo=ui.logo(ui_manager),
+      onInstall=createFatty,
+      logo=image.logo_label(ui_manager),
     }):Show()
 
 

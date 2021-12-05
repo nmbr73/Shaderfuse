@@ -2,7 +2,7 @@ require("string")
 
 local user_config = require("Shadertoys/~user_config")
 local fuses       = require("Shadertoys/fuses")
-local ui          = require("Shadertoys/ui")
+local image       = require("Shadertoys/image")
 local selectFusesDialog = require("Shadertoys/selectFusesDialog")
 
 -- print("sep '"..util.path_separator.."'")
@@ -18,7 +18,7 @@ fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
 
 function createSingleInstallers(fuses)
-  print("create single installsers")
+  print("create multiple installers - one per fuse")
   ui_dispatcher:ExitLoop()
 end
 
@@ -29,7 +29,7 @@ selectFusesDialog.window(
       fuses=fuses,
       windowTitle='Create a dedicated Installer file for each Fuse',
       onInstall=createSingleInstallers,
-      logo=ui.logo(ui_manager),
+      logo=image.logo_label(ui_manager),
     }):Show()
 
 
