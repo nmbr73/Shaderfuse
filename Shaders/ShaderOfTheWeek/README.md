@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](../README.md) | [OVERVIEW](../OVERVIEW.md) | [Abstract](../Abstract/README.md) | [Blob](../Blob/README.md) | [Distortion](../Distortion/README.md) | [Fractals](../Fractals/README.md) | [Misc](../Misc/README.md) | [Object](../Object/README.md) | [Planet](../Planet/README.md) | [Recursive](../Recursive/README.md) | **ShaderOfTheWeek** | [Tunnel](../Tunnel/README.md)
+[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Blob](../Blob/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · **ShaderOfTheWeek** · [Tunnel](../Tunnel/README.md)
 
 # ShaderOfTheWeek Shaders
 
@@ -23,6 +23,15 @@ based on [Day94](https://www.shadertoy.com/view/tdXcWM) written by [jeyko](https
 
 ## **[FractalFlythrough](FractalFlythrough.md)**
 based on [FractalFlythrough](https://www.shadertoy.com/view/4s3SRN) written by [Shane](https://www.shadertoy.com/user/Shane)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[FractalGliding](FractalGliding.md)**
+based on [Fractal Gliding](https://www.shadertoy.com/view/ftGGDR) written by [AntoineC](https://www.shadertoy.com/user/AntoineC)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[FuturisticTunnel](FuturisticTunnel.md)**
+based on [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd) written by [julianlumia](https://www.shadertoy.com/user/julianlumia)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[RME4Crater](RME4Crater.md)**
+based on [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt) written by [patu](https://www.shadertoy.com/user/patu)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[SimpleSphereRaymarching](SimpleSphereRaymarching.md)**
 based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

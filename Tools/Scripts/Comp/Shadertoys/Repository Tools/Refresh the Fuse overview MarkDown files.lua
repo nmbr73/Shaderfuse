@@ -39,12 +39,12 @@ readme:write(header)
 local links=''
 
 for i,cat in ipairs(fuses.categories) do
-  links=links..' | ['..cat..']('..cat..'/README.md)'
+  links=links..' · ['..cat..']('..cat..'/README.md)'
 end
 
 
-overview:write("[README](README.md) | **OVERVIEW**"..links.."\n\n")
-readme:write("**README** | [OVERVIEW](OVERVIEW.md)"..links.."\n\n")
+overview:write("[README](README.md) · **OVERVIEW**"..links.."\n\n")
+readme:write("**README** · [OVERVIEW](OVERVIEW.md)"..links.."\n\n")
 
 overview:write('# Shaders\n\n')
 readme:write('# Shaders\n\n')
@@ -79,13 +79,13 @@ for i, fuse in ipairs(fuses.list) do
     readme_cat   = io.open(user_config.pathToRepository..'Shaders/'..fuse.file_category..'/README.md',"w")
     readme_cat:write(header)
 
-    local links='[README](../README.md) | [OVERVIEW](../OVERVIEW.md)'
+    local links='[README](../README.md) · [OVERVIEW](../OVERVIEW.md)'
 
     for i,cat in ipairs(fuses.categories) do
         if cat==currentCategory then
-          links=links..' | **'..cat..'**'
+          links=links..' · **'..cat..'**'
         else
-          links=links..' | ['..cat..'](../'..cat..'/README.md)'
+          links=links..' · ['..cat..'](../'..cat..'/README.md)'
         end
     end
 

@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](README.md) | **OVERVIEW** | [Abstract](Abstract/README.md) | [Blob](Blob/README.md) | [Distortion](Distortion/README.md) | [Fractals](Fractals/README.md) | [Misc](Misc/README.md) | [Object](Object/README.md) | [Planet](Planet/README.md) | [Recursive](Recursive/README.md) | [ShaderOfTheWeek](ShaderOfTheWeek/README.md) | [Tunnel](Tunnel/README.md)
+[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Blob](Blob/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Tunnel](Tunnel/README.md)
 
 # Shaders
 
@@ -859,6 +859,48 @@
 </p>
 </td></tr>
 <tr>
+<td><img src="ShaderOfTheWeek/FractalGliding_320x180.png" alt="ShaderOfTheWeek/FractalGliding" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [FractalGliding](ShaderOfTheWeek/FractalGliding.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Shadertoy: [Fractal Gliding](https://www.shadertoy.com/view/ftGGDR)</nobr><br />
+<nobr>Author: [AntoineC](https://www.shadertoy.com/user/AntoineC)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="ShaderOfTheWeek/FuturisticTunnel_320x180.png" alt="ShaderOfTheWeek/FuturisticTunnel" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Shadertoy: [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd)</nobr><br />
+<nobr>Author: [julianlumia](https://www.shadertoy.com/user/julianlumia)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
+<td><img src="ShaderOfTheWeek/RME4Crater_320x180.png" alt="ShaderOfTheWeek/RME4Crater" width="320" height="180" /></td>
+<td><p>
+
+:four_leaf_clover:</p>
+<p>
+
+<nobr>Fuse: [RME4Crater](ShaderOfTheWeek/RME4Crater.md)</nobr><br />
+<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Shadertoy: [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt)</nobr><br />
+<nobr>Author: [patu](https://www.shadertoy.com/user/patu)</nobr><br />
+<nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
+</p>
+</td></tr>
+<tr>
 <td><img src="ShaderOfTheWeek/SimpleSphereRaymarching_320x180.png" alt="ShaderOfTheWeek/SimpleSphereRaymarching" width="320" height="180" /></td>
 <td><p>
 
@@ -947,4 +989,4 @@
 </p>
 </td></tr>
 </table>
-:four_leaf_clover: 64<br />
+:four_leaf_clover: 67<br />
