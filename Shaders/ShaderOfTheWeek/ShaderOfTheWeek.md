@@ -2,6 +2,11 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+
+---
+## 8th of Dezember 2021
+#### [HyperDough](HyperDough.md) (Shadertoy ID [7tcGWB](https://www.shadertoy.com/view/7tcGWB))
+[![HyperDough](https://user-images.githubusercontent.com/78935215/145252282-ed106aa9-d0dc-4f39-938c-08511beeb8a0.gif)](HyperDough.md)
 ---
 ## 3th of Dezember 2021
 #### [FractalGliding](FractalGliding.md) (Shadertoy ID [ftGGDR](https://www.shadertoy.com/view/ftGGDR))

@@ -51,10 +51,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (3th of Dezember 2021):**
+**Current Shader of the Week (8th of Dezember 2021):**
 
-[![FractalGliding](https://user-images.githubusercontent.com/78935215/144676583-8f728705-53d6-4c52-8302-a9e9a88c780b.gif)
-](Shaders/ShaderOfTheWeek/FractalGliding.md)
+[![HyperDough](https://user-images.githubusercontent.com/78935215/145252282-ed106aa9-d0dc-4f39-938c-08511beeb8a0.gif)
+](Shaders/ShaderOfTheWeek/HyperDough.md)
 
 
 
