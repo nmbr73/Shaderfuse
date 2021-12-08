@@ -61,7 +61,7 @@ for i, fuse in ipairs(fuses.list) do
   if fuse.file_category ~= currentCategory then
 
     if currentCategory~='' then
-      overview:write('</table>\n\n')
+      overview:write('\n\n')
       if readme_cat~=nil then
         readme_cat:close()
         readme_cat=nil
@@ -72,7 +72,7 @@ for i, fuse in ipairs(fuses.list) do
 
 
 
-    overview:write("## "..fuse.file_category.." Shaders\n\n<table>")
+    overview:write("## "..fuse.file_category.." Shaders\n\n")
 
     readme:write('\n\n**['..fuse.file_category..' Shaders]('..fuse.file_category..'/README.md)**\n')
 
@@ -108,21 +108,19 @@ for i, fuse in ipairs(fuses.list) do
 
 
   overview:write(
-      '<tr>\n'
-    ..'<td>'
-    ..'<img src="'..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" alt="'..fuse.file_category..'/'..fuse.file_fusename..'" width="320" height="180" />'
-    ..'</td>\n<td><p>\n'..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'</p>\n<p>\n\n'
-    ..'Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md)<br />\n'
-    ..'Category: ['..fuse.file_category..']('..fuse.file_category..'/README.md)<br />\n'
+      '\n'
+    ..'!['..fuse.file_category..'/'..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png)\\\n'
+    ..'Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) '..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'\\\n'
+    ..'Category: ['..fuse.file_category..']('..fuse.file_category..'/README.md)\\\n'
     )
 
 
 
   if (not(fuse.error)) then
     overview:write(
-        '<nobr>Shadertoy: ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')</nobr><br />\n'
-      ..'<nobr>Author: ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')</nobr><br />\n'
-      ..'<nobr>Ported by: ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)</nobr><br />\n'
+        'Shadertoy: ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')\\\n'
+      ..'Author: ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')\\\n'
+      ..'Ported by: ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n'
       )
 
     readme:write('- ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) (Shadertoy ID ['..fuse.shadertoy_id..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')) ported by ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n')
@@ -132,7 +130,7 @@ for i, fuse in ipairs(fuses.list) do
   else
 
 
-    overview:write('</p><p style="color:red; font-weight:bold; ">'..fuse.error)
+    overview:write('**'..fuse.error..'**\n')
 
     readme:write('- ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) :boom:\n')
 
@@ -140,20 +138,20 @@ for i, fuse in ipairs(fuses.list) do
 
   end
 
-  overview:write('</p>\n</td></tr>\n')
+  overview:write('\n')
 
 end
 
 if currentCategory~='' then
-  overview:write('</table>\n')
+  overview:write('\n')
 end
 
 if okay > 0 then
-  overview:write(":four_leaf_clover: "..okay.."<br />\n")
+  overview:write(":four_leaf_clover: "..okay.."\n\n")
 end
 
 if boom > 0 then
-  overview:write(":boom: "..boom.."<br />\n")
+  overview:write(":boom: "..boom.."\n\n")
 end
 
 
