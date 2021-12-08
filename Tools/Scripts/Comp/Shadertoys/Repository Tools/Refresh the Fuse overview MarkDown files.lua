@@ -107,23 +107,15 @@ for i, fuse in ipairs(fuses.list) do
   end
 
 
-  -- overview:write(
-  --     '<tr>\n'
-  --   ..'<td>'
-  --   ..'<img src="'..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" alt="'..fuse.file_category..'/'..fuse.file_fusename..'" width="320" height="180" />'
-  --   ..'</td>\n<td><p>\n\n'..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'</p>\n<p>\n\n'
-  --   ..'<nobr>Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md)</nobr><br />\n'
-  --   ..'<nobr>Category: ['..fuse.file_category..']('..fuse.file_category..'/README.md)</nobr><br />\n'
-  --   )
-
   overview:write(
       '<tr>\n'
     ..'<td>'
     ..'<img src="'..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" alt="'..fuse.file_category..'/'..fuse.file_fusename..'" width="320" height="180" />'
     ..'</td>\n<td><p>\n\n'..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'</p>\n<p>\n\n'
-    ..'<nobr>Fuse: <a href="'..fuse.file_category..'/'..fuse.file_fusename..'.md">'..fuse.file_fusename..'</a></nobr><br />\n'
-    ..'<nobr>Category: <a href="'..fuse.file_category..'/README.md">'..fuse.file_category..'</nobr><br />\n'
+    ..'Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md)<br />\n'
+    ..'<nobr>Category: ['..fuse.file_category..']('..fuse.file_category..'/README.md)</nobr><br />\n'
     )
+
 
 
   if (not(fuse.error)) then
