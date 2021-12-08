@@ -61,7 +61,7 @@ for i, fuse in ipairs(fuses.list) do
   if fuse.file_category ~= currentCategory then
 
     if currentCategory~='' then
-      overview:write('</table>\n\n')
+      overview:write('\n\n')
       if readme_cat~=nil then
         readme_cat:close()
         readme_cat=nil
@@ -108,8 +108,7 @@ for i, fuse in ipairs(fuses.list) do
 
 
   overview:write(
-      '<tr>\n'
-    ..'<td>'
+      '\n'
     ..'[!'..fuse.file_category..'/'..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png)\\\n'
     ..'Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) '..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'\\\n'
     ..'Category: ['..fuse.file_category..']('..fuse.file_category..'/README.md)\\\n'
