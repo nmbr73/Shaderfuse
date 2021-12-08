@@ -28,6 +28,8 @@ See the following videos to get an idea what these Fuses look like:
 <tr>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=WGWCrhPNmdg" target="_blank"><img src="http://img.youtube.com/vi/WGWCrhPNmdg/0.jpg" alt="Demo 5" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/WGWCrhPNmdg?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=OYOar65omeM" target="_blank"><img src="http://img.youtube.com/vi/OYOar65omeM/0.jpg" alt="Demo 6" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/OYOar65omeM?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=8sUu5GcDako" target="_blank"><img src="http://img.youtube.com/vi/8sUu5GcDako/0.jpg" alt="Demo 7" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/8sUu5GcDako?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=OKpJbFisE4c" target="_blank"><img src="http://img.youtube.com/vi/OKpJbFisE4c/0.jpg" alt="Demo 8" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/OKpJbFisE4c?style=social" /></a></td>
 </tr>
 </table>
 </center>
@@ -37,8 +39,6 @@ See the following videos to get an idea what these Fuses look like:
 <tr>
 </tr>
 <tr>
-<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=8sUu5GcDako" target="_blank"><img src="http://img.youtube.com/vi/8sUu5GcDako/0.jpg" alt="Demo 7" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/8sUu5GcDako?style=social" /></a></td>
-<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=OKpJbFisE4c" target="_blank"><img src="http://img.youtube.com/vi/OKpJbFisE4c/0.jpg" alt="Demo 8" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/OKpJbFisE4c?style=social" /></a></td>
 </tr>
 <tr>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=wKhv1nPb2lk" target="_blank"><img src="http://img.youtube.com/vi/wKhv1nPb2lk/0.jpg" alt="Demo 9" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/wKhv1nPb2lk?style=social" /></a></td>
