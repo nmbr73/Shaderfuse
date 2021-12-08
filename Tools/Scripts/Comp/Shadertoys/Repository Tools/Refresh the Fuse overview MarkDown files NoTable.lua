@@ -109,7 +109,7 @@ for i, fuse in ipairs(fuses.list) do
 
   overview:write(
       '\n'
-    ..'[!'..fuse.file_category..'/'..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png)\\\n'
+    ..'!['..fuse.file_category..'/'..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png)\\\n'
     ..'Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) '..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'\\\n'
     ..'Category: ['..fuse.file_category..']('..fuse.file_category..'/README.md)\\\n'
     )
@@ -120,7 +120,7 @@ for i, fuse in ipairs(fuses.list) do
     overview:write(
         'Shadertoy: ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')\\\n'
       ..'Author: ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')\\\n'
-      ..'Ported by: ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\\\n'
+      ..'Ported by: ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n'
       )
 
     readme:write('- ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) (Shadertoy ID ['..fuse.shadertoy_id..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')) ported by ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n')
@@ -147,11 +147,11 @@ if currentCategory~='' then
 end
 
 if okay > 0 then
-  overview:write(":four_leaf_clover: "..okay.."\\\n")
+  overview:write(":four_leaf_clover: "..okay.."\n\n")
 end
 
 if boom > 0 then
-  overview:write(":boom: "..boom.."\n")
+  overview:write(":boom: "..boom.."\n\n")
 end
 
 
