@@ -36,6 +36,7 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=dFqDDr7S_K0" target="_blank"><img src="http://img.youtube.com/vi/dFqDDr7S_K0/0.jpg" alt="Demo 10" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/dFqDDr7S_K0?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=f14cOuMq-vk" target="_blank"><img src="http://img.youtube.com/vi/f14cOuMq-vk/0.jpg" alt="Demo 11" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/f14cOuMq-vk?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=tDWsdnl7SdE" target="_blank"><img src="http://img.youtube.com/vi/tDWsdnl7SdE/0.jpg" alt="Demo 12" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/f14cOuMq-vk?style=social" /></a></td>
+</tr>
 </table>
 </center>
 
