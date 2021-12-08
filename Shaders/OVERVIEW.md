@@ -21,8 +21,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/BumpyReflectingBalls.md">BumpyReflectingBalls</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB)</nobr><br />
 <nobr>Author: [metabog](https://www.shadertoy.com/user/metabog)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -35,8 +35,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Crazyness](Abstract/Crazyness.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/Crazyness.md">Crazyness</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [craziness](https://www.shadertoy.com/view/wdjSRc)</nobr><br />
 <nobr>Author: [spsherk_](https://www.shadertoy.com/user/spsherk_)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
@@ -49,8 +49,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [CrossDistance](Abstract/CrossDistance.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/CrossDistance.md">CrossDistance</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Cross - distance](https://www.shadertoy.com/view/XtGfzw)</nobr><br />
 <nobr>Author: [iq](https://www.shadertoy.com/user/iq)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
@@ -63,8 +63,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Dynamism](Abstract/Dynamism.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/Dynamism.md">Dynamism</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Dynamism](https://www.shadertoy.com/view/MtKSWW)</nobr><br />
 <nobr>Author: [nimitz](https://www.shadertoy.com/user/nimitz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -77,8 +77,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Favela](Abstract/Favela.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/Favela.md">Favela</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Favela](https://www.shadertoy.com/view/ldGcDh)</nobr><br />
 <nobr>Author: [duvengar](https://www.shadertoy.com/user/duvengar)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
@@ -91,8 +91,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FlightThroughANebula](Abstract/FlightThroughANebula.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/FlightThroughANebula.md">FlightThroughANebula</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Flight Through A Nebula V3](https://www.shadertoy.com/view/tsK3Rd)</nobr><br />
 <nobr>Author: [morgan3d](https://www.shadertoy.com/user/morgan3d)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -105,8 +105,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Mosaic](Abstract/Mosaic.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/Mosaic.md">Mosaic</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [voronoi solid with borders](https://www.shadertoy.com/view/XtySRc)</nobr><br />
 <nobr>Author: [Darksecond](https://www.shadertoy.com/user/Darksecond)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -119,8 +119,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Noisecube](Abstract/Noisecube.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/Noisecube.md">Noisecube</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Noisecube](https://www.shadertoy.com/view/4sGBD1)</nobr><br />
 <nobr>Author: [flimshaw](https://www.shadertoy.com/user/flimshaw)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -133,8 +133,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [OtherWorlds](Abstract/OtherWorlds.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/OtherWorlds.md">OtherWorlds</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Other Worlds\bump experiment](https://www.shadertoy.com/view/Ns2XzR)</nobr><br />
 <nobr>Author: [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -147,8 +147,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [OverstimulatedNeurons](Abstract/OverstimulatedNeurons.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/OverstimulatedNeurons.md">OverstimulatedNeurons</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Overstimulated Neurons](https://www.shadertoy.com/view/NdlSD8)</nobr><br />
 <nobr>Author: [Chaotnix](https://www.shadertoy.com/user/Chaotnix)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -161,8 +161,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [RainbowSlices](Abstract/RainbowSlices.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/RainbowSlices.md">RainbowSlices</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)</nobr><br />
 <nobr>Author: [fizzer](https://www.shadertoy.com/user/fizzer)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
@@ -175,8 +175,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Raysemigarbage](Abstract/Raysemigarbage.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/Raysemigarbage.md">Raysemigarbage</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [raysemigarbage#3 but hilly](https://www.shadertoy.com/view/3tdSW8)</nobr><br />
 <nobr>Author: [supastav](https://www.shadertoy.com/user/supastav)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -189,8 +189,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [StainedLights](Abstract/StainedLights.md)</nobr><br />
-<nobr>Category: [Abstract](Abstract/README.md)</nobr><br />
+<nobr>Fuse: <a href="Abstract/StainedLights.md">StainedLights</a></nobr><br />
+<nobr>Category: <a href="Abstract/README.md">Abstract</nobr><br />
 <nobr>Shadertoy: [Stained Lights](https://www.shadertoy.com/view/WlsSzM)</nobr><br />
 <nobr>Author: [104](https://www.shadertoy.com/user/104)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
@@ -207,8 +207,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FunWithMetaballs](Blob/FunWithMetaballs.md)</nobr><br />
-<nobr>Category: [Blob](Blob/README.md)</nobr><br />
+<nobr>Fuse: <a href="Blob/FunWithMetaballs.md">FunWithMetaballs</a></nobr><br />
+<nobr>Category: <a href="Blob/README.md">Blob</nobr><br />
 <nobr>Shadertoy: [FunWithMetaballs](https://www.shadertoy.com/view/MlyXWV)</nobr><br />
 <nobr>Author: [fwilliams](https://www.shadertoy.com/user/fwilliams)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -221,8 +221,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [TorturedBlob](Blob/TorturedBlob.md)</nobr><br />
-<nobr>Category: [Blob](Blob/README.md)</nobr><br />
+<nobr>Fuse: <a href="Blob/TorturedBlob.md">TorturedBlob</a></nobr><br />
+<nobr>Category: <a href="Blob/README.md">Blob</nobr><br />
 <nobr>Shadertoy: [TorturedBlob](https://www.shadertoy.com/view/MlKGDK)</nobr><br />
 <nobr>Author: [roywig](https://www.shadertoy.com/user/roywig)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -235,8 +235,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [XRaymarching](Blob/XRaymarching.md)</nobr><br />
-<nobr>Category: [Blob](Blob/README.md)</nobr><br />
+<nobr>Fuse: <a href="Blob/XRaymarching.md">XRaymarching</a></nobr><br />
+<nobr>Category: <a href="Blob/README.md">Blob</nobr><br />
 <nobr>Shadertoy: [XRaymarching](https://www.shadertoy.com/view/XtByWW)</nobr><br />
 <nobr>Author: [Aeless](https://www.shadertoy.com/user/Aeless)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -253,8 +253,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [DisplacementShader](Distortion/DisplacementShader.md)</nobr><br />
-<nobr>Category: [Distortion](Distortion/README.md)</nobr><br />
+<nobr>Fuse: <a href="Distortion/DisplacementShader.md">DisplacementShader</a></nobr><br />
+<nobr>Category: <a href="Distortion/README.md">Distortion</nobr><br />
 <nobr>Shadertoy: [DisplacementShader](https://www.shadertoy.com/view/MtBfR3)</nobr><br />
 <nobr>Author: [Coolok](https://www.shadertoy.com/user/Coolok)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -267,8 +267,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FbmWarp](Distortion/FbmWarp.md)</nobr><br />
-<nobr>Category: [Distortion](Distortion/README.md)</nobr><br />
+<nobr>Fuse: <a href="Distortion/FbmWarp.md">FbmWarp</a></nobr><br />
+<nobr>Category: <a href="Distortion/README.md">Distortion</nobr><br />
 <nobr>Shadertoy: [Fbm Warp](https://www.shadertoy.com/view/ttGyzG)</nobr><br />
 <nobr>Author: [hanker](https://www.shadertoy.com/user/hanker)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -285,8 +285,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [EnergyPlant](Fractals/EnergyPlant.md)</nobr><br />
-<nobr>Category: [Fractals](Fractals/README.md)</nobr><br />
+<nobr>Fuse: <a href="Fractals/EnergyPlant.md">EnergyPlant</a></nobr><br />
+<nobr>Category: <a href="Fractals/README.md">Fractals</nobr><br />
 <nobr>Shadertoy: [EnergyPlant](https://www.shadertoy.com/view/WdjBWc)</nobr><br />
 <nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -299,8 +299,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Fractal03](Fractals/Fractal03.md)</nobr><br />
-<nobr>Category: [Fractals](Fractals/README.md)</nobr><br />
+<nobr>Fuse: <a href="Fractals/Fractal03.md">Fractal03</a></nobr><br />
+<nobr>Category: <a href="Fractals/README.md">Fractals</nobr><br />
 <nobr>Shadertoy: [Fractal03](https://www.shadertoy.com/view/3lKcDV)</nobr><br />
 <nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -313,8 +313,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FractalEngine](Fractals/FractalEngine.md)</nobr><br />
-<nobr>Category: [Fractals](Fractals/README.md)</nobr><br />
+<nobr>Fuse: <a href="Fractals/FractalEngine.md">FractalEngine</a></nobr><br />
+<nobr>Category: <a href="Fractals/README.md">Fractals</nobr><br />
 <nobr>Shadertoy: [FractalEngine](https://www.shadertoy.com/view/ttSBRm)</nobr><br />
 <nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -327,8 +327,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FractalGutter](Fractals/FractalGutter.md)</nobr><br />
-<nobr>Category: [Fractals](Fractals/README.md)</nobr><br />
+<nobr>Fuse: <a href="Fractals/FractalGutter.md">FractalGutter</a></nobr><br />
+<nobr>Category: <a href="Fractals/README.md">Fractals</nobr><br />
 <nobr>Shadertoy: [FractalGutter](https://www.shadertoy.com/view/ttjBD1)</nobr><br />
 <nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -341,8 +341,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FractalRadioBase](Fractals/FractalRadioBase.md)</nobr><br />
-<nobr>Category: [Fractals](Fractals/README.md)</nobr><br />
+<nobr>Fuse: <a href="Fractals/FractalRadioBase.md">FractalRadioBase</a></nobr><br />
+<nobr>Category: <a href="Fractals/README.md">Fractals</nobr><br />
 <nobr>Shadertoy: [FractalRadioBase](https://www.shadertoy.com/view/WlcczS)</nobr><br />
 <nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -355,8 +355,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Kali3D](Fractals/Kali3D.md)</nobr><br />
-<nobr>Category: [Fractals](Fractals/README.md)</nobr><br />
+<nobr>Fuse: <a href="Fractals/Kali3D.md">Kali3D</a></nobr><br />
+<nobr>Category: <a href="Fractals/README.md">Fractals</nobr><br />
 <nobr>Shadertoy: [Kali3D](https://www.shadertoy.com/view/MdB3DK)</nobr><br />
 <nobr>Author: [guil](https://www.shadertoy.com/user/guil)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -369,8 +369,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Rendezvous](Fractals/Rendezvous.md)</nobr><br />
-<nobr>Category: [Fractals](Fractals/README.md)</nobr><br />
+<nobr>Fuse: <a href="Fractals/Rendezvous.md">Rendezvous</a></nobr><br />
+<nobr>Category: <a href="Fractals/README.md">Fractals</nobr><br />
 <nobr>Shadertoy: [Rendezvous](https://www.shadertoy.com/view/ldjGDw)</nobr><br />
 <nobr>Author: [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -387,8 +387,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [BuoyantBalls](Misc/BuoyantBalls.md)</nobr><br />
-<nobr>Category: [Misc](Misc/README.md)</nobr><br />
+<nobr>Fuse: <a href="Misc/BuoyantBalls.md">BuoyantBalls</a></nobr><br />
+<nobr>Category: <a href="Misc/README.md">Misc</nobr><br />
 <nobr>Shadertoy: [BuoyantBalls](https://www.shadertoy.com/view/MtsBW8)</nobr><br />
 <nobr>Author: [dr2](https://www.shadertoy.com/user/dr2)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -401,8 +401,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Fire_Water](Misc/Fire_Water.md)</nobr><br />
-<nobr>Category: [Misc](Misc/README.md)</nobr><br />
+<nobr>Fuse: <a href="Misc/Fire_Water.md">Fire_Water</a></nobr><br />
+<nobr>Category: <a href="Misc/README.md">Misc</nobr><br />
 <nobr>Shadertoy: [ComplementaryElements](https://www.shadertoy.com/view/tdsBz4)</nobr><br />
 <nobr>Author: [izutionix](https://www.shadertoy.com/user/izutionix)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -415,8 +415,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FractalLand](Misc/FractalLand.md)</nobr><br />
-<nobr>Category: [Misc](Misc/README.md)</nobr><br />
+<nobr>Fuse: <a href="Misc/FractalLand.md">FractalLand</a></nobr><br />
+<nobr>Category: <a href="Misc/README.md">Misc</nobr><br />
 <nobr>Shadertoy: [Fractal Land](https://www.shadertoy.com/view/XsBXWt)</nobr><br />
 <nobr>Author: [Kali](https://www.shadertoy.com/user/Kali)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
@@ -429,8 +429,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [IHeartFourier](Misc/IHeartFourier.md)</nobr><br />
-<nobr>Category: [Misc](Misc/README.md)</nobr><br />
+<nobr>Fuse: <a href="Misc/IHeartFourier.md">IHeartFourier</a></nobr><br />
+<nobr>Category: <a href="Misc/README.md">Misc</nobr><br />
 <nobr>Shadertoy: [IHeartFourier](https://www.shadertoy.com/view/tltSWr)</nobr><br />
 <nobr>Author: [harry7557558](https://www.shadertoy.com/user/harry7557558)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -443,8 +443,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Legofied](Misc/Legofied.md)</nobr><br />
-<nobr>Category: [Misc](Misc/README.md)</nobr><br />
+<nobr>Fuse: <a href="Misc/Legofied.md">Legofied</a></nobr><br />
+<nobr>Category: <a href="Misc/README.md">Misc</nobr><br />
 <nobr>Shadertoy: [Legofied](https://www.shadertoy.com/view/XtBSzy)</nobr><br />
 <nobr>Author: [Gijs](https://www.shadertoy.com/user/Gijs)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -457,8 +457,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [TruePinballPhysics](Misc/TruePinballPhysics.md)</nobr><br />
-<nobr>Category: [Misc](Misc/README.md)</nobr><br />
+<nobr>Fuse: <a href="Misc/TruePinballPhysics.md">TruePinballPhysics</a></nobr><br />
+<nobr>Category: <a href="Misc/README.md">Misc</nobr><br />
 <nobr>Shadertoy: [True Pinball Physics](https://www.shadertoy.com/view/4tBGRm)</nobr><br />
 <nobr>Author: [archee](https://www.shadertoy.com/user/archee)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -475,8 +475,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [DancyTreeDoodle](Object/DancyTreeDoodle.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/DancyTreeDoodle.md">DancyTreeDoodle</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)</nobr><br />
 <nobr>Author: [wyatt](https://www.shadertoy.com/user/wyatt)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -489,8 +489,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [DancyTreeDoodle3D](Object/DancyTreeDoodle3D.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/DancyTreeDoodle3D.md">DancyTreeDoodle3D</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [DancyTreeDoodle3D](https://www.shadertoy.com/view/4lVyzh)</nobr><br />
 <nobr>Author: [wyatt](https://www.shadertoy.com/user/wyatt)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -503,8 +503,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [EggHunt](Object/EggHunt.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/EggHunt.md">EggHunt</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [EggHunt](https://www.shadertoy.com/view/ttyfDV)</nobr><br />
 <nobr>Author: [sylvain69780](https://www.shadertoy.com/user/sylvain69780)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -517,8 +517,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [HW3Swing](Object/HW3Swing.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/HW3Swing.md">HW3Swing</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [HW3Swing](https://www.shadertoy.com/view/4dtyz8)</nobr><br />
 <nobr>Author: [ChloeSnyder](https://www.shadertoy.com/user/ChloeSnyder)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -531,8 +531,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [HeavenAndHell](Object/HeavenAndHell.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/HeavenAndHell.md">HeavenAndHell</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [HeavenAndHell](https://www.shadertoy.com/view/wsKXDV)</nobr><br />
 <nobr>Author: [adurdin](https://www.shadertoy.com/user/adurdin)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -545,8 +545,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Legos](Object/Legos.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/Legos.md">Legos</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [Legos](https://www.shadertoy.com/view/Xdl3Dj)</nobr><br />
 <nobr>Author: [morgan3d](https://www.shadertoy.com/user/morgan3d)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -559,8 +559,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [LonelyVoxel](Object/LonelyVoxel.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/LonelyVoxel.md">LonelyVoxel</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [LonelyVoxel](https://www.shadertoy.com/view/Mslczn)</nobr><br />
 <nobr>Author: [SudoNhim](https://www.shadertoy.com/user/SudoNhim)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -573,8 +573,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Oblivion](Object/Oblivion.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/Oblivion.md">Oblivion</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [Oblivion](https://www.shadertoy.com/view/XtfXDN)</nobr><br />
 <nobr>Author: [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -587,8 +587,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [ProceduralWalkAnimation](Object/ProceduralWalkAnimation.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/ProceduralWalkAnimation.md">ProceduralWalkAnimation</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [ProceduralWalkAnimation](https://www.shadertoy.com/view/WlsSWS)</nobr><br />
 <nobr>Author: [TLC123](https://www.shadertoy.com/user/TLC123)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -601,8 +601,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [ShareX](Object/ShareX.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/ShareX.md">ShareX</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [ShareX](https://www.shadertoy.com/view/WsKSRK)</nobr><br />
 <nobr>Author: [fre3k](https://www.shadertoy.com/user/fre3k)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -615,8 +615,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [WalkingCubes](Object/WalkingCubes.md)</nobr><br />
-<nobr>Category: [Object](Object/README.md)</nobr><br />
+<nobr>Fuse: <a href="Object/WalkingCubes.md">WalkingCubes</a></nobr><br />
+<nobr>Category: <a href="Object/README.md">Object</nobr><br />
 <nobr>Shadertoy: [WalkingCubes](https://www.shadertoy.com/view/Xl3XR4)</nobr><br />
 <nobr>Author: [xorxor](https://www.shadertoy.com/user/xorxor)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -633,8 +633,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [CrackerCars](Planet/CrackerCars.md)</nobr><br />
-<nobr>Category: [Planet](Planet/README.md)</nobr><br />
+<nobr>Fuse: <a href="Planet/CrackerCars.md">CrackerCars</a></nobr><br />
+<nobr>Category: <a href="Planet/README.md">Planet</nobr><br />
 <nobr>Shadertoy: [CrackerCars](https://www.shadertoy.com/view/4sdXzr)</nobr><br />
 <nobr>Author: [zackpudil](https://www.shadertoy.com/user/zackpudil)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -647,8 +647,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [EARF](Planet/EARF.md)</nobr><br />
-<nobr>Category: [Planet](Planet/README.md)</nobr><br />
+<nobr>Fuse: <a href="Planet/EARF.md">EARF</a></nobr><br />
+<nobr>Category: <a href="Planet/README.md">Planet</nobr><br />
 <nobr>Shadertoy: [EARF](https://www.shadertoy.com/view/ls3SDj)</nobr><br />
 <nobr>Author: [zackpudil](https://www.shadertoy.com/user/zackpudil)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -661,8 +661,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Fake3DScene](Planet/Fake3DScene.md)</nobr><br />
-<nobr>Category: [Planet](Planet/README.md)</nobr><br />
+<nobr>Fuse: <a href="Planet/Fake3DScene.md">Fake3DScene</a></nobr><br />
+<nobr>Category: <a href="Planet/README.md">Planet</nobr><br />
 <nobr>Shadertoy: [Fake3DScene](https://www.shadertoy.com/view/MddSWB)</nobr><br />
 <nobr>Author: [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -675,8 +675,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [MightyMorphingPowerSphere](Planet/MightyMorphingPowerSphere.md)</nobr><br />
-<nobr>Category: [Planet](Planet/README.md)</nobr><br />
+<nobr>Fuse: <a href="Planet/MightyMorphingPowerSphere.md">MightyMorphingPowerSphere</a></nobr><br />
+<nobr>Category: <a href="Planet/README.md">Planet</nobr><br />
 <nobr>Shadertoy: [MightyMorphingPowerSphere](https://www.shadertoy.com/view/MtGSzh)</nobr><br />
 <nobr>Author: [Lallis](https://www.shadertoy.com/user/Lallis)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -689,8 +689,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [RayCastSphere](Planet/RayCastSphere.md)</nobr><br />
-<nobr>Category: [Planet](Planet/README.md)</nobr><br />
+<nobr>Fuse: <a href="Planet/RayCastSphere.md">RayCastSphere</a></nobr><br />
+<nobr>Category: <a href="Planet/README.md">Planet</nobr><br />
 <nobr>Shadertoy: [RayCastSphere](https://www.shadertoy.com/view/XdjBDG)</nobr><br />
 <nobr>Author: [diroru](https://www.shadertoy.com/user/diroru)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -703,8 +703,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [WildKifs4D](Planet/WildKifs4D.md)</nobr><br />
-<nobr>Category: [Planet](Planet/README.md)</nobr><br />
+<nobr>Fuse: <a href="Planet/WildKifs4D.md">WildKifs4D</a></nobr><br />
+<nobr>Category: <a href="Planet/README.md">Planet</nobr><br />
 <nobr>Shadertoy: [WildKifs4D](https://www.shadertoy.com/view/wttBzM)</nobr><br />
 <nobr>Author: [iapafoto](https://www.shadertoy.com/user/iapafoto)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -721,8 +721,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FallingCuteBombs](Recursive/FallingCuteBombs.md)</nobr><br />
-<nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
+<nobr>Fuse: <a href="Recursive/FallingCuteBombs.md">FallingCuteBombs</a></nobr><br />
+<nobr>Category: <a href="Recursive/README.md">Recursive</nobr><br />
 <nobr>Shadertoy: [FallingCuteBombs](https://www.shadertoy.com/view/ldy3Rw)</nobr><br />
 <nobr>Author: [Emil](https://www.shadertoy.com/user/Emil)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -735,8 +735,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [GrowingWeatheringRocks](Recursive/GrowingWeatheringRocks.md)</nobr><br />
-<nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
+<nobr>Fuse: <a href="Recursive/GrowingWeatheringRocks.md">GrowingWeatheringRocks</a></nobr><br />
+<nobr>Category: <a href="Recursive/README.md">Recursive</nobr><br />
 <nobr>Shadertoy: [GrowingWeatheringRocks](https://www.shadertoy.com/view/ftSSDy)</nobr><br />
 <nobr>Author: [stb](https://www.shadertoy.com/user/stb)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -749,8 +749,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [LearningReactionDiffusion](Recursive/LearningReactionDiffusion.md)</nobr><br />
-<nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
+<nobr>Fuse: <a href="Recursive/LearningReactionDiffusion.md">LearningReactionDiffusion</a></nobr><br />
+<nobr>Category: <a href="Recursive/README.md">Recursive</nobr><br />
 <nobr>Shadertoy: [LearningReactionDiffusion](https://www.shadertoy.com/view/WlSGzy)</nobr><br />
 <nobr>Author: [TekF](https://www.shadertoy.com/user/TekF)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -763,8 +763,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Spilled](Recursive/Spilled.md)</nobr><br />
-<nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
+<nobr>Fuse: <a href="Recursive/Spilled.md">Spilled</a></nobr><br />
+<nobr>Category: <a href="Recursive/README.md">Recursive</nobr><br />
 <nobr>Shadertoy: [spilled](https://www.shadertoy.com/view/MsGSRd)</nobr><br />
 <nobr>Author: [flockaroo](https://www.shadertoy.com/user/flockaroo)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -777,8 +777,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [TDSOTM_Nebula](Recursive/TDSOTM_Nebula.md)</nobr><br />
-<nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
+<nobr>Fuse: <a href="Recursive/TDSOTM_Nebula.md">TDSOTM_Nebula</a></nobr><br />
+<nobr>Category: <a href="Recursive/README.md">Recursive</nobr><br />
 <nobr>Shadertoy: [The dark side of the moon](https://www.shadertoy.com/view/4dBSDV)</nobr><br />
 <nobr>Author: [bytewave](https://www.shadertoy.com/user/bytewave)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -791,8 +791,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Vine](Recursive/Vine.md)</nobr><br />
-<nobr>Category: [Recursive](Recursive/README.md)</nobr><br />
+<nobr>Fuse: <a href="Recursive/Vine.md">Vine</a></nobr><br />
+<nobr>Category: <a href="Recursive/README.md">Recursive</nobr><br />
 <nobr>Shadertoy: [Vine](https://www.shadertoy.com/view/XldSz7)</nobr><br />
 <nobr>Author: [gaz](https://www.shadertoy.com/user/gaz)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -809,8 +809,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/AlexanderHornedSphereZoom.md">AlexanderHornedSphereZoom</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW)</nobr><br />
 <nobr>Author: [tmst](https://www.shadertoy.com/user/tmst)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -823,8 +823,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [ClubCave09](ShaderOfTheWeek/ClubCave09.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/ClubCave09.md">ClubCave09</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [20210930_CLUB-CAVE-09](https://www.shadertoy.com/view/ss3SD8)</nobr><br />
 <nobr>Author: [0b5vr](https://www.shadertoy.com/user/0b5vr)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -837,8 +837,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Day94](ShaderOfTheWeek/Day94.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/Day94.md">Day94</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [Day94](https://www.shadertoy.com/view/tdXcWM)</nobr><br />
 <nobr>Author: [jeyko](https://www.shadertoy.com/user/jeyko)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -851,8 +851,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/FractalFlythrough.md">FractalFlythrough</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [FractalFlythrough](https://www.shadertoy.com/view/4s3SRN)</nobr><br />
 <nobr>Author: [Shane](https://www.shadertoy.com/user/Shane)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -865,8 +865,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FractalGliding](ShaderOfTheWeek/FractalGliding.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/FractalGliding.md">FractalGliding</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [Fractal Gliding](https://www.shadertoy.com/view/ftGGDR)</nobr><br />
 <nobr>Author: [AntoineC](https://www.shadertoy.com/user/AntoineC)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -879,8 +879,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/FuturisticTunnel.md">FuturisticTunnel</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd)</nobr><br />
 <nobr>Author: [julianlumia](https://www.shadertoy.com/user/julianlumia)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -893,8 +893,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [RME4Crater](ShaderOfTheWeek/RME4Crater.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/RME4Crater.md">RME4Crater</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt)</nobr><br />
 <nobr>Author: [patu](https://www.shadertoy.com/user/patu)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -907,8 +907,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/SimpleSphereRaymarching.md">SimpleSphereRaymarching</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc)</nobr><br />
 <nobr>Author: [drschizzo](https://www.shadertoy.com/user/drschizzo)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -921,8 +921,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/SpiraledLayers.md">SpiraledLayers</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [Spiraled Layers](https://www.shadertoy.com/view/Ns3XWf)</nobr><br />
 <nobr>Author: [Tater](https://www.shadertoy.com/user/Tater)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -935,8 +935,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md)</nobr><br />
-<nobr>Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)</nobr><br />
+<nobr>Fuse: <a href="ShaderOfTheWeek/TasteOfNoise7.md">TasteOfNoise7</a></nobr><br />
+<nobr>Category: <a href="ShaderOfTheWeek/README.md">ShaderOfTheWeek</nobr><br />
 <nobr>Shadertoy: [Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs)</nobr><br />
 <nobr>Author: [leon](https://www.shadertoy.com/user/leon)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -953,8 +953,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [TNTHTW](Tunnel/TNTHTW.md)</nobr><br />
-<nobr>Category: [Tunnel](Tunnel/README.md)</nobr><br />
+<nobr>Fuse: <a href="Tunnel/TNTHTW.md">TNTHTW</a></nobr><br />
+<nobr>Category: <a href="Tunnel/README.md">Tunnel</nobr><br />
 <nobr>Shadertoy: [Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)</nobr><br />
 <nobr>Author: [hisojarvi](https://www.shadertoy.com/user/hisojarvi)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
@@ -967,8 +967,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [Velocibox](Tunnel/Velocibox.md)</nobr><br />
-<nobr>Category: [Tunnel](Tunnel/README.md)</nobr><br />
+<nobr>Fuse: <a href="Tunnel/Velocibox.md">Velocibox</a></nobr><br />
+<nobr>Category: <a href="Tunnel/README.md">Tunnel</nobr><br />
 <nobr>Shadertoy: [Velocibox](https://www.shadertoy.com/view/lsdXD8)</nobr><br />
 <nobr>Author: [zackpudil](https://www.shadertoy.com/user/zackpudil)</nobr><br />
 <nobr>Ported by: [nmbr73](../Site/Profiles/nmbr73.md)</nobr><br />
@@ -981,8 +981,8 @@
 :four_leaf_clover:</p>
 <p>
 
-<nobr>Fuse: [WindingMengerTunnel](Tunnel/WindingMengerTunnel.md)</nobr><br />
-<nobr>Category: [Tunnel](Tunnel/README.md)</nobr><br />
+<nobr>Fuse: <a href="Tunnel/WindingMengerTunnel.md">WindingMengerTunnel</a></nobr><br />
+<nobr>Category: <a href="Tunnel/README.md">Tunnel</nobr><br />
 <nobr>Shadertoy: [WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn)</nobr><br />
 <nobr>Author: [Shane](https://www.shadertoy.com/user/Shane)</nobr><br />
 <nobr>Ported by: [JiPi](../Site/Profiles/JiPi.md)</nobr><br />
