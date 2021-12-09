@@ -9,7 +9,9 @@
 
     Shader created by TDM
 
-    V.02 Added "reflect"-Function for OpenCL
+    V0.2 Added "reflect"-Function for OpenCL
+	V0.3 Added Cuda-Functions 
+	
 
 */--]]--
 
@@ -24,7 +26,7 @@ local dctlfuse_category    = "Misc"
 local dctlfuse_name        = "Seascape"
 local dctlfuse_author      = "nmbr73"
 -- OPTIONAL ------------------------------------------------------------------
--- local dctlfuse_versionNo   = 2
+-- local dctlfuse_versionNo   = 3
 -- local dctlfuse_versionDate = "December 2021"
 -- local dctlfuse_authorurl   = "https://www.youtube.com/c/nmbr73"
 
@@ -212,6 +214,24 @@ SeascapeKernel =
 __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
 #endif
 
+
+#if defined(DEVICE_IS_CUDA) 
+   __DEVICE__ float2 sin_f2(float2 i) {float2 r; r.x = _sinf(i.x); r.y = _sinf(i.y); return r;}
+   __DEVICE__ float2 cos_f2(float2 i) {float2 r; r.x = _cosf(i.x); r.y = _cosf(i.y); return r;}
+   __DEVICE__ float2 abs_f2(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+   #define lpowf _powf
+   __DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
+   __DEVICE__ float2 mix_f2(float2 v, float2 i, float2 m) {return to_float2(_mix(v.x,i.x,m.x),_mix(v.y,i.y,m.y));}	
+   
+#else
+   #define sin_f2 sin	
+   #define cos_f2 cos
+   #define abs_f2 _fabs
+   #define pow_f3 pow
+   #define mix_f2 _mix
+#endif   
+
+
 /*
  * "Seascape" by Alexander Alekseev aka TDM - 2014
  * License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
@@ -237,19 +257,19 @@ __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
 
 // math
 __DEVICE__  mat3 fromEuler(float3 ang) {
-	float2 a1 = to_float2(_sinf(ang.x),_cosf(ang.x));
+  float2 a1 = to_float2(_sinf(ang.x),_cosf(ang.x));
   float2 a2 = to_float2(_sinf(ang.y),_cosf(ang.y));
   float2 a3 = to_float2(_sinf(ang.z),_cosf(ang.z));
   mat3 m;
 
   #if defined(DEVICE_IS_METAL)
   m[0] = to_float3(a1.y*a3.y+a1.x*a2.x*a3.x,a1.y*a2.x*a3.x+a3.y*a1.x,-a2.y*a3.x);
-	m[1] = to_float3(-a2.y*a1.x,a1.y*a2.y,a2.x);
-	m[2] = to_float3(a3.y*a1.x*a2.x+a1.y*a3.x,a1.x*a3.x-a1.y*a3.y*a2.x,a2.y*a3.y);
+  m[1] = to_float3(-a2.y*a1.x,a1.y*a2.y,a2.x);
+  m[2] = to_float3(a3.y*a1.x*a2.x+a1.y*a3.x,a1.x*a3.x-a1.y*a3.y*a2.x,a2.y*a3.y);
   #else
   /* m[0] */ m.r0 = to_float3(a1.y*a3.y+a1.x*a2.x*a3.x,a1.y*a2.x*a3.x+a3.y*a1.x,-a2.y*a3.x);
-	/* m[1] */ m.r1 = to_float3(-a2.y*a1.x,a1.y*a2.y,a2.x);
-	/* m[2] */ m.r2 = to_float3(a3.y*a1.x*a2.x+a1.y*a3.x,a1.x*a3.x-a1.y*a3.y*a2.x,a2.y*a3.y);
+  /* m[1] */ m.r1 = to_float3(-a2.y*a1.x,a1.y*a2.y,a2.x);
+  /* m[2] */ m.r2 = to_float3(a3.y*a1.x*a2.x+a1.y*a3.x,a1.x*a3.x-a1.y*a3.y*a2.x,a2.y*a3.y);
   #endif
 
 	return m;
@@ -261,13 +281,13 @@ __DEVICE__ float hash( float2 p ) {
 }
 
 __DEVICE__ float noise( float2 p ) {
-    float2 i = floor( p );
+    float2 i = _floor( p );
     float2 f = fract_float2( p );
-	  float2 u = f*f*(3.0f-2.0f*f);
+	float2 u = f*f*(3.0f-2.0f*f);
     return -1.0f+2.0f*_mix( _mix( hash( i + to_float2(0.0f,0.0f) ),
-                     hash( i + to_float2(1.0f,0.0f) ), u.x),
-               _mix( hash( i + to_float2(0.0f,1.0f) ),
-                     hash( i + to_float2(1.0f,1.0f) ), u.x), u.y);
+                                  hash( i + to_float2(1.0f,0.0f) ), u.x),
+                      _mix( hash( i + to_float2(0.0f,1.0f) ),
+                            hash( i + to_float2(1.0f,1.0f) ), u.x), u.y);
 }
 
 // lighting
@@ -283,6 +303,7 @@ __DEVICE__ float specular(float3 n,float3 l,float3 e,float s) {
 // sky
 __DEVICE__ float3 getSkyColor(float3 e) {
     e.y = (_fmaxf(e.y,0.0f)*0.8f+0.2f)*0.8f;
+	float zzzzzzzzzzzzzzzzzzzz;
     return to_float3(pow(1.0f-e.y,2.0f), 1.0f-e.y, 0.6f+(1.0f-e.y)*0.4f) * 1.1f;
 }
 
@@ -291,9 +312,9 @@ __DEVICE__ float sea_octave(float2 uv, float choppy) {
     uv += noise(uv);
 //    float2 wv = 1.0f-_fabs(_sinf(uv));
 //    float2 swv = _fabs(_cosf(uv));
-    float2 wv = 1.0f-_fabs(sin(uv));
-    float2 swv = _fabs(cos(uv));
-    wv = _mix(wv,swv,wv);
+    float2 wv = 1.0f-abs_f2(sin_f2(uv));
+    float2 swv = abs_f2(cos_f2(uv));
+    wv = mix_f2(wv,swv,wv);
     return pow(1.0f-pow(wv.x * wv.y,0.65f),choppy);
 }
 
@@ -307,9 +328,9 @@ __DEVICE__ float map(float3 p, float iTime) {
     for(int i = 0; i < ITER_GEOMETRY; i++) {
     	d   = sea_octave((uv+SEA_TIME)*freq,choppy);
     	d  += sea_octave((uv-SEA_TIME)*freq,choppy);
-      h  += d * amp;
+        h  += d * amp;
     	uv = prod_float2_mat2(uv,octave_m); freq *= 1.9f; amp *= 0.22f;
-      choppy = _mix(choppy,1.0f,0.2f);
+        choppy = _mix(choppy,1.0f,0.2f);
     }
     return p.y - h;
 }
@@ -386,7 +407,7 @@ __DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolu
         float hm = map(ori + dir * tm, iTime);
         float tmid = 0.0f;
         for(int i = 0; i < NUM_STEPS; i++) {
-          tmid = mix(tm,tx, hm/(hm-hx));
+          tmid = _mix(tm,tx, hm/(hm-hx));
           p = ori + dir * tmid;
           float hmid = map(p, iTime);
           if(hmid < 0.0f) {
@@ -407,10 +428,10 @@ __DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolu
     float3 light = normalize(to_float3(0.0f,1.0f,0.8f));
 
     // color
-    return mix(
-        getSkyColor(dir),
-        getSeaColor(p,n,light,dir,dist),
-    	  pow(smoothstep(0.0f,-0.02f,dir.y),0.2f));
+    return _mix(
+                getSkyColor(dir),
+                getSeaColor(p,n,light,dir,dist),
+    	        pow(smoothstep(0.0f,-0.02f,dir.y),0.2f));
 }
 
 
@@ -455,7 +476,7 @@ __KERNEL__ void SeascapeKernel(
   #endif
 
   // post
-  fragColor = to_float4_aw(pow(color,to_float3_s(0.65f)), 1.0f);
+  fragColor = to_float4_aw(pow_f3(color,to_float3_s(0.65f)), 1.0f);
 
   //fragColor   = to_float4(0.0f,1.0f,0.0f,0.0f);
 
