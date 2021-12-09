@@ -69,6 +69,8 @@ FuRegisterClass(
 SeascapeParams =
 [[
   float freq;
+  float SEA_CHOPPY;
+  float x;
   bool  AA;
   int   width;
   int   height;
@@ -250,7 +252,7 @@ __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
 #define ITER_GEOMETRY 3 // const int ITER_GEOMETRY = 3;
 #define ITER_FRAGMENT 5 // const int ITER_FRAGMENT = 5;
 #define SEA_HEIGHT 0.6f // const float SEA_HEIGHT = 0.6f;
-#define SEA_CHOPPY 4.0f // const float SEA_CHOPPY = 4.0f; !!!
+// #define SEA_CHOPPY 4.0f // const float SEA_CHOPPY = 4.0f; !!!
 #define SEA_SPEED 0.8f  // const float SEA_SPEED = 0.8f;
 #define SEA_FREQ 0.16f  // const float SEA_FREQ = 0.16f; !!!
 #define SEA_BASE to_float3(0.0f,0.09f,0.18f) // const float3 SEA_BASE = to_float3(0.0,0.09,0.18);
@@ -306,7 +308,6 @@ __DEVICE__ float specular(float3 n,float3 l,float3 e,float s) {
 // sky
 __DEVICE__ float3 getSkyColor(float3 e) {
     e.y = (_fmaxf(e.y,0.0f)*0.8f+0.2f)*0.8f;
-	float zzzzzzzzzzzzzzzzzzzz;
     return to_float3(pow(1.0f-e.y,2.0f), 1.0f-e.y, 0.6f+(1.0f-e.y)*0.4f) * 1.1f;
 }
 
@@ -321,7 +322,7 @@ __DEVICE__ float sea_octave(float2 uv, float choppy) {
     return pow(1.0f-pow(wv.x * wv.y,0.65f),choppy);
 }
 
-__DEVICE__ float map(float3 p, float iTime) {
+__DEVICE__ float map(float3 p, float iTime, float SEA_CHOPPY) {
     float freq = SEA_FREQ;
     float amp = SEA_HEIGHT;
     float choppy = SEA_CHOPPY;
@@ -338,7 +339,7 @@ __DEVICE__ float map(float3 p, float iTime) {
     return p.y - h;
 }
 
-__DEVICE__ float map_detailed(float3 p, float iTime) {
+__DEVICE__ float map_detailed(float3 p, float iTime, float SEA_CHOPPY) {
     float freq = SEA_FREQ;
     float amp = SEA_HEIGHT;
     float choppy = SEA_CHOPPY;
@@ -373,17 +374,17 @@ __DEVICE__ float3 getSeaColor(float3 p, float3 n, float3 l, float3 eye, float3 d
 }
 
 // tracing
-__DEVICE__ float3 getNormal(float3 p, float eps, float iTime) {
+__DEVICE__ float3 getNormal(float3 p, float eps, float iTime, float SEA_CHOPPY) {
     float3 n;
-    n.y = map_detailed(p,iTime);
-    n.x = map_detailed(to_float3(p.x+eps,p.y,p.z),iTime) - n.y;
-    n.z = map_detailed(to_float3(p.x,p.y,p.z+eps),iTime) - n.y;
+    n.y = map_detailed(p,iTime,SEA_CHOPPY);
+    n.x = map_detailed(to_float3(p.x+eps,p.y,p.z),iTime,SEA_CHOPPY) - n.y;
+    n.z = map_detailed(to_float3(p.x,p.y,p.z+eps),iTime,SEA_CHOPPY) - n.y;
     n.y = eps;
     return normalize(n);
 }
 
 
-__DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolution) {
+__DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolution, float SEA_CHOPPY) {
     float2 uv = coord / swixy(iResolution);
     uv = uv * 2.0f - 1.0f;
     uv.x *= iResolution.x / iResolution.y;
@@ -402,17 +403,17 @@ __DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolu
     {
       float tm = 0.0f;
       float tx = 1000.0f;
-      float hx = map(ori + dir * tx, iTime);
+      float hx = map(ori + dir * tx, iTime,SEA_CHOPPY);
       if(hx > 0.0f) {
           p = ori + dir * tx;
           //return tx;
       } else {
-        float hm = map(ori + dir * tm, iTime);
+        float hm = map(ori + dir * tm, iTime,SEA_CHOPPY);
         float tmid = 0.0f;
         for(int i = 0; i < NUM_STEPS; i++) {
           tmid = _mix(tm,tx, hm/(hm-hx));
           p = ori + dir * tmid;
-          float hmid = map(p, iTime);
+          float hmid = map(p, iTime,SEA_CHOPPY);
           if(hmid < 0.0f) {
             tx = tmid;
             hx = hmid;
@@ -427,7 +428,7 @@ __DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolu
     // ///////
 
     float3 dist = p - ori;
-    float3 n = getNormal(p, dot(dist,dist) * EPSILON_NRM,iTime);
+    float3 n = getNormal(p, dot(dist,dist) * EPSILON_NRM,iTime,SEA_CHOPPY);
     float3 light = normalize(to_float3(0.0f,1.0f,0.8f));
 
     // color
@@ -463,8 +464,12 @@ __KERNEL__ void SeascapeKernel(
   //##########################################################################
 
 //TODO:  float time = iTime * 0.3f + iMouse.x*0.01f;
-  float time = iTime * 0.3f + 5000.0f*0.01f;
+//  float time = iTime * 0.3f + 5000.0f*0.01f;
 
+float mouse_x=params->x;
+float time = iTime * 0.3f + mouse_x * 0.01f;
+
+  float SEA_CHOPPY=params->SEA_CHOPPY; //   4.0f;
   float3 color;
 
   if (params->AA) {
@@ -472,12 +477,12 @@ __KERNEL__ void SeascapeKernel(
       for(int i = -1; i <= 1; i++) {
           for(int j = -1; j <= 1; j++) {
             float2 uv = fragCoord+to_float2(i,j)/3.0f;
-          color += getPixel(uv, time, iTime, iResolution);
+          color += getPixel(uv, time, iTime, iResolution,SEA_CHOPPY);
           }
       }
       color /= 9.0f;
   } else {
-      color = getPixel(fragCoord, time, iTime, iResolution);
+      color = getPixel(fragCoord, time, iTime, iResolution,SEA_CHOPPY);
   }
 
   // post
@@ -517,22 +522,45 @@ function Create()
 
   ----- Inspector Panel Controls
 
-   InFreq = self:AddInput("Frequency", "Frequency", {
+  Inx = self:AddInput("x", "x", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 0,
+    INP_MinScale 	     = 0,
+    INP_MaxScale 	     = 800,
+    INP_Integer        = true,
+  })
+
+  InFreq = self:AddInput("Frequency", "Frequency", {
     LINKID_DataType    = "Number",
     INPID_InputControl = "SliderControl",
     INP_Default        = 1.0,
     INP_MinScale 	     = 0.0,
     INP_MaxScale 	     = 5.0,
+    SLCS_HighName      = "slow",
+    SLCS_LowName       = "fast",
   })
 
-  InAA = self:AddInput("Anti-aliasing (slower)", "AA", {
+  InSEA_CHOPPY = self:AddInput("SEA_CHOPPY", "SEA_CHOPPY", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 4.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 60.0,
+    SLCS_HighName      = "flat",
+    SLCS_LowName       = "choppy",
+  })
+
+
+  InAA = self:AddInput("AA (slow)", "AA", {
     LINKID_DataType     = "Number",
     INPID_InputControl  = "CheckboxControl",
 	  INP_Integer         = true,
     INP_DoNotifyChanged = true,
     INP_Default         = 0,
     INP_External        = false,
-    IC_NoLabel = true,
+--    IC_NoLabel          = true,
+    INPS_StatusText     = "I guess this is for anti-aliasing ... at least it is damn slow on my expensive garbage MacBook Pro"
   })
 
 
@@ -597,6 +625,8 @@ function Process(req)
 
     if not pcall(function ()  -- necessary to avoid memory leakage
         params.freq         = InFreq:GetValue(req).Value
+        params.SEA_CHOPPY   = InSEA_CHOPPY:GetValue(req).Value
+        params.x            = Inx:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
@@ -606,6 +636,8 @@ function Process(req)
     end) then
         params              = node:GetParamBlock(SeascapeParams)
         params.freq         = InFreq:GetValue(req).Value
+        params.SEA_CHOPPY   = InSEA_CHOPPY:GetValue(req).Value
+        params.x            = Inx:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
