@@ -30,6 +30,9 @@ based on [Fractal Gliding](https://www.shadertoy.com/view/ftGGDR) written by [An
 ## **[FuturisticTunnel](FuturisticTunnel.md)**
 based on [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd) written by [julianlumia](https://www.shadertoy.com/user/julianlumia)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[HyperDough](HyperDough.md)**
+based on [HyperDough](https://www.shadertoy.com/view/7tcGWB) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[RME4Crater](RME4Crater.md)**
 based on [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt) written by [patu](https://www.shadertoy.com/user/patu)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

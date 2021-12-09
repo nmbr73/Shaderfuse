@@ -536,9 +536,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/HyperDough](ShaderOfTheWeek/HyperDough_320x180.png)\
-Fuse: [HyperDough](ShaderOfTheWeek/HyperDough.md) :boom:\
+Fuse: [HyperDough](ShaderOfTheWeek/HyperDough.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-**fuse category 'Recursive' does not match fuse's subdirectory**
+Shadertoy: [HyperDough](https://www.shadertoy.com/view/7tcGWB)\
+Author: [Tater](https://www.shadertoy.com/user/Tater)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/RME4Crater](ShaderOfTheWeek/RME4Crater_320x180.png)\
@@ -601,7 +603,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 68
-
-:boom: 1
+:four_leaf_clover: 69
 
