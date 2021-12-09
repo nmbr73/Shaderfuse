@@ -271,6 +271,14 @@ Author: [Gijs](https://www.shadertoy.com/user/Gijs)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![Misc/Seascape](Misc/Seascape_320x180.png)\
+Fuse: [Seascape](Misc/Seascape.md) :four_leaf_clover:\
+Category: [Misc](Misc/README.md)\
+Shadertoy: [Seascape](https://www.shadertoy.com/view/Ms2SD1)\
+Author: [TDM](https://www.shadertoy.com/user/TDM)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
 ![Misc/TruePinballPhysics](Misc/TruePinballPhysics_320x180.png)\
 Fuse: [TruePinballPhysics](Misc/TruePinballPhysics.md) :four_leaf_clover:\
 Category: [Misc](Misc/README.md)\
@@ -527,6 +535,12 @@ Author: [julianlumia](https://www.shadertoy.com/user/julianlumia)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/HyperDough](ShaderOfTheWeek/HyperDough_320x180.png)\
+Fuse: [HyperDough](ShaderOfTheWeek/HyperDough.md) :boom:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+**fuse category 'Recursive' does not match fuse's subdirectory**
+
+
 ![ShaderOfTheWeek/RME4Crater](ShaderOfTheWeek/RME4Crater_320x180.png)\
 Fuse: [RME4Crater](ShaderOfTheWeek/RME4Crater.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -587,5 +601,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 67
+:four_leaf_clover: 68
+
+:boom: 1
 

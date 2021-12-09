@@ -57,6 +57,7 @@
 - [FractalLand](Misc/FractalLand.md) (Shadertoy ID [XsBXWt](https://www.shadertoy.com/view/XsBXWt)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [IHeartFourier](Misc/IHeartFourier.md) (Shadertoy ID [tltSWr](https://www.shadertoy.com/view/tltSWr)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Legofied](Misc/Legofied.md) (Shadertoy ID [XtBSzy](https://www.shadertoy.com/view/XtBSzy)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [Seascape](Misc/Seascape.md) (Shadertoy ID [Ms2SD1](https://www.shadertoy.com/view/Ms2SD1)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [TruePinballPhysics](Misc/TruePinballPhysics.md) (Shadertoy ID [4tBGRm](https://www.shadertoy.com/view/4tBGRm)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -99,6 +100,7 @@
 - [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) (Shadertoy ID [4s3SRN](https://www.shadertoy.com/view/4s3SRN)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalGliding](ShaderOfTheWeek/FractalGliding.md) (Shadertoy ID [ftGGDR](https://www.shadertoy.com/view/ftGGDR)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) (Shadertoy ID [wdScRd](https://www.shadertoy.com/view/wdScRd)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [HyperDough](ShaderOfTheWeek/HyperDough.md) :boom:
 - [RME4Crater](ShaderOfTheWeek/RME4Crater.md) (Shadertoy ID [MlSBDt](https://www.shadertoy.com/view/MlSBDt)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf)) ported by [JiPi](../Site/Profiles/JiPi.md)

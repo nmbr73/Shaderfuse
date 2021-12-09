@@ -1,30 +1,30 @@
 --[[--/*
 
-    >>DCTLFUSE_NAME<<
+    Seascape
 
-    Based on https://www.shadertoy.com/view/>>SHADERTOY_ID<< a WebGL
+    Based on https://www.shadertoy.com/view/Ms2SD1 a WebGL
     shader from shadertoy.com converted to DCTL and embeddet
-    into a Lua Fuse by >>DCTLFUSE_AUTHOR<< (https://www.youtube.com/c/>>DCTLFUSE_AUTHOR<<)
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
     for use in DaFusion.
 
-    Shader created by >>SHADERTOY_AUTHOR<<
+    Shader created by TDM
 
 */--]]--
 
 
 
 -- MANDATORY -----------------------------------------------------------------
-local shadertoy_name       = ">>SHADERTOY_NAME<<"
-local shadertoy_author     = ">>SHADERTOY_AUTHOR<<"
-local shadertoy_id         = ">>SHADERTOY_ID<<"
-local shadertoy_license    = "unknown - please update!"
-local dctlfuse_category    = ">>DCTLFUSE_CATEFORY<<"
-local dctlfuse_name        = ">>DCTLFUSE_NAME<<"
-local dctlfuse_author      = ">>DCTLFUSE_AUTHOR<<"
+local shadertoy_name       = "Seascape"
+local shadertoy_author     = "TDM"
+local shadertoy_id         = "Ms2SD1"
+local shadertoy_license    = "Alexander Alekseev 2014 (CC BY-NC-SA 3.0)"
+local dctlfuse_category    = "Misc"
+local dctlfuse_name        = "Seascape"
+local dctlfuse_author      = "nmbr73"
 -- OPTIONAL ------------------------------------------------------------------
 -- local dctlfuse_versionNo   = 1
 -- local dctlfuse_versionDate = "April 2021"
--- local dctlfuse_authorurl   = "https://www.youtube.com/c/>>DCTLFUSE_AUTHOR<<"
+-- local dctlfuse_authorurl   = "https://www.youtube.com/c/nmbr73"
 
 
 
@@ -60,7 +60,7 @@ FuRegisterClass(
 -- // DCTL kernel parameters
 -- // ------------------------------------------------------------------------
 
-ST_>>SHADERTOY_NAME<<Params =
+SeascapeParams =
 [[
   float freq;
   int   width;
@@ -75,18 +75,348 @@ ST_>>SHADERTOY_NAME<<Params =
 -- DCTL kernel implementation
 -- // ------------------------------------------------------------------------
 
-ST_>>SHADERTOY_NAME<<Kernel =
+SeascapeKernel =
     [[
 
+// -----
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+// 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+#if 1
+  #if defined(DEVICE_IS_METAL)
+    #define USE_NATIVE_METAL_IMPL   1
+  #elif defined(DEVICE_IS_CUDA)
+    #define USE_NATIVE_CUDA_IMPL    1
+  #elif defined(DEVICE_IS_OPENCL)
+    #define USE_NATIVE_OPENCL_IMPL  1
+  #endif
+#endif
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Macros to resolve Open GL szwizzling
+// ---------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  #define swixy(V) (V).xy
+  #define swixz(V) (V).xz
+
+#else
+
+  #define swixy(V) to_float2((V).x,(V).y)
+  #define swixz(V) to_float2((V).x,(V).z)
+
+#endif
+
+
+
+// ---------------------------------------------------------------------------
+// 2x2 matrix
+// ---------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  __DEVICE__ inline mat2 to_mat2    ( float  a, float  b, float c, float d) { return mat2(a,b,c,d);       }
+  __DEVICE__ inline float2  prod_float2_mat2( float2 v, mat2   m )  { return v*m; }
+
+#else
+
+  typedef struct
+  {
+    float2 r0;
+    float2 r1;
+
+  } mat2;
+
+  __DEVICE__ inline mat2 to_mat2    ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 prod_float2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+    //return float2(v.x*m.r0.x + v.y*m.r0.y, v.x*m.r1.x + v.y*m.r1.y);
+  }
+
+
+#endif // end of mat2 implementation
+
+
+
+// ---------------------------------------------------------------------------
+// 3x3 matrix
+// ---------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline float3  prod_float3_mat3( float3 v, mat3   m )  { return v*m; }
+
+#else
+
+  typedef struct
+  {
+    float3 r0;
+    float3 r1;
+    float3 r2;
+
+  } mat3;
+
+  __DEVICE__ inline float3 prod_float3_mat3( float3 v, mat3 m )
+  {
+    float3 t;
+    t.x = v.x*m.r0.x + v.y*m.r0.y + v.z*m.r0.z;
+    t.y = v.x*m.r1.x + v.y*m.r1.y + v.z*m.r1.z;
+    t.z = v.x*m.r2.x + v.y*m.r2.y + v.z*m.r2.z;
+    return t;
+  }
+
+#endif // end of mat3 implementation
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Fraction
+// ---------------------------------------------------------------------------
+
+// In Cuda the fract function is missing
+// Does fract exist in OpenCL? And if so, what's its name then?
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  __DEVICE__ inline float  fract1f(float f) {return fract(f);}
+  __DEVICE__ inline float2 fract_float2(float2 v) { return fract(v); }
+
+#else
+
+  __DEVICE__ float  fract1f(float f) {return f - _floor(f);}
+  __DEVICE__ float2 fract_float2(float2 v) { return to_float2(v.x - _floor(v.x), v.y - _floor(v.y)                                      ); }
+
+#endif
+
+
+
+/*
+ * "Seascape" by Alexander Alekseev aka TDM - 2014
+ * License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+ * Contact: tdmaav@gmail.com
+ */
+
+#define NUM_STEPS 8 // const int NUM_STEPS = 8;
+#define EPSILON_NRM (0.1f / iResolution.x)
+
+// #define AA
+
+// sea
+#define ITER_GEOMETRY 3 // const int ITER_GEOMETRY = 3;
+#define ITER_FRAGMENT 5 // const int ITER_FRAGMENT = 5;
+#define SEA_HEIGHT 0.6f // const float SEA_HEIGHT = 0.6f;
+#define SEA_CHOPPY 4.0f // const float SEA_CHOPPY = 4.0f;
+#define SEA_SPEED 0.8f  // const float SEA_SPEED = 0.8f;
+#define SEA_FREQ 0.16f  // const float SEA_FREQ = 0.16f;
+#define SEA_BASE to_float3(0.0f,0.09f,0.18f) // const float3 SEA_BASE = to_float3(0.0,0.09,0.18);
+#define SEA_WATER_COLOR to_float3(0.8f,0.9f,0.6f)*0.6f //const float3 SEA_WATER_COLOR = to_float3(0.8,0.9,0.6)*0.6;
+#define SEA_TIME (1.0f + iTime * SEA_SPEED)
+#define octave_m to_mat2(1.6f,1.2f,-1.2f,1.6f) //const mat2 octave_m = to_mat2(1.6f,1.2f,-1.2f,1.6f);
+
+// math
+__DEVICE__  mat3 fromEuler(float3 ang) {
+	float2 a1 = to_float2(_sinf(ang.x),_cosf(ang.x));
+  float2 a2 = to_float2(_sinf(ang.y),_cosf(ang.y));
+  float2 a3 = to_float2(_sinf(ang.z),_cosf(ang.z));
+  mat3 m;
+
+  #if defined(DEVICE_IS_METAL)
+  m[0] = to_float3(a1.y*a3.y+a1.x*a2.x*a3.x,a1.y*a2.x*a3.x+a3.y*a1.x,-a2.y*a3.x);
+	m[1] = to_float3(-a2.y*a1.x,a1.y*a2.y,a2.x);
+	m[2] = to_float3(a3.y*a1.x*a2.x+a1.y*a3.x,a1.x*a3.x-a1.y*a3.y*a2.x,a2.y*a3.y);
+  #else
+  /* m[0] */ m.r0 = to_float3(a1.y*a3.y+a1.x*a2.x*a3.x,a1.y*a2.x*a3.x+a3.y*a1.x,-a2.y*a3.x);
+	/* m[1] */ m.r1 = to_float3(-a2.y*a1.x,a1.y*a2.y,a2.x);
+	/* m[2] */ m.r2 = to_float3(a3.y*a1.x*a2.x+a1.y*a3.x,a1.x*a3.x-a1.y*a3.y*a2.x,a2.y*a3.y);
+  #endif
+
+	return m;
+}
+
+__DEVICE__ float hash( float2 p ) {
+	float h = dot(p,to_float2(127.1f,311.7f));
+  return fract1f(_sinf(h)*43758.5453123f);
+}
+
+__DEVICE__ float noise( float2 p ) {
+    float2 i = floor( p );
+    float2 f = fract_float2( p );
+	  float2 u = f*f*(3.0f-2.0f*f);
+    return -1.0f+2.0f*_mix( _mix( hash( i + to_float2(0.0f,0.0f) ),
+                     hash( i + to_float2(1.0f,0.0f) ), u.x),
+               _mix( hash( i + to_float2(0.0f,1.0f) ),
+                     hash( i + to_float2(1.0f,1.0f) ), u.x), u.y);
+}
+
+// lighting
+__DEVICE__ float diffuse(float3 n,float3 l,float p) {
+    return pow(dot(n,l) * 0.4f + 0.6f,p);
+}
+
+__DEVICE__ float specular(float3 n,float3 l,float3 e,float s) {
+    float nrm = (s + 8.0f) / (3.141592f * 8.0f);
+    return pow(_fmaxf(dot(reflect(e,n),l),0.0f),s) * nrm;
+}
+
+// sky
+__DEVICE__ float3 getSkyColor(float3 e) {
+    e.y = (_fmaxf(e.y,0.0f)*0.8f+0.2f)*0.8f;
+    return to_float3(pow(1.0f-e.y,2.0f), 1.0f-e.y, 0.6f+(1.0f-e.y)*0.4f) * 1.1f;
+}
+
+// sea
+__DEVICE__ float sea_octave(float2 uv, float choppy) {
+    uv += noise(uv);
+//    float2 wv = 1.0f-_fabs(_sinf(uv));
+//    float2 swv = _fabs(_cosf(uv));
+    float2 wv = 1.0f-_fabs(sin(uv));
+    float2 swv = _fabs(cos(uv));
+    wv = _mix(wv,swv,wv);
+    return pow(1.0f-pow(wv.x * wv.y,0.65f),choppy);
+}
+
+__DEVICE__ float map(float3 p, float iTime) {
+    float freq = SEA_FREQ;
+    float amp = SEA_HEIGHT;
+    float choppy = SEA_CHOPPY;
+    float2 uv = swixz(p); uv.x *= 0.75f;
+
+    float d, h = 0.0f;
+    for(int i = 0; i < ITER_GEOMETRY; i++) {
+    	d   = sea_octave((uv+SEA_TIME)*freq,choppy);
+    	d  += sea_octave((uv-SEA_TIME)*freq,choppy);
+      h  += d * amp;
+    	uv = prod_float2_mat2(uv,octave_m); freq *= 1.9f; amp *= 0.22f;
+      choppy = _mix(choppy,1.0f,0.2f);
+    }
+    return p.y - h;
+}
+
+__DEVICE__ float map_detailed(float3 p, float iTime) {
+    float freq = SEA_FREQ;
+    float amp = SEA_HEIGHT;
+    float choppy = SEA_CHOPPY;
+    float2 uv = swixz(p); uv.x *= 0.75;
+
+    float d, h = 0.0f;
+    for(int i = 0; i < ITER_FRAGMENT; i++) {
+    	d   = sea_octave((uv+SEA_TIME)*freq,choppy);
+    	d  += sea_octave((uv-SEA_TIME)*freq,choppy);
+      h  += d * amp;
+    	uv = prod_float2_mat2(uv,octave_m); freq *= 1.9f; amp *= 0.22f;
+      choppy = _mix(choppy,1.0f,0.2f);
+    }
+    return p.y - h;
+}
+
+__DEVICE__ float3 getSeaColor(float3 p, float3 n, float3 l, float3 eye, float3 dist) {
+    float fresnel = clamp(1.0f - dot(n,-eye), 0.0f, 1.0f);
+    fresnel = _powf(fresnel,3.0f) * 0.5f;
+
+    float3 reflected = getSkyColor(reflect(eye,n));
+    float3 refracted = SEA_BASE + diffuse(n,l,80.0f) * SEA_WATER_COLOR * 0.12f;
+
+    float3 color = _mix(refracted,reflected,fresnel);
+
+    float atten = _fmaxf(1.0f - dot(dist,dist) * 0.001f, 0.0f);
+    color += SEA_WATER_COLOR * (p.y - SEA_HEIGHT) * 0.18f * atten;
+
+    color += to_float3_s(specular(n,l,eye,60.0f));
+
+    return color;
+}
+
+// tracing
+__DEVICE__ float3 getNormal(float3 p, float eps, float iTime) {
+    float3 n;
+    n.y = map_detailed(p,iTime);
+    n.x = map_detailed(to_float3(p.x+eps,p.y,p.z),iTime) - n.y;
+    n.z = map_detailed(to_float3(p.x,p.y,p.z+eps),iTime) - n.y;
+    n.y = eps;
+    return normalize(n);
+}
+
+
+__DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolution) {
+    float2 uv = coord / swixy(iResolution);
+    uv = uv * 2.0f - 1.0f;
+    uv.x *= iResolution.x / iResolution.y;
+
+    // ray
+    float3 ang = to_float3(_sinf(time*3.0f)*0.1f,_sinf(time)*0.2f+0.3f,time);
+    float3 ori = to_float3(0.0f,3.5f,time*5.0f);
+    float3 dir = normalize(to_float3_aw(swixy(uv),-2.0f)); dir.z += length(uv) * 0.14f;
+    dir = prod_float3_mat3(normalize(dir),fromEuler(ang));
+
+    // tracing
+    float3 p;
+
+    // ///////
+    // heightMapTracing(ori,dir,p);
+    {
+      float tm = 0.0f;
+      float tx = 1000.0f;
+      float hx = map(ori + dir * tx, iTime);
+      if(hx > 0.0f) {
+          p = ori + dir * tx;
+          //return tx;
+      } else {
+        float hm = map(ori + dir * tm, iTime);
+        float tmid = 0.0f;
+        for(int i = 0; i < NUM_STEPS; i++) {
+          tmid = mix(tm,tx, hm/(hm-hx));
+          p = ori + dir * tmid;
+          float hmid = map(p, iTime);
+          if(hmid < 0.0f) {
+            tx = tmid;
+            hx = hmid;
+          } else {
+            tm = tmid;
+            hm = hmid;
+          }
+        }
+        // return tmid;
+      }
+    }
+    // ///////
+
+    float3 dist = p - ori;
+    float3 n = getNormal(p, dot(dist,dist) * EPSILON_NRM,iTime);
+    float3 light = normalize(to_float3(0.0f,1.0f,0.8f));
+
+    // color
+    return mix(
+        getSkyColor(dir),
+        getSeaColor(p,n,light,dir,dist),
+    	  pow(smoothstep(0.0f,-0.02f,dir.y),0.2f));
+}
 
 
 //############################################################################
 
 
-__KERNEL__ void ST_>>SHADERTOY_NAME<<Kernel(
-    __CONSTANTREF__ ST_>>SHADERTOY_NAME<<Params*  params,
-    __TEXTURE2D__                  iChannel0,
-    __TEXTURE2D_WRITE__            dst
+__KERNEL__ void SeascapeKernel(
+    __CONSTANTREF__ SeascapeParams*  params,
+    __TEXTURE2D__                       iChannel0,
+    __TEXTURE2D_WRITE__                 dst
     )
 {
 
@@ -99,19 +429,37 @@ __KERNEL__ void ST_>>SHADERTOY_NAME<<Kernel(
   float2 fragCoord   = to_float2(x, y);
   float2 iResolution = to_float2(params->width, params->height);
   float  iTime       = params->iTime * params->freq;
+//TODO:  float2 iMouse = to_float2(params->iMouse[0], params->iMouse[1]);
   float4 fragColor   = to_float4_s(0.0f);
 
   //##########################################################################
 
+//TODO:  float time = iTime * 0.3f + iMouse.x*0.01f;
+  float time = iTime * 0.3f + 5000.0f*0.01f;
 
-  fragColor   = to_float4(0.0f,1.0f,0.0f,0.0f);
+  #ifdef AA
+      float3 color = to_float3_s(0.0f);
+      for(int i = -1; i <= 1; i++) {
+          for(int j = -1; j <= 1; j++) {
+            float2 uv = fragCoord+to_float2(i,j)/3.0f;
+          color += getPixel(uv, time, iTime, iResolution);
+          }
+      }
+      color /= 9.0f;
+  #else
+      float3 color = getPixel(fragCoord, time, iTime, iResolution);
+  #endif
+
+  // post
+  fragColor = to_float4_aw(pow(color,to_float3_s(0.65f)), 1.0f);
+
+  //fragColor   = to_float4(0.0f,1.0f,0.0f,0.0f);
 
   //##########################################################################
 
   _tex2DVec4Write(dst, x, y, fragColor);
 
 }
-
 ]]
 
 
@@ -203,7 +551,7 @@ function Process(req)
 
     -- Interface for running DCTL-Code
 
-    node = DVIPComputeNode(req, "ST_>>SHADERTOY_NAME<<Kernel", ST_>>SHADERTOY_NAME<<Kernel, "ST_>>SHADERTOY_NAME<<Params", ST_>>SHADERTOY_NAME<<Params)
+    node = DVIPComputeNode(req, "SeascapeKernel", SeascapeKernel, "SeascapeParams", SeascapeParams)
 
 
     if not pcall(function ()  -- necessary to avoid memory leakage
@@ -214,7 +562,7 @@ function Process(req)
         params.iTime        = req.Time / framerate
         node:SetParamBlock(params)
     end) then
-        params              = node:GetParamBlock(ST_>>SHADERTOY_NAME<<Params)
+        params              = node:GetParamBlock(SeascapeParams)
         params.freq         = InFreq:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
