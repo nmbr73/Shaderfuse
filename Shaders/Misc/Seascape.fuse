@@ -10,8 +10,8 @@
     Shader created by TDM
 
     V0.2 Added "reflect"-Function for OpenCL
-	V0.3 Added Cuda-Functions 
-	
+	V0.3 Added Cuda-Functions
+
 
 */--]]--
 
@@ -58,7 +58,9 @@ FuRegisterClass(
 
 
 
-
+  -- It's possible to email tools to other people.  You can select a group of tools in the flow view, ⌘C to copy them, and
+  -- then ⌘V to paste their Lua code into your email or any other text editor.  Conversely if you copy tools from your email
+  -- you can paste them back into Fusions flow view.
 
 -- // ------------------------------------------------------------------------
 -- // DCTL kernel parameters
@@ -67,6 +69,7 @@ FuRegisterClass(
 SeascapeParams =
 [[
   float freq;
+  bool  AA;
   int   width;
   int   height;
   float iTime;
@@ -215,21 +218,21 @@ __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
 #endif
 
 
-#if defined(DEVICE_IS_CUDA) 
+#if defined(DEVICE_IS_CUDA)
    __DEVICE__ float2 sin_f2(float2 i) {float2 r; r.x = _sinf(i.x); r.y = _sinf(i.y); return r;}
    __DEVICE__ float2 cos_f2(float2 i) {float2 r; r.x = _cosf(i.x); r.y = _cosf(i.y); return r;}
    __DEVICE__ float2 abs_f2(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
    #define lpowf _powf
    __DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
-   __DEVICE__ float2 mix_f2(float2 v, float2 i, float2 m) {return to_float2(_mix(v.x,i.x,m.x),_mix(v.y,i.y,m.y));}	
-   
+   __DEVICE__ float2 mix_f2(float2 v, float2 i, float2 m) {return to_float2(_mix(v.x,i.x,m.x),_mix(v.y,i.y,m.y));}
+
 #else
-   #define sin_f2 sin	
+   #define sin_f2 sin
    #define cos_f2 cos
    #define abs_f2 _fabs
    #define pow_f3 pow
    #define mix_f2 _mix
-#endif   
+#endif
 
 
 /*
@@ -247,9 +250,9 @@ __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
 #define ITER_GEOMETRY 3 // const int ITER_GEOMETRY = 3;
 #define ITER_FRAGMENT 5 // const int ITER_FRAGMENT = 5;
 #define SEA_HEIGHT 0.6f // const float SEA_HEIGHT = 0.6f;
-#define SEA_CHOPPY 4.0f // const float SEA_CHOPPY = 4.0f;
+#define SEA_CHOPPY 4.0f // const float SEA_CHOPPY = 4.0f; !!!
 #define SEA_SPEED 0.8f  // const float SEA_SPEED = 0.8f;
-#define SEA_FREQ 0.16f  // const float SEA_FREQ = 0.16f;
+#define SEA_FREQ 0.16f  // const float SEA_FREQ = 0.16f; !!!
 #define SEA_BASE to_float3(0.0f,0.09f,0.18f) // const float3 SEA_BASE = to_float3(0.0,0.09,0.18);
 #define SEA_WATER_COLOR to_float3(0.8f,0.9f,0.6f)*0.6f //const float3 SEA_WATER_COLOR = to_float3(0.8,0.9,0.6)*0.6;
 #define SEA_TIME (1.0f + iTime * SEA_SPEED)
@@ -462,8 +465,10 @@ __KERNEL__ void SeascapeKernel(
 //TODO:  float time = iTime * 0.3f + iMouse.x*0.01f;
   float time = iTime * 0.3f + 5000.0f*0.01f;
 
-  #ifdef AA
-      float3 color = to_float3_s(0.0f);
+  float3 color;
+
+  if (params->AA) {
+      color = to_float3_s(0.0f);
       for(int i = -1; i <= 1; i++) {
           for(int j = -1; j <= 1; j++) {
             float2 uv = fragCoord+to_float2(i,j)/3.0f;
@@ -471,9 +476,9 @@ __KERNEL__ void SeascapeKernel(
           }
       }
       color /= 9.0f;
-  #else
-      float3 color = getPixel(fragCoord, time, iTime, iResolution);
-  #endif
+  } else {
+      color = getPixel(fragCoord, time, iTime, iResolution);
+  }
 
   // post
   fragColor = to_float4_aw(pow_f3(color,to_float3_s(0.65f)), 1.0f);
@@ -515,10 +520,21 @@ function Create()
    InFreq = self:AddInput("Frequency", "Frequency", {
     LINKID_DataType    = "Number",
     INPID_InputControl = "SliderControl",
-    INP_Default        = 2.0,
+    INP_Default        = 1.0,
     INP_MinScale 	     = 0.0,
     INP_MaxScale 	     = 5.0,
   })
+
+  InAA = self:AddInput("Anti-aliasing (slower)", "AA", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+    IC_NoLabel = true,
+  })
+
 
   -- and your controlls here ...
 
@@ -585,6 +601,7 @@ function Process(req)
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
         params.iTime        = req.Time / framerate
+        params.AA           = InAA:GetValue(req).Value
         node:SetParamBlock(params)
     end) then
         params              = node:GetParamBlock(SeascapeParams)
@@ -593,6 +610,7 @@ function Process(req)
         params.width        = src1.DataWindow:Width()
         params.height       = src1.DataWindow:Height()
         params.iTime        = req.Time / framerate
+        params.AA           = InAA:GetValue(req).Value
         node:SetParamBlock(params)
     end
 
