@@ -14,5 +14,5 @@ Still some work left to be done:
 ## Compability
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL
