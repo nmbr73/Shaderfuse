@@ -36,6 +36,11 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=f14cOuMq-vk" target="_blank"><img src="http://img.youtube.com/vi/f14cOuMq-vk/0.jpg" alt="Demo 11" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/f14cOuMq-vk?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=tDWsdnl7SdE" target="_blank"><img src="http://img.youtube.com/vi/tDWsdnl7SdE/0.jpg" alt="Demo 12" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/f14cOuMq-vk?style=social" /></a></td>
 </tr>
+<tr>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ZyZ2y_07wXs" target="_blank"><img src="http://img.youtube.com/vi/ZyZ2y_07wXs/0.jpg" alt="Demo 13" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ZyZ2y_07wXs?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ExNG8n559NY" target="_blank"><img src="http://img.youtube.com/vi/ExNG8n559NY/0.jpg" alt="Demo 14" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ExNG8n559NY?style=social" /></a></td>
+
+</tr>
 </table>
 </center>
 
@@ -61,6 +66,7 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 # Fuses
 
 See  [Shaders/](Shaders/README.md) for a list of all shaders implemented so far - resp. the [Overview](Shaders/OVERVIEW.md) to have with thumbnails a more 'visual experience'. In particular you may want to have a look at [WorkInProgress/](WorkInProgress/README.md) to see what's coming next!
+And if you want to build shaderfuses yourself, you can see here which projects have already been started: [Shaderfuseattempts](WorkInProgress/Shaderfuseattempts.md).
 
 ## Latest Conversions
 
