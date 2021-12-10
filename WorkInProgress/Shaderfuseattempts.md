@@ -546,7 +546,7 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 |[SmoothLife(L)		                            ](https://www.shadertoy.com/view/XtdSDn)|     	frs		|   |
 |[Spirograph Distance	                        ](https://www.shadertoy.com/view/XstXz7)|     	frs		|   |
 |[Tweaking a Smoothlife                         ](https://www.shadertoy.com/view/lltSR8)|     	fuse	|   |
-|[Wave Particle Collider                        ](https://www.shadertoy.com/view/wtKBzt)|     	fuse	|   |
+|[Wave Particle Collider                        ](https://www.shadertoy.com/view/wtKBzt)|     	defect	|   |
 |[Sea of Balls		                            ](https://www.shadertoy.com/view/7sKXDG)|     	frs		|   |
 |[Moomin Chasing Clouds                         ](https://www.shadertoy.com/view/sdySWV)|     	frs		|   |
 |[Happy Moomin		                            ](https://www.shadertoy.com/view/fdK3z1)|     	frs		|   |
@@ -573,7 +573,7 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 |[Radioctive Space Balls                        ](https://www.shadertoy.com/view/ftc3D2)|     	fuse	|   |
 |[abstract road maker                           ](https://www.shadertoy.com/view/WlSSzm)|     	fuse	|   |
 |[combustion	                                ](https://www.shadertoy.com/view/WtSSzm)|     	frs2	|   |
-|[Combustion2	                                ](https://www.shadertoy.com/view/wsVGzt)|     	frs2	|   |
+|[Combustion2	                                ](https://www.shadertoy.com/view/wsVGzt)|     	defect	|   |
 |[Strange water on glass                        ](https://www.shadertoy.com/view/tsGcRz)|     	fuse	|   |
 |[Per-Pixel Particle Party!                     ](https://www.shadertoy.com/view/ll3SWs)|     	fuse	|   |
 |[Sands Of Time		                            ](https://www.shadertoy.com/view/7tc3Wf)|     	fuse	|   |
@@ -581,10 +581,10 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 |[Goldnoise		                                ](https://www.shadertoy.com/view/NssGDf)|     	fuse	|   |
 |[RME4-Crater		                            ](https://www.shadertoy.com/view/MlSBDt)|     	fuse	| :tada: Shader of the Week 46  |
 |[wigli wires		                            ](https://www.shadertoy.com/view/7lV3zW)|     	fuse	|   |
-|[Exotic smoke	                                ](https://www.shadertoy.com/view/7tdGRf)|     	fuse	|   |
+|[Exotic smoke	                                ](https://www.shadertoy.com/view/7tdGRf)|     	defect	|   |
 |[SpinFilter		                            ](https://www.shadertoy.com/view/7lVGzD)|     	fuse	|   |
 |[RazorpayFTX Metaballs                         ](https://www.shadertoy.com/view/7tK3Rm)|     	frs		|   |
-|[Fluid Mosaic 		                            ](https://www.shadertoy.com/view/MlVfDR)|     	fuse	|   |
+|[Fluid Mosaic 		                            ](https://www.shadertoy.com/view/MlVfDR)|     	defect	|   |
 |[Waterfall5		                            ](https://www.shadertoy.com/view/7tyGW1)|     	fuse	|   |
 |[DemRenderer		                            ](https://www.shadertoy.com/view/3lyGRt)|     	frs2	|   |
 |[Water Fall		                            ](https://www.shadertoy.com/view/NtKGWD)|     	fuse	|   |
@@ -594,7 +594,7 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 |[Neon Shift		                            ](https://www.shadertoy.com/view/7tKGDw)|     	frs		|   |
 |[Mercurial Nebulae                             ](https://www.shadertoy.com/view/7lV3zm)|     	fuse	|   |
 |[Salad Dressing	                            ](https://www.shadertoy.com/view/slyGzy)|     	fuse	|   |
-|[Fire2			                                ](https://www.shadertoy.com/view/4ssGzn)|     	frs		|   |
+|[Fire2			                                ](https://www.shadertoy.com/view/4ssGzn)|     	defect		|   |
 |[Single pass reintegration                     ](https://www.shadertoy.com/view/7tKGzK)|     	fuse	|   |
 |[Fork Single pas guil 898                      ](https://www.shadertoy.com/view/NtKGRc)|     	fuse	|   |
 |[Page Curl Effect on Ball                      ](https://www.shadertoy.com/view/XtX3R2)|     	frs		|   |
