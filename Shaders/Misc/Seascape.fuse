@@ -70,6 +70,7 @@ SeascapeParams =
 [[
   float freq;
   float SEA_CHOPPY;
+  float SEA_FREQ;
   float x;
   bool  AA;
   int   width;
@@ -254,7 +255,7 @@ __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
 #define SEA_HEIGHT 0.6f // const float SEA_HEIGHT = 0.6f;
 // #define SEA_CHOPPY 4.0f // const float SEA_CHOPPY = 4.0f; !!!
 #define SEA_SPEED 0.8f  // const float SEA_SPEED = 0.8f;
-#define SEA_FREQ 0.16f  // const float SEA_FREQ = 0.16f; !!!
+// #define SEA_FREQ 0.16f  // const float SEA_FREQ = 0.16f; !!!
 #define SEA_BASE to_float3(0.0f,0.09f,0.18f) // const float3 SEA_BASE = to_float3(0.0,0.09,0.18);
 #define SEA_WATER_COLOR to_float3(0.8f,0.9f,0.6f)*0.6f //const float3 SEA_WATER_COLOR = to_float3(0.8,0.9,0.6)*0.6;
 #define SEA_TIME (1.0f + iTime * SEA_SPEED)
@@ -322,10 +323,8 @@ __DEVICE__ float sea_octave(float2 uv, float choppy) {
     return pow(1.0f-pow(wv.x * wv.y,0.65f),choppy);
 }
 
-__DEVICE__ float map(float3 p, float iTime, float SEA_CHOPPY) {
-    float freq = SEA_FREQ;
+__DEVICE__ float map(float3 p, float iTime, float choppy, float freq) {
     float amp = SEA_HEIGHT;
-    float choppy = SEA_CHOPPY;
     float2 uv = swixz(p); uv.x *= 0.75f;
 
     float d, h = 0.0f;
@@ -339,10 +338,8 @@ __DEVICE__ float map(float3 p, float iTime, float SEA_CHOPPY) {
     return p.y - h;
 }
 
-__DEVICE__ float map_detailed(float3 p, float iTime, float SEA_CHOPPY) {
-    float freq = SEA_FREQ;
+__DEVICE__ float map_detailed(float3 p, float iTime, float choppy, float freq) {
     float amp = SEA_HEIGHT;
-    float choppy = SEA_CHOPPY;
     float2 uv = swixz(p); uv.x *= 0.75;
 
     float d, h = 0.0f;
@@ -374,17 +371,17 @@ __DEVICE__ float3 getSeaColor(float3 p, float3 n, float3 l, float3 eye, float3 d
 }
 
 // tracing
-__DEVICE__ float3 getNormal(float3 p, float eps, float iTime, float SEA_CHOPPY) {
+__DEVICE__ float3 getNormal(float3 p, float eps, float iTime, float SEA_CHOPPY,float SEA_FREQ) {
     float3 n;
-    n.y = map_detailed(p,iTime,SEA_CHOPPY);
-    n.x = map_detailed(to_float3(p.x+eps,p.y,p.z),iTime,SEA_CHOPPY) - n.y;
-    n.z = map_detailed(to_float3(p.x,p.y,p.z+eps),iTime,SEA_CHOPPY) - n.y;
+    n.y = map_detailed(p,iTime,SEA_CHOPPY,SEA_FREQ);
+    n.x = map_detailed(to_float3(p.x+eps,p.y,p.z),iTime,SEA_CHOPPY,SEA_FREQ) - n.y;
+    n.z = map_detailed(to_float3(p.x,p.y,p.z+eps),iTime,SEA_CHOPPY,SEA_FREQ) - n.y;
     n.y = eps;
     return normalize(n);
 }
 
 
-__DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolution, float SEA_CHOPPY) {
+__DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolution, float SEA_CHOPPY, float SEA_FREQ) {
     float2 uv = coord / swixy(iResolution);
     uv = uv * 2.0f - 1.0f;
     uv.x *= iResolution.x / iResolution.y;
@@ -403,17 +400,17 @@ __DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolu
     {
       float tm = 0.0f;
       float tx = 1000.0f;
-      float hx = map(ori + dir * tx, iTime,SEA_CHOPPY);
+      float hx = map(ori + dir * tx, iTime,SEA_CHOPPY,SEA_FREQ);
       if(hx > 0.0f) {
           p = ori + dir * tx;
           //return tx;
       } else {
-        float hm = map(ori + dir * tm, iTime,SEA_CHOPPY);
+        float hm = map(ori + dir * tm, iTime,SEA_CHOPPY,SEA_FREQ);
         float tmid = 0.0f;
         for(int i = 0; i < NUM_STEPS; i++) {
           tmid = _mix(tm,tx, hm/(hm-hx));
           p = ori + dir * tmid;
-          float hmid = map(p, iTime,SEA_CHOPPY);
+          float hmid = map(p, iTime,SEA_CHOPPY,SEA_FREQ);
           if(hmid < 0.0f) {
             tx = tmid;
             hx = hmid;
@@ -428,7 +425,7 @@ __DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolu
     // ///////
 
     float3 dist = p - ori;
-    float3 n = getNormal(p, dot(dist,dist) * EPSILON_NRM,iTime,SEA_CHOPPY);
+    float3 n = getNormal(p, dot(dist,dist) * EPSILON_NRM,iTime,SEA_CHOPPY,SEA_FREQ);
     float3 light = normalize(to_float3(0.0f,1.0f,0.8f));
 
     // color
@@ -470,6 +467,7 @@ float mouse_x=params->x;
 float time = iTime * 0.3f + mouse_x * 0.01f;
 
   float SEA_CHOPPY=params->SEA_CHOPPY; //   4.0f;
+  float SEA_FREQ = params->SEA_FREQ; //0.16f;
   float3 color;
 
   if (params->AA) {
@@ -477,12 +475,12 @@ float time = iTime * 0.3f + mouse_x * 0.01f;
       for(int i = -1; i <= 1; i++) {
           for(int j = -1; j <= 1; j++) {
             float2 uv = fragCoord+to_float2(i,j)/3.0f;
-          color += getPixel(uv, time, iTime, iResolution,SEA_CHOPPY);
+          color += getPixel(uv, time, iTime, iResolution,SEA_CHOPPY,SEA_FREQ);
           }
       }
       color /= 9.0f;
   } else {
-      color = getPixel(fragCoord, time, iTime, iResolution,SEA_CHOPPY);
+      color = getPixel(fragCoord, time, iTime, iResolution,SEA_CHOPPY,SEA_FREQ);
   }
 
   // post
@@ -537,8 +535,8 @@ function Create()
     INP_Default        = 1.0,
     INP_MinScale 	     = 0.0,
     INP_MaxScale 	     = 5.0,
-    SLCS_HighName      = "slow",
-    SLCS_LowName       = "fast",
+    SLCS_LowName       = "slow",
+    SLCS_HighName      = "fast",
   })
 
   InSEA_CHOPPY = self:AddInput("SEA_CHOPPY", "SEA_CHOPPY", {
@@ -547,9 +545,20 @@ function Create()
     INP_Default        = 4.0,
     INP_MinScale 	     = 0.0,
     INP_MaxScale 	     = 60.0,
-    SLCS_HighName      = "flat",
-    SLCS_LowName       = "choppy",
+    SLCS_LowName       = "even",
+    SLCS_HighName      = "choppy",
   })
+
+  InSEA_FREQ = self:AddInput("SEA_FREQ", "SEA_FREQ", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 0.16,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 1.0,
+    SLCS_LowName       = "flat",
+    SLCS_HighName      = "crazy",
+  })
+
 
 
   InAA = self:AddInput("AA (slow)", "AA", {
@@ -626,6 +635,7 @@ function Process(req)
     if not pcall(function ()  -- necessary to avoid memory leakage
         params.freq         = InFreq:GetValue(req).Value
         params.SEA_CHOPPY   = InSEA_CHOPPY:GetValue(req).Value
+        params.SEA_FREQ     = InSEA_FREQ:GetValue(req).Value
         params.x            = Inx:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
@@ -637,6 +647,7 @@ function Process(req)
         params              = node:GetParamBlock(SeascapeParams)
         params.freq         = InFreq:GetValue(req).Value
         params.SEA_CHOPPY   = InSEA_CHOPPY:GetValue(req).Value
+        params.SEA_FREQ     = InSEA_FREQ:GetValue(req).Value
         params.x            = Inx:GetValue(req).Value
         params.compOrder    = src1:IsMask() and 1 or 15
         params.width        = src1.DataWindow:Width()
