@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Blob](Blob/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Tunnel](Tunnel/README.md)
+[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Blob](Blob/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md)
 
 # Shaders
 
@@ -21,22 +21,6 @@ Category: [Abstract](Abstract/README.md)\
 Shadertoy: [BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB)\
 Author: [metabog](https://www.shadertoy.com/user/metabog)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
-
-
-![Abstract/Crazyness](Abstract/Crazyness_320x180.png)\
-Fuse: [Crazyness](Abstract/Crazyness.md) :four_leaf_clover:\
-Category: [Abstract](Abstract/README.md)\
-Shadertoy: [craziness](https://www.shadertoy.com/view/wdjSRc)\
-Author: [spsherk_](https://www.shadertoy.com/user/spsherk_)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
-
-
-![Abstract/CrossDistance](Abstract/CrossDistance_320x180.png)\
-Fuse: [CrossDistance](Abstract/CrossDistance.md) :four_leaf_clover:\
-Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Cross - distance](https://www.shadertoy.com/view/XtGfzw)\
-Author: [iq](https://www.shadertoy.com/user/iq)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
 
 
 ![Abstract/Dynamism](Abstract/Dynamism_320x180.png)\
@@ -573,6 +557,26 @@ Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs)\
 Author: [leon](https://www.shadertoy.com/user/leon)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+
+## Simple Shaders
+
+
+![Simple/Crazyness](Simple/Crazyness_320x180.png)\
+Fuse: [Crazyness](Simple/Crazyness.md) :four_leaf_clover:\
+Category: [Simple](Simple/README.md)\
+Shadertoy: [craziness](https://www.shadertoy.com/view/wdjSRc)\
+Author: [spsherk_](https://www.shadertoy.com/user/spsherk_)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
+![Simple/CrossDistance](Simple/CrossDistance_320x180.png)\
+Fuse: [CrossDistance](Simple/CrossDistance.md) :four_leaf_clover:\
+Category: [Simple](Simple/README.md)\
+Shadertoy: [Cross - distance](https://www.shadertoy.com/view/XtGfzw)\
+Author: [iq](https://www.shadertoy.com/user/iq)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
 
 
 

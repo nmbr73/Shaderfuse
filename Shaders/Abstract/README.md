@@ -8,18 +8,12 @@
   <!--                                                             -->
 
 
-[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · **Abstract** · [Blob](../Blob/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) · [Tunnel](../Tunnel/README.md)
+[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · **Abstract** · [Blob](../Blob/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md)
 
 # Abstract Shaders
 
 ## **[BumpyReflectingBalls](BumpyReflectingBalls.md)**
 based on [BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB) written by [metabog](https://www.shadertoy.com/user/metabog)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
-
-## **[Crazyness](Crazyness.md)**
-based on [craziness](https://www.shadertoy.com/view/wdjSRc) written by [spsherk_](https://www.shadertoy.com/user/spsherk_)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
-
-## **[CrossDistance](CrossDistance.md)**
-based on [Cross - distance](https://www.shadertoy.com/view/XtGfzw) written by [iq](https://www.shadertoy.com/user/iq)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
 ## **[Dynamism](Dynamism.md)**
 based on [Dynamism](https://www.shadertoy.com/view/MtKSWW) written by [nimitz](https://www.shadertoy.com/user/nimitz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-**README** · [OVERVIEW](OVERVIEW.md) · [Abstract](Abstract/README.md) · [Blob](Blob/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Tunnel](Tunnel/README.md)
+**README** · [OVERVIEW](OVERVIEW.md) · [Abstract](Abstract/README.md) · [Blob](Blob/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md)
 
 # Shaders
 
@@ -16,8 +16,6 @@
 
 **[Abstract Shaders](Abstract/README.md)**
 - [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) (Shadertoy ID [ltsXDB](https://www.shadertoy.com/view/ltsXDB)) ported by [JiPi](../Site/Profiles/JiPi.md)
-- [Crazyness](Abstract/Crazyness.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
-- [CrossDistance](Abstract/CrossDistance.md) (Shadertoy ID [XtGfzw](https://www.shadertoy.com/view/XtGfzw)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [Dynamism](Abstract/Dynamism.md) (Shadertoy ID [MtKSWW](https://www.shadertoy.com/view/MtKSWW)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Favela](Abstract/Favela.md) (Shadertoy ID [ldGcDh](https://www.shadertoy.com/view/ldGcDh)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [FlightThroughANebula](Abstract/FlightThroughANebula.md) (Shadertoy ID [tsK3Rd](https://www.shadertoy.com/view/tsK3Rd)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -105,6 +103,11 @@
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) (Shadertoy ID [NddSWs](https://www.shadertoy.com/view/NddSWs)) ported by [JiPi](../Site/Profiles/JiPi.md)
+
+
+**[Simple Shaders](Simple/README.md)**
+- [Crazyness](Simple/Crazyness.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
+- [CrossDistance](Simple/CrossDistance.md) (Shadertoy ID [XtGfzw](https://www.shadertoy.com/view/XtGfzw)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 
 
 **[Tunnel Shaders](Tunnel/README.md)**
