@@ -95,14 +95,6 @@ Author: [supastav](https://www.shadertoy.com/user/supastav)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-![Abstract/StainedLights](Abstract/StainedLights_320x180.png)\
-Fuse: [StainedLights](Abstract/StainedLights.md) :four_leaf_clover:\
-Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Stained Lights](https://www.shadertoy.com/view/WlsSzM)\
-Author: [104](https://www.shadertoy.com/user/104)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
-
-
 
 ## Blob Shaders
 
@@ -579,6 +571,22 @@ Author: [iq](https://www.shadertoy.com/user/iq)\
 Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
 
 
+![Simple/ShatteredLight](Simple/ShatteredLight_320x180.png)\
+Fuse: [ShatteredLight](Simple/ShatteredLight.md) :four_leaf_clover:\
+Category: [Simple](Simple/README.md)\
+Shadertoy: [Shattered light](https://www.shadertoy.com/view/stjSRV)\
+Author: [conceptblend](https://www.shadertoy.com/user/conceptblend)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
+![Simple/StainedLights](Simple/StainedLights_320x180.png)\
+Fuse: [StainedLights](Simple/StainedLights.md) :four_leaf_clover:\
+Category: [Simple](Simple/README.md)\
+Shadertoy: [Stained Lights](https://www.shadertoy.com/view/WlsSzM)\
+Author: [104](https://www.shadertoy.com/user/104)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
 
 ## Tunnel Shaders
 
@@ -607,5 +615,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 69
+:four_leaf_clover: 70
 

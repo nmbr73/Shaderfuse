@@ -42,6 +42,3 @@ based on [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4) written by [fiz
 ## **[Raysemigarbage](Raysemigarbage.md)**
 based on [raysemigarbage#3 but hilly](https://www.shadertoy.com/view/3tdSW8) written by [supastav](https://www.shadertoy.com/user/supastav)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[StainedLights](StainedLights.md)**
-based on [Stained Lights](https://www.shadertoy.com/view/WlsSzM) written by [104](https://www.shadertoy.com/user/104)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
-
