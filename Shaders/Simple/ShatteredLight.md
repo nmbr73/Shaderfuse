@@ -6,12 +6,11 @@ Based on '_[Shattered light](https://www.shadertoy.com/view/stjSRV)_' by [concep
 ![thumbnail](ShatteredLight_320x180.png "Shattered light Thumb")
 
 Still some work left to be done:
-- Unexpected result on macOS/OpenCL
 - Some parameters could be nice
 
 
 ## Compability
 - [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL :poop:
+- [x] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
