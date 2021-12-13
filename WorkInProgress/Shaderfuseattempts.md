@@ -562,14 +562,14 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 |[Page Flip	                                    ](https://www.shadertoy.com/view/ssGXzK)|     	fuse	|   |
 |[FirstFluidSim                                 ](https://www.shadertoy.com/view/7d2GzD)|     	fuse	|   |
 |[SandStorm	                                    ](https://www.shadertoy.com/view/flt3Wr)|     	fuse	|   |
-|[Motilla Tea	                                ](https://www.shadertoy.com/view/tllfzl)|     	fuse	|   |
+|[Motilla Tea	                                ](https://www.shadertoy.com/view/tllfzl)|     	defect	|   |
 |[Velocity Conservation                         ](https://www.shadertoy.com/view/fld3z2)|     	fuse	|   |
 |[fluid with more comments	                    ](https://www.shadertoy.com/view/wllXWs)|     	frs		|   |
 |[aether with rivers	                        ](https://www.shadertoy.com/view/WlSSzh)|     	fuse	|   |
 |[Chaos Wave Propagation Effect                 ](https://www.shadertoy.com/view/XtGBzy)|     	frs2	|   |
 |[FuturisticTunnel                              ](https://www.shadertoy.com/view/wdScRd)|     	fuse	|   |
 |[Rock-Paper-Scissor-4D                         ](https://www.shadertoy.com/view/4sK3RD)|     	fuse	|   |
-|[Exploding Blobs	                            ](https://www.shadertoy.com/view/slcGRX)|     	fuse    |   |
+|[Exploding Blobs	                            ](https://www.shadertoy.com/view/slcGRX)|     	defect    | at frame33 "nan"-Problem  |
 |[Radioctive Space Balls                        ](https://www.shadertoy.com/view/ftc3D2)|     	fuse	|   |
 |[abstract road maker                           ](https://www.shadertoy.com/view/WlSSzm)|     	fuse	|   |
 |[combustion	                                ](https://www.shadertoy.com/view/WtSSzm)|     	frs2	|   |
@@ -589,8 +589,8 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 |[DemRenderer		                            ](https://www.shadertoy.com/view/3lyGRt)|     	frs2	|   |
 |[Water Fall		                            ](https://www.shadertoy.com/view/NtKGWD)|     	fuse	|   |
 |[Canyons?		                                ](https://www.shadertoy.com/view/flK3DD)|     	frs		|   |
-|[Tunnel Experiment #3                          ](https://www.shadertoy.com/view/NtK3DW)|     	frs		|   |
-|[MLS Reintegration v2                          ](https://www.shadertoy.com/view/7lV3DD)|     	fuse	|   |
+|[Tunnel Experiment #3                          ](https://www.shadertoy.com/view/NtK3DW)|     	defect		|   |
+|[MLS Reintegration v2                          ](https://www.shadertoy.com/view/7lV3DD)|     	defect |   |
 |[Neon Shift		                            ](https://www.shadertoy.com/view/7tKGDw)|     	frs		|   |
 |[Mercurial Nebulae                             ](https://www.shadertoy.com/view/7lV3zm)|     	fuse	|   |
 |[Salad Dressing	                            ](https://www.shadertoy.com/view/slyGzy)|     	fuse	|   |
@@ -615,7 +615,8 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 |[Snowflake Generation 4                        ](https://www.shadertoy.com/view/NltXR7)|     	fuse	|   |
 |[Acid toothpaste		                        ](https://www.shadertoy.com/view/NstGzf)|     	fuse	|   |
 |[HyperDough		                            ](https://www.shadertoy.com/view/7tcGWB)|     	fuse	| :tada: Shader of the Week 49  |
-
+|[Snow Ball](https://www.shadertoy.com/view/Xtl3zM) | fuse | A Snowman and a Snowwoman on a Snowball - noise texture|
+|[Just Snow](https://www.shadertoy.com/view/ldsGDn) | frs  | It's 3D Snowing |
 
 
 
