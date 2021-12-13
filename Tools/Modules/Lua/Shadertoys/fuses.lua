@@ -112,7 +112,7 @@ function fuses.fetch(path, details, list)
     for k, v in pairs(handle) do
       if (v.Name ~= nil and string.sub(v.Name,0,1) ~= ".") then
         if (v.IsDir == false) then
-          if string.sub(v.Name,-5) == '.fuse' then
+          if string.sub(v.Name,-5) == '.fuse' and v.Name ~= "FragmentShader.fuse" then
             table.insert(list,Fuse:new(path..v.Name))
           end
         else
