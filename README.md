@@ -39,6 +39,8 @@ See the following videos to get an idea what these Fuses look like:
 <tr>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ZyZ2y_07wXs" target="_blank"><img src="http://img.youtube.com/vi/ZyZ2y_07wXs/0.jpg" alt="Demo 13" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ZyZ2y_07wXs?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ExNG8n559NY" target="_blank"><img src="http://img.youtube.com/vi/ExNG8n559NY/0.jpg" alt="Demo 14" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ExNG8n559NY?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=3vrS5hUsU60" target="_blank"><img src="http://img.youtube.com/vi/3vrS5hUsU60/0.jpg" alt="Demo 15" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/3vrS5hUsU60?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=UVl4vYk1D-o" target="_blank"><img src="http://img.youtube.com/vi/UVl4vYk1D-o/0.jpg" alt="Demo 16" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/UVl4vYk1D-o?style=social" /></a></td>
 
 </tr>
 </table>
@@ -70,6 +72,8 @@ And if you want to build shaderfuses yourself, you can see here which projects h
 
 ## Latest Conversions
 
+[![HappyBouncing](https://user-images.githubusercontent.com/78935215/147247710-5e0126ac-7252-4d47-8b03-96c461cf4564.gif
+)](Shaders/Object/HappyBouncing.md)
 [![ShareX](Shaders/Object/ShareX_320x180.png)](Shaders/Object/ShareX.md)
 [![GrowingWeatheringRocks](https://user-images.githubusercontent.com/78935215/128998614-85759f48-e57a-4021-aebd-10a3bf5c138c.gif)](Shaders/Recursive/GrowingWeatheringRocks.md)
 [![Dynamism](https://user-images.githubusercontent.com/78935215/126867926-b7bf3330-67ff-4604-8b83-6c8c54c20664.gif)](Shaders/Abstract/Dynamism.md)

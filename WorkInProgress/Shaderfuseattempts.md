@@ -1,12 +1,14 @@
 ﻿# Shaderfuseattemps
 
-This is a list of the shadertoys I've tried to convert in some way. Its purpose is to avoid any duplication of work. The corresponding "maturity" can be very different under certain circumstances. A fuse may have been built with the DCTL code, but there are no parameters whatsoever, or there are still extensive debugging backlogs or development attempts in the code. There are three different types.
+This is a list of the shadertoys I've tried to convert in some way. Its purpose is to avoid any duplication of work. The corresponding "maturity" can be very different under certain circumstances. A fuse may have been built with the DCTL code, but there are no parameters whatsoever, or there are still extensive debugging backlogs or development attempts in the code. There are four different types.
 
 
-|frs | Code has been converted in the fragment shader, there is no fuse, just a frs file |
+| frs | Code has been converted in the fragment shader, there is no fuse, just a frs file |
 |-|-|
+| __incub__ | The conversion is done with the Incubator |
 | __Fuse__ | The DCTL code has been integrated into a fuse |
 | __defect__ | The conversion attempt failed |
+
 
 
 
@@ -617,6 +619,24 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 |[HyperDough		                            ](https://www.shadertoy.com/view/7tcGWB)|     	fuse	| :tada: Shader of the Week 49  |
 |[Snow Ball](https://www.shadertoy.com/view/Xtl3zM) | fuse | A Snowman and a Snowwoman on a Snowball - noise texture|
 |[Just Snow](https://www.shadertoy.com/view/ldsGDn) | frs  | It's 3D Snowing |
+|[Snow Ball](https://www.shadertoy.com/view/Xtl3zM) | fuse | A Snowman and a Snowwoman on a Snowball - noise texture|
+|[Just Snow](https://www.shadertoy.com/view/ldsGDn) | frs  | It's 3D Snowing |
+|[Fluid Metal](https://www.shadertoy.com/view/ft3SW4) | fuse  |  |
+|[Boreal Spring](https://www.shadertoy.com/view/ldXBRH) | frs | |
+|[HexaGold 2](https://www.shadertoy.com/view/sltSR2) | frs | |
+|[Happy holidays 2021](https://www.shadertoy.com/view/NtdXRj)| frs | Christmastree |
+|[Merry Christmas!](https://www.shadertoy.com/view/4dlGRn)| frs | Christmastree |
+|[Christmas tree lights](https://www.shadertoy.com/view/4st3DH)| frs | Christmastree  |
+|[Frosted ornament](https://www.shadertoy.com/view/Mt2fRw)| frs | christmas tree ball  |
+|[Alvy Inspired (micro)feedback3](https://www.shadertoy.com/view/Nt3Szf)| frs | Smokesimulation  |
+|[Lomateron2x](https://www.shadertoy.com/view/7ltXRs)| frs | Fluid Algorithm with 2 Substances  |
+|[simple detailed fluid](https://www.shadertoy.com/view/sl3Szs)| frs | WebGL fängt NaN/inf ab, DCTL nicht :-(  |
+|[Fluid physics with viscosity](https://www.shadertoy.com/view/Wsf3Dj)| defect | DCTL behaves differently |
+|[dragon_scales](https://www.shadertoy.com/view/7l3XDM)| frs2 | Dragon Skin |
+|[particles without particles](https://www.shadertoy.com/view/7ldGzl)| fuse | nur float32 (NaN/inf) |
+|[Apollian with a twist](https://www.shadertoy.com/view/Wl3fzM)| incub |  |
+|[noise blobby blobs](https://www.shadertoy.com/view/7l3XW2)| incub |   |
+|[Happy Bouncing](https://www.shadertoy.com/view/flyXRh)| incub | Three in One |
 
 
 

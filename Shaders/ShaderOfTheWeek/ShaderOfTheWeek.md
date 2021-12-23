@@ -3,6 +3,13 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 
+
+---
+## 16th of Dezember 2021
+
+#### Paper Plane (Shadertoy ID [tstczS](https://www.shadertoy.com/view/tstczS))
+GameShader, is not interesting as a shaderfuse, as it is intended for playing
+
 ---
 ## 8th of Dezember 2021
 #### [HyperDough](HyperDough.md) (Shadertoy ID [7tcGWB](https://www.shadertoy.com/view/7tcGWB))
