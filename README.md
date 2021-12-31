@@ -58,10 +58,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (8th of Dezember 2021):**
+**Current Shader of the Week (30th of Dezember 2021):**
 
-[![HyperDough](https://user-images.githubusercontent.com/78935215/145252282-ed106aa9-d0dc-4f39-938c-08511beeb8a0.gif)
-](Shaders/ShaderOfTheWeek/HyperDough.md)
+[![Truchet](https://user-images.githubusercontent.com/78935215/147809922-fc1b6362-88fd-4306-8eb5-a5c4c2057f80.gif)
+](Shaders/ShaderOfTheWeek/TruchetKaleidoscopeFTW.md)
 
 
 
