@@ -3,6 +3,12 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 5th of January 2022
+#### Recursive Donut (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/tls3WB))
+
+[![RecursiveDonut](https://user-images.githubusercontent.com/78935215/148296130-8fbc8d5c-8863-4aaa-a20d-44f718a5bc2f.gif)](RecursiveDonut.md)
+
+---
 ## 30th of Dezember 2021
 #### Truchet + Kaleidoscope FTW (Shadertoy ID [7lKSWW](https://www.shadertoy.com/view/7lKSWW))
 
