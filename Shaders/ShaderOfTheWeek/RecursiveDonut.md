@@ -11,6 +11,16 @@ Have fun playing
 
 [![Recursive Donut](RecursiveDonut.png)](RecursiveDonut.fuse)
 
+[![Download Installer](https://img.shields.io/badge/chocolatey/dt/:packageName)](RecusiveDonut-Installer.lua "Installer")
+
+
+<a href="..\ShaderOfTheWeek\RecusiveDonut-Installer.lua" download>Download Installer</a>
+
+<a id="raw-url" href="https://github.com/nmbr73/Shadertoys/tree/main/Shaders/ShaderOfTheWeek\RecusiveDonut-Installer.lua">Download FILE</a>
+
+
+<a id="raw-url" href="https://github.com/J-i-P-i/Shadertoys/releases/download/untagged-33c803b7ff15000bdc00/RecursiveDonut-Installer.lua">Download FILE</a>
+
 
 
 ## Compatibility
