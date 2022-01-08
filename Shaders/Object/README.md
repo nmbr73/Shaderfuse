@@ -24,6 +24,9 @@ based on [EggHunt](https://www.shadertoy.com/view/ttyfDV) written by [sylvain697
 ## **[HW3Swing](HW3Swing.md)**
 based on [HW3Swing](https://www.shadertoy.com/view/4dtyz8) written by [ChloeSnyder](https://www.shadertoy.com/user/ChloeSnyder)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[HappyBouncingVariation](HappyBouncingVariation.md)** :boom:
+- *thumbnail does not exists*
+
 ## **[HeavenAndHell](HeavenAndHell.md)**
 based on [HeavenAndHell](https://www.shadertoy.com/view/wsKXDV) written by [adurdin](https://www.shadertoy.com/user/adurdin)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

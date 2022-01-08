@@ -147,6 +147,14 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 ## Fractals Shaders
 
 
+![Fractals/ApollianWithATwist](Fractals/ApollianWithATwist_320x180.png)\
+Fuse: [ApollianWithATwist](Fractals/ApollianWithATwist.md) :four_leaf_clover:\
+Category: [Fractals](Fractals/README.md)\
+Shadertoy: [Apollian with a twist](https://www.shadertoy.com/view/Wl3fzM)\
+Author: [mrange](https://www.shadertoy.com/user/mrange)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
 ![Fractals/EnergyPlant](Fractals/EnergyPlant_320x180.png)\
 Fuse: [EnergyPlant](Fractals/EnergyPlant.md) :four_leaf_clover:\
 Category: [Fractals](Fractals/README.md)\
@@ -297,6 +305,12 @@ Category: [Object](Object/README.md)\
 Shadertoy: [HW3Swing](https://www.shadertoy.com/view/4dtyz8)\
 Author: [ChloeSnyder](https://www.shadertoy.com/user/ChloeSnyder)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Object/HappyBouncingVariation](Object/HappyBouncingVariation_320x180.png)\
+Fuse: [HappyBouncingVariation](Object/HappyBouncingVariation.md) :boom:\
+Category: [Object](Object/README.md)\
+**thumbnail does not exists**
 
 
 ![Object/HeavenAndHell](Object/HeavenAndHell_320x180.png)\
@@ -527,6 +541,14 @@ Author: [patu](https://www.shadertoy.com/user/patu)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/RecursiveDonut](ShaderOfTheWeek/RecursiveDonut_320x180.png)\
+Fuse: [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Recursive Donut](https://www.shadertoy.com/view/tls3WB)\
+Author: [ShnitzelKiller](https://www.shadertoy.com/user/ShnitzelKiller)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching_320x180.png)\
 Fuse: [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -548,6 +570,14 @@ Fuse: [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs)\
 Author: [leon](https://www.shadertoy.com/user/leon)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW_320x180.png)\
+Fuse: [TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW)\
+Author: [mrange](https://www.shadertoy.com/user/mrange)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -615,5 +645,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 70
+:four_leaf_clover: 73
+
+:boom: 1
 

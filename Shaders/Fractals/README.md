@@ -12,6 +12,9 @@
 
 # Fractals Shaders
 
+## **[ApollianWithATwist](ApollianWithATwist.md)**
+based on [Apollian with a twist](https://www.shadertoy.com/view/Wl3fzM) written by [mrange](https://www.shadertoy.com/user/mrange)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+
 ## **[EnergyPlant](EnergyPlant.md)**
 based on [EnergyPlant](https://www.shadertoy.com/view/WdjBWc) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

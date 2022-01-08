@@ -36,6 +36,9 @@ based on [HyperDough](https://www.shadertoy.com/view/7tcGWB) written by [Tater](
 ## **[RME4Crater](RME4Crater.md)**
 based on [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt) written by [patu](https://www.shadertoy.com/user/patu)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[RecursiveDonut](RecursiveDonut.md)**
+based on [Recursive Donut](https://www.shadertoy.com/view/tls3WB) written by [ShnitzelKiller](https://www.shadertoy.com/user/ShnitzelKiller)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[SimpleSphereRaymarching](SimpleSphereRaymarching.md)**
 based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
@@ -44,4 +47,7 @@ based on [Spiraled Layers](https://www.shadertoy.com/view/Ns3XWf) written by [Ta
 
 ## **[TasteOfNoise7](TasteOfNoise7.md)**
 based on [Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs) written by [leon](https://www.shadertoy.com/user/leon)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[TruchetKaleidoscopeFTW](TruchetKaleidoscopeFTW.md)**
+based on [Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW) written by [mrange](https://www.shadertoy.com/user/mrange)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
