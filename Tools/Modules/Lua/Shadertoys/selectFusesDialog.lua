@@ -100,7 +100,7 @@ function selectFusesDialog.window(ui,dispatcher,params)
   local defaultInfoText=""
 
   function win.On.Files.CurrentItemChanged(ev)
-    print("CurrentItemChanged "..ev.item.Text[1])
+    -- print("CurrentItemChanged "..ev.item.Text[1])
 
 
     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
