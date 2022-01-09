@@ -307,10 +307,12 @@ Author: [ChloeSnyder](https://www.shadertoy.com/user/ChloeSnyder)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-![Object/HappyBouncingVariation](Object/HappyBouncingVariation_320x180.png)\
-Fuse: [HappyBouncingVariation](Object/HappyBouncingVariation.md) :boom:\
+![Object/HappyBouncing](Object/HappyBouncing_320x180.png)\
+Fuse: [HappyBouncing](Object/HappyBouncing.md) :four_leaf_clover:\
 Category: [Object](Object/README.md)\
-**thumbnail does not exists**
+Shadertoy: [happy bouncing](https://www.shadertoy.com/view/flyXRh)\
+Author: [leon](https://www.shadertoy.com/user/leon)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Object/HeavenAndHell](Object/HeavenAndHell_320x180.png)\
@@ -645,7 +647,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 73
-
-:boom: 1
+:four_leaf_clover: 74
 
