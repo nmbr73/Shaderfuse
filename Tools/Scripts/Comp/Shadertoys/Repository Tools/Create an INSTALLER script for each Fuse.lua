@@ -17,8 +17,8 @@ local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
 
-function createFatty(fuses)
-  print("create a single installer - one containing all fuses")
+function createSingleInstallers(fuses)
+  print("create multiple installers - one per fuse")
   ui_dispatcher:ExitLoop()
 end
 
@@ -27,8 +27,10 @@ selectFusesDialog.window(
     ui_dispatcher,
     {
       fuses=fuses,
-      windowTitle='Create one Installer containing all Fuses',
-      onInstall=createFatty,
+      windowTitle='Create a dedicated Installer file for each Fuse',
+      onInstall=createSingleInstallers,
+      installLabel="Go...",
+      -- cancelLabel="Abort",
       logo=image.logo_label(ui_manager),
     }):Show()
 
