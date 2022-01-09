@@ -60,8 +60,8 @@ function selectFusesDialog.window(ui,dispatcher,params)
         },
 
         ui:HGap(0,1),
-        ui:Button{ ID = "Install",  Text = "Go..." },
-        ui:Button{ ID = "Cancel",   Text = "Cancel" },
+        ui:Button{ ID = "Install",  Text = (params.installLabel and  params.installLabel or "Install"), Hidden = (params.onInstall == nil and true or false) },
+        ui:Button{ ID = "Cancel",   Text = (params.cancelLabel and  params.cancelLabel or "Cancel") },
       },
 
     },
