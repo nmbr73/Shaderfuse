@@ -3,7 +3,7 @@ require("string")
 local user_config = require("Shadertoys/~user_config")
 local fuses       = require("Shadertoys/fuses")
 local image       = require("Shadertoys/image")
-local selectFusesDialog = require("Shadertoys/selectFusesDialog")
+local simpleDialog = require("Shadertoys/simpleDialog")
 
 -- print("sep '"..util.path_separator.."'")
 -- print("path '".. user_config.pathToRepository .."'")
@@ -14,12 +14,10 @@ local ui_manager    = fu.UIManager
 local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 
 
-fuses.fetch(user_config.pathToRepository..'Shaders/',true)
-
-
 
 function updateMarkdown(fuses)
   print("update markdown files")
+  fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
 
   local overview = io.open(user_config.pathToRepository..'Shaders/OVERVIEW.md',"w")
@@ -179,14 +177,20 @@ end
 
 
 
-selectFusesDialog.window(
+simpleDialog.window(
     ui_manager,
     ui_dispatcher,
     {
       fuses=fuses,
-      windowTitle='Refresh the Fuse overview and Markdonw files',
-      onInstall=updateMarkdown,
-      logo=image.logo_label(ui_manager),
+      windowTitle="Refresh the Fuses' MarkDown files",
+      onOkay=updateMarkdown,
+      -- logo=image.logo_label(ui_manager),
+
+      text=
+      [[<p>By clicking 'okay' all README.md files in the 'Shaders/' folder and all its subdirectories will be rewritten.
+      Also the 'Shaders/OVERVIEW.md' file will be recreated.
+      </p>
+            ]]
     }):Show()
 
 
