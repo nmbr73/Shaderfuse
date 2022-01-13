@@ -3,6 +3,13 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 12th of January 2022
+#### On the salt lake (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/fsXcR8))
+
+[![OnTheSaltLake](https://user-images.githubusercontent.com/78935215/149341819-5d02474b-6553-42f1-8128-4c3db7c10238.gif)](OnTheSal.md)
+
+
+---
 ## 5th of January 2022
 #### Recursive Donut (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/tls3WB))
 
