@@ -39,6 +39,9 @@ based on [Overstimulated Neurons](https://www.shadertoy.com/view/NdlSD8) written
 ## **[RainbowSlices](RainbowSlices.md)**
 based on [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
+## **[RainbowSpaghetti](RainbowSpaghetti.md)**
+based on [rainbow spaghetti](https://www.shadertoy.com/view/lsjGRV) written by [mattz](https://www.shadertoy.com/user/mattz)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+
 ## **[Raysemigarbage](Raysemigarbage.md)**
 based on [raysemigarbage#3 but hilly](https://www.shadertoy.com/view/3tdSW8) written by [supastav](https://www.shadertoy.com/user/supastav)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

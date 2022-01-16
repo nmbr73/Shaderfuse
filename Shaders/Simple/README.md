@@ -18,9 +18,18 @@ based on [craziness](https://www.shadertoy.com/view/wdjSRc) written by [spsherk_
 ## **[CrossDistance](CrossDistance.md)**
 based on [Cross - distance](https://www.shadertoy.com/view/XtGfzw) written by [iq](https://www.shadertoy.com/user/iq)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
+## **[Quadtree3](Quadtree3.md)**
+based on [quadtree 3](https://www.shadertoy.com/view/lljSDy) written by [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+
+## **[Rosace3C](Rosace3C.md)**
+based on [rosace 3c](https://www.shadertoy.com/view/Ms3SzB) written by [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+
 ## **[ShatteredLight](ShatteredLight.md)**
 based on [Shattered light](https://www.shadertoy.com/view/stjSRV) written by [conceptblend](https://www.shadertoy.com/user/conceptblend)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
 ## **[StainedLights](StainedLights.md)**
 based on [Stained Lights](https://www.shadertoy.com/view/WlsSzM) written by [104](https://www.shadertoy.com/user/104)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+
+## **[VideoFilters](VideoFilters.md)**
+based on [Video filters](https://www.shadertoy.com/view/XsX3z8) written by [XT95](https://www.shadertoy.com/user/XT95)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 

@@ -87,6 +87,14 @@ Author: [fizzer](https://www.shadertoy.com/user/fizzer)\
 Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
 
 
+![Abstract/RainbowSpaghetti](Abstract/RainbowSpaghetti_320x180.png)\
+Fuse: [RainbowSpaghetti](Abstract/RainbowSpaghetti.md) :four_leaf_clover:\
+Category: [Abstract](Abstract/README.md)\
+Shadertoy: [rainbow spaghetti](https://www.shadertoy.com/view/lsjGRV)\
+Author: [mattz](https://www.shadertoy.com/user/mattz)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
 ![Abstract/Raysemigarbage](Abstract/Raysemigarbage_320x180.png)\
 Fuse: [Raysemigarbage](Abstract/Raysemigarbage.md) :four_leaf_clover:\
 Category: [Abstract](Abstract/README.md)\
@@ -603,6 +611,22 @@ Author: [iq](https://www.shadertoy.com/user/iq)\
 Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
 
 
+![Simple/Quadtree3](Simple/Quadtree3_320x180.png)\
+Fuse: [Quadtree3](Simple/Quadtree3.md) :four_leaf_clover:\
+Category: [Simple](Simple/README.md)\
+Shadertoy: [quadtree 3](https://www.shadertoy.com/view/lljSDy)\
+Author: [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
+![Simple/Rosace3C](Simple/Rosace3C_320x180.png)\
+Fuse: [Rosace3C](Simple/Rosace3C.md) :four_leaf_clover:\
+Category: [Simple](Simple/README.md)\
+Shadertoy: [rosace 3c](https://www.shadertoy.com/view/Ms3SzB)\
+Author: [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
 ![Simple/ShatteredLight](Simple/ShatteredLight_320x180.png)\
 Fuse: [ShatteredLight](Simple/ShatteredLight.md) :four_leaf_clover:\
 Category: [Simple](Simple/README.md)\
@@ -616,6 +640,14 @@ Fuse: [StainedLights](Simple/StainedLights.md) :four_leaf_clover:\
 Category: [Simple](Simple/README.md)\
 Shadertoy: [Stained Lights](https://www.shadertoy.com/view/WlsSzM)\
 Author: [104](https://www.shadertoy.com/user/104)\
+Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+
+
+![Simple/VideoFilters](Simple/VideoFilters_320x180.png)\
+Fuse: [VideoFilters](Simple/VideoFilters.md) :four_leaf_clover:\
+Category: [Simple](Simple/README.md)\
+Shadertoy: [Video filters](https://www.shadertoy.com/view/XsX3z8)\
+Author: [XT95](https://www.shadertoy.com/user/XT95)\
 Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
 
 
@@ -647,5 +679,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 74
+:four_leaf_clover: 78
 
