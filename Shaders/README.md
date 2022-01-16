@@ -24,6 +24,7 @@
 - [OtherWorlds](Abstract/OtherWorlds.md) (Shadertoy ID [Ns2XzR](https://www.shadertoy.com/view/Ns2XzR)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [OverstimulatedNeurons](Abstract/OverstimulatedNeurons.md) (Shadertoy ID [NdlSD8](https://www.shadertoy.com/view/NdlSD8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RainbowSlices](Abstract/RainbowSlices.md) (Shadertoy ID [XdsGD4](https://www.shadertoy.com/view/XdsGD4)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
+- [RainbowSpaghetti](Abstract/RainbowSpaghetti.md) (Shadertoy ID [lsjGRV](https://www.shadertoy.com/view/lsjGRV)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [Raysemigarbage](Abstract/Raysemigarbage.md) (Shadertoy ID [3tdSW8](https://www.shadertoy.com/view/3tdSW8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -111,8 +112,11 @@
 **[Simple Shaders](Simple/README.md)**
 - [Crazyness](Simple/Crazyness.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [CrossDistance](Simple/CrossDistance.md) (Shadertoy ID [XtGfzw](https://www.shadertoy.com/view/XtGfzw)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
+- [Quadtree3](Simple/Quadtree3.md) (Shadertoy ID [lljSDy](https://www.shadertoy.com/view/lljSDy)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
+- [Rosace3C](Simple/Rosace3C.md) (Shadertoy ID [Ms3SzB](https://www.shadertoy.com/view/Ms3SzB)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [ShatteredLight](Simple/ShatteredLight.md) (Shadertoy ID [stjSRV](https://www.shadertoy.com/view/stjSRV)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [StainedLights](Simple/StainedLights.md) (Shadertoy ID [WlsSzM](https://www.shadertoy.com/view/WlsSzM)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
+- [VideoFilters](Simple/VideoFilters.md) (Shadertoy ID [XsX3z8](https://www.shadertoy.com/view/XsX3z8)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 
 
 **[Tunnel Shaders](Tunnel/README.md)**
