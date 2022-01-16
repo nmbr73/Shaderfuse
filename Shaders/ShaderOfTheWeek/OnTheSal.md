@@ -1,5 +1,7 @@
 # OnTheSal
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=OnTheSal-Installer.lua&color=blue)](OnTheSal-Installer.lua "Installer")
+
+<a href="https://github.com/nmbr73/Shadertoys/releases/download/V1.1/OnTheSal-Installer.lua"><img src="https://img.shields.io/static/v1?label=Download&message=OnTheSal-Installer.lua&color=blue"  > </a>
+
 
 Based on '_[On the salt Lake](https://www.shadertoy.com/view/fsXcR8)_' by [iapafoto](https://www.shadertoy.com/user/iapafoto) and ported by [JiPi](../../Site/Profiles/JiPi.md).
 

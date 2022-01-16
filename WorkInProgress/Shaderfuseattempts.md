@@ -14,6 +14,15 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Macroscopic LBM Shallow Water](https://www.shadertoy.com/view/NdXyRB)| incub | BufA |
+|[Elevated analytical normal](https://www.shadertoy.com/view/fdlyW4)| incub | BufferA->MotionBlur |
+|[menger building](https://www.shadertoy.com/view/7ssyD8)| incub | Nur eine Textur verwendet |
+|[On the salt lake](https://www.shadertoy.com/view/fsXcR8)| Fuse | ShaderOfTheWeek 02/22 |
+|[Voxel Hall Colors](https://www.shadertoy.com/view/fsXczN)| incub |  |
+|[Magnet Simulation](https://www.shadertoy.com/view/ssfcRN)| incub | ABCD |
+|[Sedimentation](https://www.shadertoy.com/view/7tySWt)| incub | ABC |
+|[GPU manufacturer detector](https://www.shadertoy.com/view/slySWV)| incub |  |
+|[Bubble Bath](https://www.shadertoy.com/view/slySD3)| DEFEKT | Schon Startframe ist zerstört |
 |[Recursive Donut](https://www.shadertoy.com/view/tls3WB)| Fuse | Shader Of The Week 01/22 |
 |[incubator](https://www.shadertoy.com/view/ldyGDG)| incub | Attention risk of confusion |
 |[Night Escape](https://www.shadertoy.com/view/NtGXDG)| incub | beautiful evening mood by the sea  |
