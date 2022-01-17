@@ -9,5 +9,5 @@ Based on '_[rosace 3c](https://www.shadertoy.com/view/Ms3SzB)_' by [FabriceNeyre
 ## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL

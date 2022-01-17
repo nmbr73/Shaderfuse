@@ -12,5 +12,5 @@ and video versions [MtBSDV](https://www.shadertoy.com/view/MtBSDV) and [ltBSDV](
 ## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL

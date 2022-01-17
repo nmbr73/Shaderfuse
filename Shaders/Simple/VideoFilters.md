@@ -8,5 +8,5 @@ Based on '_[Video filters](https://www.shadertoy.com/view/XsX3z8)_' by [XT95](ht
 ## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL
