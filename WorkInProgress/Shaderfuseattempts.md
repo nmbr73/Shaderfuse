@@ -14,6 +14,9 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Exit the Matrix](https://www.shadertoy.com/view/NlsXDH)| incub | Shader Of The Week |
+|[block CA by racon](https://www.shadertoy.com/view/7sVXWG)| incub | AB |
+|[Star systems evolution](https://www.shadertoy.com/view/7slyRj)| incub |  |
 |[Macroscopic LBM Shallow Water](https://www.shadertoy.com/view/NdXyRB)| incub | BufA |
 |[Elevated analytical normal](https://www.shadertoy.com/view/fdlyW4)| incub | BufferA->MotionBlur |
 |[menger building](https://www.shadertoy.com/view/7ssyD8)| incub | Nur eine Textur verwendet |
