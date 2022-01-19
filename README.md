@@ -58,9 +58,9 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (12th of January 2022):**
+**Current Shader of the Week (19th of January 2022):**
 
-[![OnTheSaltLake](https://user-images.githubusercontent.com/78935215/149341819-5d02474b-6553-42f1-8128-4c3db7c10238.gif)
+[![ExitTheMatrix](https://user-images.githubusercontent.com/78935215/150183070-42b94990-8837-4cfc-baf3-e378ef2616eb.gif)
 ](Shaders/ShaderOfTheWeek/OnTheSal.md)
 
 
