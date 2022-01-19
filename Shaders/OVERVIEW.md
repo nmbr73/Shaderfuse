@@ -511,6 +511,14 @@ Author: [jeyko](https://www.shadertoy.com/user/jeyko)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix_320x180.png)\
+Fuse: [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Exit the Matrix](https://www.shadertoy.com/view/NlsXDH)\
+Author: [Kali](https://www.shadertoy.com/user/Kali)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/FractalFlythrough](ShaderOfTheWeek/FractalFlythrough_320x180.png)\
 Fuse: [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -540,6 +548,14 @@ Fuse: [HyperDough](ShaderOfTheWeek/HyperDough.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [HyperDough](https://www.shadertoy.com/view/7tcGWB)\
 Author: [Tater](https://www.shadertoy.com/user/Tater)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/OnTheSal](ShaderOfTheWeek/OnTheSal_320x180.png)\
+Fuse: [OnTheSal](ShaderOfTheWeek/OnTheSal.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [On the salt lake](https://www.shadertoy.com/view/fsXcR8)\
+Author: [iapafoto](https://www.shadertoy.com/user/iapafoto)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -679,5 +695,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 78
+:four_leaf_clover: 80
 
