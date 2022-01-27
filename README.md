@@ -58,10 +58,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (19th of January 2022):**
+**Current Shader of the Week (26th of January 2022):**
 
-[![ExitTheMatrix](https://user-images.githubusercontent.com/78935215/150183070-42b94990-8837-4cfc-baf3-e378ef2616eb.gif)
-](Shaders/ShaderOfTheWeek/ExitTheMatrix.md)
+[![TrippyTriangle](https://user-images.githubusercontent.com/78935215/151451818-ca9d5df1-823a-419b-84c0-e1bd568e113d.gif)
+](Shaders/ShaderOfTheWeek/TrippyTriangle.md)
 
 
 

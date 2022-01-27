@@ -2,6 +2,11 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+---
+## 26th of January 2022
+#### TrippyTriangle (Shadertoy ID [fslcDS](https://www.shadertoy.com/view/fsXcR8))
+
+[![TrippyTriangle](https://user-images.githubusercontent.com/78935215/151451818-ca9d5df1-823a-419b-84c0-e1bd568e113d.gif)](TrippyTriangle.md)
 
 ---
 ## 19th of January 2022
