@@ -3,6 +3,12 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 2th of February 2022
+#### Undulating Columns (Shadertoy ID [WlXXDH](https://www.shadertoy.com/view/WlXXDH))
+
+[![UndulatingColumns](https://user-images.githubusercontent.com/78935215/152228434-9bd5366d-51e9-4302-a493-c8d4c84a31a0.gif)](TrippyTriangle.md)
+
+---
 ## 26th of January 2022
 #### TrippyTriangle (Shadertoy ID [fslcDS](https://www.shadertoy.com/view/fsXcR8))
 
