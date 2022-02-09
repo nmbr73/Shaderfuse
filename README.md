@@ -63,7 +63,7 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 **Current Shader of the Week (9th of February 2022):**
 
 [![StarGazingHippo](https://user-images.githubusercontent.com/78935215/153215162-35f62940-7813-4256-8672-2030b725afb6.gif)
-](Shaders/ShaderOfTheWeek/StarGazingHippo.md)
+](Shaders/ShaderOfTheWeek/Stargazinghippo.md)
 
 
 
