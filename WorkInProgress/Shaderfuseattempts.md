@@ -14,6 +14,47 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[StarGazingHippo](https://www.shadertoy.com/view/4tGfz3)| Fuse | ShaderOfTheWeek 06/22 |
+|[You're as Hot as Fire](https://www.shadertoy.com/view/4tfBRn)| incub | ABCD ! mit Herz |
+|[experiment_malze](https://www.shadertoy.com/view/Ns2cWd)| incub | AB !! |
+|[Lover 3](https://www.shadertoy.com/view/7s2cWc)| incub | ABCD ! |
+|[Liquid Crystal](https://www.shadertoy.com/view/MltBz7)| Defect |  |
+|[Thermal Particles IV](https://www.shadertoy.com/view/3slGRr)| incub | ABCD ! |
+|[Land of Water](https://www.shadertoy.com/view/Wlj3Rc)| incub | ABCD !! |
+|[2d particle fluid test](https://www.shadertoy.com/view/MdtGD2)| incub |  |
+|[2D physics engine](https://www.shadertoy.com/view/flX3zH)| incub |  |
+|[Broken Buddha](https://www.shadertoy.com/view/NdBcRd)| incub |  |
+|[Sketchy Stippling Stylization](https://www.shadertoy.com/view/ldSyzV)| incub |  |
+|[Fork Falling Sa manthrax 836](https://www.shadertoy.com/view/7d2cDz)| incub |  |
+|[Pollution mask test](https://www.shadertoy.com/view/NtySDc)| incub |  |
+|[Lover](https://www.shadertoy.com/view/fsjyR3)| incub | ABCD ! |
+|[tunnel x](https://www.shadertoy.com/view/7dSyzV)| incub |   |
+|[Fork Video on f elevations 785](https://www.shadertoy.com/view/ssjczK)| incub | AB Edge !  |
+|[Undulating Columns](https://www.shadertoy.com/view/WlXXDH)| Fuse | ShaderOfTheWeek 05/22  |
+|[Communication and Grouping](https://www.shadertoy.com/view/wtSSDm)| incub | ABCD - Fehler in der Y-Achse  |
+|[Sea Stars](https://www.shadertoy.com/view/fdScWw)| incub | ABCD |
+|[physics engine](https://www.shadertoy.com/view/MdXBD8)| incub | ABCD ! |
+|[Creeping Waves](https://www.shadertoy.com/view/7djcWR)| incub |  |
+|[Verlet integration test](https://www.shadertoy.com/view/7dSyWR)| incub | ! |
+|[Electric Sheep](https://www.shadertoy.com/view/sdBcDh)| incub |  |
+|[Antonalog's Glassy Blobs &camera](https://www.shadertoy.com/view/wdjXRy)| incub | cubemap |
+|[Newton Pendulum](https://www.shadertoy.com/view/7sXyzX)| incub | cubemap |
+|[Machine DNA](https://www.shadertoy.com/view/7d2yz1)| defect | Beleuchtung fehlt |
+|[Rhodium liquid carbon](https://www.shadertoy.com/view/llK3Dy)| incub | !! |
+|[worley Noise Fractal](https://www.shadertoy.com/view/Wdf3DH)| defect |  |
+|[apply insulate operator to torus](https://www.shadertoy.com/view/ssBczR)| incub |  |
+|[Water Hammer](https://www.shadertoy.com/view/sdSyzR)| incub | ABCD  |
+|[Convection](https://www.shadertoy.com/view/ssByRz)| incub | ABCD |
+|[Stone Bridge](https://www.shadertoy.com/view/NdjyRR)| incub | ABCD |
+|[Caustic LBM](https://www.shadertoy.com/view/fslyWs)| incub |  |
+|[Material Point Method](https://www.shadertoy.com/view/fssyDs)| incub | ABCD |
+|[3D Fractal Cubes (buggy)](https://www.shadertoy.com/view/7sfyW2)| incub |  |
+|[Disaster](https://www.shadertoy.com/view/fsscDX)| incub | Supercooler Shader |
+|[Sundown](https://www.shadertoy.com/view/sdlcDj)| incub | ABCD |
+|[Controllable Machinery](https://www.shadertoy.com/view/fsXyDj)| incub |  |
+|[Fluidic Boids II](https://www.shadertoy.com/view/7dlcW7)| incub | ReferenzShader?  |
+|[Doc Dump II](https://www.shadertoy.com/view/sdfyzs)| incub |  |
+|[head0000000](https://www.shadertoy.com/view/wdcSzH)| incub | Cubemap! |
 |[Exit the Matrix](https://www.shadertoy.com/view/NlsXDH)| incub | Shader Of The Week |
 |[block CA by racon](https://www.shadertoy.com/view/7sVXWG)| incub | AB |
 |[Star systems evolution](https://www.shadertoy.com/view/7slyRj)| incub |  |

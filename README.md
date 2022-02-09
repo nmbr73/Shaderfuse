@@ -41,6 +41,8 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ExNG8n559NY" target="_blank"><img src="http://img.youtube.com/vi/ExNG8n559NY/0.jpg" alt="Demo 14" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ExNG8n559NY?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=3vrS5hUsU60" target="_blank"><img src="http://img.youtube.com/vi/3vrS5hUsU60/0.jpg" alt="Demo 15" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/3vrS5hUsU60?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=UVl4vYk1D-o" target="_blank"><img src="http://img.youtube.com/vi/UVl4vYk1D-o/0.jpg" alt="Demo 16" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/UVl4vYk1D-o?style=social" /></a></td>
+<tr>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=QTft66_s8qY" target="_blank"><img src="http://img.youtube.com/vi/QTft66_s8qY/0.jpg" alt="Demo 14" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/QTft66_s8qY?style=social" /></a></td>
 
 </tr>
 </table>
@@ -58,10 +60,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (2th of February 2022):**
+**Current Shader of the Week (9th of February 2022):**
 
-[![UndulatingColumns](https://user-images.githubusercontent.com/78935215/152228434-9bd5366d-51e9-4302-a493-c8d4c84a31a0.gif)
-](Shaders/ShaderOfTheWeek/UndulatingColumns.md)
+[![StarGazingHippo](https://user-images.githubusercontent.com/78935215/153215162-35f62940-7813-4256-8672-2030b725afb6.gif)
+](Shaders/ShaderOfTheWeek/StarGazingHippo.md)
 
 
 

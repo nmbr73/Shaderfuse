@@ -3,6 +3,13 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 9th of February 2022
+#### StarGazingHippo (Shadertoy ID [4tGfz3](https://www.shadertoy.com/view/WlXXDH))
+
+[!![StarGazingHippo](https://user-images.githubusercontent.com/78935215/153215162-35f62940-7813-4256-8672-2030b725afb6.gif)](StarGazingHippo.md)
+
+---
+
 ## 2th of February 2022
 #### Undulating Columns (Shadertoy ID [WlXXDH](https://www.shadertoy.com/view/WlXXDH))
 
