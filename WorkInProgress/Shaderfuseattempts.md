@@ -14,6 +14,31 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Terraform](https://www.shadertoy.com/view/NsdXDs)| Fuse | ShaderOfTheWeek |
+|[Reactive Voronoi](https://www.shadertoy.com/view/Ml3GDX)| incub |  |
+|[Audio cube II - Visualiser](https://www.shadertoy.com/view/4lS3W3)| defect |  |
+|[Audio heightfield 1](https://www.shadertoy.com/view/ldXGzN)| incub |  |
+|[Audio Waveform Visualizer v3](https://www.shadertoy.com/view/wd3Bzl)| incub |  |
+|[Audio spectrum ( Enhanced )](https://www.shadertoy.com/view/4sySDt)| incub |  |
+|[Annotated Reference Spectrum Vis](https://www.shadertoy.com/view/XdX3z2)| incub |  |
+|[Basic audio visualizer](https://www.shadertoy.com/view/4lGSzy)| incub |  |
+|[Fractal 110 gaz](https://www.shadertoy.com/view/7ssfD4)| incub |  |
+|[Entwined](https://www.shadertoy.com/view/7lySWh)| incub | A |
+|[Instamaze](https://www.shadertoy.com/view/sdsyWN)| incub | Rand fehlt |
+|[The meaning of life](https://www.shadertoy.com/view/3s2XWW)| incub | !  |
+|[Autumn mushrooms](https://www.shadertoy.com/view/7lVGzh)| defect | Fehler in pModPolar -> nur ein Zwerg ev. Modulofehler |
+|[Floating Colorful Spheres](https://www.shadertoy.com/view/ftVSzK)| incub |  |
+|[Thermal Particles II](https://www.shadertoy.com/view/XtGBWt)| incub | ABCD !! |
+|[Blob blob the blobby blob blob](https://www.shadertoy.com/view/sslfRH)| incub |  |
+|[Perspex Web Lattice](https://www.shadertoy.com/view/Mld3Rn)| incub |  |
+|[100000 Pins Valley](https://www.shadertoy.com/view/XtBfz1)| incub |  |
+|[Solid Forces](https://www.shadertoy.com/view/wdKyRD)| incub | ABCD |
+|[Texture Stencil Library](https://www.shadertoy.com/view/ssBczm)| incub | AB !!! |
+|[Drag a Pseudo Fluid!](https://www.shadertoy.com/view/lsVfRd)| incub | AB !! |
+|[Center flow](https://www.shadertoy.com/view/3lXfzr)| incub | AB !!  |
+|[Animated Subdivision 3D](https://www.shadertoy.com/view/fdyGDt)| incub |  |
+|[Super Sonic](https://www.shadertoy.com/view/wsf3zX)| incub | ABCD |
+|[Transport Dynamics](https://www.shadertoy.com/view/wdVBRR)| incub | ABCD |
 |[StarGazingHippo](https://www.shadertoy.com/view/4tGfz3)| Fuse | ShaderOfTheWeek 06/22 |
 |[You're as Hot as Fire](https://www.shadertoy.com/view/4tfBRn)| incub | ABCD ! mit Herz |
 |[experiment_malze](https://www.shadertoy.com/view/Ns2cWd)| incub | AB !! |

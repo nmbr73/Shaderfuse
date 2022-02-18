@@ -60,10 +60,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (9th of February 2022):**
+**Current Shader of the Week (16th of February 2022):**
 
-[![StarGazingHippo](https://user-images.githubusercontent.com/78935215/153215162-35f62940-7813-4256-8672-2030b725afb6.gif)
-](Shaders/ShaderOfTheWeek/Stargazinghippo.md)
+[![Terraform](https://user-images.githubusercontent.com/78935215/154648977-658c0780-f09c-4ef8-8b3e-77ba879eed11.gif)
+](Shaders/ShaderOfTheWeek/Terraform.md)
 
 
 
