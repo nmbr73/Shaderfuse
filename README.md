@@ -140,6 +140,23 @@ Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and star
 And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinci Resolve) pane under 'Tools' you should now find an entry 'Shadertoys' that lists all the categories and the different fuses.
 
 
+
+# Audio Shader
+
+Shaders that use audio data (wave and frequency) over an image for display. Shadertoy provides an interface consisting of an image (512*2 pixels). One line contains 512 sampled waveform values ​​belonging to the current frame and the second line contains the FFT (Spectrum) values.
+This interface can also be implemented in Resolve/Fusion. The [AudioWaveform.fuse](Shaders/Audio/AudioWaveform.md) generates the corresponding image from a loaded WAV file. The AudioWaveform has a second output for this. This Output is connected to an AudioShaderfuse-Input.
+
+[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioWaveform-Installer.lua&color=blue)](AudioWaveform-Installer.lua "Installer")
+
+Here are the AudioShaderfuses:
+- [AudioWaveformVisualizer](Shaders/Audio/AudioWaveformVisualizer.md)
+- [AudioHeightfield1](Shaders/Audio/AudioHeightfield1.md)
+- [JamSession](Shaders/Audio/JamSession.md)
+- [ReactiveVoronoi](Shaders/Audio/ReactiveVoronoi.md)
+- [Rlstyle](Shaders/Audio/Rlstyle.md)
+- [ShadertoyAudioDisplay](Shaders/Audio/ShadertoyAudioDisplay.md)
+
+
 # Contribute
 
 [![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/Zb48E4z3Pg) [![GitHub Watchers](https://img.shields.io/github/watchers/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Stars](https://img.shields.io/github/stars/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Forks](https://img.shields.io/github/forks/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys)
