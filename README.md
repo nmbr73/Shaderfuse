@@ -146,7 +146,7 @@ And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinc
 Shaders that use audio data (wave and frequency) over an image for display. Shadertoy provides an interface consisting of an image (512*2 pixels). One line contains 512 sampled waveform values ​​belonging to the current frame and the second line contains the FFT (Spectrum) values.
 This interface can also be implemented in Resolve/Fusion. The [AudioWaveform.fuse](Shaders/Audio/AudioWaveform.md) generates the corresponding image from a loaded WAV file. The AudioWaveform has a second output for this. This Output is connected to an AudioShaderfuse-Input.
 
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioWaveform-Installer.lua&color=blue)](AudioWaveform-Installer.lua "Installer")
+[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioWaveform-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/AudioWaveform-Installer.lua "Installer")
 
 Here are the AudioShaderfuses:
 - [AudioWaveformVisualizer](Shaders/Audio/AudioWaveformVisualizer.md)
