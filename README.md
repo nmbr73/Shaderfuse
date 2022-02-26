@@ -157,6 +157,19 @@ Here are the AudioShaderfuses:
 - [ShadertoyAudioDisplay](Shaders/Audio/ShadertoyAudioDisplay.md)
 
 
+# Cubemap Shader
+
+These are shaders that require a cubemap as input. nmbr73 created a tool to provide a cubemap for the shader fuses.
+
+[![Download Installer](https://img.shields.io/static/v1?label=Download&message=CubeMapLoader-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/CubeMapLoader-Installer.lua "Installer")
+
+Here are the cubemap shader fuses:
+- [BallsAreTouching](Shaders/Cubemap/BallsAreTouching.md)
+- [GlassAndBubble](Shaders/Cubemap/GlassAndBubble.md)
+- [KissTracing](Shaders/Cubemap/KissTracing.md)
+- [NewtonPendulum](Shaders/Cubemap/NewtonPendulum.md)
+- [OceanElemental](Shaders/Cubemap/OceanElemental.md)
+
 # Contribute
 
 [![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/Zb48E4z3Pg) [![GitHub Watchers](https://img.shields.io/github/watchers/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Stars](https://img.shields.io/github/stars/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Forks](https://img.shields.io/github/forks/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys)
