@@ -108,39 +108,51 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/AudioHeightfield1](Audio/AudioHeightfield1_320x180.png)\
-Fuse: [AudioHeightfield1](Audio/AudioHeightfield1.md) :boom:\
+Fuse: [AudioHeightfield1](Audio/AudioHeightfield1.md) :four_leaf_clover:\
 Category: [Audio](Audio/README.md)\
-**fuse category 'Incubator' does not match fuse's subdirectory**
+Shadertoy: [Audio heightfield 1](https://www.shadertoy.com/view/ldXGzN)\
+Author: [huttarl](https://www.shadertoy.com/user/huttarl)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/AudioWaveformVisualizer](Audio/AudioWaveformVisualizer_320x180.png)\
-Fuse: [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) :boom:\
+Fuse: [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) :four_leaf_clover:\
 Category: [Audio](Audio/README.md)\
-**fuse category 'Incubator' does not match fuse's subdirectory**
+Shadertoy: [Audio Waveform Visualizer v3](https://www.shadertoy.com/view/wd3Bzl)\
+Author: [oneshade](https://www.shadertoy.com/user/oneshade)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/JamSession](Audio/JamSession_320x180.png)\
-Fuse: [JamSession](Audio/JamSession.md) :boom:\
+Fuse: [JamSession](Audio/JamSession.md) :four_leaf_clover:\
 Category: [Audio](Audio/README.md)\
-**fuse category 'Incubator' does not match fuse's subdirectory**
+Shadertoy: [Jam Session](https://www.shadertoy.com/view/XdsyW4)\
+Author: [Passion](https://www.shadertoy.com/user/Passion)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/ReactiveVoronoi](Audio/ReactiveVoronoi_320x180.png)\
-Fuse: [ReactiveVoronoi](Audio/ReactiveVoronoi.md) :boom:\
+Fuse: [ReactiveVoronoi](Audio/ReactiveVoronoi.md) :four_leaf_clover:\
 Category: [Audio](Audio/README.md)\
-**fuse category 'Incubator' does not match fuse's subdirectory**
+Shadertoy: [Reactive Voronoi](https://www.shadertoy.com/view/Ml3GDX)\
+Author: [glk7](https://www.shadertoy.com/user/glk7)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/Rlstyle](Audio/Rlstyle_320x180.png)\
-Fuse: [Rlstyle](Audio/Rlstyle.md) :boom:\
+Fuse: [Rlstyle](Audio/Rlstyle.md) :four_leaf_clover:\
 Category: [Audio](Audio/README.md)\
-**fuse category 'Incubator' does not match fuse's subdirectory**
+Shadertoy: [RLStyle Visualizer](https://www.shadertoy.com/view/llXyzN)\
+Author: [clintolibre](https://www.shadertoy.com/user/clintolibre)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay_320x180.png)\
-Fuse: [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md) :boom:\
+Fuse: [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md) :four_leaf_clover:\
 Category: [Audio](Audio/README.md)\
-**fuse category 'Incubator' does not match fuse's subdirectory**
+Shadertoy: [Shadertoy audio display](https://www.shadertoy.com/view/MtVfWh)\
+Author: [saidwho12](https://www.shadertoy.com/user/saidwho12)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 
@@ -823,7 +835,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 89
+:four_leaf_clover: 95
 
-:boom: 8
+:boom: 2
 

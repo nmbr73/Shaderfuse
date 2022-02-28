@@ -29,12 +29,12 @@
 
 
 **[Audio Shaders](Audio/README.md)**
-- [AudioHeightfield1](Audio/AudioHeightfield1.md) :boom:
-- [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) :boom:
-- [JamSession](Audio/JamSession.md) :boom:
-- [ReactiveVoronoi](Audio/ReactiveVoronoi.md) :boom:
-- [Rlstyle](Audio/Rlstyle.md) :boom:
-- [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md) :boom:
+- [AudioHeightfield1](Audio/AudioHeightfield1.md) (Shadertoy ID [ldXGzN](https://www.shadertoy.com/view/ldXGzN)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) (Shadertoy ID [wd3Bzl](https://www.shadertoy.com/view/wd3Bzl)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [JamSession](Audio/JamSession.md) (Shadertoy ID [XdsyW4](https://www.shadertoy.com/view/XdsyW4)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [ReactiveVoronoi](Audio/ReactiveVoronoi.md) (Shadertoy ID [Ml3GDX](https://www.shadertoy.com/view/Ml3GDX)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [Rlstyle](Audio/Rlstyle.md) (Shadertoy ID [llXyzN](https://www.shadertoy.com/view/llXyzN)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md) (Shadertoy ID [MtVfWh](https://www.shadertoy.com/view/MtVfWh)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
 **[Blob Shaders](Blob/README.md)**
