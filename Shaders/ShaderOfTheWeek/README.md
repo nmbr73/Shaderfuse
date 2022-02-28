@@ -54,8 +54,8 @@ based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) writte
 ## **[SpiraledLayers](SpiraledLayers.md)**
 based on [Spiraled Layers](https://www.shadertoy.com/view/Ns3XWf) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[StarGazingHippo](StarGazingHippo.md)** :boom:
-- *Fuse name does not correspond to filename´*
+## **[StarGazingHippo](StarGazingHippo.md)**
+based on [StarGazingHippo](https://www.shadertoy.com/view/4tGfz3) written by [kuvkar](https://www.shadertoy.com/user/kuvkar)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[TasteOfNoise7](TasteOfNoise7.md)**
 based on [Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs) written by [leon](https://www.shadertoy.com/user/leon)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

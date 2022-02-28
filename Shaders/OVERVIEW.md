@@ -702,9 +702,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/StarGazingHippo](ShaderOfTheWeek/StarGazingHippo_320x180.png)\
-Fuse: [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) :boom:\
+Fuse: [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-**Fuse name does not correspond to filename´**
+Shadertoy: [StarGazingHippo](https://www.shadertoy.com/view/4tGfz3)\
+Author: [kuvkar](https://www.shadertoy.com/user/kuvkar)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7_320x180.png)\
@@ -835,7 +837,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 95
+:four_leaf_clover: 96
 
-:boom: 2
+:boom: 1
 

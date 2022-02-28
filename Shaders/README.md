@@ -126,7 +126,7 @@
 - [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/tls3WB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf)) ported by [JiPi](../Site/Profiles/JiPi.md)
-- [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) :boom:
+- [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) (Shadertoy ID [4tGfz3](https://www.shadertoy.com/view/4tGfz3)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) (Shadertoy ID [NddSWs](https://www.shadertoy.com/view/NddSWs)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Terraform](ShaderOfTheWeek/Terraform.md) (Shadertoy ID [NsdXDs](https://www.shadertoy.com/view/NsdXDs)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TrippyTriangle](ShaderOfTheWeek/TrippyTriangle.md) (Shadertoy ID [fslcDS](https://www.shadertoy.com/view/fslcDS)) ported by [JiPi](../Site/Profiles/JiPi.md)
