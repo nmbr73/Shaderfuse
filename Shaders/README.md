@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-**README** · [OVERVIEW](OVERVIEW.md) · [Abstract](Abstract/README.md) · [Blob](Blob/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md)
+**README** · [OVERVIEW](OVERVIEW.md) · [Abstract](Abstract/README.md) · [Audio](Audio/README.md) · [Blob](Blob/README.md) · [Cubemap](Cubemap/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md)
 
 # Shaders
 
@@ -28,10 +28,28 @@
 - [Raysemigarbage](Abstract/Raysemigarbage.md) (Shadertoy ID [3tdSW8](https://www.shadertoy.com/view/3tdSW8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
+**[Audio Shaders](Audio/README.md)**
+- [AudioHeightfield1](Audio/AudioHeightfield1.md) :boom:
+- [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) :boom:
+- [JamSession](Audio/JamSession.md) :boom:
+- [ReactiveVoronoi](Audio/ReactiveVoronoi.md) :boom:
+- [Rlstyle](Audio/Rlstyle.md) :boom:
+- [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md) :boom:
+
+
 **[Blob Shaders](Blob/README.md)**
 - [FunWithMetaballs](Blob/FunWithMetaballs.md) (Shadertoy ID [MlyXWV](https://www.shadertoy.com/view/MlyXWV)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TorturedBlob](Blob/TorturedBlob.md) (Shadertoy ID [MlKGDK](https://www.shadertoy.com/view/MlKGDK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [XRaymarching](Blob/XRaymarching.md) (Shadertoy ID [XtByWW](https://www.shadertoy.com/view/XtByWW)) ported by [JiPi](../Site/Profiles/JiPi.md)
+
+
+**[Cubemap Shaders](Cubemap/README.md)**
+- [BallsAreTouching](Cubemap/BallsAreTouching.md) (Shadertoy ID [MdlGWn](https://www.shadertoy.com/view/MdlGWn)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [CubeMapLoader](Cubemap/CubeMapLoader.md) :boom:
+- [GlassAndBubble](Cubemap/GlassAndBubble.md) (Shadertoy ID [XdVSRV](https://www.shadertoy.com/view/XdVSRV)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [KissTracing](Cubemap/KissTracing.md) (Shadertoy ID [sttXWX](https://www.shadertoy.com/view/sttXWX)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [NewtonPendulum](Cubemap/NewtonPendulum.md) (Shadertoy ID [7sXyzX](https://www.shadertoy.com/view/7sXyzX)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [OceanElemental](Cubemap/OceanElemental.md) (Shadertoy ID [NdS3zK](https://www.shadertoy.com/view/NdS3zK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
 **[Distortion Shaders](Distortion/README.md)**
@@ -102,13 +120,18 @@
 - [FractalGliding](ShaderOfTheWeek/FractalGliding.md) (Shadertoy ID [ftGGDR](https://www.shadertoy.com/view/ftGGDR)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) (Shadertoy ID [wdScRd](https://www.shadertoy.com/view/wdScRd)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [HyperDough](ShaderOfTheWeek/HyperDough.md) (Shadertoy ID [7tcGWB](https://www.shadertoy.com/view/7tcGWB)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [Lover](ShaderOfTheWeek/Lover.md) (Shadertoy ID [fsjyR3](https://www.shadertoy.com/view/fsjyR3)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [OnTheSal](ShaderOfTheWeek/OnTheSal.md) (Shadertoy ID [fsXcR8](https://www.shadertoy.com/view/fsXcR8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RME4Crater](ShaderOfTheWeek/RME4Crater.md) (Shadertoy ID [MlSBDt](https://www.shadertoy.com/view/MlSBDt)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/tls3WB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) :boom:
 - [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) (Shadertoy ID [NddSWs](https://www.shadertoy.com/view/NddSWs)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [Terraform](ShaderOfTheWeek/Terraform.md) (Shadertoy ID [NsdXDs](https://www.shadertoy.com/view/NsdXDs)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [TrippyTriangle](ShaderOfTheWeek/TrippyTriangle.md) (Shadertoy ID [fslcDS](https://www.shadertoy.com/view/fslcDS)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) (Shadertoy ID [7lKSWW](https://www.shadertoy.com/view/7lKSWW)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) (Shadertoy ID [WlXXDH](https://www.shadertoy.com/view/WlXXDH)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
 **[Simple Shaders](Simple/README.md)**

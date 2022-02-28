@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Blob](Blob/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md)
+[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Audio](Audio/README.md) · [Blob](Blob/README.md) · [Cubemap](Cubemap/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md)
 
 # Shaders
 
@@ -104,6 +104,46 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 
+## Audio Shaders
+
+
+![Audio/AudioHeightfield1](Audio/AudioHeightfield1_320x180.png)\
+Fuse: [AudioHeightfield1](Audio/AudioHeightfield1.md) :boom:\
+Category: [Audio](Audio/README.md)\
+**fuse category 'Incubator' does not match fuse's subdirectory**
+
+
+![Audio/AudioWaveformVisualizer](Audio/AudioWaveformVisualizer_320x180.png)\
+Fuse: [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) :boom:\
+Category: [Audio](Audio/README.md)\
+**fuse category 'Incubator' does not match fuse's subdirectory**
+
+
+![Audio/JamSession](Audio/JamSession_320x180.png)\
+Fuse: [JamSession](Audio/JamSession.md) :boom:\
+Category: [Audio](Audio/README.md)\
+**fuse category 'Incubator' does not match fuse's subdirectory**
+
+
+![Audio/ReactiveVoronoi](Audio/ReactiveVoronoi_320x180.png)\
+Fuse: [ReactiveVoronoi](Audio/ReactiveVoronoi.md) :boom:\
+Category: [Audio](Audio/README.md)\
+**fuse category 'Incubator' does not match fuse's subdirectory**
+
+
+![Audio/Rlstyle](Audio/Rlstyle_320x180.png)\
+Fuse: [Rlstyle](Audio/Rlstyle.md) :boom:\
+Category: [Audio](Audio/README.md)\
+**fuse category 'Incubator' does not match fuse's subdirectory**
+
+
+![Audio/ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay_320x180.png)\
+Fuse: [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md) :boom:\
+Category: [Audio](Audio/README.md)\
+**fuse category 'Incubator' does not match fuse's subdirectory**
+
+
+
 ## Blob Shaders
 
 
@@ -128,6 +168,56 @@ Fuse: [XRaymarching](Blob/XRaymarching.md) :four_leaf_clover:\
 Category: [Blob](Blob/README.md)\
 Shadertoy: [XRaymarching](https://www.shadertoy.com/view/XtByWW)\
 Author: [Aeless](https://www.shadertoy.com/user/Aeless)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+
+## Cubemap Shaders
+
+
+![Cubemap/BallsAreTouching](Cubemap/BallsAreTouching_320x180.png)\
+Fuse: [BallsAreTouching](Cubemap/BallsAreTouching.md) :four_leaf_clover:\
+Category: [Cubemap](Cubemap/README.md)\
+Shadertoy: [balls are touching](https://www.shadertoy.com/view/MdlGWn)\
+Author: [w23](https://www.shadertoy.com/user/w23)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Cubemap/CubeMapLoader](Cubemap/CubeMapLoader_320x180.png)\
+Fuse: [CubeMapLoader](Cubemap/CubeMapLoader.md) :boom:\
+Category: [Cubemap](Cubemap/README.md)\
+**fuse category 'Tool' does not match fuse's subdirectory**
+
+
+![Cubemap/GlassAndBubble](Cubemap/GlassAndBubble_320x180.png)\
+Fuse: [GlassAndBubble](Cubemap/GlassAndBubble.md) :four_leaf_clover:\
+Category: [Cubemap](Cubemap/README.md)\
+Shadertoy: [Glass and Bubble](https://www.shadertoy.com/view/XdVSRV)\
+Author: [TambakoJaguar](https://www.shadertoy.com/user/TambakoJaguar)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Cubemap/KissTracing](Cubemap/KissTracing_320x180.png)\
+Fuse: [KissTracing](Cubemap/KissTracing.md) :four_leaf_clover:\
+Category: [Cubemap](Cubemap/README.md)\
+Shadertoy: [KISS Tracing 001: Spheres&Plane](https://www.shadertoy.com/view/sttXWX)\
+Author: [tsaari42](https://www.shadertoy.com/user/tsaari42)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Cubemap/NewtonPendulum](Cubemap/NewtonPendulum_320x180.png)\
+Fuse: [NewtonPendulum](Cubemap/NewtonPendulum.md) :four_leaf_clover:\
+Category: [Cubemap](Cubemap/README.md)\
+Shadertoy: [Newton Pendulum](https://www.shadertoy.com/view/7sXyzX)\
+Author: [leesten](https://www.shadertoy.com/user/leesten)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Cubemap/OceanElemental](Cubemap/OceanElemental_320x180.png)\
+Fuse: [OceanElemental](Cubemap/OceanElemental.md) :four_leaf_clover:\
+Category: [Cubemap](Cubemap/README.md)\
+Shadertoy: [OCEAN ELEMENTAL](https://www.shadertoy.com/view/NdS3zK)\
+Author: [alro](https://www.shadertoy.com/user/alro)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -551,6 +641,14 @@ Author: [Tater](https://www.shadertoy.com/user/Tater)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/Lover](ShaderOfTheWeek/Lover_320x180.png)\
+Fuse: [Lover](ShaderOfTheWeek/Lover.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Lover](https://www.shadertoy.com/view/fsjyR3)\
+Author: [wyatt](https://www.shadertoy.com/user/wyatt)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/OnTheSal](ShaderOfTheWeek/OnTheSal_320x180.png)\
 Fuse: [OnTheSal](ShaderOfTheWeek/OnTheSal.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -591,6 +689,12 @@ Author: [Tater](https://www.shadertoy.com/user/Tater)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/StarGazingHippo](ShaderOfTheWeek/StarGazingHippo_320x180.png)\
+Fuse: [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) :boom:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+**Fuse name does not correspond to filename´**
+
+
 ![ShaderOfTheWeek/TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7_320x180.png)\
 Fuse: [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -599,11 +703,35 @@ Author: [leon](https://www.shadertoy.com/user/leon)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/Terraform](ShaderOfTheWeek/Terraform_320x180.png)\
+Fuse: [Terraform](ShaderOfTheWeek/Terraform.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Terraform](https://www.shadertoy.com/view/NsdXDs)\
+Author: [Xor](https://www.shadertoy.com/user/Xor)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/TrippyTriangle](ShaderOfTheWeek/TrippyTriangle_320x180.png)\
+Fuse: [TrippyTriangle](ShaderOfTheWeek/TrippyTriangle.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Trippy Triangle](https://www.shadertoy.com/view/fslcDS)\
+Author: [Tater](https://www.shadertoy.com/user/Tater)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW_320x180.png)\
 Fuse: [TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW)\
 Author: [mrange](https://www.shadertoy.com/user/mrange)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/UndulatingColumns](ShaderOfTheWeek/UndulatingColumns_320x180.png)\
+Fuse: [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Undulating Columns](https://www.shadertoy.com/view/WlXXDH)\
+Author: [fizzer](https://www.shadertoy.com/user/fizzer)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -695,5 +823,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 80
+:four_leaf_clover: 89
+
+:boom: 8
 

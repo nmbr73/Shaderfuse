@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Blob](../Blob/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · **ShaderOfTheWeek** · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md)
+[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Audio](../Audio/README.md) · [Blob](../Blob/README.md) · [Cubemap](../Cubemap/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · **ShaderOfTheWeek** · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md)
 
 # ShaderOfTheWeek Shaders
 
@@ -36,6 +36,9 @@ based on [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd) written by [
 ## **[HyperDough](HyperDough.md)**
 based on [HyperDough](https://www.shadertoy.com/view/7tcGWB) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[Lover](Lover.md)**
+based on [Lover](https://www.shadertoy.com/view/fsjyR3) written by [wyatt](https://www.shadertoy.com/user/wyatt)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[OnTheSal](OnTheSal.md)**
 based on [On the salt lake](https://www.shadertoy.com/view/fsXcR8) written by [iapafoto](https://www.shadertoy.com/user/iapafoto)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
@@ -51,9 +54,21 @@ based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) writte
 ## **[SpiraledLayers](SpiraledLayers.md)**
 based on [Spiraled Layers](https://www.shadertoy.com/view/Ns3XWf) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[StarGazingHippo](StarGazingHippo.md)** :boom:
+- *Fuse name does not correspond to filename´*
+
 ## **[TasteOfNoise7](TasteOfNoise7.md)**
 based on [Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs) written by [leon](https://www.shadertoy.com/user/leon)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[Terraform](Terraform.md)**
+based on [Terraform](https://www.shadertoy.com/view/NsdXDs) written by [Xor](https://www.shadertoy.com/user/Xor)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[TrippyTriangle](TrippyTriangle.md)**
+based on [Trippy Triangle](https://www.shadertoy.com/view/fslcDS) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[TruchetKaleidoscopeFTW](TruchetKaleidoscopeFTW.md)**
 based on [Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW) written by [mrange](https://www.shadertoy.com/user/mrange)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[UndulatingColumns](UndulatingColumns.md)**
+based on [Undulating Columns](https://www.shadertoy.com/view/WlXXDH) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

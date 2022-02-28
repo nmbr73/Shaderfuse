@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Blob](../Blob/README.md) · [Distortion](../Distortion/README.md) · **Fractals** · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md)
+[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Audio](../Audio/README.md) · [Blob](../Blob/README.md) · [Cubemap](../Cubemap/README.md) · [Distortion](../Distortion/README.md) · **Fractals** · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md)
 
 # Fractals Shaders
 
