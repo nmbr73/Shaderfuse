@@ -195,12 +195,6 @@ Author: [w23](https://www.shadertoy.com/user/w23)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-![Cubemap/CubeMapLoader](Cubemap/CubeMapLoader_320x180.png)\
-Fuse: [CubeMapLoader](Cubemap/CubeMapLoader.md) :boom:\
-Category: [Cubemap](Cubemap/README.md)\
-**fuse category 'Tool' does not match fuse's subdirectory**
-
-
 ![Cubemap/GlassAndBubble](Cubemap/GlassAndBubble_320x180.png)\
 Fuse: [GlassAndBubble](Cubemap/GlassAndBubble.md) :four_leaf_clover:\
 Category: [Cubemap](Cubemap/README.md)\
@@ -838,6 +832,4 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 :four_leaf_clover: 96
-
-:boom: 1
 

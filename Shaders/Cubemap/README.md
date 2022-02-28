@@ -15,9 +15,6 @@
 ## **[BallsAreTouching](BallsAreTouching.md)**
 based on [balls are touching](https://www.shadertoy.com/view/MdlGWn) written by [w23](https://www.shadertoy.com/user/w23)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[CubeMapLoader](CubeMapLoader.md)** :boom:
-- *fuse category 'Tool' does not match fuse's subdirectory*
-
 ## **[GlassAndBubble](GlassAndBubble.md)**
 based on [Glass and Bubble](https://www.shadertoy.com/view/XdVSRV) written by [TambakoJaguar](https://www.shadertoy.com/user/TambakoJaguar)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

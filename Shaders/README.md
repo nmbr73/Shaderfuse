@@ -45,7 +45,6 @@
 
 **[Cubemap Shaders](Cubemap/README.md)**
 - [BallsAreTouching](Cubemap/BallsAreTouching.md) (Shadertoy ID [MdlGWn](https://www.shadertoy.com/view/MdlGWn)) ported by [JiPi](../Site/Profiles/JiPi.md)
-- [CubeMapLoader](Cubemap/CubeMapLoader.md) :boom:
 - [GlassAndBubble](Cubemap/GlassAndBubble.md) (Shadertoy ID [XdVSRV](https://www.shadertoy.com/view/XdVSRV)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [KissTracing](Cubemap/KissTracing.md) (Shadertoy ID [sttXWX](https://www.shadertoy.com/view/sttXWX)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [NewtonPendulum](Cubemap/NewtonPendulum.md) (Shadertoy ID [7sXyzX](https://www.shadertoy.com/view/7sXyzX)) ported by [JiPi](../Site/Profiles/JiPi.md)
