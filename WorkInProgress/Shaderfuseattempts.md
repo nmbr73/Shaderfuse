@@ -14,6 +14,24 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Streamline charges](https://www.shadertoy.com/view/wtKfDy)| defect | texelfetch / packSnorm2x16 |
+|[Foamy Anger](https://www.shadertoy.com/view/sdffDj)| defect | packHalf2x16 |
+|[RL Style Visualizer](https://www.shadertoy.com/view/llXyzN)| Fuse | audio |
+|[reflection changes](https://www.shadertoy.com/view/fslfDf)| defect | ? |
+|[Balanced Entropy](https://www.shadertoy.com/view/stcXR7)| incub |  |
+|[Stranger Tides](https://www.shadertoy.com/view/ssBfzR)| incub |  |
+|[Drive the Mapper](https://www.shadertoy.com/view/7dsBW2)| incub | !!! |
+|[Stomper](https://www.shadertoy.com/view/7t3Szj)| incub | ! Nur Cuda |
+|[KISS Tracing 001: Spheres&Plane](https://www.shadertoy.com/view/sttXWX)| incub | Cubemap  |
+|[Remnant Lost](https://www.shadertoy.com/view/Nl3SWs)| incub | !!mat3!! |
+|[Dynamic Block Grid](https://www.shadertoy.com/view/sdsBDH)| defect |  |
+|[Fluther Of Orbs](https://www.shadertoy.com/view/4sl3Dj)| defect |  |
+|[Hell 2](https://www.shadertoy.com/view/7ssBzX)| incub |  |
+|[Jam Session](https://www.shadertoy.com/view/XdsyW4)| incub | Audio  |
+|[Sparkle sparkle little lightning](https://www.shadertoy.com/view/3sXSD2)| incub |  |
+|[[TWITCH] Volumetric screamer](https://www.shadertoy.com/view/tlSBWw)| incub | ! |
+|[Thunderlight](https://www.shadertoy.com/view/wsXczB)| incub | ABCD |
+|[Shadertoy audio display](https://www.shadertoy.com/view/MtVfWh)| incub | Audio |
 |[Terraform](https://www.shadertoy.com/view/NsdXDs)| Fuse | ShaderOfTheWeek |
 |[Reactive Voronoi](https://www.shadertoy.com/view/Ml3GDX)| incub |  |
 |[Audio cube II - Visualiser](https://www.shadertoy.com/view/4lS3W3)| defect |  |

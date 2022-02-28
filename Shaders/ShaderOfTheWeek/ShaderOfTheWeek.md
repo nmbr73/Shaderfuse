@@ -3,6 +3,13 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 23th of February 2022
+#### Lover (Shadertoy ID [fsjyR3](https://www.shadertoy.com/view/fsjyR3))
+
+[![Lover](https://user-images.githubusercontent.com/78935215/155531303-950f901d-2797-4c5e-8def-9a7a22328bd0.gif)](Lover.md)
+
+
+---
 ## 16th of February 2022
 #### Terraform (Shadertoy ID [NsdXDs](https://www.shadertoy.com/view/NsdXDs))
 

@@ -60,10 +60,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (16th of February 2022):**
+**Current Shader of the Week (23th of February 2022):**
 
-[![Terraform](https://user-images.githubusercontent.com/78935215/154648977-658c0780-f09c-4ef8-8b3e-77ba879eed11.gif)
-](Shaders/ShaderOfTheWeek/Terraform.md)
+[![Lover](https://user-images.githubusercontent.com/78935215/155531303-950f901d-2797-4c5e-8def-9a7a22328bd0.gif)
+](Shaders/ShaderOfTheWeek/Lover.md)
 
 
 
@@ -139,6 +139,36 @@ Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and star
 
 And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinci Resolve) pane under 'Tools' you should now find an entry 'Shadertoys' that lists all the categories and the different fuses.
 
+
+
+# Audio Shader
+
+Shaders that use audio data (wave and frequency) over an image for display. Shadertoy provides an interface consisting of an image (512*2 pixels). One line contains 512 sampled waveform values ​​belonging to the current frame and the second line contains the FFT (Spectrum) values.
+This interface can also be implemented in Resolve/Fusion. The [AudioWaveform.fuse](Shaders/Audio/AudioWaveform.md) generates the corresponding image from a loaded WAV file. The AudioWaveform has a second output for this. This Output is connected to an AudioShaderfuse-Input.
+
+[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioWaveform-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/AudioWaveform-Installer.lua "Installer")
+
+Here are the AudioShaderfuses:
+- [AudioWaveformVisualizer](Shaders/Audio/AudioWaveformVisualizer.md)
+- [AudioHeightfield1](Shaders/Audio/AudioHeightfield1.md)
+- [JamSession](Shaders/Audio/JamSession.md)
+- [ReactiveVoronoi](Shaders/Audio/ReactiveVoronoi.md)
+- [Rlstyle](Shaders/Audio/Rlstyle.md)
+- [ShadertoyAudioDisplay](Shaders/Audio/ShadertoyAudioDisplay.md)
+
+
+# Cubemap Shader
+
+These are shaders that require a cubemap as input. nmbr73 created a tool to provide a cubemap for the shader fuses.
+
+[![Download Installer](https://img.shields.io/static/v1?label=Download&message=CubeMapLoader-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/CubeMapLoader-Installer.lua "Installer")
+
+Here are the cubemap shader fuses:
+- [BallsAreTouching](Shaders/Cubemap/BallsAreTouching.md)
+- [GlassAndBubble](Shaders/Cubemap/GlassAndBubble.md)
+- [KissTracing](Shaders/Cubemap/KissTracing.md)
+- [NewtonPendulum](Shaders/Cubemap/NewtonPendulum.md)
+- [OceanElemental](Shaders/Cubemap/OceanElemental.md)
 
 # Contribute
 
