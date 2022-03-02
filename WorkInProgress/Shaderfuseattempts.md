@@ -14,6 +14,22 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Virtual particle advection](https://www.shadertoy.com/view/WtfyW7)| defect | texelfetch !! anderes Pixelverhalten  |
+|[spqr: blackle gated domain 8](https://www.shadertoy.com/view/7dlBRs)| incub | tex3D |
+|[CA Molecular dynamics](https://www.shadertoy.com/view/3s3cWr)| incub | ! AB |
+|[expanding prismatic smoke](https://www.shadertoy.com/view/3dlXW8)| incub | ! AB  |
+|[De Broglie Particles V](https://www.shadertoy.com/view/wsfGzS)| incub | ! ABCD |
+|[Surface Waves?...](https://www.shadertoy.com/view/3lsGWr)| incub | ABCD Watersimulation  |
+|[[Test] shallow water equations](https://www.shadertoy.com/view/4t3GWM)| incub | AB Watersimulation |
+|[Audio Reactive Ray Marching](https://www.shadertoy.com/view/ltscz4)| incub | Cubemap + Audio |
+|[Golf Balls And Big Water Ripples](https://www.shadertoy.com/view/ts3Gzs)| incub | ! AB ! |
+|[Glass and Gold Bubble](https://www.shadertoy.com/view/XdVSRV)| incub | cubemap |
+|[Michael's Awesome Wave System](https://www.shadertoy.com/view/3sy3DV)| incub | ABCD - kleiner Fehler |
+|[Lava blaster](https://www.shadertoy.com/view/WdtXzs)| defect | kein Bild - sofort Übersteuert |
+|[3D Wavelet Noise](https://www.shadertoy.com/view/tlBczy)| incub | !! |
+|[OCEAN ELEMENTAL](https://www.shadertoy.com/view/NdS3zK)| incub | cubemap ! |
+|[hexwaves](https://www.shadertoy.com/view/XsBczc)| incub |  |
+|[text Ink](https://www.shadertoy.com/view/fty3zW)| incub | ! |
 |[Streamline charges](https://www.shadertoy.com/view/wtKfDy)| defect | texelfetch / packSnorm2x16 |
 |[Foamy Anger](https://www.shadertoy.com/view/sdffDj)| defect | packHalf2x16 |
 |[RL Style Visualizer](https://www.shadertoy.com/view/llXyzN)| Fuse | audio |
