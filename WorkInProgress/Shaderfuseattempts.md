@@ -14,6 +14,78 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Blurred Net](https://www.shadertoy.com/view/fd2BDy)| incub | ! |
+|[Mass Collision](https://www.shadertoy.com/view/Wltczn)| incub | ABCD ! |
+|[walking robot](https://www.shadertoy.com/view/fdSyWW)| incub | A noch Fehler in der Textur |
+|[Finite Element Calculus](https://www.shadertoy.com/view/ftlcDr)| incub | Sobel |
+|[Weird Object](https://www.shadertoy.com/view/fssfDM)| incub | ! |
+|[JFA Caustic](https://www.shadertoy.com/view/wdsyDH)| incub | ABCD |
+|[Waveguide mesh](https://www.shadertoy.com/view/4ltyWj)| incub | AB ! |
+|[Schro ona Flu](https://www.shadertoy.com/view/tlsGRn)| incub | ABC |
+|[Triangulated Actors](https://www.shadertoy.com/view/tltSW8)| incub | ABCD ! |
+|[Fractal Cube Steps](https://www.shadertoy.com/view/Ns2fzG)| incub | ! |
+|[Scalar Fluid](https://www.shadertoy.com/view/3s3SzN)| incub | ABCD ! |
+|[Quantized Flow](https://www.shadertoy.com/view/wttGWN)| incub | ABCD ! |
+|[Meander](https://www.shadertoy.com/view/3tsBDr)| incub | ABCD !! |
+|[Watercolor Percolation](https://www.shadertoy.com/view/wsKfWG)| incub | ABCD ! |
+|[Surprising Phenomenon!](https://www.shadertoy.com/view/wtcGW4)| defect | Bild läuft nach oben rechts |
+|[Jelly Gateways](https://www.shadertoy.com/view/NdKXDm)| incub | ! |
+|[Mycorrhizal](https://www.shadertoy.com/view/tsVfDG)| incub | ABC |
+|[Wavy Fluid*](https://www.shadertoy.com/view/wty3Rh)| incub | ABCD ! |
+|[2 Fluid](https://www.shadertoy.com/view/WtK3RD)| incub | ABCD ! |
+|[Aqua Vista](https://www.shadertoy.com/view/ssXGDB)| incub | ABCD ! |
+|[Celerity](https://www.shadertoy.com/view/3djcWK)| incub | ABCD !! |
+|[Elastic Goop](https://www.shadertoy.com/view/3tSSW3)| incub | AB ! |
+|[fluid_thingy_3](https://www.shadertoy.com/view/7llyzH)| defect | Cubemap falsch |
+|[fluid_thingy_0](https://www.shadertoy.com/view/wdByWd)| incub | A ! |
+|[Glimmer of Hope](https://www.shadertoy.com/view/wlXBzn)| incub | ABCD ! |
+|[Graph Network*](https://www.shadertoy.com/view/wdjcDR)| incub | ABCD ! |
+|[Low Toner](https://www.shadertoy.com/view/WtlBWr)| incub | ABCD ! |
+|[Smooth Particle Hydrodynamics](https://www.shadertoy.com/view/ttVGW1)| incub | ABCD ! |
+|[Marble Painting](https://www.shadertoy.com/view/ss2Xzh)| incub | ABCD ! |
+|[Material Point Method](https://www.shadertoy.com/view/fssyDs)| incub | ABCD ! |
+|[Surface Forces*](https://www.shadertoy.com/view/WtySzV)| incub | ABCD ! |
+|[Destructible*](https://www.shadertoy.com/view/tdXyRH)| incub | ABC ! |
+|[Schrodinger's Smoke](https://www.shadertoy.com/view/tstXz4)| incub | ABCD ! |
+|[Triangulated Actors**](https://www.shadertoy.com/view/ttVXzD)| incub | ABC ! |
+|[Destructible](https://www.shadertoy.com/view/3lKSDV)| incub | ABC |
+|[Maybe Lattice Boltzmann](https://www.shadertoy.com/view/wdG3DW)| incub | AD  |
+|[Weird Science III](https://www.shadertoy.com/view/XlyBDy )| incub | ABCD !  |
+|[Drag Me! Im almost a Fluid!](https://www.shadertoy.com/view/XttyR4)| incub | ABCD ! |
+|[Is this realistic ?](https://www.shadertoy.com/view/4tccW4)| incub | ABCD ! |
+|[A Gooey Mess](https://www.shadertoy.com/view/wsjGDK)| incub | ABCD ! |
+|[Distribution Fluid Explained](https://www.shadertoy.com/view/wsG3Rd)| incub | ABCD ! |
+|[Inverse diffusion](https://www.shadertoy.com/view/ttt3RM)| incub | ABCD |
+|[Foam Simulation](https://www.shadertoy.com/view/tlyXDG)| incub | ABCD !! |
+|[Pour Yann ](https://www.shadertoy.com/view/tdKBz3)| incub | ABC |
+|[Continuum Detector](https://www.shadertoy.com/view/ts3GR4)| incub | ABCD |
+|[Imaginary Craziness](https://www.shadertoy.com/view/3sV3DV)| incub | AB ! |
+|[Last Fluid](https://www.shadertoy.com/view/3tcSDj)| incub | AB ! |
+|[Michaels cool algo + Pressure](https://www.shadertoy.com/view/WlfcWf)| incub | ABCD !!! |
+|[Quantum Rain](https://www.shadertoy.com/view/wlGGRm)| incub | ABCD !! |
+|[Nebula 16](https://www.shadertoy.com/view/3tBBWd)| incub | A |
+|[Gravity Streams](https://www.shadertoy.com/view/MdGfDc)| incub | ABC ! |
+|[Fluid Mosaic](https://www.shadertoy.com/view/MlVfDR)| defect | ABCD Raster wird nicht erzeugt |
+|[Through the tripping glass](https://www.shadertoy.com/view/fscGWS)| incub |  |
+|[Pseudofluidfade](https://www.shadertoy.com/view/MdSBzm)| incub | ABCD |
+|[Mind dump buffer overflow](https://www.shadertoy.com/view/wdGyzh)| incub | ABC ! |
+|[parasight](https://www.shadertoy.com/view/wllfRf)| incub | ABC !  |
+|[Dynamic Voronoi Graph](https://www.shadertoy.com/view/3t33D2)| incub | AB !! |
+|[Weird Science II](https://www.shadertoy.com/view/XtGyDd)| incub | ABCD ! |
+|[Stop Polluting!](https://www.shadertoy.com/view/3lc3DH)| incub | AB Keyboard & Alphabet  |
+|[That 70's Colour Palette](https://www.shadertoy.com/view/fdG3zV)| incub | ABCD !! Spilled |
+|[surface tension phase shift osci](https://www.shadertoy.com/view/3sdczs)| defect | ABCD Bild läuft zu 0.0 |
+|[Hot liquid metal](https://www.shadertoy.com/view/4sKGDK)| incub | ABCD |
+|[Maxwell Equations Test](https://www.shadertoy.com/view/tsB3Rz)| incub | ABC ! |
+|[Molecular Dance](https://www.shadertoy.com/view/WdB3WG)| incub | ABCD !!  |
+|[trajectory - random force field](https://www.shadertoy.com/view/wd33Dr)| defect | ? |
+|[inorganica permutations](https://www.shadertoy.com/view/WlSBDw)| incub | ABCD ! |
+|[Trig1](https://www.shadertoy.com/view/Xs23WV)| incub |  |
+|[velocity conservation](https://www.shadertoy.com/view/fld3z2)| incub | ABC Edges: Wrap |
+|[Jackson Meets Gauss](https://www.shadertoy.com/view/4scfDN)| incub | A |
+|[Magic Powder](https://www.shadertoy.com/view/tsGXR3)| incub | A |
+|[SandStorm](https://www.shadertoy.com/view/flt3Wr)| Fuse | ABCD |
+|[Smoke ball](https://www.shadertoy.com/view/ftl3zN)| incub | fliegende Wolke |
 |[Virtual particle advection](https://www.shadertoy.com/view/WtfyW7)| defect | texelfetch !! anderes Pixelverhalten  |
 |[spqr: blackle gated domain 8](https://www.shadertoy.com/view/7dlBRs)| incub | tex3D |
 |[CA Molecular dynamics](https://www.shadertoy.com/view/3s3cWr)| incub | ! AB |

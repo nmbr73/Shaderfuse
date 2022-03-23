@@ -2,6 +2,25 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+
+---
+## 23th of March 2022
+#### OMZG Shader Royale (Shadertoy ID [3l3Bzl](https://www.shadertoy.com/view/3l3Bzl))
+[![OMZGShaderRoyale](https://user-images.githubusercontent.com/78935215/159676611-7ac0d809-024f-4808-abee-eef1bf7b02f7.gif)](OMZGShaderRoyale.md)
+
+
+---
+## 16th of March 2022
+#### Morning Commute (Shadertoy ID [wdKBz1](https://www.shadertoy.com/view/wdKBz1))
+Not a worthwhile shader for fusion
+
+
+---
+## 9th of March 2022
+#### Quartz - wip (Shadertoy ID [fs2GWh](https://www.shadertoy.com/view/fs2GWh))
+Not a worthwhile shader for fusion
+
+
 ---
 ## 2th of March 2022
 #### Synthwave song (sound) (Shadertoy ID [NddSzl](https://www.shadertoy.com/view/NddSzl))
