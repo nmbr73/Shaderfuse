@@ -14,6 +14,26 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[@Party Concert Visuals 2020](https://www.shadertoy.com/view/WtscW4)| Fuse | Shader OF The Week 13/22 |
+|[Michael's Water](https://www.shadertoy.com/view/3lGcW1)| incub | ABC - Flüssigkeit friert ein :-(  |
+|[Electro](https://www.shadertoy.com/view/4scGWj)| incub | ! |
+|[fire in the brain](https://www.shadertoy.com/view/fsSXDV)| incub | ABC ! |
+|[Firework waves](https://www.shadertoy.com/view/Ws3SzS)| incub | AB !! |
+|[Balance](https://www.shadertoy.com/view/XssGRH)| incub | AB Sonnenaufgang |
+|[Shaded Fluid 2](https://www.shadertoy.com/view/XtyfD1)| incub | ABCD !!! Viele Parameter |
+|[Vasculature](https://www.shadertoy.com/view/wt33Wr)| incub | ABCD |
+|[Puffy](https://www.shadertoy.com/view/ltdyDl)| defect | nur cuda Globalvariablen |
+|[Multiple Neighborhood CA 2](https://www.shadertoy.com/view/7dByzw)| defect | AB nur grau  |
+|[Fluidic Space](https://www.shadertoy.com/view/tdS3DD)| incub | Audio |
+|[Particle System Dynamics](https://www.shadertoy.com/view/4sK3RR)| incub | ABC ! |
+|[Nimitz's Vorticity Confinement](https://www.shadertoy.com/view/tssGDN)| incub | ABCD !!!! |
+|[Neon Crystal](https://www.shadertoy.com/view/NlXcRB)| defect | zu viele Globals - s/w & artefakte |
+|[Fluid Density Consideration](https://www.shadertoy.com/view/WsySzD)| incub | ABCD !!!! |
+|[psychadelic_raspberries](https://www.shadertoy.com/view/4ldXRr)| incub | AB Blob |
+|[Water Punk](https://www.shadertoy.com/view/NsKSz3)| incub | Glasbrechung |
+|[octtree truchet](https://www.shadertoy.com/view/st3GRr)| incub |  |
+|[Unknown1](https://www.shadertoy.com/view/stlyW4)| incub | Horror Tunnel |
+|[OMZG Shader Royale - NuSan](https://www.shadertoy.com/view/3l3Bzl)| Fuse | Shader OF The Week 12/22 |
 |[Blurred Net](https://www.shadertoy.com/view/fd2BDy)| incub | ! |
 |[Mass Collision](https://www.shadertoy.com/view/Wltczn)| incub | ABCD ! |
 |[walking robot](https://www.shadertoy.com/view/fdSyWW)| incub | A noch Fehler in der Textur |

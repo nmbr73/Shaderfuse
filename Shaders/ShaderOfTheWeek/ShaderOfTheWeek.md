@@ -4,6 +4,12 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 
 
 ---
+## 30th of March 2022
+#### PartyConcertVisuals2020 (Shadertoy ID [WtscW4](https://www.shadertoy.com/view/WtscW4))
+[![PartyConcertVisuals2020](https://user-images.githubusercontent.com/78935215/160671987-d4ac1490-4fb8-4ba7-8182-2956bc8d8cdc.gif)](PartyConcertVisuals2020.md)
+
+
+---
 ## 23th of March 2022
 #### OMZG Shader Royale (Shadertoy ID [3l3Bzl](https://www.shadertoy.com/view/3l3Bzl))
 [![OMZGShaderRoyale](https://user-images.githubusercontent.com/78935215/159676611-7ac0d809-024f-4808-abee-eef1bf7b02f7.gif)](OMZGShaderRoyale.md)

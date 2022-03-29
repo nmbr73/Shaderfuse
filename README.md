@@ -42,8 +42,9 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=3vrS5hUsU60" target="_blank"><img src="http://img.youtube.com/vi/3vrS5hUsU60/0.jpg" alt="Demo 15" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/3vrS5hUsU60?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=UVl4vYk1D-o" target="_blank"><img src="http://img.youtube.com/vi/UVl4vYk1D-o/0.jpg" alt="Demo 16" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/UVl4vYk1D-o?style=social" /></a></td>
 <tr>
-<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=QTft66_s8qY" target="_blank"><img src="http://img.youtube.com/vi/QTft66_s8qY/0.jpg" alt="Demo 14" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/QTft66_s8qY?style=social" /></a></td>
-<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=3ikzubTYlm0" target="_blank"><img src="http://img.youtube.com/vi/3ikzubTYlm0/0.jpg" alt="Demo 15" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/3ikzubTYlm0?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=QTft66_s8qY" target="_blank"><img src="http://img.youtube.com/vi/QTft66_s8qY/0.jpg" alt="Demo 17" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/QTft66_s8qY?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=3ikzubTYlm0" target="_blank"><img src="http://img.youtube.com/vi/3ikzubTYlm0/0.jpg" alt="Demo 18" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/3ikzubTYlm0?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=EIIfA28pvZQ" target="_blank"><img src="http://img.youtube.com/vi/EIIfA28pvZQ/0.jpg" alt="Demo 19" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/EIIfA28pvZQ?style=social" /></a></td>
 </tr>
 </table>
 </center>
@@ -60,10 +61,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (23th of March 2022):**
+**Current Shader of the Week (30th of March 2022):**
 
-[![OMZGShaderRoyale](https://user-images.githubusercontent.com/78935215/159676611-7ac0d809-024f-4808-abee-eef1bf7b02f7.gif)
-](Shaders/ShaderOfTheWeek/OMZGShaderRoyale.md)
+[![PartyConcertVisuals2020](https://user-images.githubusercontent.com/78935215/160671987-d4ac1490-4fb8-4ba7-8182-2956bc8d8cdc.gif)
+](Shaders/ShaderOfTheWeek/PartyConcertVisuals2020.md)
 
 
 
