@@ -39,8 +39,14 @@ based on [HyperDough](https://www.shadertoy.com/view/7tcGWB) written by [Tater](
 ## **[Lover](Lover.md)**
 based on [Lover](https://www.shadertoy.com/view/fsjyR3) written by [wyatt](https://www.shadertoy.com/user/wyatt)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[OMZGShaderRoyale](OMZGShaderRoyale.md)**
+based on [OMZG Shader Royale](https://www.shadertoy.com/view/stXyWN) written by [NuSan](https://www.shadertoy.com/user/NuSan)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[OnTheSal](OnTheSal.md)**
 based on [On the salt lake](https://www.shadertoy.com/view/fsXcR8) written by [iapafoto](https://www.shadertoy.com/user/iapafoto)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[PartyConcertVisuals2020](PartyConcertVisuals2020.md)**
+based on [@Party Concert Visuals 2020](https://www.shadertoy.com/view/WtscW4) written by [blackle](https://www.shadertoy.com/user/blackle)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[RME4Crater](RME4Crater.md)**
 based on [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt) written by [patu](https://www.shadertoy.com/user/patu)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

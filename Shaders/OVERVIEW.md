@@ -655,11 +655,27 @@ Author: [wyatt](https://www.shadertoy.com/user/wyatt)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale_320x180.png)\
+Fuse: [OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [OMZG Shader Royale](https://www.shadertoy.com/view/stXyWN)\
+Author: [NuSan](https://www.shadertoy.com/user/NuSan)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/OnTheSal](ShaderOfTheWeek/OnTheSal_320x180.png)\
 Fuse: [OnTheSal](ShaderOfTheWeek/OnTheSal.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [On the salt lake](https://www.shadertoy.com/view/fsXcR8)\
 Author: [iapafoto](https://www.shadertoy.com/user/iapafoto)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/PartyConcertVisuals2020](ShaderOfTheWeek/PartyConcertVisuals2020_320x180.png)\
+Fuse: [PartyConcertVisuals2020](ShaderOfTheWeek/PartyConcertVisuals2020.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [@Party Concert Visuals 2020](https://www.shadertoy.com/view/WtscW4)\
+Author: [blackle](https://www.shadertoy.com/user/blackle)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -831,5 +847,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 96
+:four_leaf_clover: 98
 
