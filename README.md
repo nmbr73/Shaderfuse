@@ -61,10 +61,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (30th of March 2022):**
+**Current Shader of the Week (14th of April 2022):**
 
-[![PartyConcertVisuals2020](https://user-images.githubusercontent.com/78935215/160671987-d4ac1490-4fb8-4ba7-8182-2956bc8d8cdc.gif)
-](Shaders/ShaderOfTheWeek/PartyConcertVisuals2020.md)
+[![StarsAndGalaxy](Shaders/ShaderOfTheWeek/StarsAndGalaxy_320x180.png)
+](Shaders/ShaderOfTheWeek/StarsAndGalaxy.md)
 
 
 

@@ -2,24 +2,30 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+---
+## 14th of April 2022
+#### StarsAndGalaxy (Shadertoy ID [stBcW1](https://www.shadertoy.com/view/stBcW1))
+[![StarsAndGalaxy](StarsAndGalaxy_320x180.png)](StarsAndGalaxy.md)
+
+---
+## 7th of April 2022
+#### Desperate Distraction (Shadertoy ID [7ddSD7](https://www.shadertoy.com/view/7ddSD7))
+Not a worthwhile shader for fusion
 
 ---
 ## 30th of March 2022
 #### PartyConcertVisuals2020 (Shadertoy ID [WtscW4](https://www.shadertoy.com/view/WtscW4))
 [![PartyConcertVisuals2020](https://user-images.githubusercontent.com/78935215/160671987-d4ac1490-4fb8-4ba7-8182-2956bc8d8cdc.gif)](PartyConcertVisuals2020.md)
 
-
 ---
 ## 23th of March 2022
 #### OMZG Shader Royale (Shadertoy ID [3l3Bzl](https://www.shadertoy.com/view/3l3Bzl))
 [![OMZGShaderRoyale](https://user-images.githubusercontent.com/78935215/159676611-7ac0d809-024f-4808-abee-eef1bf7b02f7.gif)](OMZGShaderRoyale.md)
 
-
 ---
 ## 16th of March 2022
 #### Morning Commute (Shadertoy ID [wdKBz1](https://www.shadertoy.com/view/wdKBz1))
 Not a worthwhile shader for fusion
-
 
 ---
 ## 9th of March 2022
