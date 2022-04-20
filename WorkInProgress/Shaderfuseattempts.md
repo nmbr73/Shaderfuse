@@ -14,6 +14,48 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Danger Noodle](https://www.shadertoy.com/view/wlVSDK)| Fuse | ShaderOfTheWeek 15/22 |
+|[ReflectionTutorial](https://www.shadertoy.com/view/stjyWm)| incub | cubemap ! |
+|[neurons colors2](https://www.shadertoy.com/view/7tByWd)| incub | fwidth |
+|[Champagne ice cream](https://www.shadertoy.com/view/NlSyWt)| defect |  zuviele Globals - zerstörter Bildaufbau |
+|[Fountain water](https://www.shadertoy.com/view/7tBcDc)| incub | refract_f3 !! Colorparameter funktioniert nicht |
+|[Ocean terrain](https://www.shadertoy.com/view/NtjcW3)| incub |  |
+|[SDF collision](https://www.shadertoy.com/view/NtjcDG)| incub | fwidth - Leichte Unterschiede, besonders bei Kreisen  |
+|[Sound Oscilloscope from spectrum](https://www.shadertoy.com/view/Ws2GWD)| incub | ! Audioreactiv |
+|[Spline Idea e 2](https://www.shadertoy.com/view/fdXcR4)| defect | falscher Aufbau |
+|[[4k] Pullback Effect](https://www.shadertoy.com/view/7t2yDz)| incub | !! Globalvariablen |
+|[Cellular automata 3](https://www.shadertoy.com/view/fdXXRf)| incub | ! |
+|[Abstract Noise](https://www.shadertoy.com/view/st2czd)| incub | Übungsshader |
+|[Colorful Music Visualizer](https://www.shadertoy.com/view/llycWD)| incub | AB Audioreaktiv |
+|[Flowing Crystals](https://www.shadertoy.com/view/ssXcWr)| incub | A ! |
+|[Clouds2D With Shadows](https://www.shadertoy.com/view/7l2yRt)| incub | ! |
+|[Ice sheet height field](https://www.shadertoy.com/view/stByzd)| Fuse | ! Transition |
+|[Primordial Soup System](https://www.shadertoy.com/view/NssczB)| Fuse | AB ! |
+|[Cube lines](https://www.shadertoy.com/view/NslGRN)| Defect | fwidth - iBilinearPatch gibt keine Linien  |
+|[Space war automata 2](https://www.shadertoy.com/view/stSyR3)| incub | A ! Parameter anpassen Par1=35000, Par3=0.167 ! |
+|[Random Walk e](https://www.shadertoy.com/view/7tdXzM)| incub | ! |
+|[Reactive - Universe Within](https://www.shadertoy.com/view/Nt2czK)| incub | Audioreactiv |
+|[FIRE! in the brain](https://www.shadertoy.com/view/ftjyzV)| incub | ABCD ! |
+|[Game of Life aint uv coords](https://www.shadertoy.com/view/flVGWt)| defect |  |
+|[room tunnel](https://www.shadertoy.com/view/sljyDW)| incub | ! |
+|[Liquid Crystal Labyrinth](https://www.shadertoy.com/view/7tScDW)| incub | A ! |
+|[Basic : Wave Equation](https://www.shadertoy.com/view/ldVyWW)| incub | AB |
+|[diffusion test10](https://www.shadertoy.com/view/flBcW1)| incub | und test11 test12 |
+|[Sound visualizer](https://www.shadertoy.com/view/3ljXDd)| incub | AB ! |
+|[Chaos & Order](https://www.shadertoy.com/view/7tjyzh)| defect | ABC Ausfall von Bereichen |
+|[Dream like Stylized Sobel Edge](https://www.shadertoy.com/view/7tfcRj)| incub | ABCD ! Sobel |
+|[strange smoke](https://www.shadertoy.com/view/ft2yRD)| incub | ABCD ! |
+|[Color Branches](https://www.shadertoy.com/view/st2yz1)| incub | ABC ! |
+|[lbm_2d_fluid](https://www.shadertoy.com/view/Nl2cRR)| incub | ABC ! |
+|[Xyptonjtroz](https://www.shadertoy.com/view/4ts3z2)| incub | ! |
+|[The sun, the moon and cloud](https://www.shadertoy.com/view/7lXcWf)| incub | Naja |
+|[Fleurette](https://www.shadertoy.com/view/7lfyDX)| incub | AB ! |
+|[Fork @Party Con qb777 479](https://www.shadertoy.com/view/flfcD2)| Fuse | In @Party Concert Visuals 2020 integriert  |
+|[Burning Cube](https://www.shadertoy.com/view/7lXyzl)| incub | AB ! |
+|[Fireflow 2](https://www.shadertoy.com/view/4lBcDG)| incub | A ! |
+|[Lichen Growth V2](https://www.shadertoy.com/view/Wt3yzB)| incub | A ! |
+|[Lichen Growth](https://www.shadertoy.com/view/ttdcWM)| incub | A ! |
+|[Evolve](https://www.shadertoy.com/view/Wld3D2)| incub | ABCD ! |
 |[@Party Concert Visuals 2020](https://www.shadertoy.com/view/WtscW4)| Fuse | Shader OF The Week 13/22 |
 |[Michael's Water](https://www.shadertoy.com/view/3lGcW1)| incub | ABC - Flüssigkeit friert ein :-(  |
 |[Electro](https://www.shadertoy.com/view/4scGWj)| incub | ! |
