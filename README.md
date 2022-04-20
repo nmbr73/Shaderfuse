@@ -63,7 +63,7 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 
 **Current Shader of the Week (20th of April 2022):**
 
-[![DangerNoodle](https://user-images.githubusercontent.com/78935215/164216037-35b7febd-440e-42c7-af87-3cf259c0eece.gif))
+[![DangerNoodle](https://user-images.githubusercontent.com/78935215/164216037-35b7febd-440e-42c7-af87-3cf259c0eece.gif)
 ](Shaders/ShaderOfTheWeek/DangerNoodle.md)
 
 
