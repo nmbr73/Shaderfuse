@@ -14,6 +14,27 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[More Torus "Fog"](https://www.shadertoy.com/view/7sSBzm)| incub |  |
+|[Twizzly Flower](https://www.shadertoy.com/view/7dKSWm)| incub | cubemap |
+|[HAPPY 2016!](https://www.shadertoy.com/view/lsd3RX)| incub | ! Wunderkerze |
+|[nanoKontrol2](https://www.shadertoy.com/view/NlsfDM)| incub | Audioreaktiv - fast alle Farben anpassbar|
+|[Speedy Maze Generation](https://www.shadertoy.com/view/MlVBDc)| incub | A  Textur mit Sobel|
+|[Planet attempt](https://www.shadertoy.com/view/7tlBzM)| incub | A !!! mit Blending |
+|[Self-Organization](https://www.shadertoy.com/view/WdKGRd)| incub | ABCD !! |
+|[Self-organising blue-ish noise](https://www.shadertoy.com/view/7llfWH)| incub | A |
+|[Marble Satisfaction](https://www.shadertoy.com/view/stlBWH)| incub | Ball fliegt durch Ringe im Kreis |
+|[paint with deformations](https://www.shadertoy.com/view/7tXBz7)| incub | AB ! |
+|[Ray Caustics](https://www.shadertoy.com/view/ftsBzH)| incub |  |
+|[Meatballs](https://www.shadertoy.com/view/flsfzH)| incub |  |
+|[Voronoi Tracking Experiment 3](https://www.shadertoy.com/view/7lXBz4)| incub | AB !!! Parameter/Blending |
+|[Space ship](https://www.shadertoy.com/view/NlsBzn)| incub | ! |
+|[Fluid solver](https://www.shadertoy.com/view/XlsBDf)| incub | A ! |
+|[River Basin](https://www.shadertoy.com/view/XsVBDz)| incub | A !! |
+|[Vorticity confinement](https://www.shadertoy.com/view/flsBRr)| incub | Kleine Abweichung - Unterschied nicht zu finden |
+|[Sutured Satin](https://www.shadertoy.com/view/sdByzV)| defect | ABCD Shader verhält sich komplett anders - kein Bildaufbau |
+|[Tiny paint streams (530char)](https://www.shadertoy.com/view/7lVSDD)| incub | A !!! |
+|[heat diffusion](https://www.shadertoy.com/view/NddSRX)| incub | A ! |
+|[Cracked Mirror Fire](https://www.shadertoy.com/view/NlScDd)| incub |  |
 |[Danger Noodle](https://www.shadertoy.com/view/wlVSDK)| Fuse | ShaderOfTheWeek 15/22 |
 |[ReflectionTutorial](https://www.shadertoy.com/view/stjyWm)| incub | cubemap ! |
 |[neurons colors2](https://www.shadertoy.com/view/7tByWd)| incub | fwidth |
