@@ -776,9 +776,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/UndulatingColumns](ShaderOfTheWeek/UndulatingColumns_320x180.png)\
-Fuse: [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) :boom:\
+Fuse: [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-**thumbnail does not exists**
+Shadertoy: [Undulating Columns](https://www.shadertoy.com/view/WlXXDH)\
+Author: [fizzer](https://www.shadertoy.com/user/fizzer)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 
@@ -869,7 +871,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 100
-
-:boom: 1
+:four_leaf_clover: 101
 
