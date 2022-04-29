@@ -84,6 +84,6 @@ based on [Trippy Triangle](https://www.shadertoy.com/view/fslcDS) written by [Ta
 ## **[TruchetKaleidoscopeFTW](TruchetKaleidoscopeFTW.md)**
 based on [Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW) written by [mrange](https://www.shadertoy.com/user/mrange)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[UndulatingColumns](UndulatingColumns.md)**
-based on [Undulating Columns](https://www.shadertoy.com/view/WlXXDH) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[UndulatingColumns](UndulatingColumns.md)** :boom:
+- *thumbnail does not exists*
 
