@@ -14,6 +14,27 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Color processing](https://www.shadertoy.com/view/7tfBzs)| Fuse | ShaderOfTheWeek 18/22 |
+|[violet fog](https://www.shadertoy.com/view/7tsfWS)| incub | sehr guter Lernshader |
+|[Cookbook - SDF Sphere](https://www.shadertoy.com/view/7dVXDR)| incub | Toller Lernshader |
+|[Liquid Crystal Forest](https://www.shadertoy.com/view/7tlfD2)| incub | A ! |
+|[Super SPH ](https://www.shadertoy.com/view/tdXBRf)| incub | ABC Super !!! |
+|[heyx3 Metaballs 2D](https://www.shadertoy.com/view/MdySRR)| defect | keine Bälle erzeugbar |
+|[Refraction - Spi3lot](https://www.shadertoy.com/view/NtsBRf)| defect | cubemap - keine Refraktion möglich |
+|[3D Brownian Tree](https://www.shadertoy.com/view/3s3GzH)| incub | Wie ein Atom AB ! |
+|[Shader of Life](https://www.shadertoy.com/view/7lsBzl)| incub | AB !! Blending |
+|[Fire With Universal Gravity](https://www.shadertoy.com/view/MlVcRG)| incub | AB ! Feuerschatten |
+|[Fast Elastic N-Ball Collision](https://www.shadertoy.com/view/wdlGRN)| incub | Mit Canvas/Warp iO - sonst oberer Übergang fehlerhaft ! |
+|[Fireballs](https://www.shadertoy.com/view/tlfBDX)| defect | Bild läuft nach unten links - texelfetch ? mod_f ? |
+|[Ray Marching Experiment 71](https://www.shadertoy.com/view/4tXyDl)| incub | AB Cubemap Deformationskugel |
+|[Drippy Room](https://www.shadertoy.com/view/MstGWX)| incub | Würfel im Wasser ! |
+|[reaction diffusion swb](https://www.shadertoy.com/view/stXBzj)| incub | A |
+|[lots o' particles](https://www.shadertoy.com/view/MdtGDX)| incub | AB Particle mit Trail !  |
+|[Dark Science](https://www.shadertoy.com/view/tdSSDt)| incub | ABC !! |
+|[ [SH17B] - The Greatest Adventure](https://www.shadertoy.com/view/MsSBD1)| incub | Lebenslauf einer Kerze !! |
+|[XY Oscilloscope Music - Cube](https://www.shadertoy.com/view/NlXBzS)| incub | Audioreaktiv |
+|[2D Random Walk](https://www.shadertoy.com/view/7s2Szm)| defect | thingies nicht stabil |
+|[Bursting bubbles automata](https://www.shadertoy.com/view/NtfGRj)| incub | A |
 |[More Torus "Fog"](https://www.shadertoy.com/view/7sSBzm)| incub |  |
 |[Twizzly Flower](https://www.shadertoy.com/view/7dKSWm)| incub | cubemap |
 |[HAPPY 2016!](https://www.shadertoy.com/view/lsd3RX)| incub | ! Wunderkerze |

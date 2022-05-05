@@ -61,10 +61,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (27th of April 2022):**
+**Current Shader of the Week (05th of May 2022):**
 
-[![SpaceShip1](https://user-images.githubusercontent.com/78935215/165700854-a3233033-2931-4e1b-85cb-e7d63aa9c7d9.gif)
-](Shaders/ShaderOfTheWeek/SpaceShip.md)
+[![ColorProcessing](https://user-images.githubusercontent.com/78935215/166887489-87295291-9e32-4db8-9c42-786b9cfc57b3.gif)
+](Shaders/ShaderOfTheWeek/ColorProcessing.md)
 
 
 

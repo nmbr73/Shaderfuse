@@ -2,6 +2,13 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+
+---
+## 05th of May 2022
+#### ColorProcessing (Shadertoy ID [7tfBzs](https://www.shadertoy.com/view/7tfBzsn))
+[![ColorProcessing](https://user-images.githubusercontent.com/78935215/166887489-87295291-9e32-4db8-9c42-786b9cfc57b3.gif)](ColorProcessing.md)
+
+
 ---
 ## 27th of April 2022
 #### SpaceShip (Shadertoy ID [NlsBzn](https://www.shadertoy.com/view/NlsBzn))
