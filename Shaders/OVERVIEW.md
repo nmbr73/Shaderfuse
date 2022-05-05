@@ -599,6 +599,14 @@ Author: [0b5vr](https://www.shadertoy.com/user/0b5vr)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/DangerNoodle](ShaderOfTheWeek/DangerNoodle_320x180.png)\
+Fuse: [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [DangerNoodle](https://www.shadertoy.com/view/wlVSDK)\
+Author: [BigWIngs](https://www.shadertoy.com/user/BigWIngs)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/Day94](ShaderOfTheWeek/Day94_320x180.png)\
 Fuse: [Day94](ShaderOfTheWeek/Day94.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -703,6 +711,14 @@ Author: [drschizzo](https://www.shadertoy.com/user/drschizzo)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/SpaceShip](ShaderOfTheWeek/SpaceShip_320x180.png)\
+Fuse: [SpaceShip](ShaderOfTheWeek/SpaceShip.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Space ship](https://www.shadertoy.com/view/NlsBzn)\
+Author: [A_Toaster](https://www.shadertoy.com/user/A_Toaster)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/SpiraledLayers](ShaderOfTheWeek/SpiraledLayers_320x180.png)\
 Fuse: [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -716,6 +732,14 @@ Fuse: [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [StarGazingHippo](https://www.shadertoy.com/view/4tGfz3)\
 Author: [kuvkar](https://www.shadertoy.com/user/kuvkar)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/StarsAndGalaxy](ShaderOfTheWeek/StarsAndGalaxy_320x180.png)\
+Fuse: [StarsAndGalaxy](ShaderOfTheWeek/StarsAndGalaxy.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Stars and galaxy](https://www.shadertoy.com/view/stBcW1)\
+Author: [mrange](https://www.shadertoy.com/user/mrange)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -847,5 +871,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 98
+:four_leaf_clover: 101
 

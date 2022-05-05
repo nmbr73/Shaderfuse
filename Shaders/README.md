@@ -113,6 +113,7 @@
 **[ShaderOfTheWeek Shaders](ShaderOfTheWeek/README.md)**
 - [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md) (Shadertoy ID [ttyGzW](https://www.shadertoy.com/view/ttyGzW)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ClubCave09](ShaderOfTheWeek/ClubCave09.md) (Shadertoy ID [ss3SD8](https://www.shadertoy.com/view/ss3SD8)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) (Shadertoy ID [wlVSDK](https://www.shadertoy.com/view/wlVSDK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Day94](ShaderOfTheWeek/Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) (Shadertoy ID [NlsXDH](https://www.shadertoy.com/view/NlsXDH)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) (Shadertoy ID [4s3SRN](https://www.shadertoy.com/view/4s3SRN)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -126,8 +127,10 @@
 - [RME4Crater](ShaderOfTheWeek/RME4Crater.md) (Shadertoy ID [MlSBDt](https://www.shadertoy.com/view/MlSBDt)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/tls3WB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [SpaceShip](ShaderOfTheWeek/SpaceShip.md) (Shadertoy ID [NlsBzn](https://www.shadertoy.com/view/NlsBzn)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) (Shadertoy ID [4tGfz3](https://www.shadertoy.com/view/4tGfz3)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [StarsAndGalaxy](ShaderOfTheWeek/StarsAndGalaxy.md) (Shadertoy ID [stBcW1](https://www.shadertoy.com/view/stBcW1)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) (Shadertoy ID [NddSWs](https://www.shadertoy.com/view/NddSWs)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Terraform](ShaderOfTheWeek/Terraform.md) (Shadertoy ID [NsdXDs](https://www.shadertoy.com/view/NsdXDs)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TrippyTriangle](ShaderOfTheWeek/TrippyTriangle.md) (Shadertoy ID [fslcDS](https://www.shadertoy.com/view/fslcDS)) ported by [JiPi](../Site/Profiles/JiPi.md)
