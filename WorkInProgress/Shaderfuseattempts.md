@@ -14,6 +14,34 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Cubic Dispersal](https://www.shadertoy.com/view/fldXWS)| incub | ShaderOfTheWeek 19/22 |
+|[2019](https://www.shadertoy.com/view/WdXGDN)| incub | Cooler Buchstabenflug |
+|[Virtual particle SPH - Boiling](https://www.shadertoy.com/view/ttXcDB)| incub | AB texelFetch ! coole Blendingeffekte |
+|[Lichtenberg figure 5](https://www.shadertoy.com/view/3t3Xz4)| incub | ABCD cooler Effekt ! |
+|[Liquid Cassini ovals](https://www.shadertoy.com/view/Ntjfzy)| incub |  |
+|[Rainbow Spiral (Noise Animation)](https://www.shadertoy.com/view/7ljBRy)| incub |  |
+|[Trippy Paint](https://www.shadertoy.com/view/MdKfRG)| incub | A ! |
+|[7.5 kilobytes for Nathalie](https://www.shadertoy.com/view/WltXRj)| defect | nen toller Diamant, aber zu schwer |
+|[Neural CA Demo](https://www.shadertoy.com/view/ftSfzG)| incub | A ! |
+|[Voronoi broke the scene](https://www.shadertoy.com/view/7tBBDw)| incub | coole 3D Schrift (Union) |
+|[Fork Falling Sa manthrax 836 ](https://www.shadertoy.com/view/7d2cDz)| incub | Unterschied durch texelFetch -> Pixel verschwinden  |
+|[Cloud Flight](https://www.shadertoy.com/view/XtlfDn)| incub | nur mit der internen Noisefunktion |
+|[Pillar Wave](https://www.shadertoy.com/view/slSfW1)| incub | cubemap |
+|[RPS(3) reaction-diffusion](https://www.shadertoy.com/view/fl2fDz)| incub | A |
+|[2D varying reaction-diffusion](https://www.shadertoy.com/view/fdBXzy)| incub | A cooler Effekt mit Blending |
+|[Magic sand](https://www.shadertoy.com/view/4ljyzK)| incub | A sehr kompakt und toller Effekt |
+|[Sand † Water](https://www.shadertoy.com/view/WsVfRt)| defect | Shader verhält sich anders - Fehler nicht gefunden |
+|[Image Sandbox](https://www.shadertoy.com/view/wl3GzX)| incub | A sehr cooler Effekt !! mit Brightnessnode anpassen |
+|[Basic : Sandpiles](https://www.shadertoy.com/view/llySRK)| incub | ABCD sehr toller Effekt !!! |
+|[Falling magic sand](https://www.shadertoy.com/view/XtjyRt)| incub |  |
+|[Falling Sand Ost_](https://www.shadertoy.com/view/MdyGWz)| incub | ABCD !! Tolle Materialsimulation !! Blending |
+|[Cave Exploration](https://www.shadertoy.com/view/stXfWB)| incub | Lod fehlt leider (-100) |
+|[Navier-Stokes](https://www.shadertoy.com/view/4ltBWj)| incub | AB Flüssigkeitssimulation |
+|[diffusion test23](https://www.shadertoy.com/view/slScD1)| incub | A  |
+|[Squares All Sliding About](https://www.shadertoy.com/view/NljfRh)| incub | A Lustiger Effekt |
+|[little exploders](https://www.shadertoy.com/view/7tBBRh)| incub | A ! |
+|[Cubes among cubes...](https://www.shadertoy.com/view/NtXfzS)| incub | Textur unterschiedlich, da Volumen |
+|[Borromean Gears](https://www.shadertoy.com/view/flXfWs)| incub | Zahnräder !! |
 |[Color processing](https://www.shadertoy.com/view/7tfBzs)| Fuse | ShaderOfTheWeek 18/22 |
 |[violet fog](https://www.shadertoy.com/view/7tsfWS)| incub | sehr guter Lernshader |
 |[Cookbook - SDF Sphere](https://www.shadertoy.com/view/7dVXDR)| incub | Toller Lernshader |
