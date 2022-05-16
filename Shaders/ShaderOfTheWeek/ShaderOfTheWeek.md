@@ -5,7 +5,7 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 ---
 ## 12th of May 2022
 #### Cubic Dispersal (Shadertoy ID [fldXWS](https://www.shadertoy.com/view/fldXWS))
-[![CubicDospersal](https://user-images.githubusercontent.com/78935215/168441827-e06b134f-7c7b-4321-86ec-589a4ffb8ba4.gif)](ColorProcessing.md)
+[![CubicDispersal](https://user-images.githubusercontent.com/78935215/168441827-e06b134f-7c7b-4321-86ec-589a4ffb8ba4.gif)](CubicDispersal.md)
 
 ---
 ## 05th of May 2022
