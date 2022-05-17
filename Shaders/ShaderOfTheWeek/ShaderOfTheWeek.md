@@ -3,6 +3,17 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 12th of May 2022
+#### Cubic Dispersal (Shadertoy ID [fldXWS](https://www.shadertoy.com/view/fldXWS))
+[![CubicDispersal](https://user-images.githubusercontent.com/78935215/168441827-e06b134f-7c7b-4321-86ec-589a4ffb8ba4.gif)](CubicDispersal.md)
+
+---
+## 05th of May 2022
+#### ColorProcessing (Shadertoy ID [7tfBzs](https://www.shadertoy.com/view/7tfBzsn))
+[![ColorProcessing](https://user-images.githubusercontent.com/78935215/166887489-87295291-9e32-4db8-9c42-786b9cfc57b3.gif)](ColorProcessing.md)
+
+
+---
 ## 27th of April 2022
 #### SpaceShip (Shadertoy ID [NlsBzn](https://www.shadertoy.com/view/NlsBzn))
 [![SpaceShip1](https://user-images.githubusercontent.com/78935215/165700854-a3233033-2931-4e1b-85cb-e7d63aa9c7d9.gif)](SpaceShip.md)

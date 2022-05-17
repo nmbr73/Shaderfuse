@@ -8,5 +8,5 @@ Based on '_[rainbow spaghetti](https://www.shadertoy.com/view/lsjGRV)_' by [matt
 ## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL
