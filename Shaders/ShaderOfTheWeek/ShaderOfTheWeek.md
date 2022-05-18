@@ -3,6 +3,11 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 18th of May 2022
+#### Pig Squad (Shadertoy ID [WdBcRh](https://www.shadertoy.com/view/WdBcRh))
+[![PigSquad](https://user-images.githubusercontent.com/78935215/169035117-051e7d99-063e-4783-b7f5-da3b4d56d628.gif)](PigSquad.md)
+
+---
 ## 12th of May 2022
 #### Cubic Dispersal (Shadertoy ID [fldXWS](https://www.shadertoy.com/view/fldXWS))
 [![CubicDispersal](https://user-images.githubusercontent.com/78935215/168441827-e06b134f-7c7b-4321-86ec-589a4ffb8ba4.gif)](CubicDispersal.md)

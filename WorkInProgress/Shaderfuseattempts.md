@@ -14,6 +14,14 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Pig Squad 9 Year Anniversary](https://www.shadertoy.com/view/WdBcRh)| incub | ShaderOfTheWeek 20/22 |
+|[Liquid Toy ](https://www.shadertoy.com/view/fljBWc)| incub | BrushToy und LiquidToy zusammengeführt |
+|[Brush toy](https://www.shadertoy.com/view/NlSBW3)| incub | Cooler Effekt ! |
+|[Life of tree](https://www.shadertoy.com/view/XsS3Dm)| incub | Lustiger Shader |
+|[Meditation for dummies](https://www.shadertoy.com/view/Md3GR4)| incub | Lustiger Shader |
+|[Wave Simulation](https://www.shadertoy.com/view/slBBR3)| incub | sehr kompakt Blending !! |
+|[Fire - CLIP Guided NCA](https://www.shadertoy.com/view/7t2BRt)| incub | sehr kompakt |
+|[Space curvature](https://www.shadertoy.com/view/tdyBDh)| incub | Tanzende Buchstaben ! |
 |[Cubic Dispersal](https://www.shadertoy.com/view/fldXWS)| incub | ShaderOfTheWeek 19/22 |
 |[2019](https://www.shadertoy.com/view/WdXGDN)| incub | Cooler Buchstabenflug |
 |[Virtual particle SPH - Boiling](https://www.shadertoy.com/view/ttXcDB)| incub | AB texelFetch ! coole Blendingeffekte |
