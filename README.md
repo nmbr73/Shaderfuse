@@ -62,10 +62,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (12th of May 2022):**
+**Current Shader of the Week (18th of May 2022):**
 
-[![CubicDispersal](https://user-images.githubusercontent.com/78935215/168441827-e06b134f-7c7b-4321-86ec-589a4ffb8ba4.gif)
-](Shaders/ShaderOfTheWeek/CubicDispersal.md)
+[![PigSquad](https://user-images.githubusercontent.com/78935215/169035117-051e7d99-063e-4783-b7f5-da3b4d56d628.gif)
+](Shaders/ShaderOfTheWeek/PigSquad.md)
 
 
 
