@@ -150,6 +150,12 @@ ShaderCompatibilityCode =
 
 #if defined(USE_NATIVE_METAL_IMPL)
 
+  #define fract_f3(A) fract(A)
+  #define abs_f3(a) _fabs(a)
+  #define sqrt_f3(a) _sqrtf(a)
+  #define pow_f3(a,b) pow(a,b)
+
+
 #else
 
   #if defined(USE_NATIVE_OPENCL_IMPL)
@@ -157,19 +163,23 @@ ShaderCompatibilityCode =
     #define reflect(I,N) (I-2.0f*dot(N,I)*N)
 
     #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
-
+    #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+    #define abs_f3(a) fabs(a)
+    #define sqrt_f3(a) _sqrtf(a)
+    #define pow_f3(a,b) pow(a,b)
+    
  //-------refract--------
 
  #else // Generic
 
-#define fract(a) ((a)-_floor(a))
-
- //-------refract--------
+    #define fract(a) ((a)-_floor(a))
+    #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+    #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+    #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+    #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
 
   #endif
-
 #endif
-
 ]]
 -- /*
 
@@ -199,7 +209,7 @@ ShaderKernelCode =
 
 __DEVICE__ float3 hsv2rgb(float3 c) {
   const float4 K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
-  float3 p = _fabs(fract(swi3(c,x,x,x) + swi3(K,x,y,z)) * 6.0f - swi3(K,w,w,w));
+  float3 p = abs_f3(fract_f3(swi3(c,x,x,x) + swi3(K,x,y,z)) * 6.0f - swi3(K,w,w,w));
   return c.z * _mix(swi3(K,x,x,x), clamp(p - swi3(K,x,x,x), 0.0f, 1.0f), c.y);
 }
 
@@ -221,7 +231,7 @@ __DEVICE__ float apollian(float4 p, float s, float scale) {
 
 __DEVICE__ float weird(float2 p, float iTime, float scale) {
   float z = 4.0f;
-  p *= ROT(iTime*0.1f);
+  p = mul_f2_mat2(p,ROT(iTime*0.1f));
   float tm = 0.2f*iTime;
   float r = 0.5f;
   float4 off = to_float4(r*PSIN(tm*_sqrtf(3.0f)), r*PSIN(tm*_sqrtf(1.5f)), r*PSIN(tm*_sqrtf(2.0f)), 0.0f);
@@ -294,7 +304,7 @@ __DEVICE__ float3 color(float2 p, float iTime, float iResolution_y, float scale)
   float3 bcol = hsv2rgb(hsv);
   col       *= (1.0f-_tanhf(0.75f*l))*0.5f;
   col       = _mix(col, bcol, smoothstep(-aa, aa, -d));
-  col       += 0.5f*_sqrtf(swi3(bcol,z,x,y))*(_expf(-(10.0f+100.0f*_tanhf(l))*_fmaxf(d, 0.0f)));
+  col       += 0.5f*sqrt_f3(swi3(bcol,z,x,y))*(_expf(-(10.0f+100.0f*_tanhf(l))*_fmaxf(d, 0.0f)));
 
   return col;
 }
@@ -330,13 +340,13 @@ __KERNEL__ void ApollianWithATwistFuse(__CONSTANTREF__ Params*  params, __TEXTUR
   float3 col = color(p,iTime,iResolution.y,Scale);
 
   #if 0
-    col=_powf(clamp(col,0.0f,1.0f),to_float3_s(1.0f/2.2f));
+    col=pow_f3(clamp(col,0.0f,1.0f),to_float3_s(1.0f/2.2f));
     col=col*0.6f+0.4f*col*col*(3.0f-2.0f*col);  // contrast
     col=_mix(col, to_float3_s( dot(col, to_float3_s(0.33f)) ), -0.4f);  // saturation
     col*=0.5f+0.5f*_powf(19.0f*q.x*q.y*(1.0f-q.x)*(1.0f-q.y),0.7f);  // vigneting
     fragColor = to_float4_aw(col, 1.0f);
   #else
-    col=_powf(clamp(col,0.0f,1.0f),to_float3_s(1.0f/2.2f));
+    col=pow_f3(clamp(col,0.0f,1.0f),to_float3_s(1.0f/2.2f));
     col=col*Contrast+0.4f*col*col*(3.0f-2.0f*col);  // contrast
     col=_mix(col, to_float3_s( dot(col, to_float3_s(Saturation)) ), -0.4f);  // saturation
     col*=0.5f+0.5f*_powf(19.0f*q.x*q.y*(1.0f-q.x)*(1.0f-q.y),Vigneting);  // vigneting

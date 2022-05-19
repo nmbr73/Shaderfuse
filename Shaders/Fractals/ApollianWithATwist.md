@@ -6,5 +6,5 @@ Based on '_[Apollian with a twist](https://www.shadertoy.com/view/Wl3fzM)_' by [
 ## Compatibility
 - [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+- [x] Tested on Windows/Cuda
+- [x] Tested on Windows/OpenCL
