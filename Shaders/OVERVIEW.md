@@ -599,6 +599,20 @@ Author: [0b5vr](https://www.shadertoy.com/user/0b5vr)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/ColorProcessing](ShaderOfTheWeek/ColorProcessing_320x180.png)\
+Fuse: [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) :boom:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+**Fuse name does not correspond to filename´**
+
+
+![ShaderOfTheWeek/CubicDispersal](ShaderOfTheWeek/CubicDispersal_320x180.png)\
+Fuse: [CubicDispersal](ShaderOfTheWeek/CubicDispersal.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Cubic Dispersal](https://www.shadertoy.com/view/fldXWS)\
+Author: [Tater](https://www.shadertoy.com/user/Tater)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/DangerNoodle](ShaderOfTheWeek/DangerNoodle_320x180.png)\
 Fuse: [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -684,6 +698,14 @@ Fuse: [PartyConcertVisuals2020](ShaderOfTheWeek/PartyConcertVisuals2020.md) :fou
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [@Party Concert Visuals 2020](https://www.shadertoy.com/view/WtscW4)\
 Author: [blackle](https://www.shadertoy.com/user/blackle)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/PigSquad](ShaderOfTheWeek/PigSquad_320x180.png)\
+Fuse: [PigSquad](ShaderOfTheWeek/PigSquad.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Pig Squad 9 Year Anniversary](https://www.shadertoy.com/view/WdBcRh)\
+Author: [bpfarrell](https://www.shadertoy.com/user/bpfarrell)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -871,5 +893,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 101
+:four_leaf_clover: 103
+
+:boom: 1
 

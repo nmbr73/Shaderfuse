@@ -18,6 +18,12 @@ based on [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW) w
 ## **[ClubCave09](ClubCave09.md)**
 based on [20210930_CLUB-CAVE-09](https://www.shadertoy.com/view/ss3SD8) written by [0b5vr](https://www.shadertoy.com/user/0b5vr)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[ColorProcessing](ColorProcessing.md)** :boom:
+- *Fuse name does not correspond to filename´*
+
+## **[CubicDispersal](CubicDispersal.md)**
+based on [Cubic Dispersal](https://www.shadertoy.com/view/fldXWS) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[DangerNoodle](DangerNoodle.md)**
 based on [DangerNoodle](https://www.shadertoy.com/view/wlVSDK) written by [BigWIngs](https://www.shadertoy.com/user/BigWIngs)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
@@ -50,6 +56,9 @@ based on [On the salt lake](https://www.shadertoy.com/view/fsXcR8) written by [i
 
 ## **[PartyConcertVisuals2020](PartyConcertVisuals2020.md)**
 based on [@Party Concert Visuals 2020](https://www.shadertoy.com/view/WtscW4) written by [blackle](https://www.shadertoy.com/user/blackle)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[PigSquad](PigSquad.md)**
+based on [Pig Squad 9 Year Anniversary](https://www.shadertoy.com/view/WdBcRh) written by [bpfarrell](https://www.shadertoy.com/user/bpfarrell)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[RME4Crater](RME4Crater.md)**
 based on [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt) written by [patu](https://www.shadertoy.com/user/patu)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

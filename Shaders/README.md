@@ -113,6 +113,8 @@
 **[ShaderOfTheWeek Shaders](ShaderOfTheWeek/README.md)**
 - [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md) (Shadertoy ID [ttyGzW](https://www.shadertoy.com/view/ttyGzW)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ClubCave09](ShaderOfTheWeek/ClubCave09.md) (Shadertoy ID [ss3SD8](https://www.shadertoy.com/view/ss3SD8)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) :boom:
+- [CubicDispersal](ShaderOfTheWeek/CubicDispersal.md) (Shadertoy ID [fldXWS](https://www.shadertoy.com/view/fldXWS)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) (Shadertoy ID [wlVSDK](https://www.shadertoy.com/view/wlVSDK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Day94](ShaderOfTheWeek/Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) (Shadertoy ID [NlsXDH](https://www.shadertoy.com/view/NlsXDH)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -124,6 +126,7 @@
 - [OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale.md) (Shadertoy ID [stXyWN](https://www.shadertoy.com/view/stXyWN)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [OnTheSal](ShaderOfTheWeek/OnTheSal.md) (Shadertoy ID [fsXcR8](https://www.shadertoy.com/view/fsXcR8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [PartyConcertVisuals2020](ShaderOfTheWeek/PartyConcertVisuals2020.md) (Shadertoy ID [WtscW4](https://www.shadertoy.com/view/WtscW4)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [PigSquad](ShaderOfTheWeek/PigSquad.md) (Shadertoy ID [WdBcRh](https://www.shadertoy.com/view/WdBcRh)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RME4Crater](ShaderOfTheWeek/RME4Crater.md) (Shadertoy ID [MlSBDt](https://www.shadertoy.com/view/MlSBDt)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/tls3WB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
