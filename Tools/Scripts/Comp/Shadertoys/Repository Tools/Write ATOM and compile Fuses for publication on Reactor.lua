@@ -1,6 +1,5 @@
 require("string")
--- local ui = require "Tools.Modules.Lua.Shadertoys.ui"
-local ui          = require("Shadertoys/ui") -- for the logo
+local image       = require("Shadertoys/image")
 
 local user_config = require("Shadertoys/~user_config")
 local snippet     = require("Shadertoys/snippet")
@@ -16,7 +15,7 @@ local YourCompanyName='JiPi'
 local YourPackageName='Shadertoys'
 local PackageIdentifier='com.JiPi.Shadertoys'
 local TargetFilepath=user_config.pathToRepository..'Atom/'
-local YourPackageVersion='1.0'
+local YourPackageVersion='1.1'
 local YourPackageDate=os.date("%Y,%m,%d")
 
 
@@ -154,7 +153,7 @@ if handle then
 
     if true then
       handle:write('          <br />')
-      handle:write(ui.logo_string)
+      handle:write(image.logo_html())
       handle:write('<br /><br />\n')
     else
       handle:write([[
