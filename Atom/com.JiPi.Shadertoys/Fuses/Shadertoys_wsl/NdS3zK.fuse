@@ -1,0 +1,1721 @@
+
+--
+--       _____        _   _       _   ______    _ _ _
+--      |  __ \      | \ | |     | | |  ____|  | (_) |
+--      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+--      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+--      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+--      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+--
+--   ... this File is managed by some scripts and can be
+--    overwritten at any time and without further notice!
+--         pls. see https://github.com/nmbr73/Shadertoys
+--                                           for details
+--
+
+local SHADERFUSES_REACTOR_PACKAGE_VERSION = '1.1'
+local SHADERFUSES_REACTOR_PACKAGE_DATE    = 'May 2022'
+
+--[[--/*
+
+  OceanElemental.fuse
+
+  Based on https://www.shadertoy.com/view/NsSBRm a WebGL shader created by alro
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+-- MANDATORY -----------------------------------------------------------------
+local shadertoy_name       = "OCEAN ELEMENTAL"
+local shadertoy_author     = "alro"
+local shadertoy_id         = "NdS3zK"
+local shadertoy_license    = ""
+local dctlfuse_category    = "Cubemap"
+local dctlfuse_name        = "OceanElemental"
+local dctlfuse_author      = "JiPi"
+-- OPTIONAL ------------------------------------------------------------------
+local dctlfuse_versionNo   = 1
+local dctlfuse_versionDate = "February 26, 2022"
+local dctlfuse_authorurl   = "https://www.youtube.com/c/JiPi_YT"
+local dctlfuse_authorlogo=nil
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(
+
+
+  dctlfuse_name, CT_SourceTool, {
+  REGS_Category      = "Shadertoys\\"..dctlfuse_category,
+  REGS_OpIconString  = "ST-"..shadertoy_id,
+  REGS_OpDescription = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..") created by "..shadertoy_author.." and ported by "..dctlfuse_author..(shadertoy_license == "" and ". Copyright "..shadertoy_author.." (CC BY-NC-SA 3.0)" or ". "..shadertoy_license)..". This port is by no means meant to take advantage of anyone or to do anyone wrong : Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) if you see your rights abused or your intellectual property violated by this work.",
+  REG_Fuse_NoEdit    = true,
+  REG_Fuse_NoReload  = true,
+  REGS_Company       = dctlfuse_company==nil and dctlfuse_author or dctlfuse_company,
+  REGS_URL           = dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl,
+--REGS_URL           = 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html',
+  REG_Version        = dctlfuse_versionNo==nil and 1 or dctlfuse_versionNo,
+
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  int    iFrame;
+  float  iMouse[4];
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+    #define swi4(A,a,b,c,d) (A).a##b##c##d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+    #define swi4(A,a,b,c,d) to_float4((A).a,(A).b,(A).c,(A).d)
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+ #define fract_f4(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+ #define mod_f3(value,divisor) fmod(value,divisor)
+ #define mod_f4f4(value,divisor) fmod(value,divisor)
+
+ #define abs_f3(a) _fabs(a)
+ #define abs_f4(a) _fabs(a)
+ #define exp_f3(a) _expf((a).x)
+ #define mix_f3(v,i,m) mix(v,i,m)
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+ #define refract_f3(I,N,eta) refract(I,N,eta)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define fract_f4(A) to_float4(fract((A).x),fract((A).y),fract((A).z),fract((A).w))
+ #define mod_f(a,b) _fmod(a,b)
+ #define mod_f3(value,divisor) _fmod(value,divisor)
+ #define mod_f4f4(value,divisor) _fmod(value,divisor)
+ #define abs_f3(a) fabs(a)
+ #define abs_f4(a) fabs(a)
+ #define exp_f3(a) _expf((a).x)
+ #define mix_f3(v,i,m) mix(v,i,m)
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+__DEVICE__ float3 refract_f3(float3 I, float3 N, float eta) {
+   float dotNI = dot(N, I);
+   float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+   if (k < 0.0f) {
+      return to_float3_s(0.0f);
+   }
+   return eta * I - (eta * dotNI * _sqrtf(k)) * N; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+ }
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+ #if defined(DEVICE_IS_CUDA)
+   #define radians(a) a * M_PI/180.0f
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define fract_f4(A) to_float4(fract((A).x),fract((A).y),fract((A).z),fract((A).w))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define mod_f3(value,divisor) to_float3(mod_f((value).x, (divisor)),mod_f((value).y, (divisor)),mod_f((value).z, (divisor)))
+ #define mod_f4f4(value,divisor) to_float4(mod_f((value).x, (divisor).x),mod_f((value).y, (divisor).y),mod_f((value).z, (divisor).z),mod_f((value).w, (divisor).w))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define abs_f4(a) to_float4(_fabs((a).x), _fabs((a).y),_fabs((a).z),_fabs((a).w))
+ #define exp_f3(a) to_float3(_expf((a).x), _expf((a).y),_expf((a).z))
+ #define mix_f3(v,i,m) to_float3(_mix((v).x,(i).x,(m).x),_mix((v).y,(i).y,(m).y),_mix((v).z,(i).z,(m).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+ __DEVICE__ float3 refract_f3(float3 I, float3 N, float eta) {
+    float dotNI = dot(N, I);
+    float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+    if (k < 0.0f) {
+      return to_float3_s(0.0f);
+    }
+    return eta * I - (eta * dotNI * _sqrtf(k)) * N; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+ }
+
+  #endif
+
+#endif
+
+#define to_float4_f2f2(A,B) to_float4((A).x,(A).y,(B).x,(B).y ) // or is there some to_float_..() for that?!? - No - that is missing in DCTL :-) but now we have "one"
+
+__DEVICE__ float4 decube_f3(__TEXTURE2D__ t, float3 xyz)
+{
+  float ax=_fabs(xyz.x);
+  float ay=_fabs(xyz.y);
+  float az=_fabs(xyz.z);
+
+  if (xyz.x>0.0f && ax>=ay && ax>=az) // +X, Face 0, right
+    return _tex2DVecN(t,(-xyz.z/ax+1.0f)/8.0f + 0.5f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y>0.0f && ay>=ax && ay>=az) // +Y, Face 2, top
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(-xyz.z/ay+1.0f)/6.0f + (2.0f/3.0f),15);
+
+  if (xyz.z>0.0f && az>=ax && az>=ay) // +Z, Face 4, front
+    return _tex2DVecN(t,(xyz.x/az+1.0f)/8.0f + 0.25f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.x<0.0f && ax>=ay && ax>=az) // -X, Face 1, left
+    return _tex2DVecN(t,(xyz.z/ax+1.0f)/8.0f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y<0.0f && ay>=ax && ay>=az) // -Y, Face 3, bottom
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(xyz.z/ay+1.0f)/6.0f,15);
+
+  if (xyz.z<0.0f && az>=ax && az>=ay) // -Z, Face 5, back
+    return _tex2DVecN(t,(-xyz.x/az+1.0f)/8.0f + 0.75f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  return to_float4(1.0f,0.0f,0.0f,1.0f); // error
+}
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+
+#define R iResolution
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+
+
+__DEVICE__ float3 _refract_f3(float3 I, float3 N, float eta) {
+   float dotNI = dot(N, I);
+   float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+   if (k < 0.0f) {
+     return to_float3_s(0.0);
+   }
+   return eta * I - (eta * dotNI * _sqrtf(k)) * N * -0.40f;// + 0.5f;  // * -01.50f;//(MarchingCubes)  - 0.15f; (GlassDuck)
+}
+
+#define refract_f3 _refract_f3
+
+
+// Alternative
+__DEVICE__ float3 __refract_f3(float3 I, float3 N, float ior) {
+    //float cosi = clamp(dot(N,I), -1.0f,1.0f);  //clamp(-1, 1, I.dot(N));
+    float cosi = clamp( -1.0f,1.0f,dot(N,I));  //clamp(-1, 1, I.dot(N));
+    float etai = 01.0f, etat = ior*1.0f;
+    float3 n = N;
+    if (cosi < 0) {
+        cosi = -cosi;
+    } else {
+        float temp = etai;
+        etai = etat;
+        etat = temp;
+        n = -N;
+    }
+    float eta = etai / etat;
+    float k = 1.0f - (eta * eta) * (1.0f - (cosi * cosi));
+    if (k <= 0) {
+        return to_float3_s(0.0f);
+    } else {
+        //return I.multiply(eta).add(n.multiply(((eta * cosi) - Math.sqrt(k))));
+    return eta * I + (eta * cosi - _sqrtf(1.0f-k)) * N * 0.0f;
+    }
+}
+
+
+
+#define PI 3.14159f
+#define FOUR_PI 4.0f * PI
+#define GAMMA 2.2f
+#define INV_GAMMA (1.0f/GAMMA)
+
+// Minimum dot product value
+#define minDot  1e-3f
+
+// Clamped dot product
+__DEVICE__ float dot_c(float3 a, float3 b){
+  return _fmaxf(dot(a, b), minDot);
+}
+
+__DEVICE__ float3 gamma(float3 col){
+  return pow_f3(col, to_float3_s(INV_GAMMA));
+}
+
+__DEVICE__ float3 inv_gamma(float3 col){
+  return pow_f3(col, to_float3_s(GAMMA));
+}
+
+//__DEVICE__ float saturate(float _x){
+//  return clamp(_x, 0.0f, 1.0f);
+//}
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel0
+
+
+// Track mouse movement and resolution change between frames and set camera position.
+
+#define CAMERA_DIST 2.5f
+
+__KERNEL__ void OceanElementalFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+
+  // --------
+
+
+
+    fragCoord+=0.5f;
+
+    // Work with just the first four pixels.
+    if((fragCoord.x == 0.5f) && (fragCoord.y < 4.0f)){
+
+        //vec4 oldMouse = texelFetch(iChannel0, ito_float2_s(0.5f), 0).xyzw;
+        float4 oldMouse = texture(iChannel0, (make_float2((int)0.5f,(int)0.5)+0.5f)/iResolution);
+        float4 mouse = (iMouse / swi4(iResolution,x,y,x,y));
+        float4 newMouse = to_float4_s(0);
+
+        //float mouseDownLastFrame = texelFetch(iChannel0, to_int2(0.5f, 3.5f), 0).x;
+        float mouseDownLastFrame = texture(iChannel0, (make_float2((int)0.5f, (int)3.5f)+0.5f)/iResolution).x;
+
+        // If mouse button is down and was down last frame
+        if(iMouse.z > 0.0f && mouseDownLastFrame > 0.0f){
+
+            // Difference between mouse position last frame and now.
+            float2 mouseMove = swi2(mouse,x,y)-swi2(oldMouse,z,w);
+            newMouse = to_float4_f2f2(swi2(oldMouse,x,y) + to_float2(5.0f, 3.0f)*mouseMove, swi2(mouse,x,y));
+        }else{
+            newMouse = to_float4_f2f2(swi2(oldMouse,x,y), swi2(mouse,x,y));
+        }
+        newMouse.x = mod_f(newMouse.x, 2.0f*PI);
+        newMouse.y = _fminf(0.99f, _fmaxf(-0.99f, newMouse.y));
+
+        // Store mouse data in the first pixel of Buffer A.
+        if(fragCoord.x == 0.5f && fragCoord.y == 0.5f){
+            // Set value at first frames
+            if(iFrame < 5){
+                newMouse = to_float4(1.15f, 0.2f, 0.0f, 0.0f);
+            }
+            fragColor = newMouse;
+        }
+
+        // Store camera position in the second pixel of Buffer A.
+        if(fragCoord.x == 0.5f && fragCoord.y == 1.5f){
+            // Set camera position from mouse information.
+            float3 cameraPos = CAMERA_DIST *
+                               to_float3(_sinf(newMouse.x), -_sinf(newMouse.y), -_cosf(newMouse.x));
+
+            fragColor = to_float4_aw(cameraPos, 1.0f);
+        }
+
+        // Store resolution change data in the third pixel of Buffer A.
+        if(fragCoord.x == 0.5f && fragCoord.y == 2.5f){
+            float resolutionChangeFlag = 0.0f;
+            // The resolution last frame.
+            //vec2 oldResolution = texelFetch(iChannel0, to_int2(0.5f, 2.5f), 0).yz;
+            float2 oldResolution = swi2(texture(iChannel0, (make_float2((int)0.5f, (int)2.5f)+0.5f)/iResolution),y,z);
+
+            if(iResolution.x != oldResolution.x || iResolution.y != oldResolution.y){
+              resolutionChangeFlag = 1.0f;
+            }
+
+          fragColor = to_float4(resolutionChangeFlag, iResolution.x,iResolution.y, 1.0f);
+        }
+
+        // Store whether the mouse button is down in the fourth pixel of Buffer A
+        if(fragCoord.x == 0.5f && fragCoord.y == 3.5f ){
+            if(iMouse.z > 0.0f){
+              fragColor = to_float4_aw(to_float3_s(1.0f), 1.0f);
+            }else{
+              fragColor = to_float4_aw(to_float3_s(0.0f), 1.0f);
+            }
+        }
+
+    }
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer B                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer B 'Previsualization: Buffer A' to iChannel0
+// Connect Buffer B 'Previsualization: Buffer B' to iChannel1
+
+
+// Perlin noise FBM for heightmap and Worley noise for texture fade out control.
+
+// GLSL version of 2D periodic seamless perlin noise.
+// https://github.com/g-truc/glm/blob/master/glm/gtc/noise.inl
+
+__DEVICE__ float4 taylorInvSqrt(float4 r){
+    return to_float4_s(1.79284291400159f)-0.85373472095314f*r;
+}
+
+__DEVICE__ float4 mod289(float4 _x){
+  return _x-_floor(_x*(1.0f/289.0f))*289.0f;
+}
+
+__DEVICE__ float4 permute(float4 _x){
+  return mod289(((_x*34.0f)+1.0f)*_x);
+}
+
+__DEVICE__ float2 fade(float2 t){
+  return (t * t * t) * (t * (t * 6.0f - 15.0f) + 10.0f);
+}
+
+__DEVICE__ float perlin(float2 Position, float2 rep){
+    float4 Pi = _floor(to_float4(Position.x, Position.y, Position.x, Position.y)) + to_float4(0.0f, 0.0f, 1.0f, 1.0f);
+    float4 Pf = fract_f4(to_float4(Position.x, Position.y, Position.x, Position.y)) - to_float4(0.0f, 0.0f, 1.0f, 1.0f);
+    Pi = mod_f4f4(Pi, to_float4(rep.x, rep.y, rep.x, rep.y)); // To create noise with explicit period
+    Pi = mod_f4f4(Pi, to_float4_s(289)); // To avoid truncation effects in permutation
+    float4 ix = to_float4(Pi.x, Pi.z, Pi.x, Pi.z);
+    float4 iy = to_float4(Pi.y, Pi.y, Pi.w, Pi.w);
+    float4 fx = to_float4(Pf.x, Pf.z, Pf.x, Pf.z);
+    float4 fy = to_float4(Pf.y, Pf.y, Pf.w, Pf.w);
+
+    float4 i = permute(permute(ix) + iy);
+
+    float4 gx = (float)(2) * fract_f4(i / (float)(41)) - (float)(1);
+    float4 gy = abs_f4(gx) - (float)(0.5f);
+    float4 tx = _floor(gx + (float)(0.5f));
+    gx = gx - tx;
+
+    float2 g00 = to_float2(gx.x, gy.x);
+    float2 g10 = to_float2(gx.y, gy.y);
+    float2 g01 = to_float2(gx.z, gy.z);
+    float2 g11 = to_float2(gx.w, gy.w);
+
+    float4 norm = taylorInvSqrt(to_float4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11)));
+    g00 *= norm.x;
+    g01 *= norm.y;
+    g10 *= norm.z;
+    g11 *= norm.w;
+
+    float n00 = dot(g00, to_float2(fx.x, fy.x));
+    float n10 = dot(g10, to_float2(fx.y, fy.y));
+    float n01 = dot(g01, to_float2(fx.z, fy.z));
+    float n11 = dot(g11, to_float2(fx.w, fy.w));
+
+    float2 fade_xy = fade(to_float2(Pf.x, Pf.y));
+    float2 n_x = _mix(to_float2(n00, n01), to_float2(n10, n11), fade_xy.x);
+    float n_xy = _mix(n_x.x, n_x.y, fade_xy.y);
+    return (float)(2.3f) * n_xy;
+}
+
+__DEVICE__ float hash(float n){
+  return fract(_sinf(n) * 43758.5453f);
+}
+
+// From Shadertoy somewhere but not sure where originally.
+__DEVICE__ float noise(in float3 x){
+  float3 p = _floor(x);
+  float3 f = fract_f3(x);
+
+  f = f*f*(3.0f - 2.0f * f);
+  float n = p.x + p.y*57.0f + 113.0f*p.z;
+  return _mix(
+         _mix(  _mix(hash(n + 0.0f), hash(n + 1.0f), f.x),
+                _mix(hash(n + 57.0f), hash(n + 58.0f), f.x),
+              f.y),
+         _mix(
+         _mix(hash(n + 113.0f), hash(n + 114.0f), f.x),
+         _mix(hash(n + 170.0f), hash(n + 171.0f), f.x),
+         f.y),
+         f.z);
+}
+
+//float TILES = 1.0f;
+#define TILES  1.0f
+
+__DEVICE__ float worley(float3 pos, float numCells){
+  float3 p = pos * numCells;
+  float d = 1.0e10;
+  for (int _x = -1; _x <= 1; _x++){
+    for (int _y = -1; _y <= 1; _y++){
+      for (int _z = -1; _z <= 1; _z++){
+                float3 tp = _floor(p) + to_float3(_x, _y, _z);
+                tp = p - tp - noise(mod_f3(tp, numCells / TILES));
+                d = _fminf(d, dot(tp, tp));
+            }
+        }
+    }
+  return 1.0f - clamp(d, 0.0f, 1.0f);
+}
+
+__DEVICE__ float fbm(float2 pos, float2 scale){
+    float res = 0.0f;
+    float freq = 1.0f;
+    float amp = 1.0f;
+    float sum = 0.0f;
+
+    int limit = 5;
+
+    for(int i = 0; i < limit; i++){
+        float offset = (float)(limit-i);
+        float d = mod_f((float)(i), 2.0f) > 0.0f ? 1.0f : -1.0f;
+        res += d * (perlin(freq*(pos+offset), freq*scale)) * amp;
+
+        freq *= 2.0f;
+        amp *= 0.5f;
+    }
+    return res/(float)(limit);
+}
+
+
+__KERNEL__ void OceanElementalFuse__Buffer_B(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+
+  // --------
+
+
+
+    fragCoord+=0.5f;
+
+    float2 uv = fragCoord/iResolution;
+    float3 col = to_float3_s(0);
+
+    //bool resolutionChanged = texelFetch(iChannel0, to_int2(0.5f, 2.5f), 0).r > 0.0f;
+    bool resolutionChanged = texture(iChannel0, (make_float2((int)0.5f, (int)2.5f)+0.5f)/iResolution).x > 0.0f;
+
+    if(iFrame == 0 || resolutionChanged){
+
+        // Use diffrent scales for X and Y to get long wave fronts
+        float2 scale = to_float2(8.0f, 15.0f);
+
+        // For seamless texture, UV scale has to match rep
+        float noise = perlin(scale*uv, scale);
+        noise = 0.5f+0.5f*(fbm(scale*uv, scale));
+
+        float s = 2.0f;
+        float _worley = worley(s * to_float3_aw(uv, 0.0f), s);
+
+        col = to_float3(noise, _worley, 0.0f);
+
+    }else{
+        //col = texelFetch(iChannel1, to_int2(fragCoord), 0).rgb;
+        col = swi3(texture(iChannel1, (make_float2((int)fragCoord.x,(int)fragCoord.y)+0.5f)/iResolution),x,y,z);
+    }
+
+    // Output to screen
+    fragColor = to_float4_aw(col,1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Cubemap: Uffizi Gallery_0' to iChannel2
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+// Connect Image 'Previsualization: Buffer B' to iChannel1
+
+
+// Water material with depth peeling, light scattering and texture distortion
+// Follow up to https://www.shadertoy.com/view/sdBGWh
+
+// BufferA: Camera and resolution change tracking
+// BufferB: R - Perlin noise FBM for wave height map
+//          G - Worley noise for staggered mixing of textures
+
+// Large bodies of water are blue mainly due to absorption of lower frequency light.
+// Scattering from particulates suspended in the water can add other tones. For simplicity,
+// we'll use a combined transmittance colour that attenuates with Beer's law. The environment
+// and direct lights use the same depth along the refracted view ray. Light scattering uses a
+// two-lobed Henyey-Greenstein phase function.
+
+// Is there a simple phase function for water or some information on the rate of absorption?
+
+// EDIT 1: Added separate light marching.
+
+// EDIT 2: Handle total internal reflection
+
+// Uncomment for separate light depth marching and better light contribution
+//#define HQ_LIGHT
+
+// Variable iterator initializer to stop loop unrolling
+#define ZERO 0 //(_fminf(iFrame,0))
+
+// Comment out to remove environment map
+#define CUBEMAP
+
+// Index of refraction for water
+#define IOR 1.333f
+
+// Ratios of air and water IOR for refraction
+// Air to water
+#define ETA 1.0f/IOR
+// Water to air
+#define ETA_REVERSE IOR
+
+//const int MAX_STEPS = 50;
+#define MAX_STEPS  50
+//const float MIN_DIST = 0.01f;
+#define MIN_DIST  0.01f
+//const float MAX_DIST = 5.0f;
+#define MAX_DIST  5.0f
+#define EPSILON 1e-4f
+#define DETAIL_EPSILON  2e-3f
+
+//const float DETAIL_HEIGHT = 0.1f;
+#define DETAIL_HEIGHT  0.1f
+//const float3 DETAIL_SCALE = to_float3_s(1.0f);
+#define DETAIL_SCALE  to_float3_s(1.0f)
+//const float3 BLENDING_SHARPNESS = to_float3_s(4.0f);
+#define BLENDING_SHARPNESS to_float3_s(4.0f)
+
+/*
+const float3 sunLightColour = to_float3_s(3.5f);
+
+float3 waterColour = 0.85f * to_float3(0.1f, 0.75f, 0.9f);
+
+// Amount of the background visible through the water
+const float CLARITY = 0.75f;
+
+// Modifiers for light attenuation
+const float DENSITY = 3.5f;
+const float DENSITY_POW = 1.0f;
+
+// In a circle of 2*PI
+const float sunLocation = -2.0f;
+const float sunHeight = 0.9f;
+*/
+
+__DEVICE__ float3 rayDirection(float fieldOfView, float2 fragCoord, float2 iResolution) {
+    float2 xy = fragCoord - iResolution / 2.0f;
+    float z = (0.5f * iResolution.y) / _tanf(radians(fieldOfView) / 2.0f);
+    return normalize(to_float3_aw(xy, -z));
+}
+
+// https://www.geertarien.com/blog/2017/07/30/breakdown-of-the-lookAt-function-in-OpenGL/
+__DEVICE__ mat3 lookAt(float3 camera, float3 at, float3 up){
+  float3 zaxis = normalize(at-camera);
+  float3 xaxis = normalize(cross(zaxis, up));
+  float3 yaxis = cross(xaxis, zaxis);
+
+  return to_mat3_f3(xaxis, yaxis, -zaxis);
+}
+
+
+__DEVICE__ float3 getSkyColour(float3 rayDir, __TEXTURE2D__ iChannel2){
+    float3 col;
+#ifdef CUBEMAP
+    col = inv_gamma(swi3(decube_f3(iChannel2,rayDir),x,y,z));
+    // Add some bloom to the environment
+    col += 2.0f * pow_f3(col, to_float3_s(2));
+#else
+    col = 0.5f*(0.5f+0.5f*rayDir);
+#endif
+    return col;
+}
+
+__DEVICE__ float getGlow(float dist, float radius, float intensity){
+    dist = _fmaxf(dist, 1e-6f);
+  return _powf(radius/dist, intensity);
+}
+
+//-------------------------------- Rotations --------------------------------
+
+__DEVICE__ float3 _rotate(float3 p, float4 q){
+  return 2.0f * cross(swi3(q,x,y,z), p * q.w + cross(swi3(q,x,y,z), p)) + p;
+}
+__DEVICE__ float3 rotateX(float3 p, float angle){
+    return _rotate(p, to_float4(_sinf(angle/2.0f), 0.0f, 0.0f, _cosf(angle/2.0f)));
+}
+__DEVICE__ float3 rotateY(float3 p, float angle){
+  return _rotate(p, to_float4(0.0f, _sinf(angle/2.0f), 0.0f, _cosf(angle/2.0f)));
+}
+__DEVICE__ float3 rotateZ(float3 p, float angle){
+  return _rotate(p, to_float4(0.0f, 0.0f, _sinf(angle), _cosf(angle)));
+}
+
+
+//---------------------------- Distance functions ----------------------------
+
+// Distance functions and operators from:
+// https://iquilezles.org/www/articles/distfunctions/distfunctions.htm
+
+__DEVICE__ float displacement(float3 p){
+    return _sinf(p.x)*_sinf(p.y)*_sinf(p.z);
+}
+
+__DEVICE__ float opDisplace(float3 p, float iTime){
+    float3 offset = 0.4f*iTime * normalize(to_float3(1.0f, -1.0f, 0.1f));
+    return displacement(10.0f*(p+offset));
+}
+
+
+__DEVICE__ float opSmoothSub( float d1, float d2, float k ) {
+    float h = clamp( 0.5f - 0.5f*(d2+d1)/k, 0.0f, 1.0f );
+    return _mix( d2, -d1, h ) + k*h*(1.0f-h); }
+
+__DEVICE__ float sphereSDF(float3 p, float radius) {
+    return length(p) - radius;
+}
+
+__DEVICE__ float sdRoundCone( float3 p, float r1, float r2, float h ){
+  float2 q = to_float2( length(swi2(p,x,z)), p.y );
+
+  float b = (r1-r2)/h;
+  float a = _sqrtf(1.0f-b*b);
+  float k = dot(q,to_float2(-b,a));
+
+  if( k < 0.0f ) return length(q) - r1;
+  if( k > a*h ) return length(q-to_float2(0.0f,h)) - r2;
+
+  return dot(q, to_float2(a,b) ) - r1;
+}
+
+// https://www.iquilezles.org/www/articles/smin/smin.htm
+__DEVICE__ float smoothMin(float a, float b, float k){
+    float h = clamp(0.5f+0.5f*(b-a)/k, 0.0f, 1.0f );
+    return _mix( b, a, h ) - k*h*(1.0f-h);
+}
+
+__DEVICE__ float getSDF(float3 p, float sdfSign, float iTime){
+
+    p.y -= 0.4f;
+    float dist = 1e5;
+    float3 q = p;
+
+    // Upper back
+    dist = sphereSDF(q, 0.5f);
+
+
+    // Head
+    q.y -= 0.25f;
+    q.x -= 0.45f;
+    q = rotateZ(q, 0.39f);
+
+    dist = smoothMin(dist, sdRoundCone(q, 0.25f, 0.25f, 0.1f), 0.25f);
+
+
+    // Upper body
+    // Two round cones for chest and shoulders
+    q = p;
+    q.z = _fabs(q.z);
+    q.y += 0.1f;
+    q.z -= 0.15f;
+    q = rotateX(q, -1.45f);
+
+    dist = smoothMin(dist, sdRoundCone(q, 0.4f, 0.35f, 0.4f), 0.25f);
+
+
+    // Lower body
+    q = p;
+    q.y += 0.5f;
+    q.x += 0.15f;
+    q = rotateZ(q, 1.4f);
+
+    dist = smoothMin(dist, sdRoundCone(q, 0.35f, 0.25f, 0.7f), 0.5f);
+
+
+    // Base
+    // A large round cone
+    q = p;
+    q.y += 1.4f;
+    q.x -= 0.1f;
+    q = rotateZ(q, -1.5f);
+
+    dist = smoothMin(dist, sdRoundCone(q, 0.24f, 2.0f, 3.0f), 0.25f);
+
+
+    // Subtract a sphere from the base to make it flared
+    q = p;
+    q.y += 4.75f;
+
+    dist = opSmoothSub(sphereSDF(q, 2.8f), dist, 0.15f);
+
+    // Arms
+    q = p;
+    q.z = _fabs(q.z);
+    q.z -= 0.8f;
+    q.y += 0.3f;
+    q = rotateZ(q, -1.7f);
+    q = rotateX(q, -0.2f);
+
+    dist = smoothMin(dist, sdRoundCone(q, 0.22f, 0.2f, 0.3f), 0.15f);
+
+    // Forearms
+    q = p;
+    q.z = _fabs(q.z);
+    q.z -= 0.9f;
+    q.y += 0.8f;
+    q.x -= 0.15f;
+    q = rotateZ(q, -2.0f);
+    q = rotateX(q, 0.15f);
+
+    dist = smoothMin(dist, sdRoundCone(q, 0.18f, 0.18f, 0.3f), 0.1f);
+
+
+    // Fists
+    q = p;
+    q.z = _fabs(q.z);
+    q.z -= 0.77f;
+    q.y += 0.95f;
+    q.x -= 0.55f;
+    q = rotateZ(q, PI*0.6f);
+
+    dist = smoothMin(dist, sdRoundCone(q, 0.1f, 0.1f, 0.2f), 0.15f);
+
+
+    float height = p.y+0.4f;
+    // Displace the surface for larger waves
+    // Add more displacement lower down
+    float strength = _mix(0.02f, 0.1f, smoothstep(-0.6f, -1.5f, height));
+    if(height < -1.5f){
+        // No displacement at the very bottom
+        strength = _mix(strength, 0.0f, smoothstep(-1.5f, -1.62f, height));
+    }
+    dist += strength * opDisplace(p,iTime);
+
+    return sdfSign * dist;
+}
+
+__DEVICE__ float distanceToScene(float3 cameraPos, float3 rayDir, float start, float end, float sdfSign, float iTime){
+
+    // Start at a predefined distance from the camera in the ray direction
+    float depth = start;
+
+    // Variable that tracks the distance to the scene at the current ray endpoint
+    float dist;
+
+    // For a set number of steps
+    for (int i = ZERO; i < MAX_STEPS; i++) {
+
+        // Get the sdf value at the ray endpoint, giving the maximum
+        // safe distance we can travel in any direction without hitting a surface
+        dist = getSDF(cameraPos + depth * rayDir, sdfSign,iTime);
+
+        // If it is small enough, we have hit a surface
+        // Return the depth that the ray travelled through the scene
+        if (dist < EPSILON){
+            return depth;
+        }
+
+        // Else, march the ray by the sdf value
+        depth += dist;
+
+        // Test if we have left the scene
+        if (depth >= end){
+            return end;
+        }
+    }
+
+    return depth;
+}
+
+//----------------------------- Texture distortion -----------------------------
+
+// Find the local gradients in the X and Y directions which we use as the velocities
+// of the texure distortion
+__DEVICE__ float2 getGradient(float2 uv, __TEXTURE2D__ iChannel1){
+
+    float delta = 1e-1;
+    uv *= 0.3f;
+
+    float data = _tex2DVecN(iChannel1,uv.x,uv.y,15).x;
+    float gradX = data - texture(iChannel1, uv-to_float2(delta, 0.0f)).x;
+    float gradY = data - texture(iChannel1, uv-to_float2(0.0f, delta)).x;
+
+    return to_float2(gradX, gradY);
+}
+
+// https://catlikecoding.com/unity/tutorials/flow/texture-distortion/
+__DEVICE__ float getDistortedTexture(float2 uv, __TEXTURE2D__ iChannel1, float iTime){
+
+    float strength = 0.5f;
+
+    // The texture is distorted in time and we switch between two texture states.
+    // The transition is based on Worley noise which will shift the change of differet parts
+    // for a more organic result
+    float time = 0.5f * iTime + texture(iChannel1, 0.25f*uv).y;
+
+    float f = fract(time);
+
+    // Get the velocity at the current location
+    float2 grad = getGradient(uv,iChannel1);
+    uv *= 1.0f;
+    float2 distortion = strength*to_float2(grad.x, grad.y) + to_float2(0, -0.3f);
+
+    // Get two shifted states of the texture distorted in time by the local velocity.
+    // Loop the distortion from 0 -> 1 using fract(time)
+    float distort1 = texture(iChannel1, uv + f * distortion).x;
+    float distort2 = texture(iChannel1, uv + fract(time + 0.5f) * distortion).x;
+
+    // Mix between the two texture states to hide the sudden jump from 1 -> 0.
+    // Modulate the value returned by the velocity.
+    return (1.0f-length(grad)) * (_mix(distort1, distort2, _fabs(1.0f - 2.0f * f)));
+}
+
+//----------------------------- Normal mapping -----------------------------
+
+// https://tinyurl.com/y5ebd7w7
+__DEVICE__ float3 getTriplanar(float3 position, float3 normal, __TEXTURE2D__ iChannel1, float iTime){
+
+    // A hack to get the flow direction on the arms to be consistent
+    float2 xpos = swi2(position,z,x);
+    if(_fabs(position.z) > 0.65f){
+        // If position is below 0.0f, flip the uv direction for upwards flow
+        xpos = _mix(xpos, to_float2(position.z, -position.x), smoothstep(-0.0f, -0.2f, position.y));
+    }
+
+    float3 xaxis = to_float3_s(getDistortedTexture(DETAIL_SCALE.x*(swi2(position,z,y)),iChannel1,iTime));
+    float3 yaxis = to_float3_s(getDistortedTexture(DETAIL_SCALE.y*(xpos),iChannel1,iTime));
+    float3 zaxis = to_float3_s(getDistortedTexture(DETAIL_SCALE.z*(swi2(position,x,y)),iChannel1,iTime));
+
+    float3 blending = abs_f3(normal);
+    blending = normalize(_fmaxf(blending, to_float3_s(0.00001f)));
+    blending = pow_f3(blending, BLENDING_SHARPNESS);
+    blending = pow_f3(blending, BLENDING_SHARPNESS);
+    float b = (blending.x + blending.y + blending.z);
+    blending /= b;
+
+    return  xaxis * blending.x +
+            yaxis * blending.y +
+            zaxis * blending.z;
+}
+
+// Return the position of p extruded in the normal direction by a normal map
+__DEVICE__ float3 getDetailExtrusion(float3 p, float3 normal, __TEXTURE2D__ iChannel1, float iTime){
+
+    float detail = DETAIL_HEIGHT * length(getTriplanar(p, normal,iChannel1,iTime));
+
+    // Increase the normal extrusion height on the upper body
+    float d = 1.0f + smoothstep(0.0f, -0.5f, p.y);
+    return p + d * detail * normal;
+}
+
+// Tetrahedral normal technique with a loop to avoid inlining getSDF()
+// This should improve compilation times
+// https://iquilezles.org/www/articles/normalsSDF/normalsSDF.htm
+__DEVICE__ float3 getNormal(float3 p, float sdfSign, float iTime){
+    float3 n = to_float3_s(0.0f);
+    int id;
+    for(int i = ZERO; i < 4; i++){
+        float3 e = 0.5773f*(2.0f*to_float3((((i+3)>>1)&1),((i>>1)&1),(i&1))-1.0f);
+        n += e*getSDF(p+e*EPSILON, sdfSign,iTime);
+    }
+    return normalize(n);
+}
+
+// Get orthonormal basis from surface normal
+// https://graphics.pixar.com/library/OrthonormalB/paper.pdf
+__DEVICE__ void pixarONB(float3 n, out float3 *b1, out float3 *b2){
+  float sign_ = sign_f(n.z);
+  float a = -1.0f / (sign_ + n.z);
+  float b = n.x * n.y * a;
+  *b1 = to_float3(1.0f + sign_ * n.x * n.x * a, sign_ * b, -sign_ * n.x);
+  *b2 = to_float3(b, sign_ + n.y * n.y * a, -n.y);
+}
+
+// Return the normal after applying a normal map
+__DEVICE__ float3 getDetailNormal(float3 p, float3 normal, __TEXTURE2D__ iChannel1, float iTime){
+
+    float3 tangent;
+    float3 bitangent;
+
+    // Construct orthogonal directions tangent and bitangent to sample detail gradient in
+    pixarONB(normal, &tangent, &bitangent);
+
+    tangent = normalize(tangent);
+    bitangent = normalize(bitangent);
+
+    float3 delTangent = to_float3_s(0);
+    float3 delBitangent = to_float3_s(0);
+
+    for(int i = ZERO; i < 2; i++){
+
+        //i to  s
+        //0 ->  1
+        //1 -> -1
+        float s = 1.0f - 2.0f * (float)(i&1);
+
+        delTangent += s * getDetailExtrusion(p + s * tangent * DETAIL_EPSILON, normal,iChannel1,iTime);
+        delBitangent += s * getDetailExtrusion(p + s * bitangent * DETAIL_EPSILON, normal,iChannel1,iTime);
+
+    }
+
+    return normalize(cross(delTangent, delBitangent));
+}
+
+//--------------------------------- PBR ---------------------------------
+
+// Trowbridge-Reitz
+__DEVICE__ float distribution(float3 n, float3 h, float roughness){
+  float a_2 = roughness*roughness;
+  return a_2/(PI*_powf(pow(dot_c(n, h),2.0f) * (a_2 - 1.0f) + 1.0f, 2.0f));
+}
+
+// GGX and Schlick-Beckmann
+__DEVICE__ float geometry(float cosTheta, float k){
+  return (cosTheta)/(cosTheta*(1.0f-k)+k);
+}
+
+__DEVICE__ float smiths(float3 n, float3 viewDir, float3 lightDir, float roughness){
+    float k = _powf(roughness + 1.0f, 2.0f)/8.0f;
+  return geometry(dot_c(n, lightDir), k) * geometry(dot_c(n, viewDir), k);
+}
+
+// Fresnel-Schlick
+__DEVICE__ float3 fresnel(float cosTheta, float3 F0){
+    return F0 + (1.0f - F0) * _powf(1.0f - cosTheta, 5.0f);
+}
+
+// Specular part of Cook-Torrance BRDF
+__DEVICE__ float3 BRDF(float3 p, float3 n, float3 viewDir, float3 lightDir, float3 F0, float roughness){
+    float3 h = normalize(viewDir + lightDir);
+    float cosTheta = dot_c(h, viewDir);
+    float D = distribution(n, h, roughness);
+    float3 F = fresnel(cosTheta, F0);
+    float G = smiths(n, viewDir, lightDir, roughness);
+
+    float3 specular =  D * F * G / _fmaxf(0.0001f, (4.0f * dot_c(lightDir, n) * dot_c(viewDir, n)));
+
+    return specular;
+}
+
+// From the closest intersection with the scene, raymarch the negative SDF field to
+// find the far instersection. The distance inside the water is used to determine
+// transmittance and the attenuation of the environment.
+__DEVICE__ float3 getEnvironment(float3 org, float3 rayDir, out float3 *transmittance, out float3 *halfwayPoint, __TEXTURE2D__ iChannel2,
+                                 float DENSITY, float DENSITY_POW, float3 waterColour, float iTime ){
+        float sdfSign = -1.0f;
+
+        float distFar = distanceToScene(org, rayDir, MIN_DIST, MAX_DIST, sdfSign,iTime);
+
+        float3 positionFar = org + rayDir * distFar;
+        *halfwayPoint = org + rayDir * distFar * 0.5f;
+        float3 geoNormalFar = getNormal(positionFar, sdfSign,iTime);
+
+        // Avoid artefacts when trying to sample detail normals across Z-plane. Shape
+        // deformation increases the region where visible errors occur.
+        if(_fabs(geoNormalFar.z) < 1e-5){
+            geoNormalFar.z = 1e-5;
+        }
+
+        //Use the geometry normal on the far side to reduce noise
+        float3 refractedDir = normalize(refract_f3(rayDir, geoNormalFar, ETA_REVERSE));
+
+        // When total internal reflection occurs, reflect the ray off the far side
+        // Critical angle for 1.333f -> 1.0f is 0.8483
+        // _cosf(0.8483f) = 0.66125
+        if(dot(-rayDir, geoNormalFar) <= 0.66125f){
+            refractedDir = normalize(reflect(rayDir, geoNormalFar));
+        }
+
+        float3 transmitted = getSkyColour(refractedDir, iChannel2);
+
+        // View depth
+        float d = DENSITY*length(org-positionFar);
+
+        if(DENSITY_POW != 1.0f){
+            d = _powf(d, DENSITY_POW);
+        }
+
+
+        // Beer's law depending on the water colour
+        *transmittance = exp_f3( -d * (1.0f - waterColour));
+
+        float3 result = transmitted * *transmittance;
+        return result;
+}
+
+__DEVICE__ float getLightDepth(float3 org, float3 rayDir, float iTime){
+    float sdfSign = -1.0f;
+
+    return distanceToScene(org, rayDir, MIN_DIST, MAX_DIST, sdfSign,iTime);
+}
+
+
+//------------------------------- Shading -------------------------------
+
+__DEVICE__ float HenyeyGreenstein(float g, float costh){
+  return (1.0f/(FOUR_PI))  * ((1.0f - g * g) / _powf(1.0f + g*g - 2.0f*g*costh, 1.5f));
+}
+
+__DEVICE__ float3 shadingPBR(float3 cameraPos, float3 lightPos, float3 p, float3 n, float3 rayDir, float3 geoNormal, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2,
+                             float3 sunLightColour, float CLARITY, float DENSITY, float DENSITY_POW, float3 waterColour, float iTime){
+    float3 I = to_float3_s(0);
+
+    float3 F0 = to_float3_s(0.02f);
+    float roughness = 0.1f;
+
+    float3 vectorToLight = lightPos - p;
+     float3 lightDir = normalize(vectorToLight);
+    I +=  BRDF(p, n, -rayDir, lightDir, F0, roughness)
+        * sunLightColour
+        * dot_c(n, lightDir);
+
+
+    float3 transmittance;
+    float3 halfwayPoint;
+
+    float f = smoothstep(0.0f, -0.5f, p.y);
+
+    float3 result = to_float3_s(0);
+
+    result += (1.0f-f) * CLARITY * getEnvironment(p+rayDir*2.0f*EPSILON,
+                                                  refract_f3(rayDir, n, ETA),
+                                                  &transmittance, &halfwayPoint,iChannel2,
+                                                  DENSITY, DENSITY_POW, waterColour, iTime);
+
+
+    float mu = dot(refract_f3(rayDir, n, ETA), lightDir);
+    float phase = _mix(HenyeyGreenstein(-0.3f, mu), HenyeyGreenstein(0.85f, mu), 0.5f);
+
+    #ifdef HQ_LIGHT
+
+    float lightDepth = getLightDepth(p+rayDir*2.0f*EPSILON, normalize(lightPos-halfwayPoint,iTime));
+    lightDepth = _fmaxf(1.0f, lightDepth);
+
+    float3 lightTransmittance = _expf(-DENSITY*lightDepth * (1.0f - waterColour));
+
+    result += CLARITY * sunLightColour * lightTransmittance * phase;
+    #else
+
+    result += CLARITY * sunLightColour * transmittance * phase;
+
+    #endif
+
+    // Reflection of the environment.
+    float3 reflectedDir = normalize(reflect(rayDir, n));
+    float3 reflectedCol = getSkyColour(reflectedDir,iChannel2);
+
+    float cosTheta = dot_c(n, -rayDir);
+    float3 F = fresnel(cosTheta, F0);
+
+    result = mix_f3(result, reflectedCol, F);
+
+    // Foam based on wave height
+    float waveHeight = length(getTriplanar(p, n, iChannel1,iTime));
+
+    // Sharper crests higher up
+    float e = _mix(2.0f, 16.0f, 1.0f-smoothstep(0.2f, -1.3f, p.y));
+
+    result += f * _powf(waveHeight, e);
+
+    return result + I;
+}
+
+//https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+__DEVICE__ float3 ACESFilm(float3 x){
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0f, 1.0f);
+}
+
+__KERNEL__ void OceanElementalFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+
+  // --------
+
+
+    fragCoord+=0.5f;
+
+    const float3 sunLightColour = to_float3_s(3.5f);
+
+    float3 waterColour = 0.85f * to_float3(0.1f, 0.75f, 0.9f);
+
+    // Amount of the background visible through the water
+    const float CLARITY = 0.75f;
+
+    // Modifiers for light attenuation
+    const float DENSITY = 3.5f;
+    const float DENSITY_POW = 1.0f;
+
+    // In a circle of 2*PI
+    const float sunLocation = -2.0f;
+    const float sunHeight = 0.9f;
+
+    float3 col = to_float3_s(0);
+
+  //----------------- Define a camera -----------------
+
+    float3 rayDir = rayDirection(60.0f, fragCoord, iResolution);
+
+    //vec3 cameraPos = texelFetch(iChannel0, to_int2(0.5f, 1.5f), 0).xyz;
+    float3 cameraPos = swi3(texture(iChannel0, (make_float2((int)0.5f, (int)1.5f)+0.5f)/iResolution),x,y,z);
+
+    float3 targetDir = -cameraPos;
+
+    float3 up = to_float3(0.0f, 1.0f, 0.0f);
+
+    // Get the view matrix from the camera orientation.
+    mat3 viewMatrix = lookAt(cameraPos, targetDir, up);
+
+    // Transform the ray to point in the correct direction.
+    rayDir = normalize(mul_mat3_f3(viewMatrix , rayDir));
+
+    //---------------------------------------------------
+
+    float3 lightPos = 100.0f * normalize(to_float3(_cosf(sunLocation), sunHeight, _sinf(sunLocation)));
+    float3 lightDirection = normalize(lightPos);
+
+    float sdfSign = 1.0f;
+
+    // Find the distance to where the ray stops.
+    float dist = distanceToScene(cameraPos, rayDir, MIN_DIST, MAX_DIST, sdfSign,iTime);
+
+    if(dist < MAX_DIST){
+
+
+    float3 position = cameraPos + rayDir * dist;
+
+        float3 geoNormal = getNormal(position, sdfSign,iTime);
+
+        // Avoid artefacts when trying to sample detail normals across Z-plane. Shape
+        // deformation increases the region where visible errors occur.
+        if(_fabs(geoNormal.z) < 1e-5){
+            geoNormal.z = 1e-5;
+        }
+
+        float3 detailNormal = normalize(getDetailNormal(position, geoNormal,iChannel1,iTime));
+
+        col += shadingPBR(cameraPos, lightPos, position, detailNormal, rayDir, geoNormal,iChannel1,iChannel2,
+                          sunLightColour,CLARITY,DENSITY,DENSITY_POW,waterColour,iTime);
+
+
+    }else{
+
+        col += getSkyColour(rayDir,iChannel2);
+        float mu = dot(rayDir, lightDirection);
+        col += sunLightColour * getGlow(1.0f-mu, 0.0005f, 1.0f);
+
+    }
+
+    //col = to_float3(getDistortedTexture(fragCoord/iResolution,iChannel1,iTime));
+    //col = to_float3(texture(iChannel1, fragCoord/iResolution, 0.0f).r);
+
+    //Tonemapping.
+    col = ACESFilm(col);
+
+    //Gamma correction 1.0f/2.2f = 0.4545...
+    col = pow_f3(col, to_float3_s(0.4545f));
+
+    //Output to screen.
+    fragColor = to_float4_aw(col, 1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  StandardShaderFuseTopControls();
+
+  ----- Inspector Panel Controls
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+
+  -- iMouse Controls
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = false,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  StandardShaderFuseBottomControls();
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+	      IMG_DeferAlloc = false,
+        }
+
+Image_Buff_GlobalA = Image(ImgAttrs_Global)
+Image_Buff_GlobalB = Image(ImgAttrs_Global)
+
+
+function Process(req)
+
+
+	if InDepth:GetValue(req).Value == 0 then
+		SourceDepth = 7
+	else
+	  SourceDepth = 8
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local dstA   = Image(imgattrs)
+  local dstB   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local nodeA = DVIPComputeNode(req,
+    "OceanElementalFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  -------------- BufferA -----------------
+  params = nodeA:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  params.iFrame = req.Time
+
+  -- iMouse
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+
+  --params.iMouse   = {InMouseXY:GetValue(req).X*Width,InMouseXY:GetValue(req).Y*Height,1.0,0.0}
+
+
+  -- Resolution
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  -- Set parameters and add I/O
+
+  nodeA:SetParamBlock(params)
+  nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  nodeA:AddInput("iChannel0",Image_Buff_GlobalA) -- TODO: add a better channel name
+  nodeA:AddOutput("dst", dstA)
+
+  local ok = nodeA:RunSession(req)
+
+	if (not ok) then
+		dstA = nil
+    dump(nodeA:GetErrorLog())
+	end
+
+  Image_Buff_GlobalA = dstA
+
+ 
+  -------------- BufferB -----------------
+  local nodeB = DVIPComputeNode(req,
+                                "OceanElementalFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+                                "Params", ShaderParameters
+  )
+  
+  nodeB:SetParamBlock(params)
+  nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  nodeB:AddInput("iChannel0", Image_Buff_GlobalA)
+  nodeB:AddInput("iChannel1", Image_Buff_GlobalB) 
+  nodeB:AddOutput("dst", dstB)
+
+  local success = nodeB:RunSession(req)
+  if not success then
+    dstB = nil
+    dump(nodeB:GetErrorLog())
+  end
+ 
+  Image_Buff_GlobalB = dstB
+ 
+-------------- Image ----------------- 
+  local nodeI = DVIPComputeNode(req,
+                                "OceanElementalFuse", ShaderCompatibilityCode..ShaderKernelCode,
+                                "Params", ShaderParameters
+  )
+  
+  nodeI:SetParamBlock(params)
+
+  nodeI:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  
+  nodeI:AddInput("iChannel0", Image_Buff_GlobalA)
+  nodeI:AddInput("iChannel1", Image_Buff_GlobalB) 
+  nodeI:AddInput("iChannel2", iChannel0)   
+  nodeI:AddOutput("dst", dst)
+
+  local success = nodeI:RunSession(req)
+  if not success then
+    dst = nil
+    dump(nodeI:GetErrorLog())
+  end
+
+
+  OutImage:Set(req,dst)
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+-- /* ====================== DO NOT TOUCH OR APPEND ANY CODE HERE ===========================================
+
+
+function StandardShaderFuseTopControls()
+  -- Branding
+  self:AddInput('<p align="center"><a href="https://github.com/nmbr73/Shadertoys"><img height="20" width="210" src="data:image/png;base64,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" /></a></p>',
+  "DctlFuseBrandLabel", {
+    IC_ControlPage = -1 ,
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    LBLC_MultiLine = true,
+    IC_NoLabel = true,
+    IC_NoReset = true,
+    INP_External = false,
+    INP_Passive = true,
+  })
+end
+
+function StandardShaderFuseBottomControls()
+
+  local version_info=''
+
+  if dctlfuse_versionNo == nil then dctlfuse_versionNo='' end
+  if dctlfuse_versionDate == nil then dctlfuse_versionDate='' end
+
+  if dctlfuse_versionNo=='' and dctlfuse_versionDate=='' then
+    version_info=''
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate=='' then
+    version_info='Fuse version '..dctlfuse_versionNo
+  elseif dctlfuse_versionNo == '' and dctlfuse_versionDate~='' then
+    version_info=dctlfuse_versionDate
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate~='' then
+    version_info='Version '..dctlfuse_versionNo..' - '..dctlfuse_versionDate
+  end
+
+  if version_info ~= '' then
+    version_info=version_info..'<br />'
+  end
+
+  -- self:BeginControlNest("Shaderfuse Info", "Shaderfuse_Info", true, {})
+
+  -- Separator
+  self:AddInput( '<br />',"DctlFuseSeparatorLabel",{LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+  -- Info Btn
+  self:AddInput(dctlfuse_name.." Info ...", "DctlFuseInfoButton", {IC_ControlPage = 1,LINKID_DataType = "Text",INPID_InputControl = "ButtonControl",INP_DoNotifyChanged = false,INP_External = false,BTNCS_Execute = 'bmd.openurl("'..(dctlfuse_infourl~=nil and dctlfuse_infourl or 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html')..'")'})
+  -- Info Txt
+  self:AddInput('<p align="center">'
+    ..'Shadertoy <a href="https://www.shadertoy.com/view/'..shadertoy_id..'" style="color:white; text-decoration:none; ">'..shadertoy_name..'</a> by <a href="https://www.shadertoy.com/user/'..shadertoy_author..'" style="color:#a0a060; text-decoration:none; ">'..shadertoy_author..'</a><br />'
+    ..'<span style="color:#a06060; ">'..(shadertoy_license == "" and '&copy; '..shadertoy_author..' (CC BY-NC-SA 3.0)' or shadertoy_license)..'</span><br />'
+    ..'DCTLified and DaFused by <a href="'..(dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl)..'" style="color:#a0a060; text-decoration:none; ">'..dctlfuse_author..'</a><br />'
+    ..version_info
+    ..'Reactor package v'..SHADERFUSES_REACTOR_PACKAGE_VERSION..' created '..SHADERFUSES_REACTOR_PACKAGE_DATE..'<br />'
+    ,"DctlFuseInfoLabel", {IC_ControlPage = 1, LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+
+    -- self:EndControlNest()
+
+  end
+
+-- */

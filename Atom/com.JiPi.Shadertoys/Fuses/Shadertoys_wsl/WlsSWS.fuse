@@ -1,0 +1,1351 @@
+
+--
+--       _____        _   _       _   ______    _ _ _
+--      |  __ \      | \ | |     | | |  ____|  | (_) |
+--      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+--      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+--      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+--      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+--
+--   ... this File is managed by some scripts and can be
+--    overwritten at any time and without further notice!
+--         pls. see https://github.com/nmbr73/Shadertoys
+--                                           for details
+--
+
+local SHADERFUSES_REACTOR_PACKAGE_VERSION = '1.1'
+local SHADERFUSES_REACTOR_PACKAGE_DATE    = 'May 2022'
+
+--[[--
+ProceduralWalkAnimation
+
+    Based on https://www.shadertoy.com/view/WlsSWS a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT)
+    for use in DaFusion.
+
+    Shader created by TLC123
+
+
+--]] --
+
+-- MANDATORY -----------------------------------------------------------------
+local shadertoy_name       = "ProceduralWalkAnimation"
+local shadertoy_author     = "TLC123"
+local shadertoy_id         = "WlsSWS"
+local shadertoy_license    = ""
+local dctlfuse_category    = "Object"
+local dctlfuse_name        = "ProceduralWalkAnimation"
+local dctlfuse_author      = "JiPi"
+-- OPTIONAL ------------------------------------------------------------------
+local dctlfuse_versionNo   = 1
+local dctlfuse_versionDate = "9st of June 2021"
+local dctlfuse_authorurl   = "https://www.youtube.com/c/JiPi_YT"
+local dctlfuse_authorlogo=nil
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+FuRegisterClass( 
+
+  dctlfuse_name, CT_SourceTool, {
+  REGS_Category      = "Shadertoys\\"..dctlfuse_category,
+  REGS_OpIconString  = "ST-"..shadertoy_id,
+  REGS_OpDescription = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..") created by "..shadertoy_author.." and ported by "..dctlfuse_author..(shadertoy_license == "" and ". Copyright "..shadertoy_author.." (CC BY-NC-SA 3.0)" or ". "..shadertoy_license)..". This port is by no means meant to take advantage of anyone or to do anyone wrong : Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) if you see your rights abused or your intellectual property violated by this work.",
+  REG_Fuse_NoEdit    = true,
+  REG_Fuse_NoReload  = true,
+  REGS_Company       = dctlfuse_company==nil and dctlfuse_author or dctlfuse_company,
+  REGS_URL           = dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl,
+--REGS_URL           = 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html',
+  REG_Version        = dctlfuse_versionNo==nil and 1 or dctlfuse_versionNo,
+
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  })
+
+dctlfuse_versionNo =  dctlfuse_versionNo/10
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+ProceduralWalkAnimationParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  bool grdtex;
+  bool fgrtex;
+  float grdtexoff[2];
+  float grdtexscale;
+  float fgrtexoff[2];
+  float fgrtexscale;
+  bool head;
+  bool ball;
+  float look[3];
+  float color[3];
+  float color2[3];
+  int width;
+  int height;
+  float itime;
+  int compOrder;
+]]
+
+
+-- source of kernel
+ProceduralWalkAnimationKernel =
+    [[
+//uniform float(TexOffX,0.0)
+//uniform float(TexOffY,0.0)
+//uniform float(TexScale,1.0)
+
+
+//-----------------------
+//-------- mat3 ---------
+//-----------------------
+
+//**** mat3 ****
+typedef struct  
+  {  
+
+	float3 r0, r1, r2;  
+  } mat3;  
+ 
+__DEVICE__ inline mat3 make_mat3( float3 A, float3 B, float3 C)  
+  {  
+	mat3 D;  
+	D.r0 = A;  
+	D.r1 = B;  
+	D.r2 = C;  
+	return D;  
+  } 
+  
+__DEVICE__ inline float3 mat3_multi_f3( mat3 B, float3 A) {  
+	float3 C;  
+
+	C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;  
+	C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;  
+	C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;  
+	return C;  
+  }
+
+#if defined(DEVICE_IS_OPENCL) || defined(DEVICE_IS_METAL)
+__DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+#endif
+
+__DEVICE__ float fract_f(float A){return A - _floor(A);}
+__DEVICE__ float2 fract_f2(float2 A){return make_float2(A.x - _floor(A.x), A.y - _floor(A.y));}
+__DEVICE__ float3 fract_f3(float3 A){return make_float3(A.x - _floor(A.x), A.y - _floor(A.y), A.z - _floor(A.z));}
+__DEVICE__ float2 abs_f2(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+__DEVICE__ float3 sin_f3(float3 i) {float3 r; r.x = _sinf(i.x); r.y = _sinf(i.y); r.z = _sinf(i.z); return r;}
+#define lpowf _powf
+__DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
+
+
+#define swixy(V) to_float2((V).x,(V).y)
+#define swixz(V) to_float2((V).x,(V).z)
+
+#define swixyz(V) to_float3((V).x,(V).y,(V).z)
+  #define swixxx(V) to_float3((V).x,(V).x,(V).x)
+  #define swixyy(V) to_float3((V).x,(V).y,(V).y)
+  #define swiyxy(V) to_float3((V).y,(V).x,(V).y)
+  #define swiyyx(V) to_float3((V).y,(V).y,(V).x)
+
+
+//#ifdef Simulate_fwidth
+__DEVICE__ float2 _fwidth(float2 inp, float2 iR){
+    //simulate fwidth
+    float uvx = inp.x + 1.0f/iR.x;
+    float ddx = uvx * uvx - inp.x * inp.x;
+
+    float uvy = inp.y + 1.0f/iR.y;
+    float ddy = uvy * uvy - inp.y * inp.y;
+
+    return to_float2(_fabs(ddx), _fabs(ddy));
+}
+//#endif
+// Fork of "Football" by . https://shadertoy.com/view/llKcR3
+// 2019-07-25 21:23:38
+// Modified from https://www.shadertoy.com/view/Xds3zN by iq.
+//
+
+/*
+ Some path funtion: timefly(t) returns a 2d pivot
+ pasaR(t) and pasaL(t) modifies time to get 
+ initial foot targets when fead to timefly()
+ 
+*/
+
+#define AA 1
+# define PI 3.14159265359f
+# define PHI 1.618033988749895f
+# define TAU 6.283185307179586f
+
+struct Figur
+{
+	float3 rightFoot;
+	float3 leftFoot;
+	float3 rightToe;
+	float3 leftToe;
+	float3 rightHand;
+	float3 leftHand;
+	float3 rightFootT;
+	float3 leftFootT;
+	float3 rightHandT;
+	float3 leftHandT;
+	float3 rightToeT;
+	float3 leftToeT;
+	float3 rightE;  // Elbow
+	float3 leftE;
+	float3 rightK;  //Knee
+	float3 leftK;
+	float3 rightH;  //Hip
+	float3 leftH;
+	float3 rightS;  // Shoulder
+	float3 leftS;
+	float3 pelvis;
+	float3 torso;
+	float3 head;
+	float3 target;
+
+	float pasa;     // = 1.0f;    // steps overlaping airtime
+	float legmax;   // = 0.89f; // max extention
+	float leg;      // = 0.89f+0.005f; // actual max length
+	float armmax;   // = 0.7f;// max extention
+	float arm;      // = 0.7f +0.012f;// actual max length
+	float toemax;   // = 1.1f;// max extention toe from hip
+	float footlift; //=0.19f; //lift height later multiplied by speed
+};
+
+# define PLOTPATH 0
+ 
+
+//------------------------------------------------------------------
+__DEVICE__ float sdPlane(float3 p) {
+
+
+	return p.y;
+}
+__DEVICE__ float sdSphere(float3 p, float s) {
+	return length(p) - s;
+}
+__DEVICE__ float sdCapsule(float3 p, float3 a, float3 b, float r) {
+	float3 pa = p - a, ba = b - a;
+	float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0f, 1.0f);
+	return length(pa - ba * h) - r;
+}
+__DEVICE__ float sdRoundedCylinder( float3 p, float ra, float rb, float h )
+{
+    float2 d = make_float2( length(swixz(p))-2.0f*ra+rb, _fabs(p.y) - h );
+    return _fminf(_fmaxf(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f))) - rb;
+}
+
+__DEVICE__ float pathterrain(float x,float z){
+    // Common height function for path and terrain
+
+    return  _sinf(x*0.5f )*1.0f+_cosf(z*0.3f )*0.3f
+           +_cosf(x*3.0f+z )*0.1f+_sinf(x-z*0.2f )*0.2f;
+}
+		
+__DEVICE__ float3 timefly(float t) {
+    // main path Called from many places
+    t*=0.80f;
+    t += (0.125f + _sinf(t * 0.125f));
+    float3 v =	make_float3(_sinf(t / 50.0f) * 20.0f, 0.0f, _cosf(t / 25.0f) * 24.0f) +
+	            make_float3(_sinf(t / 17.1f) * 07.0f, 0.0f, _cosf(t / 17.1f) * 05.0f) +
+		        make_float3(_sinf(t / 8.1f) * 6.0f, 0.0f, _cosf(t / 8.1f) * 8.0f) +
+		        make_float3(_cosf(t / 3.0f) * 3.0f,0.0f, _sinf(t / 3.0f) * 2.0f)  +
+			    make_float3(_cosf(t  )*2.0f,0.0f, _sinf(t  )*2.0f );
+    v.y=pathterrain(v.x,v.z);
+    return v        ;
+} 
+
+__DEVICE__ float pasaR(float x, struct Figur *figur){
+	return _fmaxf(x + fract_f(x + 0.25f) * (*figur).pasa - (*figur).pasa, _floor(x + 0.25f) - 0.25f) + 0.25f;
+    //gait function 
+}
+    
+__DEVICE__ float pasaL(float x, struct Figur *figur){
+	return _fmaxf(x + fract_f(x - 0.25f) * (*figur).pasa - (*figur).pasa, _floor(x - 0.25f) + 0.25f) + 0.25f;
+   //gait function 
+}
+
+
+
+__DEVICE__ float lpnorm(float3 p, float s) {
+	return _powf(( _powf(_fabs(p.x), s) +
+		         _powf(_fabs(p.y), s) +
+		         _powf(_fabs(p.z), s)),
+		         1.0f / s);
+}
+
+ 
+//------------------------------------------------------------------
+__DEVICE__ float2 opU(float2 d1, float2 d2) {
+	return (d1.x < d2.x) ? d1 : d2;
+}
+
+__DEVICE__ float s_fminf(float a, float b, float k)
+{
+	float h = clamp(0.5f + 0.5f*(a-b)/k, 0.0f, 1.0f);
+	return _mix(a, b, h) - k*h*(1.0f-h);
+}
+
+//float3 perpr = cross(dirr,make_float3(0,-1,0));
+
+__DEVICE__ float2 bodyPlan(float3 pos, float itime, struct Figur figur, __CONSTANTREF__ ProceduralWalkAnimationParams *params) {
+	float res;
+	res =  sdSphere(pos - figur.leftFoot, 0.07f);
+	res = _fminf(res, sdSphere(pos - figur.leftHand, 0.06f));
+	res = _fminf(res, sdSphere(pos - figur.leftH, 0.09f));
+	res = _fminf(res, sdSphere(pos - figur.leftK, 0.08f));
+	res = _fminf(res, sdSphere(pos - figur.leftE, 0.08f));
+	res = _fminf(res, sdSphere(pos - figur.leftS, 0.07f));	
+
+    
+    res = _fminf(res, sdSphere(pos - figur.rightFoot, 0.07f));
+	res = _fminf(res, sdSphere(pos - figur.rightHand, 0.06f));
+	res = _fminf(res, sdSphere(pos - figur.rightH, 0.09f));
+	res = _fminf(res, sdSphere(pos - figur.rightS, 0.07f));
+	res = _fminf(res, sdSphere(pos - figur.rightK, 0.08f));
+	res = _fminf(res, sdSphere(pos - figur.rightE, 0.08f));
+    
+	if (params->ball) res = _fminf(res, sdSphere(pos - figur.target, 0.2f));
+	if (params->head) res = _fminf(res, sdSphere(pos - figur.head, 0.16f));
+
+ 	
+    
+    res = _fminf(res, sdCapsule(pos ,figur.rightToe,figur.rightFoot, 0.06f));
+    res = s_fminf(res, sdRoundedCylinder(pos - figur.rightToe, 0.04f, 0.02f, 0.03f ),0.06f );
+
+    res = _fminf(res, sdCapsule(pos ,figur.rightK,figur.rightFoot, 0.06f));
+    res = _fminf(res, sdCapsule(pos ,figur.rightK,figur.rightH, 0.07f));   
+    res = _fminf(res, sdCapsule(pos ,figur.rightE,figur.rightHand, 0.05f));
+    res = _fminf(res, sdCapsule(pos ,figur.rightE,figur.rightS, 0.06f));
+    res = _fminf(res, sdCapsule(pos ,figur.torso,figur.rightS, 0.08f));
+    
+    res = _fminf(res, sdCapsule(pos ,figur.leftToe,figur.leftFoot, 0.06f));
+    res = s_fminf(res, sdRoundedCylinder(pos - figur.leftToe, 0.04f, 0.02f, 0.03f ),0.06f);// todo rotate to grund normal
+
+    res = _fminf(res, sdCapsule(pos ,figur.leftK,figur.leftFoot, 0.06f));
+    res = _fminf(res, sdCapsule(pos ,figur.leftK,figur.leftH, 0.07f));   
+    res = _fminf(res, sdCapsule(pos ,figur.leftE,figur.leftHand, 0.05f));
+    res = _fminf(res, sdCapsule(pos ,figur.leftE,figur.leftS, 0.06f));
+    res = _fminf(res, sdCapsule(pos ,figur.torso,figur.leftS, 0.08f));
+    
+    res = s_fminf(res, sdSphere(pos - figur.torso, 0.14f),0.025f);
+    res = s_fminf(res, sdSphere(pos - figur.pelvis, 0.16f),0.025f);
+    
+    res = s_fminf(res, sdCapsule(pos ,figur.pelvis,figur.torso, 0.13f),0.025f);
+    res = _fminf(res, sdCapsule(pos ,figur.head,figur.torso, 0.02f)); 
+    
+    
+    
+    if(PLOTPATH>0)for(int i=PLOTPATH;i>-PLOTPATH/2;i--)
+
+    {
+        res = _fminf(res, sdSphere(pos- timefly(itime+(float)(i)*0.5f), 0.04f));
+    }  
+
+     //float x=itime;
+     // res= _fminf(res, sdCapsule( pos, timefly(x),timefly(x+1.0f) , 0.06125f));
+     // res= _fminf(res, sdCapsule( pos, timefly(x)-perpr*-0.25f,timefly(x)-perpl*0.25f , 0.06125f));
+     return make_float2(res, 2.0f);
+}
+
+__DEVICE__ float2 map( float3 pos, float itime, struct Figur figur, __CONSTANTREF__ ProceduralWalkAnimationParams *params) {
+	float2 res = make_float2(pos.y-pathterrain(pos.x,pos.z), 1.0f);
+	res = opU(res, bodyPlan(pos,itime, figur, params));
+	return res;
+}
+
+__DEVICE__ float2 castRay( float3 ro, float3 rd, float itime, struct Figur figur, __CONSTANTREF__ ProceduralWalkAnimationParams *params) {
+	float tmin = 1.0f;
+	float tmax = 30.0f;
+	float t = tmin;
+	float m = -1.0f;
+	for (int i = 0; i < 80; i++) {
+		float precis = 0.0001f * t;
+		float2 res = map(ro + rd * t,itime, figur, params);
+		if (res.x < precis || t > tmax) break;
+		t += res.x * 0.7f;
+		m = res.y;
+	}
+	if (t > tmax) m = -1.0f;
+	return make_float2(t, m);
+}
+
+__DEVICE__ float calcSoftshadow( float3 ro, float3 rd, float mint, float tmax, float itime, struct Figur figur, __CONSTANTREF__ ProceduralWalkAnimationParams *params) {
+	float res = 1.0f;
+	float t = mint;
+	for (int i = 0; i < 32; i++) {
+		float h = map(ro + rd * t,itime, figur,params).x;
+		res = _fminf(res, 8.0f * h / t);
+		t += clamp(h, 0.02f, 0.10f);
+		if (res < 0.005f || t > tmax) break;
+	}
+	return clamp(res, 0.0f, 1.0f);
+}
+
+__DEVICE__ float3 calcNormal( float3 pos, float itime, struct Figur figur, __CONSTANTREF__ ProceduralWalkAnimationParams *params) {
+	float2 e = make_float2(1.0f, -1.0f) * 0.5773f * 0.0005f;
+	return normalize(swixyy(e) * map(pos + swixyy(e),itime,figur, params).x +
+		           swiyyx(e) * map(pos + swiyyx(e),itime,figur,params).x +
+		           swiyxy(e) * map(pos + swiyxy(e),itime,figur,params).x +
+		           swixxx(e) * map(pos + swixxx(e),itime,figur,params).x);
+}
+
+__DEVICE__ float calcAO( float3 pos, float3 nor, float itime, struct Figur figur, __CONSTANTREF__ ProceduralWalkAnimationParams *params) {
+	float occ = 0.0f;
+	float sca = 1.0f;
+	for (int i = 0; i < 5; i++) {
+		float hr = 0.01f + 0.12f * (float)(i) / 4.0f;
+		float3 aopos = nor * hr + pos;
+		float dd = map(aopos,itime,figur,params).x;
+		occ += -(dd - hr) * sca;
+		sca *= 0.95f;
+	}
+	return clamp(1.0f - 3.0f * occ, 0.0f, 1.0f);
+}
+// http://iquilezles.swiwww(org)/articles/checkerfiltering/checkerfiltering.htm
+__DEVICE__ float checkersGradBox2( float2 p,float2 iR) {
+	// filter kernel
+	float2 w = _fwidth(p,iR)/10.0f + 0.001f;//make_float2(0.01,0.01);//_fwidth(p,iR)/10. + 0.001;
+	// analytical integral (box filter)
+	float2 i = 2.0f * (abs_f2(fract_f2((p - 0.5f * w) * 0.5f) - 0.5f) - abs_f2(fract_f2((p + 0.5f * w) * 0.5f) - 0.5f)) / w;
+	// xor pattern
+	return 0.5f - 0.5f * i.x * i.y;
+}
+
+__DEVICE__ float checkersGradBox( float2 p, float2 iR) {
+	return  checkersGradBox2(p,iR) -checkersGradBox2(p-0.03f,iR )*0.4f ;
+}
+
+__DEVICE__ float3 render( float3 ro, float3 rd, float itime, float2 iR, __TEXTURE2D__ iCh0, __TEXTURE2D__ iCh1,float ratio, __CONSTANTREF__ ProceduralWalkAnimationParams *params, struct Figur figur) {
+	float3 col = make_float3(0.7f, 0.9f, 1.0f) + rd.y * 0.8f;
+	float2 res = castRay(ro, rd,itime, figur, params);
+	float t = res.x;
+	float m = res.y;
+	if (m > -0.5f) {
+		float3 pos = ro + t * rd;
+		float3 nor = calcNormal(pos,itime, figur, params);
+		float3 ref = reflect(rd, nor);
+		// material        
+		col = 0.45f + 0.35f * sin_f3(make_float3(0.05f, 0.08f, 0.10f) * (m - 1.0f));
+		if (m < 1.5f) {
+            
+			if (params->grdtex)
+			{
+				float2 tuv = make_float2(pos.x/ratio,pos.z)/params->grdtexscale + to_float2_v(params->grdtexoff);
+				col = swixyz(_tex2DVecN(iCh0, tuv.x,tuv.y,15));
+			}
+			else			
+			{
+							//Original
+				float f = checkersGradBox(1.2f * swixz(pos), iR);
+				col = 0.3f + f * to_float3_v(params->color);
+			}
+
+		}
+		if (m >= 2.0f) {
+			if (params->fgrtex)
+			{
+				float2 tuv = make_float2(nor.x/ratio,nor.y)/params->fgrtexscale + to_float2_v(params->fgrtexoff);
+				col = swixyz(_tex2DVecN(iCh1, tuv.x,tuv.y,15));
+			}
+			else			
+			{
+				col = to_float3_v(params->color2); // Body
+			}
+		}
+		if (m >= 3.0f) {
+			col = make_float3(0.07f,0.0f,0.0f);    // Unknown
+		}
+		// lighting        
+		float occ = calcAO(pos, nor,itime, figur, params);
+		float3 lig = normalize(make_float3(0.2f, 0.7f, 0.6f));
+		float3 hal = normalize(lig - rd);
+		float amb = clamp(0.5f + 0.5f * nor.y, 0.0f, 1.0f);
+		float dif = clamp(dot(nor, lig), 0.0f, 1.0f);
+		float bac = clamp(dot(nor, normalize(make_float3(-lig.x, 0.0f, -lig.z))), 0.0f, 1.0f) * clamp(1.0f - pos.y, 0.0f, 1.0f);
+		float dom = smoothstep(-0.1f, 0.1f, ref.y);
+		float fre = _powf(clamp(1.0f + dot(nor, rd), 0.0f, 1.0f), 2.0f);
+		dif *= calcSoftshadow(pos, lig, 0.02f, 2.5f,itime, figur, params);
+		dom *= calcSoftshadow(pos, ref, 0.02f, 2.5f,itime, figur, params);
+		float spe = _powf(clamp(dot(nor, hal), 0.0f, 1.0f), 16.0f) *
+			        dif *
+			        (0.04f + 0.96f * _powf(clamp(1.0f + dot(hal, rd), 0.0f, 1.0f), 5.0f));
+		float3 lin = to_float3_s(0.0f);
+		lin += 1.30f * dif * make_float3(1.00f, 0.80f, 0.55f);
+		lin += 0.20f * amb * make_float3(0.40f, 0.60f, 1.00f) * occ;
+		lin += 0.20f * dom * make_float3(0.40f, 0.60f, 1.00f) * occ;
+		lin += 0.30f * bac * make_float3(0.25f, 0.25f, 0.25f) * occ;
+		lin += 0.35f * fre * make_float3(1.00f, 1.00f, 1.00f) * occ;
+		col = col * lin;
+		col += 10.00f * spe * make_float3(1.00f, 0.90f, 0.70f);
+		col = _mix(col, make_float3(0.8f, 0.9f, 1.0f), 1.0f - _expf(-0.0002f * t * t * t));
+	}
+	return (clamp(col, 0.0f, 1.0f));
+}
+
+__DEVICE__ mat3 setCamera( float3 ro, float3 ta, float cr) {
+	float3 cw = normalize(ta - ro);
+	float3 cp = make_float3(_sinf(cr), _cosf(cr), 0.0f);
+	float3 cu = normalize(cross(cw, cp));
+	float3 cv = normalize(cross(cu, cw));
+	return make_mat3(cu, cv, cw);
+}
+
+
+__DEVICE__ void setup(float itime, struct Figur *figur) {
+    float x = itime   ;//Time manipulations moved to timefly
+
+    
+    // filter gait slightly for less stabby foot placement, too much generates skating
+    float filt=18.0f;
+    float left = 0.025f+ _mix(pasaR(_floor(x*filt)/filt, figur) ,pasaR(_ceil(x*filt)/filt, figur), ( fract_f(x*filt)));
+    float right =0.025f+ _mix(pasaL(_floor(x*filt)/filt, figur) ,pasaL(_ceil(x*filt)/filt, figur), ( fract_f(x*filt)));
+	
+    
+    float ahead=1.1f;
+    float3 dif = (timefly(x + ahead) - timefly(x))/ahead; //delta x+1
+    float speed = length(dif); 
+    ahead = clamp(0.8f,1.1f,1.3f-speed);
+    dif = (timefly(x + ahead) - timefly(x))/ahead; //delta x+1
+    speed = length(dif); 
+    
+    
+    float3 nextdif = (timefly(x + ahead+0.5f) - timefly(x + 0.5f))/ahead; 
+    float3 lean = (nextdif - dif*2.0f); // bank into turns
+
+    ahead=speed;
+    dif = (timefly(x + ahead) - timefly(x))/ahead; //delta x+1
+    nextdif = (timefly(x + ahead+0.5f) - timefly(x + 0.5f))/ahead; 
+    lean = (nextdif - dif*2.0f); // bank into turns
+   
+    float nextSpeed = length(timefly(x + 1.2f) - timefly(x + 0.2f));
+ 
+    float3 dir = normalize(dif); //Path direction 
+    float3 nextdir = normalize(nextdif); //Path direction 
+    float3 dirr = normalize(timefly(right + 1.0f) - timefly(right)); //Path direction Foot specific
+    float3 dirl = normalize(timefly(left + 1.0f) - timefly(left));
+    
+    float3 perp = cross(dir,make_float3(0,-1,0));// perpendicular to main path
+    float3 perpl = cross(dirl,make_float3(0,-1,0));// perpendicular to intervalled step path
+    float3 perpr = cross(dirr,make_float3(0,-1,0));
+    
+    (*figur).target =(timefly(x+1.5f)) + (make_float3(0,0.4f,0)+lean*1.6f+dir*0.25f )*(0.09f/clamp(speed , 0.05f, 4.5f));// rolling head
+       
+    (*figur).target.y=pathterrain((*figur).target.x,(*figur).target.z);// fix for rolling head collision 
+    
+    (*figur).target +=  ( make_float3(0,0.14f+_fabs(_sinf(x*7.0f)*0.3f),0)) ;
+
+    float3 tfx= timefly(x)  ; // Pelvis   path
+    float3 tfr= timefly(right) ;//intervalled step path
+    float3 tfl= timefly(left) ; //intervalled step path
+    
+    // foot lift component
+    float3 leftlift = make_float3(0, _fminf(0.0f, _sinf(x * TAU + 1.57f) * (*figur).footlift * clamp(speed, 0.05f, 1.5f)), 0);
+    float3 rightlift = make_float3(0, _fminf(0.0f, _sinf(x * TAU - 1.57f) * (*figur).footlift * clamp(speed, 0.05f, 1.5f)), 0);
+ 
+    
+    // setup targets
+    (*figur).rightFootT = tfr + perpr * -0.16f - rightlift;
+    (*figur).leftFootT = tfl + perpl * 0.16f - leftlift;
+    (*figur).rightToeT = tfr  + perpr * -0.19f  +dir*0.172f - rightlift*0.6f;
+    (*figur).leftToeT = tfl  + perpl * 0.19f  +dir*0.172f- leftlift*0.7f;
+    // ground collision feet and toes
+    (*figur).rightFootT.y=_fmaxf(pathterrain((*figur).rightFootT.x,(*figur).rightFootT.z),    (*figur).rightFootT.y);
+    (*figur).leftFootT.y=_fmaxf(pathterrain((*figur).leftFootT.x,(*figur).leftFootT.z),    (*figur).leftFootT.y);
+    (*figur).rightToeT.y=_fmaxf(pathterrain((*figur).rightToeT.x,(*figur).rightToeT.z),    (*figur).rightToeT.y);
+    (*figur).leftToeT.y=_fmaxf(pathterrain((*figur).leftToeT.x,(*figur).leftToeT.z),    (*figur).leftToeT.y);
+    
+   
+	(*figur).pelvis = tfx 
+            + (lean  ) * clamp(nextSpeed, 0.01f, 0.5f) * 0.1f 					// lean into turn
+            + make_float3(0, 0.9f + _cosf(x * TAU * 2.0f) * 0.02f * speed, 0) 	// bob u/d with step
+		    + dir * 0.1f * (-0.45f + speed) 									// lean to run
+		    + perpr * _sinf(x * TAU) * 0.025f * speed 							// bob l/R with step
+ 		    + (make_float3(0,-1.0f,0) )*(0.02f/clamp(speed , 0.15f, 4.5f));		// bend when head is close
+
+    // spine component
+    float3 spine = normalize(
+		    (lean  ) * clamp(nextSpeed, 0.2f, 0.5f) * 0.1f 					// lean into turn
+		    + make_float3(0, 0.3f + _cosf(x * TAU * 2.0f) * 0.0125f * speed, 0)	// bob u/d with step
+		    + dir * 0.05f * (-0.25f + nextSpeed)  								// lean to run
+            +(make_float3(0,-1.0f,0)+dir)*(0.05f/clamp(speed , 0.15f, 4.5f))	// bend when head is close
+            + perpr * _cosf(x * TAU) * 0.025f * speed);							// bob l/R with step
+	
+     
+    (*figur).torso = (*figur).pelvis + spine * 0.3f;
+    
+    
+
+    // Hips
+    (*figur).rightH = (*figur).pelvis + perp * -0.11f - rightlift * 0.1f - spine * 0.08f + dir * -0.025f;
+    (*figur).leftH = (*figur).pelvis + perp * 0.11f - leftlift * 0.1f - spine * 0.08f + dir * -0.025f;
+    
+    // Feet
+    (*figur).rightFoot = (*figur).rightH + normalize((*figur).rightFootT - (*figur).rightH) * _fminf((*figur).legmax, length((*figur).rightFootT - (*figur).rightH));
+    (*figur).leftFoot = (*figur).leftH + normalize((*figur).leftFootT - (*figur).leftH) * _fminf((*figur).legmax, length((*figur).leftFootT - (*figur).leftH));
+	
+    (*figur).rightToe = (*figur).rightH + normalize((*figur).rightToeT - (*figur).rightH) * _fminf((*figur).toemax, length((*figur).rightToeT - (*figur).rightH));
+    (*figur).leftToe = (*figur).leftH + normalize((*figur).leftToeT - (*figur).leftH) * _fminf((*figur).toemax, length((*figur).leftToeT - (*figur).leftH));
+
+    // Shoulder
+	(*figur).rightS = (*figur).torso + perp * -0.2f   + spine * 0.05f;
+	(*figur).leftS = (*figur).torso + perp * 0.2f  + spine * 0.05f;
+    
+    // Hand Target
+    (*figur).rightHandT=((*figur).rightS +  normalize(
+			perpr * -0.06f 
+			+make_float3(0, -0.4f, 0) 
+			+dir * 0.3f * _cosf(0.25f + x * TAU) * (clamp(speed, 0.0f, 2.0f) * 0.25f)) 
+            * (*figur).armmax 
+			+make_float3(0, 0.2f, 0) * clamp(speed - 0.6f, 0.0f, 1.0f) )				// lift alittle with speed
+        	      + ((*figur).target -(*figur).rightS)*(1.0f-smoothstep(0.0f,1.2f,(1.0f+_sinf(x*1.0f ))))*0.3f;	// reach for head 
+    
+    (*figur).leftHandT= ((*figur).leftS + normalize(
+			perpl * 0.06f +
+			make_float3(0, -0.4f, 0) +
+			dir * 0.3f * _cosf(0.25f + PI + x * TAU) * (clamp(speed, 0.0f, 2.0f) * 0.25f)) 
+			* (*figur).armmax 
+			+ make_float3(0, 0.2f, 0) * clamp(speed - 0.6f, 0.0f, 1.0f))
+			+ ((*figur).target -(*figur).leftS)*(1.0f-smoothstep(0.0f,1.2f,(1.0f+_sinf(x*1.0f+PI))))*0.3f;
+    
+    (*figur).rightHand = (*figur).rightS + normalize((*figur).rightHandT - (*figur).rightS) * _fminf((*figur).armmax, length((*figur).rightHandT - (*figur).rightS));
+    (*figur).leftHand = (*figur).leftS + normalize((*figur).leftHandT - (*figur).leftS) * _fminf((*figur).armmax, length((*figur).leftHandT - (*figur).leftS));
+ 	
+     
+    (*figur).rightHand.y=_fmaxf(pathterrain((*figur).rightHand.x,(*figur).rightHand.z)+0.2f,    (*figur).rightHand.y);
+    (*figur).leftHand.y=_fmaxf(pathterrain((*figur).leftHand.x,(*figur).leftHand.z)+0.2f,    (*figur).leftHand.y);
+ 
+    
+    
+    (*figur).head = (*figur).torso +normalize(
+		make_float3(0, 0.27f, 0) 
+		+ normalize(lean) * clamp(nextSpeed, 0.2f, 1.0f) * 0.05f // lean into torn
+		+dir * 0.1f * (-0.35f + clamp(speed, 0.5f, 2.0f)) // lean into run
+		+perpr * _cosf(x * TAU) * 0.025f * clamp(speed, 0.5f, 2.0f)
+        +(make_float3(0,-1.0f,0)+dir)*(0.07f/clamp(speed , 0.05f, 4.5f))// bend when head is close
+        )*0.27f;// sway with step
+    
+    // bendy lims IK
+
+	(*figur).rightE = _mix((*figur).rightS, (*figur).rightHand, 0.5f) - cross((*figur).rightS - (*figur).rightHand, -1.0f*normalize(perp - dir * 0.5f)) *
+		     _sqrtf(_fmaxf(0.0001f, (*figur).arm * (*figur).arm - length((*figur).rightS - (*figur).rightHand) * length((*figur).rightS - (*figur).rightHand))) * 0.5f;
+	(*figur).leftE = _mix((*figur).leftS, (*figur).leftHand, 0.5f) - cross((*figur).leftS - (*figur).leftHand, -1.0f*normalize(perp + dir * 0.5f)) *
+		    _sqrtf(_fmaxf(0.0001f, (*figur).arm * (*figur).arm - length((*figur).leftS - (*figur).leftHand) * length((*figur).leftS - (*figur).leftHand))) * 0.5f;
+	(*figur).rightK = _mix((*figur).rightH, (*figur).rightFoot, 0.5f) - cross((*figur).rightH - (*figur).rightFoot, normalize(perp + dir * 0.25f)) *
+		     _sqrtf(_fmaxf(0.0001f, (*figur).leg * (*figur).leg - length((*figur).rightH - (*figur).rightFoot) * length((*figur).rightH - (*figur).rightFoot))) * 0.5f;
+	(*figur).leftK = _mix((*figur).leftH, (*figur).leftFoot, 0.5f) - cross((*figur).leftH - (*figur).leftFoot, normalize(perp - dir * 0.25f)) *
+		    _sqrtf(_fmaxf(0.0001f, (*figur).leg * (*figur).leg - length((*figur).leftH - (*figur).leftFoot) * length((*figur).leftH - (*figur).leftFoot))) * 0.5f;
+} 
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+  float C = _cosf(angle);
+  float S = _sinf(angle);
+   
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+   
+return uv;
+} 
+
+//############################################################################################################################
+__KERNEL__ void ProceduralWalkAnimationKernel(__CONSTANTREF__ ProceduralWalkAnimationParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height) 
+  {
+  
+     //-----------------------
+     float2 fragCoord = to_float2(x, y); 
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime * params->freq;
+	 float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+    struct Figur figur;
+
+    figur.pasa = 1.0f;    // steps overlaping airtime
+	figur.legmax = 0.89f; // max extention
+	figur.leg = 0.89f+0.005f; // actual max length
+	figur.armmax = 0.7f;// max extention
+	figur.arm = 0.7f +0.012f;// actual max length
+	figur.toemax = 1.1f;// max extention toe from hip
+	figur.footlift=0.19f; //lift height later multiplied by speed
+
+	setup(itime, &figur);
+	//float2 mo = make_float2(iMouse.x,iMouse.y) / iResolution;
+    float2 mo = make_float2(params->look[0],params->look[1]);
+	float time = 0.0f + itime;
+	float3 tot = to_float3_s(0.0f);
+ #	if AA > 1
+	for (int m = 0; m < AA; m++)
+		for (int n = 0; n < AA; n++) {
+			// pixel coordinates
+			float2 o = make_float2((float)(m), (float)(n)) / (float)(AA) - 0.5f;
+			float2 p = (-iResolution + 2.0f * (fragCoord + o)) / iResolution.y;
+ # else
+			float2 p = (-iResolution + 2.0f * fragCoord) / iResolution.y;
+ # endif
+			p -=  to_float2( (params->center[0]-0.5f)*2.0f*ratio, (params->center[1]-0.5f)*2.0f);
+			p *= params->scale;
+			float2 pivot = to_float2(((params->pivot[0]-0.5f)*2.0f*ratio),(params->pivot[1]-0.5f)*2.0f);
+			p = spin(p, pivot*params->scale, params->angle, 1.0f);
+
+			// camera	
+			float3 ta = timefly(time) + make_float3(0, 0.7f, 0);
+			float3 ro = ta + make_float3(-0.5f + 3.5f * _cosf(0.1f * time + 6.0f * mo.x),
+				                          2.0f + 2.0f * mo.y,
+				                          0.5f + 4.0f * _sinf(0.1f * time + 6.0f * mo.x));
+			// camera-to-world transformation
+			mat3 ca = setCamera(ro, ta, 0.0f);
+			// ray direction
+			float3 rd = mat3_multi_f3(ca , normalize(to_float3_aw(swixy(p), 2.5f)));
+			// render	
+			float3 col = render(ro, rd,itime, iResolution, iChannel0, iChannel1, ratio, params, figur);
+			// gamma
+			col = pow_f3(col, to_float3_s(0.4545f));
+			tot += col;
+ # if AA > 1
+		}
+	tot /= (float)(AA * AA);
+ #	endif
+	fragColor = to_float4_aw(tot, 1.0f);
+    _tex2DVec4Write(dst, x, y, fragColor); 
+  }
+}
+]]
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+function Create()
+--------------------------------------------
+StandardShaderFuseTopControls(); 
+--------------------------------------------
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  --------------- ProceduralWalkAnimation ---------------
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "Center", 
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+    })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",    
+    IC_Visible          = false, 
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })    
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+    })
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true, 
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+  })
+
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+  
+  
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	  IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })   
+
+self:BeginControlNest("Parameter", "Par", true, {})
+
+ InLook = self:AddInput("Look","Look", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.0,
+    INP_DefaultY = 0.0,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+  InLookZ = self:AddInput("LookZ", "LookZ", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    }) 	
+
+  InBall = self:AddInput("Ball", "Ball", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+
+  InHead = self:AddInput("Head", "Head", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External      = false,
+  })
+
+  InGroundTexOff = self:AddInput("Ground texture Offset","GroundTexOff", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.0,
+    INP_DefaultY = 0.0,
+	IC_Visible   = true,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+  InGroundTexScale = self:AddInput("Ground Texture Scale", "GroundTexScale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	IC_Visible   = true,
+	INP_MinScale = 0.0,
+	INP_MaxScale = 3.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    }) 
+  InFigurTexOff = self:AddInput("Figur Texture Offset","FigurTexOff", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.0,
+    INP_DefaultY = 0.0,
+	IC_Visible   = true,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+  InFigurTexScale = self:AddInput("Figur Texture Scale", "FigurTexScale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	INP_MinScale = 0.0,
+	INP_MaxScale = 3.0,
+	IC_Visible   = true,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    }) 
+
+
+
+ InRedCH = self:AddInput("Red", "RedCH", {
+    ICS_Name            = "Ground Color",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.3,
+    INP_MaxScale        = 0.5,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 0,
+  })
+  InGreenCH = self:AddInput("Green", "GreenCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.3,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 1,
+  })
+  InBlueCH = self:AddInput("Blue", "BlueCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.3,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 2,
+  })
+  
+  InRed2CH = self:AddInput("Red", "Red2CH", {
+    ICS_Name            = "Figur Color",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.6,
+    INP_MaxScale        = 1.0,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 0,
+  })
+  InGreen2CH = self:AddInput("Green", "Green2CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.6,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 1,
+  })
+  InBlue2CH = self:AddInput("Blue", "Blue2CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.6,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 2,
+  })
+
+
+self:EndControlNest() 
+
+--------------------------------------------
+ StandardShaderFuseBottomControls();
+--------------------------------------------
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+	--LINK_Visible = false,
+    INP_Required = false
+  })
+  InImage2 = self:AddInput("Image2", "Image2", {
+    LINKID_DataType = "Image",
+    LINK_Main = 2,
+	--LINK_Visible = false,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end 
+
+
+-------------------------------------------------------------------
+--       NotifyChanged
+-------------------------------------------------------------------
+function NotifyChanged(inp, param, time)
+
+
+  if inp ~= nil and param ~= nil then
+  
+    if inp == InCenter then
+        -- the center moved, reposition the axis according to the current offset
+        nCenterX = param.X
+        nCenterY = param.Y
+      
+        InPivot:SetAttrs({
+            PCD_OffsetX = nCenterX - 0.5,
+            PCD_OffsetY = nCenterY - 0.5,
+            })
+           
+        InAngle:SetAttrs({
+            PCD_OffsetX = (nCenterX - 0.5)/100,
+            PCD_OffsetY = (nCenterY - 0.5)/100,
+            })
+    end
+    if inp == InWidgets then  
+      if param.Value == 1.0 then
+         InCenter:SetAttrs({ PC_Visible = false })
+         InAngle:SetAttrs({ PC_Visible = false })
+         InPivot:SetAttrs({ PC_Visible = false })
+         InScale:SetAttrs({ PC_Visible = false })
+      else
+         InCenter:SetAttrs({ PC_Visible = true })
+         InAngle:SetAttrs({ PC_Visible = true })
+         InPivot:SetAttrs({ PC_Visible = true })
+         InScale:SetAttrs({ PC_Visible = true })
+      end
+    end
+	
+    if inp == InStop then  
+      if param.Value == 1 then
+	     InActtime:SetAttrs({IC_Visible = true})
+	  else
+	     InActtime:SetAttrs({IC_Visible = false})
+	  end
+	end  
+
+	if inp == InLogoSw then  
+	  if param.Value == 1 then
+		 --authorlogo:SetAttrs({IC_Visible = true})
+	  else
+		 --authorlogo:SetAttrs({IC_Visible = false})
+	  end
+	end 
+  end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle = -InAngle:GetValue(req).Value/360*3.1415*2
+    local debug = InDebug:GetValue(req).Value
+    local scale = InScale:GetValue(req).Value
+    local freq = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+   
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+   
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+    
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    
+	tex1 = false
+	tex2 = false
+      if (InImage1:GetValue(req) ~= nil) then
+         src1 = InImage1:GetValue(req)
+		 tex1 = true
+		 InGroundTexOff:SetAttrs({IC_Visible = true})
+		 InGroundTexScale:SetAttrs({IC_Visible = true})
+		 InRedCH:SetAttrs({IC_Visible = false})
+      else
+         src1 = Image(imgattrs)
+         src1:Fill(p)
+		 InGroundTexOff:SetAttrs({IC_Visible = false})
+		 InGroundTexScale:SetAttrs({IC_Visible = false})
+		 InRedCH:SetAttrs({IC_Visible = true})
+      end
+
+      if (InImage2:GetValue(req) ~= nil) then
+         src2 = InImage2:GetValue(req)
+		 tex2 = true
+		 InFigurTexOff:SetAttrs({IC_Visible = true})
+		 InFigurTexScale:SetAttrs({IC_Visible = true})
+		 InRed2CH:SetAttrs({IC_Visible = false})
+		 
+      else
+         src2 = Image(imgattrs)
+         src2:Fill(p)
+		 InFigurTexOff:SetAttrs({IC_Visible = false})
+		 InFigurTexScale:SetAttrs({IC_Visible = false})
+		 InRed2CH:SetAttrs({IC_Visible = true})
+      end
+	  
+  
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+    if req:IsPreCalc() then
+	   --print("\n######################### Precalc ##############################\n")
+	   local out = Image({IMG_Like = dst, IMG_NoData = true})
+       OutImage:Set(req, out)
+	   return
+	end
+
+
+
+    --StartStop	
+    if InStop:GetValue(req).Value == 0 then             
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   else
+	      _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	   end	
+	end
+
+    acttime = _acttime / framerate
+
+    
+    --Sep1:SetAttrs({LINKS_Name = "____________ProceduralWalkAnimation______________________",LBLC_LabelColor = 3,})
+    
+    node = DVIPComputeNode(req, "ProceduralWalkAnimationKernel", ProceduralWalkAnimationKernel, "ProceduralWalkAnimationParams", ProceduralWalkAnimationParams)
+
+    if not pcall(function () 
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.grdtex      = tex1
+		params.fgrtex      = tex2
+		params.fgrtexoff   = {InFigurTexOff:GetValue(req).X,InGroundTexOff:GetValue(req).Y}
+		params.fgrtexscale = InFigurTexScale:GetValue(req).Value
+        params.grdtexoff   = {InGroundTexOff:GetValue(req).X,InGroundTexOff:GetValue(req).Y}
+		params.grdtexscale = InGroundTexScale:GetValue(req).Value
+		params.ball        = InBall:GetValue(req).Value
+		params.head        = InHead:GetValue(req).Value
+        params.look        = {InLook:GetValue(req).X,InLook:GetValue(req).Y,InLookZ:GetValue(req).Value}
+        params.color       = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+		params.color2      = {InRed2CH:GetValue(req).Value, InGreen2CH:GetValue(req).Value, InBlue2CH:GetValue(req).Value}
+        
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+    
+        params.itime = acttime --req.Time / framerate
+    
+        node:SetParamBlock(params)
+    end) then
+        params = node:GetParamBlock(ProceduralWalkAnimationParams)
+    
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.grdtex      = tex1
+		params.fgrtex      = tex2
+		params.fgrtexoff   = {InFigurTexOff:GetValue(req).X,InGroundTexOff:GetValue(req).Y}
+		params.fgrtexscale = InFigurTexScale:GetValue(req).Value
+        params.grdtexoff   = {InGroundTexOff:GetValue(req).X,InGroundTexOff:GetValue(req).Y}
+		params.grdtexscale = InGroundTexScale:GetValue(req).Value
+		params.ball        = InBall:GetValue(req).Value
+		params.head        = InHead:GetValue(req).Value
+        params.look        = {InLook:GetValue(req).X,InLook:GetValue(req).Y,InLookZ:GetValue(req).Value}
+        params.color       = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+		params.color2      = {InRed2CH:GetValue(req).Value, InGreen2CH:GetValue(req).Value, InBlue2CH:GetValue(req).Value}
+        
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+        
+        params.itime = acttime  --req.Time / framerate
+    
+        node:SetParamBlock(params)
+    
+    end
+
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+     node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR, TEX_ADDRESS_MODE_CLAMP, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+	node:AddInput("iChannel1", src2)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Fehlerausgabe des DCTL
+    end
+
+    OutImage:Set(req, dst)
+	collectgarbage();
+end
+
+-- **/ "End of LUA CODE"
+
+
+function StandardShaderFuseTopControls()
+  -- Branding
+  self:AddInput('<p align="center"><a href="https://github.com/nmbr73/Shadertoys"><img height="20" width="210" src="data:image/png;base64,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" /></a></p>',
+  "DctlFuseBrandLabel", {
+    IC_ControlPage = -1 ,
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    LBLC_MultiLine = true,
+    IC_NoLabel = true,
+    IC_NoReset = true,
+    INP_External = false,
+    INP_Passive = true,
+  })
+end
+
+function StandardShaderFuseBottomControls()
+
+  local version_info=''
+
+  if dctlfuse_versionNo == nil then dctlfuse_versionNo='' end
+  if dctlfuse_versionDate == nil then dctlfuse_versionDate='' end
+
+  if dctlfuse_versionNo=='' and dctlfuse_versionDate=='' then
+    version_info=''
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate=='' then
+    version_info='Fuse version '..dctlfuse_versionNo
+  elseif dctlfuse_versionNo == '' and dctlfuse_versionDate~='' then
+    version_info=dctlfuse_versionDate
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate~='' then
+    version_info='Version '..dctlfuse_versionNo..' - '..dctlfuse_versionDate
+  end
+
+  if version_info ~= '' then
+    version_info=version_info..'<br />'
+  end
+
+  -- self:BeginControlNest("Shaderfuse Info", "Shaderfuse_Info", true, {})
+
+  -- Separator
+  self:AddInput( '<br />',"DctlFuseSeparatorLabel",{LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+  -- Info Btn
+  self:AddInput(dctlfuse_name.." Info ...", "DctlFuseInfoButton", {IC_ControlPage = 1,LINKID_DataType = "Text",INPID_InputControl = "ButtonControl",INP_DoNotifyChanged = false,INP_External = false,BTNCS_Execute = 'bmd.openurl("'..(dctlfuse_infourl~=nil and dctlfuse_infourl or 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html')..'")'})
+  -- Info Txt
+  self:AddInput('<p align="center">'
+    ..'Shadertoy <a href="https://www.shadertoy.com/view/'..shadertoy_id..'" style="color:white; text-decoration:none; ">'..shadertoy_name..'</a> by <a href="https://www.shadertoy.com/user/'..shadertoy_author..'" style="color:#a0a060; text-decoration:none; ">'..shadertoy_author..'</a><br />'
+    ..'<span style="color:#a06060; ">'..(shadertoy_license == "" and '&copy; '..shadertoy_author..' (CC BY-NC-SA 3.0)' or shadertoy_license)..'</span><br />'
+    ..'DCTLified and DaFused by <a href="'..(dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl)..'" style="color:#a0a060; text-decoration:none; ">'..dctlfuse_author..'</a><br />'
+    ..version_info
+    ..'Reactor package v'..SHADERFUSES_REACTOR_PACKAGE_VERSION..' created '..SHADERFUSES_REACTOR_PACKAGE_DATE..'<br />'
+    ,"DctlFuseInfoLabel", {IC_ControlPage = 1, LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+
+    -- self:EndControlNest()
+
+  end
+
+-- */
