@@ -1,0 +1,1 @@
+On the home page of [Shadertoy.com](https://www.shadertoy.com) the "[Shader of the Week](https://www.shadertoy.com/playlist/week)" is presented. If such a shader can be converted to DCTL (and its license allows it), the corresponding Fuse is published here.

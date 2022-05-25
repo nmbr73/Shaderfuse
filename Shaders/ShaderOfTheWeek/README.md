@@ -12,6 +12,9 @@
 
 # ShaderOfTheWeek Shaders
 
+On the home page of [Shadertoy.com](https://www.shadertoy.com) the "[Shader of the Week](https://www.shadertoy.com/playlist/week)" is presented. If such a shader can be converted to DCTL (and its license allows it), the corresponding Fuse is published here.
+
+
 ## **[AlexanderHornedSphereZoom](AlexanderHornedSphereZoom.md)**
 based on [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW) written by [tmst](https://www.shadertoy.com/user/tmst)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
