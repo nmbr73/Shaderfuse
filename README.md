@@ -46,6 +46,8 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=3ikzubTYlm0" target="_blank"><img src="http://img.youtube.com/vi/3ikzubTYlm0/0.jpg" alt="Demo 18" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/3ikzubTYlm0?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=EIIfA28pvZQ" target="_blank"><img src="http://img.youtube.com/vi/EIIfA28pvZQ/0.jpg" alt="Demo 19" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/EIIfA28pvZQ?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=68haN89yG7A" target="_blank"><img src="http://img.youtube.com/vi/68haN89yG7A/0.jpg" alt="Demo 20" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/68haN89yG7A?style=social" /></a></td>
+<tr>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=V5BVk5RO3yk" target="_blank"><img src="http://img.youtube.com/vi/V5BVk5RO3yk/0.jpg" alt="Demo 21" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/V5BVk5RO3yk?style=social" /></a></td>
 </tr>
 </table>
 </center>
@@ -62,10 +64,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (18th of May 2022):**
+**Current Shader of the Week (25th of May 2022):**
 
-[![PigSquad](https://user-images.githubusercontent.com/78935215/169035117-051e7d99-063e-4783-b7f5-da3b4d56d628.gif)
-](Shaders/ShaderOfTheWeek/PigSquad.md)
+[![NightCircuit](https://user-images.githubusercontent.com/78935215/170346986-2211ffd6-2c0b-40ba-898d-bfb2d33d98fa.gif)
+](Shaders/ShaderOfTheWeek/NightCircuit.md)
 
 
 

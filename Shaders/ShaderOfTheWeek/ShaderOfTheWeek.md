@@ -3,6 +3,12 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 25th of May 2022
+#### NightCircuit (Shadertoy ID [tdyBR1](https://www.shadertoy.com/view/tdyBR1))
+[![NightCircuit](https://user-images.githubusercontent.com/78935215/170346986-2211ffd6-2c0b-40ba-898d-bfb2d33d98fa.gif)
+](NightCircuit.md)
+
+---
 ## 18th of May 2022
 #### Pig Squad (Shadertoy ID [WdBcRh](https://www.shadertoy.com/view/WdBcRh))
 [![PigSquad](https://user-images.githubusercontent.com/78935215/169035117-051e7d99-063e-4783-b7f5-da3b4d56d628.gif)](PigSquad.md)
