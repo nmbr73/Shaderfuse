@@ -7,7 +7,7 @@ Based on '_[Fork Newton Pendulum](https://www.shadertoy.com/view/7sXyzX)_' by [l
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - [X] Tested on Windows/OpenCL

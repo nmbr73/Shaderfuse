@@ -14,7 +14,7 @@ Have Fun playing
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [ ] Tested on macOS/Metal :bomb: *`radians` unknown*
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

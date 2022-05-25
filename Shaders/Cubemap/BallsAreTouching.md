@@ -7,7 +7,7 @@ Based on '_[balls are touching](https://www.shadertoy.com/view/MdlGWn)_' by [w23
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - [X] Tested on Windows/OpenCL
