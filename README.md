@@ -66,9 +66,10 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 
 **Current Shader of the Week (25th of May 2022):**
 
-[![NightCircuit](https://user-images.githubusercontent.com/78935215/170346986-2211ffd6-2c0b-40ba-898d-bfb2d33d98fa.gif)
-](Shaders/ShaderOfTheWeek/NightCircuit.md)
+[![NightCircuit](https://user-images.githubusercontent.com/78935215/170346986-2211ffd6-2c0b-40ba-898d-bfb2d33d98fa.gif)](Shaders/ShaderOfTheWeek/NightCircuit.md)
 
+
+[Link](Shaders/ShaderOfTheWeek/NightCircuit.md)
 
 
 # Fuses
