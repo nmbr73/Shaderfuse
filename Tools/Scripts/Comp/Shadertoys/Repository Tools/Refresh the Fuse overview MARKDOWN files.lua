@@ -103,6 +103,19 @@ function updateMarkdown(fuses)
       readme_cat:write("# "..fuse.file_category.." Shaders\n\n")
 
 
+      local description_cat = io.open(user_config.pathToRepository..'Shaders/'..fuse.file_category..'/DESCRIPTION.md',"r")
+      local description = ''
+
+      if description_cat then
+        print("description found")
+        description = description_cat:read "*a"
+        description_cat:close()
+      end
+
+      if description ~= nil and description ~= '' then
+        readme_cat:write(description.."\n\n")
+      end
+
     end
 
     if fuse.error then

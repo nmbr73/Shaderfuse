@@ -12,6 +12,9 @@
 
 # Planet Shaders
 
+Planet shaders are shaders that generally render planets. The following tasks should be mentioned: surface texture, moving atmosphere, the use of bump maps or displacement for the surface texture. Rotations and movements in relation to the background or additional planets or suns and their throwing of light or shadow represent further challenges. The boundary between some blobs and planets is fluid.
+
+
 ## **[CrackerCars](CrackerCars.md)**
 based on [CrackerCars](https://www.shadertoy.com/view/4sdXzr) written by [zackpudil](https://www.shadertoy.com/user/zackpudil)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
