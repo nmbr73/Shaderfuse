@@ -16,7 +16,7 @@ local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 
 
 function updateMarkdown(fuses)
-  print("update markdown files")
+  -- print("update markdown files")
   fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
 
@@ -107,7 +107,7 @@ function updateMarkdown(fuses)
       local description = ''
 
       if description_cat then
-        print("description found")
+        -- print("description found")
         description = description_cat:read "*a"
         description_cat:close()
       end
