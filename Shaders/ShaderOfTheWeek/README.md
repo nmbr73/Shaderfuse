@@ -48,6 +48,9 @@ based on [HyperDough](https://www.shadertoy.com/view/7tcGWB) written by [Tater](
 ## **[Lover](Lover.md)**
 based on [Lover](https://www.shadertoy.com/view/fsjyR3) written by [wyatt](https://www.shadertoy.com/user/wyatt)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[NightCircuit](NightCircuit.md)**
+based on [Night circuit](https://www.shadertoy.com/view/tdyBR1) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[OMZGShaderRoyale](OMZGShaderRoyale.md)**
 based on [OMZG Shader Royale](https://www.shadertoy.com/view/stXyWN) written by [NuSan](https://www.shadertoy.com/user/NuSan)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

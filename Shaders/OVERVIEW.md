@@ -677,6 +677,14 @@ Author: [wyatt](https://www.shadertoy.com/user/wyatt)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/NightCircuit](ShaderOfTheWeek/NightCircuit_320x180.png)\
+Fuse: [NightCircuit](ShaderOfTheWeek/NightCircuit.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Night circuit](https://www.shadertoy.com/view/tdyBR1)\
+Author: [gaz](https://www.shadertoy.com/user/gaz)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale_320x180.png)\
 Fuse: [OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -893,7 +901,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 103
+:four_leaf_clover: 104
 
 :boom: 1
 

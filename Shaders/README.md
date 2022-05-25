@@ -123,6 +123,7 @@
 - [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) (Shadertoy ID [wdScRd](https://www.shadertoy.com/view/wdScRd)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [HyperDough](ShaderOfTheWeek/HyperDough.md) (Shadertoy ID [7tcGWB](https://www.shadertoy.com/view/7tcGWB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Lover](ShaderOfTheWeek/Lover.md) (Shadertoy ID [fsjyR3](https://www.shadertoy.com/view/fsjyR3)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [NightCircuit](ShaderOfTheWeek/NightCircuit.md) (Shadertoy ID [tdyBR1](https://www.shadertoy.com/view/tdyBR1)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale.md) (Shadertoy ID [stXyWN](https://www.shadertoy.com/view/stXyWN)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [OnTheSal](ShaderOfTheWeek/OnTheSal.md) (Shadertoy ID [fsXcR8](https://www.shadertoy.com/view/fsXcR8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [PartyConcertVisuals2020](ShaderOfTheWeek/PartyConcertVisuals2020.md) (Shadertoy ID [WtscW4](https://www.shadertoy.com/view/WtscW4)) ported by [JiPi](../Site/Profiles/JiPi.md)
