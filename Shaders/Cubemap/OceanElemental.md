@@ -7,7 +7,7 @@ Based on '_[OCEAN ELEMENTAL](https://www.shadertoy.com/view/NdS3zK)_' by [alro](
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [ ] Tested on macOS/Metal :bomb: *`refract_f3`redefined*
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - [X] Tested on Windows/OpenCL

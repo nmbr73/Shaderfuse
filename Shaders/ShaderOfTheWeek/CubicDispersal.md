@@ -11,7 +11,7 @@ Based on '_[Cubic Dispersal](https://www.shadertoy.com/view/fldXWS)_' by [Tater]
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - [X] Tested on Windows/OpenCL

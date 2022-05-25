@@ -7,7 +7,7 @@ Based on '_[KISS Tracing5](https://www.shadertoy.com/view/sttXWX)_' by [tsaari42
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [ ] Tested on macOS/Metal :frog: *seems to be broken*
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - [X] Tested on Windows/OpenCL

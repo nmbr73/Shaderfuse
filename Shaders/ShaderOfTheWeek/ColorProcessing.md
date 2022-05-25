@@ -8,7 +8,7 @@ Based on '_[Color processing](https://www.shadertoy.com/view/7tfBzs)_' by [sinve
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

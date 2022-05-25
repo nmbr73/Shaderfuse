@@ -8,7 +8,7 @@ Based on '_[Glass and Bubble](https://www.shadertoy.com/view/XdVSRV)_' by [Tamba
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - [X] Tested on Windows/OpenCL

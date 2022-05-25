@@ -16,7 +16,7 @@ Have fun playing
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal :bomb:
+- [ ] Tested on macOS/Metal :bomb::bomb::bomb: *Fusion crashes*
 - [ ] Tested on macOS/OpenCL
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL

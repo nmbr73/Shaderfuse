@@ -13,7 +13,7 @@ In the shader fuse, the color of the top and bottom, the eyes and the tongue can
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
+- [x] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - [X] Tested on Windows/OpenCL
