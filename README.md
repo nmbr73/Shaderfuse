@@ -69,6 +69,8 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 [![NightCircuit](https://user-images.githubusercontent.com/78935215/170346986-2211ffd6-2c0b-40ba-898d-bfb2d33d98fa.gif)](Shaders/ShaderOfTheWeek/NightCircuit.md)
 
 
+[Link](Shaders/ShaderOfTheWeek/NightCircuit.md)
+
 
 # Fuses
 
