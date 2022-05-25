@@ -11,9 +11,15 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 
 
-
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Night circuit](https://www.shadertoy.com/view/tdyBR1)| incub | ShaderOfTheWeek 21/22 |
+|[Mationi- Blue Neon Border](https://www.shadertoy.com/view/7dccR7)| incub | Rahmen viele Parameter!! |
+|[FlightControlCenter](https://www.shadertoy.com/view/fljfWR)| defect | Reihenfolge der Buffer ? |
+|[shifting scales](https://www.shadertoy.com/view/7styz4)| incub | AB |
+|[Soap MetaBubble](https://www.shadertoy.com/view/sdcyz4)| incub | Bubble vor Text mit Font1 umgebaut |
+|[Emergence of life](https://www.shadertoy.com/view/Wt2BR1)| incub | ABCD Cooler Effekt !! 26 Parameter Blending |
+|[Simple Incompressible Fluid](https://www.shadertoy.com/view/fdcyzr)| incub | ABCD cooler Effekt ! Blending !! |
 |[Pig Squad 9 Year Anniversary](https://www.shadertoy.com/view/WdBcRh)| incub | ShaderOfTheWeek 20/22 |
 |[Liquid Toy ](https://www.shadertoy.com/view/fljBWc)| incub | BrushToy und LiquidToy zusammengeführt |
 |[Brush toy](https://www.shadertoy.com/view/NlSBW3)| incub | Cooler Effekt ! |
