@@ -3,18 +3,18 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 03th of June 2022
+#### CoastalLandscapet (Shadertoy ID [fstyD4](https://www.shadertoy.com/view/fstyD4))
+[![CoastalLandscape](https://user-images.githubusercontent.com/78935215/171990744-ed32ac74-2b33-4bb9-9f84-2012da2f967e.gif)](CoastalLandscape.md)
+
+[Link](CoastalLandscape.md)
+
+---
 ## 25th of May 2022
 #### NightCircuit (Shadertoy ID [tdyBR1](https://www.shadertoy.com/view/tdyBR1))
 [![NightCircuit](https://user-images.githubusercontent.com/78935215/170346986-2211ffd6-2c0b-40ba-898d-bfb2d33d98fa.gif)](NightCircuit.md)
 
-[Warum geht dieser Link und der darüber nicht](NightCircuit.md)
-
-
-Test
-
-[![NightCircuit][NC_Gif]](NightCircuit.md)
-
-[NC_Gif]: https://user-images.githubusercontent.com/78935215/170346986-2211ffd6-2c0b-40ba-898d-bfb2d33d98fa.gif
+[Link](NightCircuit.md)
 
 ---
 ## 18th of May 2022

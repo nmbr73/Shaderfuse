@@ -64,12 +64,12 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-**Current Shader of the Week (25th of May 2022):**
+**Current Shader of the Week (03th of June 2022):**
 
-[![NightCircuit](https://user-images.githubusercontent.com/78935215/170346986-2211ffd6-2c0b-40ba-898d-bfb2d33d98fa.gif)](Shaders/ShaderOfTheWeek/NightCircuit.md)
+[![CoastalLandscape](https://user-images.githubusercontent.com/78935215/171990744-ed32ac74-2b33-4bb9-9f84-2012da2f967e.gif)](Shaders/ShaderOfTheWeek/NightCircuit.md)
 
 
-[Link](Shaders/ShaderOfTheWeek/NightCircuit.md)
+[Link](Shaders/ShaderOfTheWeek/CoastalLandscape.md)
 
 
 # Fuses

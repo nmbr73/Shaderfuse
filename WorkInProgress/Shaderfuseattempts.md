@@ -13,6 +13,24 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Coastal Landscape](https://www.shadertoy.com/view/fstyD4)| Fuse | ShaderofTheWeek 22/22 |
+|[maybe something behind this](https://www.shadertoy.com/view/flSfWV)| incub | Cooler Effekt ohne Buffer !! |
+|[HD LIQUID](https://www.shadertoy.com/view/sdVXWt)| incub | Cooler Effekt ohne Buffer !! |
+|[Fireworks 3d](https://www.shadertoy.com/view/tsX3DN)| incub | ! |
+|[This is podracing!](https://www.shadertoy.com/view/NljBWt)| incub | ! |
+|[Lustre creme from ....](https://www.shadertoy.com/view/MscGWX)| incub | Cooler Effekt AB !|
+|[reaction diffusion + lighting](https://www.shadertoy.com/view/7dBBRG)| incub | A |
+|[cranks2 difficult](https://www.shadertoy.com/view/7l2BRd)| incub |  |
+|[FS Jet Engine Flame](https://www.shadertoy.com/view/7scczj)| incub | sehr realistische Flamme ! |
+|[Visceral Infection](https://www.shadertoy.com/view/7ddcW7)| incub | ! |
+|[SoundSpector](https://www.shadertoy.com/view/4sdyRH)| incub | Audioreactiv ! |
+|[Tex Puff Ball](https://www.shadertoy.com/view/7d3czS)| incub | Lustiger Effekt !|
+|[Gas emitter](https://www.shadertoy.com/view/st3GR7)| defect | texelfetch läßt sich nicht emulieren |
+|[Generative Beat](https://www.shadertoy.com/view/NdccWN)| incub | A ! |
+|[Dodecaplex2](https://www.shadertoy.com/view/NdtcD8)| incub |  |
+|[TL // Atom Pulse](https://www.shadertoy.com/view/fdcyWN)| incub | + Atom Distort + Atoms Noise Circle + Atom Supernova !! |
+|[Fork LIGHTNING Storm LenoC 619](https://www.shadertoy.com/view/sd3cDN)| incub | sehr coole Wolke mit Blitzen !  |
+
 |[Night circuit](https://www.shadertoy.com/view/tdyBR1)| incub | ShaderOfTheWeek 21/22 |
 |[Mationi- Blue Neon Border](https://www.shadertoy.com/view/7dccR7)| incub | Rahmen viele Parameter!! |
 |[FlightControlCenter](https://www.shadertoy.com/view/fljfWR)| defect | Reihenfolge der Buffer ? |
