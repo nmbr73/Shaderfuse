@@ -599,10 +599,20 @@ Author: [0b5vr](https://www.shadertoy.com/user/0b5vr)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-![ShaderOfTheWeek/ColorProcessing](ShaderOfTheWeek/ColorProcessing_320x180.png)\
-Fuse: [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) :boom:\
+![ShaderOfTheWeek/CoastalLandscape](ShaderOfTheWeek/CoastalLandscape_320x180.png)\
+Fuse: [CoastalLandscape](ShaderOfTheWeek/CoastalLandscape.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-**Fuse name does not correspond to filename´**
+Shadertoy: [Coastal Landscape](https://www.shadertoy.com/view/fstyD4)\
+Author: [bitless](https://www.shadertoy.com/user/bitless)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/ColorProcessing](ShaderOfTheWeek/ColorProcessing_320x180.png)\
+Fuse: [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Color processing](https://www.shadertoy.com/view/7tfBzs)\
+Author: [sinvec](https://www.shadertoy.com/user/sinvec)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/CubicDispersal](ShaderOfTheWeek/CubicDispersal_320x180.png)\
@@ -901,7 +911,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 104
-
-:boom: 1
+:four_leaf_clover: 106
 

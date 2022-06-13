@@ -21,8 +21,11 @@ based on [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW) w
 ## **[ClubCave09](ClubCave09.md)**
 based on [20210930_CLUB-CAVE-09](https://www.shadertoy.com/view/ss3SD8) written by [0b5vr](https://www.shadertoy.com/user/0b5vr)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[ColorProcessing](ColorProcessing.md)** :boom:
-- *Fuse name does not correspond to filename´*
+## **[CoastalLandscape](CoastalLandscape.md)**
+based on [Coastal Landscape](https://www.shadertoy.com/view/fstyD4) written by [bitless](https://www.shadertoy.com/user/bitless)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[ColorProcessing](ColorProcessing.md)**
+based on [Color processing](https://www.shadertoy.com/view/7tfBzs) written by [sinvec](https://www.shadertoy.com/user/sinvec)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[CubicDispersal](CubicDispersal.md)**
 based on [Cubic Dispersal](https://www.shadertoy.com/view/fldXWS) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
