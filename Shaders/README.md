@@ -113,7 +113,8 @@
 **[ShaderOfTheWeek Shaders](ShaderOfTheWeek/README.md)**
 - [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md) (Shadertoy ID [ttyGzW](https://www.shadertoy.com/view/ttyGzW)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ClubCave09](ShaderOfTheWeek/ClubCave09.md) (Shadertoy ID [ss3SD8](https://www.shadertoy.com/view/ss3SD8)) ported by [JiPi](../Site/Profiles/JiPi.md)
-- [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) :boom:
+- [CoastalLandscape](ShaderOfTheWeek/CoastalLandscape.md) (Shadertoy ID [fstyD4](https://www.shadertoy.com/view/fstyD4)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) (Shadertoy ID [7tfBzs](https://www.shadertoy.com/view/7tfBzs)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [CubicDispersal](ShaderOfTheWeek/CubicDispersal.md) (Shadertoy ID [fldXWS](https://www.shadertoy.com/view/fldXWS)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) (Shadertoy ID [wlVSDK](https://www.shadertoy.com/view/wlVSDK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Day94](ShaderOfTheWeek/Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM)) ported by [JiPi](../Site/Profiles/JiPi.md)
