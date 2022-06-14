@@ -13,6 +13,17 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Jeweled Vortex](https://www.shadertoy.com/view/fdjfDc)| incub | ShaderofTheWeek 24/22  |
+|[Neonwave sunrise](https://www.shadertoy.com/view/7dyyRy)| incub |  |
+|[plasma storm](https://www.shadertoy.com/view/7sdcWM)| incub |  |
+|[Getting into/out of hyperspace](https://www.shadertoy.com/view/NdKyD1)| incub |  |
+|[Cellular Diffusion](https://www.shadertoy.com/view/NsKcD1)| incub |  |
+|[Fountains *](https://www.shadertoy.com/view/NsyyWW)| incub | ABCD cool |
+|[FrogTry](https://www.shadertoy.com/view/sdVyDW)| incub | Galaxy - Mouseslider |
+|[fluffballs](https://www.shadertoy.com/view/fscczX)| incub | Shader Of The Week 23/22 - Volumen |
+|[Anisotropic Blur Image Warp](https://www.shadertoy.com/view/ldcSDB)| Fuse | Ölsimulation - OpenCL BW ?|
+|[Reaction-Diffusion-Stamps](https://www.shadertoy.com/view/sdVyzR)| incub | sehr aufwändig !! |
+|[Creepy Trails](https://www.shadertoy.com/view/fdVcRR)| incub |  |
 |[Coastal Landscape](https://www.shadertoy.com/view/fstyD4)| Fuse | ShaderofTheWeek 22/22 |
 |[maybe something behind this](https://www.shadertoy.com/view/flSfWV)| incub | Cooler Effekt ohne Buffer !! |
 |[HD LIQUID](https://www.shadertoy.com/view/sdVXWt)| incub | Cooler Effekt ohne Buffer !! |

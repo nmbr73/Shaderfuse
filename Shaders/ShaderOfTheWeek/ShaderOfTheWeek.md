@@ -3,6 +3,18 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 14th of June 2022
+#### JeweledVortex (Shadertoy ID [fdjfDc](https://www.shadertoy.com/view/fdjfDc))
+[![JeweledVortex](https://user-images.githubusercontent.com/78935215/173695169-18a5f11d-28a6-4c4a-bedc-66b2ddeaeeee.gif)](JeweledVortex.md)
+
+[Link](JeweledVortex.md)
+---
+## 07th of June 2022
+#### fluffballs (Shadertoy ID [fscczX](https://www.shadertoy.com/view/fscczX))
+Not a worthwhile shader for fusion
+
+
+---
 ## 03th of June 2022
 #### CoastalLandscapet (Shadertoy ID [fstyD4](https://www.shadertoy.com/view/fstyD4))
 [![CoastalLandscape](https://user-images.githubusercontent.com/78935215/171990744-ed32ac74-2b33-4bb9-9f84-2012da2f967e.gif)](CoastalLandscape.md)
