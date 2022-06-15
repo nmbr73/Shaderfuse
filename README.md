@@ -48,6 +48,7 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=68haN89yG7A" target="_blank"><img src="http://img.youtube.com/vi/68haN89yG7A/0.jpg" alt="Demo 20" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/68haN89yG7A?style=social" /></a></td>
 <tr>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=V5BVk5RO3yk" target="_blank"><img src="http://img.youtube.com/vi/V5BVk5RO3yk/0.jpg" alt="Demo 21" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/V5BVk5RO3yk?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=83ZjzUh1NB0" target="_blank"><img src="http://img.youtube.com/vi/83ZjzUh1NB0/0.jpg" alt="Demo 21" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/83ZjzUh1NB0?style=social" /></a></td>
 </tr>
 </table>
 </center>
@@ -64,7 +65,7 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (03th of June 2022):**](Shaders/ShaderOfTheWeek/JeweledVortex.md)
+[**Current Shader of the Week (15th of June 2022):**](Shaders/ShaderOfTheWeek/JeweledVortex.md)
 
 [![JeweledVortex](https://user-images.githubusercontent.com/78935215/173695169-18a5f11d-28a6-4c4a-bedc-66b2ddeaeeee.gif)](Shaders/ShaderOfTheWeek/JeweledVortex.md)
 
@@ -79,6 +80,8 @@ And if you want to build shaderfuses yourself, you can see here which projects h
 
 ## Latest Conversions
 
+[![AnisotropicBlurImage](https://user-images.githubusercontent.com/78935215/173939861-554cd73b-f945-4af9-a775-42517b3e419d.gif)](Shaders/Recursive/AnisotropicBlurImage.md)
+[AnisotropicBlurImage](Shaders/Recursive/AnisotropicBlurImage.md)
 [![HappyBouncing](https://user-images.githubusercontent.com/78935215/147247710-5e0126ac-7252-4d47-8b03-96c461cf4564.gif
 )](Shaders/Object/HappyBouncing.md)
 [![ShareX](Shaders/Object/ShareX_320x180.png)](Shaders/Object/ShareX.md)
