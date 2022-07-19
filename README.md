@@ -48,7 +48,8 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=68haN89yG7A" target="_blank"><img src="http://img.youtube.com/vi/68haN89yG7A/0.jpg" alt="Demo 20" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/68haN89yG7A?style=social" /></a></td>
 <tr>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=V5BVk5RO3yk" target="_blank"><img src="http://img.youtube.com/vi/V5BVk5RO3yk/0.jpg" alt="Demo 21" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/V5BVk5RO3yk?style=social" /></a></td>
-<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=83ZjzUh1NB0" target="_blank"><img src="http://img.youtube.com/vi/83ZjzUh1NB0/0.jpg" alt="Demo 21" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/83ZjzUh1NB0?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=83ZjzUh1NB0" target="_blank"><img src="http://img.youtube.com/vi/83ZjzUh1NB0/0.jpg" alt="Demo 22" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/83ZjzUh1NB0?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=VwIa6QokOFk" target="_blank"><img src="http://img.youtube.com/vi/VwIa6QokOFk/0.jpg" alt="Demo 23" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/VwIa6QokOFk?style=social" /></a></td>
 </tr>
 </table>
 </center>
@@ -65,12 +66,12 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (15th of June 2022):**](Shaders/ShaderOfTheWeek/JeweledVortex.md)
+[**Current Shader of the Week (19th of July 2022):**](Shaders/ShaderOfTheWeek/ControllableMachinery.md)
 
-[![JeweledVortex](https://user-images.githubusercontent.com/78935215/173695169-18a5f11d-28a6-4c4a-bedc-66b2ddeaeeee.gif)](Shaders/ShaderOfTheWeek/JeweledVortex.md)
+[![ControllableMachinery](https://user-images.githubusercontent.com/78935215/179848409-935eed7a-d54c-48ae-b08f-6bc3365e07ed.gif)](Shaders/ShaderOfTheWeek/ControllableMachinery.md)
 
 
-[Link](Shaders/ShaderOfTheWeek/JeweledVortex.md)
+[Link](Shaders/ShaderOfTheWeek/ControllableMachinery.md)
 
 
 # Fuses

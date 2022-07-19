@@ -13,6 +13,33 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Silky Storm](https://www.shadertoy.com/view/fsKfzW)| incub | AB ! |
+|[Smell of Burning Plastic](https://www.shadertoy.com/view/7dyBRm)| incub | A ! |
+|[The door at the end of the world](https://www.shadertoy.com/view/fdVBRw)| incub | A ! |
+|[MPM dambreak](https://www.shadertoy.com/view/NdSczm)| incub | ABCD !! |
+|[rythmic fluid](https://www.shadertoy.com/view/XsyfDm)| incub | A ! Blending |
+|[Procedural Bricks](https://www.shadertoy.com/view/NdtBRB)| incub |  |
+|[impulse_glass_morph](https://www.shadertoy.com/view/NddfDX)| incub | ! |
+|[2D Walk Automata]( )| defekt |  |
+|[SCIGGLEW](https://www.shadertoy.com/view/sdsBWM)| incub | ! |
+|[Moon Rock 3000](https://www.shadertoy.com/view/NlSBz1 )| incub | ! |
+|[Strange Fluid](https://www.shadertoy.com/view/XdcGW2)| incub | A ! |
+|[Happy July 4th](https://www.shadertoy.com/view/7sdfzX)| incub | Feuerwerk |
+|[湍流 (Turbulence)](https://www.shadertoy.com/view/sd3fzs)| incub |  |
+|[Continuous Cellular Automata](https://www.shadertoy.com/view/sdXXRj)| incub | A ! |
+|[Spoon Life](https://www.shadertoy.com/view/fdfXWS)| incub | A ! |
+|[Mudcrack](https://www.shadertoy.com/view/7s3BzN)| incub | A ! |
+|[Variable Blobs](https://www.shadertoy.com/view/NdtfzM)| incub | ! |
+|[Phawq of Lovely Bubbles](https://www.shadertoy.com/view/fscSD8)| defect | Bubbles zerstört |
+|[fire trail](https://www.shadertoy.com/view/NsyyDV)| incub | ! Blending |
+|[feedback practice](https://www.shadertoy.com/view/sdVyDK)| incub | ! |
+|[Tree automata](https://www.shadertoy.com/view/Ns2XRh)| incub | ! |
+|[well bottom](https://www.shadertoy.com/view/Ns3BRH)| incub | ! |
+|[Moana Water Shader](https://www.shadertoy.com/view/wlsyzH)| incub | ! |
+|[Mouse Trails Soft](https://www.shadertoy.com/view/7sycRG)| incub | A ! |
+|[Curler 1.0](https://www.shadertoy.com/view/XsVBzd)| incub |  |
+|[Colors!](https://www.shadertoy.com/view/7dX3z7)| incub | ABC ! |
+|[Quantum Plant 2](https://www.shadertoy.com/view/NdKyRd)| incub |  |
 |[Jeweled Vortex](https://www.shadertoy.com/view/fdjfDc)| incub | ShaderofTheWeek 24/22  |
 |[Neonwave sunrise](https://www.shadertoy.com/view/7dyyRy)| incub |  |
 |[plasma storm](https://www.shadertoy.com/view/7sdcWM)| incub |  |

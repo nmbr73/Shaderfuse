@@ -3,6 +3,13 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 19th of July 2022
+#### ControllableMachinery (Shadertoy ID [fsXyDj](https://www.shadertoy.com/view/fsXyDj))
+[![ControllableMachinery](https://user-images.githubusercontent.com/78935215/179848409-935eed7a-d54c-48ae-b08f-6bc3365e07ed.gif)](ControllableMachinery.md)
+
+[Link](ControllableMachinery.md)
+
+---
 ## 14th of June 2022
 #### JeweledVortex (Shadertoy ID [fdjfDc](https://www.shadertoy.com/view/fdjfDc))
 [![JeweledVortex](https://user-images.githubusercontent.com/78935215/173695169-18a5f11d-28a6-4c4a-bedc-66b2ddeaeeee.gif)](JeweledVortex.md)
