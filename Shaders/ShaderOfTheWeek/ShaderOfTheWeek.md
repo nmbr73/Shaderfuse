@@ -2,6 +2,15 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+
+---
+## 17th of August 2022
+#### Frozen Wasteland (Shadertoy ID [Xls3D2](https://www.shadertoy.com/view/Xls3D2))
+[![FrozenWasteland](https://user-images.githubusercontent.com/78935215/185489092-77e9d33e-6ed6-4fcc-a386-af988f2e89c9.gif)
+](FrozenWasteland.md)
+
+[Link](FrozenWasteland.md)
+
 ---
 ## 19th of July 2022
 #### ControllableMachinery (Shadertoy ID [fsXyDj](https://www.shadertoy.com/view/fsXyDj))

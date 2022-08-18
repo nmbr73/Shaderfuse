@@ -13,6 +13,24 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Frozen Wasteland](https://www.shadertoy.com/view/Xls3D2)| Fuse | ShaderOFTheWeek 33/22  |
+|[torpedo amoeba](https://www.shadertoy.com/view/sttcWX)| incub | A ! |
+|[Simple Water Ripple Effect](https://www.shadertoy.com/view/wdtyDH)| incub | A |
+|[Letter Marbles](https://www.shadertoy.com/view/Nt3yW4)| incub | AB  |
+|[Self supporting SPH](https://www.shadertoy.com/view/7ddfRB)| incub | AB ! |
+|[Broken Screen](https://www.shadertoy.com/view/NdKXDd)| incub | A ! |
+|[Inter Membrane Space](https://www.shadertoy.com/view/fdGfR3)| incub | AB |
+|[sobel_filter_test](https://www.shadertoy.com/view/NdVBRt)| incub | ABC ! |
+|[n-pendulum](https://www.shadertoy.com/view/fsVBWG)| incub | AB !cool |
+|[3D Perlin Ice Cracks](https://www.shadertoy.com/view/fsyBRV)| defect | uint3 & << ^ |
+|[Cloudy Could Call](https://www.shadertoy.com/view/7sVBRd)| incub | AB ! |
+|[ERD slime mould](https://www.shadertoy.com/view/7dyBWd)| incub | ABCD !! Blending |
+|[Touchelou](https://www.shadertoy.com/view/7dVBWt)| incub |  |
+|[Noise animation - Electric](https://www.shadertoy.com/view/ldlXRS)| incub |  |
+|[Reaction Diffusion lolucky](https://www.shadertoy.com/view/fsyfzw)| incub | ABCD |
+|[Minimal Fluidish Simulacre](https://www.shadertoy.com/view/7dGfWw)| incub | A ! Blending |
+|[Giant Ventifacts Of Calientis V](https://www.shadertoy.com/view/7dGfWW)| incub |  |
+|[Non Iterative Particles](https://www.shadertoy.com/view/ssGfDw)| incub | AB ! Blending |
 |[Silky Storm](https://www.shadertoy.com/view/fsKfzW)| incub | AB ! |
 |[Smell of Burning Plastic](https://www.shadertoy.com/view/7dyBRm)| incub | A ! |
 |[The door at the end of the world](https://www.shadertoy.com/view/fdVBRw)| incub | A ! |

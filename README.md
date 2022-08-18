@@ -66,12 +66,13 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (19th of July 2022):**](Shaders/ShaderOfTheWeek/ControllableMachinery.md)
+[**Current Shader of the Week (17th of August 2022):**](Shaders/ShaderOfTheWeek/FrozenWasteland.md)
 
-[![ControllableMachinery](https://user-images.githubusercontent.com/78935215/179848409-935eed7a-d54c-48ae-b08f-6bc3365e07ed.gif)](Shaders/ShaderOfTheWeek/ControllableMachinery.md)
+[![FrozenWasteland](https://user-images.githubusercontent.com/78935215/185489092-77e9d33e-6ed6-4fcc-a386-af988f2e89c9.gif)
+](Shaders/ShaderOfTheWeek/FrozenWasteland.md)
 
 
-[Link](Shaders/ShaderOfTheWeek/ControllableMachinery.md)
+[Link](Shaders/ShaderOfTheWeek/FrozenWasteland.md)
 
 
 # Fuses
