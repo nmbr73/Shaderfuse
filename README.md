@@ -50,7 +50,7 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=V5BVk5RO3yk" target="_blank"><img src="http://img.youtube.com/vi/V5BVk5RO3yk/0.jpg" alt="Demo 21" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/V5BVk5RO3yk?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=83ZjzUh1NB0" target="_blank"><img src="http://img.youtube.com/vi/83ZjzUh1NB0/0.jpg" alt="Demo 22" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/83ZjzUh1NB0?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=VwIa6QokOFk" target="_blank"><img src="http://img.youtube.com/vi/VwIa6QokOFk/0.jpg" alt="Demo 23" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/VwIa6QokOFk?style=social" /></a></td>
-<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ArkJzr2Aej0" target="_blank"><img src="http://img.youtube.com/vi/VwIa6QokOFk/0.jpg" alt="Demo 24" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ArkJzr2Aej0?style=social" /></a></td>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ArkJzr2Aej0" target="_blank"><img src="http://img.youtube.com/vi/ArkJzr2Aej0/0.jpg" alt="Demo 24" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ArkJzr2Aej0?style=social" /></a></td>
 </tr>
 </table>
 </center>
