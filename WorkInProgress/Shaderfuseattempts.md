@@ -13,6 +13,35 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Mountains & Lakes](https://www.shadertoy.com/view/7tSSDD)| Fuse | ABCD !! |
+|[Tiny Planet Clouds](https://www.shadertoy.com/view/ldyXRw)| incub | ! |
+|[writings from hell](https://www.shadertoy.com/view/XltSzj)| incub | ABC ! |
+|[Bloody](https://www.shadertoy.com/view/4sKGWw)| incub | AB !! |
+|[Fast Thin-Film Interference](https://www.shadertoy.com/view/ld3SDl)| defect | funnycube braucht LOD |
+|[Columns and Lights](https://www.shadertoy.com/view/lsf3zr)| incub | ! |
+|[Sphere Gears](https://www.shadertoy.com/view/tt2XzG)| incub | ! Getriebekugel |
+|[Biomine](https://www.shadertoy.com/view/4lyGzR)| incub | ! |
+|[Robot prototype 01](https://www.shadertoy.com/view/slVczW)| incub | ! |
+|[Torus, Grid and Sentinel](https://www.shadertoy.com/view/ltcyW2)| incub | ABCD !! |
+|[Timewarp](https://www.shadertoy.com/view/ldl3zn)| incub | ! |
+|[Shadertoy](https://www.shadertoy.com/view/lslGDn)| incub |  |
+|[Meta CRT - Single Pass](https://www.shadertoy.com/view/NljGR1)| incub | !! |
+|[Nebula 18](https://www.shadertoy.com/view/Ws3yzH)| incub | A |
+|[Organic growth w/ convolution](https://www.shadertoy.com/view/ssGBRz)| incub | A |
+|[stable goo](https://www.shadertoy.com/view/MddfDM)| incub | A ! |
+|[basic planet](https://www.shadertoy.com/view/7dcBDs)| incub | ! |
+|[Cells cam](https://www.shadertoy.com/view/ftVyDR)| incub | A |
+|[Meta Soup](https://www.shadertoy.com/view/NttyRs)| incub | ! |
+|[TL // Noise vortex](https://www.shadertoy.com/view/Ns3cDN)| incub | ! |
+|[Star Nest](https://www.shadertoy.com/view/XlfGRj)| incub | Same as spacey boi  |
+|[spacey boi](https://www.shadertoy.com/view/NtcyDl)| incub | !! |
+|[mouse rot the universe](https://www.shadertoy.com/view/NldcR2)| incub | ! |
+|[2D Jelly](https://www.shadertoy.com/view/7t3cRf)| incub | A ! |
+|[Bloody](https://www.shadertoy.com/view/4sKGWw)| defect | AB |
+|[fluid 2 (number 2)](https://www.shadertoy.com/view/flKczR)| incub | AB ! |
+|[simple detailed fluid](https://www.shadertoy.com/view/sl3Szs)| incub | AB Repariert |
+|[Spark Phoenix](https://www.shadertoy.com/view/ftdyDX)| defect |  |
+|[Spinning Spark Clouds](https://www.shadertoy.com/view/ftccDX)| incub | ABCD ! |
 |[Frozen Wasteland](https://www.shadertoy.com/view/Xls3D2)| Fuse | ShaderOFTheWeek 33/22  |
 |[torpedo amoeba](https://www.shadertoy.com/view/sttcWX)| incub | A ! |
 |[Simple Water Ripple Effect](https://www.shadertoy.com/view/wdtyDH)| incub | A |
