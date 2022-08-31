@@ -4,6 +4,13 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 
 
 ---
+## 31th of August 2022
+#### SimpleRefractionTest (Shadertoy ID [flcSW2](https://www.shadertoy.com/view/flcSW2))
+[![SimpleRefractionTest](https://user-images.githubusercontent.com/78935215/187634245-973d63f6-7805-41bd-9586-996403a7b6f7.gif))
+](SimpleRefractionTest.md)
+
+[Link](SimpleRefractionTest.md)
+---
 ## 17th of August 2022
 #### Frozen Wasteland (Shadertoy ID [Xls3D2](https://www.shadertoy.com/view/Xls3D2))
 [![FrozenWasteland](https://user-images.githubusercontent.com/78935215/185489092-77e9d33e-6ed6-4fcc-a386-af988f2e89c9.gif)
