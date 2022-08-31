@@ -67,13 +67,11 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (17th of August 2022):**](Shaders/ShaderOfTheWeek/FrozenWasteland.md)
+[**Current Shader of the Week (31th of August 2022):**](Shaders/ShaderOfTheWeek/SimpleRefractionTest.md)
 
-[![FrozenWasteland](https://user-images.githubusercontent.com/78935215/185489092-77e9d33e-6ed6-4fcc-a386-af988f2e89c9.gif)
-](Shaders/ShaderOfTheWeek/FrozenWasteland.md)
+[![SimpleRefractionTest](https://user-images.githubusercontent.com/78935215/187634245-973d63f6-7805-41bd-9586-996403a7b6f7.gif))
+](Shaders/ShaderOfTheWeek/SimpleRefractionTest.md)
 
-
-[Link](Shaders/ShaderOfTheWeek/FrozenWasteland.md)
 
 
 # Fuses
