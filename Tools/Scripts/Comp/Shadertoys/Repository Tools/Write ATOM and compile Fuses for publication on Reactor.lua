@@ -1,3 +1,2 @@
-require("Shadertoys/write_atom")
+require("Shadertoys/function_writeAtom")
 writeAtom()
-
