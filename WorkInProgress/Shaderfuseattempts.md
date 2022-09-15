@@ -13,6 +13,55 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Twizzly Circle Mess](https://www.shadertoy.com/view/sltGRj)| incub | ShaderOfTheWeek |
+|[Cyborg Signature](https://www.shadertoy.com/view/7lcfz7)| defect | glow funktioniert nicht, step |
+|[bubble moving](https://www.shadertoy.com/view/sdt3zH)| incub | ! |
+|[JeanParticleVanDamme](https://www.shadertoy.com/view/WsKXWh)| incub | A ! |
+|[LOADING](https://www.shadertoy.com/view/NdKfDR)| incub | ! |
+|[Organic Fabrics I](https://www.shadertoy.com/view/flX3Wr)| incub | ABC !! |
+|[Color Dynamics](https://www.shadertoy.com/view/ttl3DN)| incub | ABC Dynamik fehlt |
+|[Tiny paint streams (530char)](https://www.shadertoy.com/view/7lVSDD)| incub | A supercool ! |
+|[entropy](https://www.shadertoy.com/view/stt3Wl)| incub |  |
+|[Particle Field](https://www.shadertoy.com/view/ttccWM)| incub |  |
+|[Vape](https://www.shadertoy.com/view/MssyDr)| incub | AB !! Blending |
+|[Sinusoidal Painting](https://www.shadertoy.com/view/fttBD8)| incub | AB !! |
+|[Mouseable Air Foil](https://www.shadertoy.com/view/lt3cDM)| incub | ABCD ! Blending |
+|[Paint Explotions](https://www.shadertoy.com/view/3dyXzV)| incub | A |
+|[chalk](https://www.shadertoy.com/view/wsGBRD)| incub | AB !! |
+|[Liquid Woman](https://www.shadertoy.com/view/lssXRf)| incub | cooler Effekt |
+|[Smokey](https://www.shadertoy.com/view/ldVGDw)| incub | A leider nicht wie im Original |
+|[Multi-Substance](https://www.shadertoy.com/view/WtffRM)| incub | ABCD ! |
+|[Game of life, again](https://www.shadertoy.com/view/ldGGRm)| incub | A !! |
+|[lomateron2x](https://www.shadertoy.com/view/7ltXRs)| incub | ABCD überarbeitet |
+|[Communicators](https://www.shadertoy.com/view/3tV3zt)| incub | ABCD !! |
+|[sad robot](https://www.shadertoy.com/view/XsXGDH)| defect | mat4 ? |
+|[Nonlinear Gears](https://www.shadertoy.com/view/MtdyzX)| incub | ABCD !! |
+|[Lovely Bubbles](https://www.shadertoy.com/view/Nl2SRc)| incub | A ! |
+|[Lego Shader](https://www.shadertoy.com/view/ftjczd)| incub |  |
+|[Infinite Sadness](https://www.shadertoy.com/view/tldcW7)| incub/defect | AB Simulation von Half2x16 unzureichend |
+|[Thermal Particles](https://www.shadertoy.com/view/4tKBDc)| incub | ABCD !!! |
+|[Continuous Gradient w. Direction](https://www.shadertoy.com/view/XtK3Dd)| incub | Sobel !! |
+|[Screen Bubbles](https://www.shadertoy.com/view/tsBSWh)| incub | ABC !! |
+|[Fixed Velocity](https://www.shadertoy.com/view/4lyBzG)| defect | ? |
+|[HardSurface Sphere [2]](https://www.shadertoy.com/view/fdGfW1)| defect | starke Störungen beim Umbau |
+|[Cellular Automata Particle Field](https://www.shadertoy.com/view/MdGGzG)| incub | A !! |
+|[Simple 2D Navier Stokes](https://www.shadertoy.com/view/ldd3WS)| incub | ABCD |
+|[Ink Ghost](https://www.shadertoy.com/view/4t3GDj)| incub | ABC !! |
+|[PBR Glint](https://www.shadertoy.com/view/wstcRH)| incub | dFdx/dFdy fehlt |
+|[p3 - drifts](https://www.shadertoy.com/view/4sGGR1)| incub | A |
+|[jean claude van gogh](https://www.shadertoy.com/view/MdGSDG)| incub |  |
+|[Fourier workflow 2 / phases info ](https://www.shadertoy.com/view/XtScWt )| incub | ABCD |
+|[Fourier workflow](https://www.shadertoy.com/view/4s3GDs)| incub | ABCD |
+|[Cartoonish WebCam: variant](https://www.shadertoy.com/view/4sfSR7)| incub |  |
+|[Neon Plasma Storm](https://www.shadertoy.com/view/4scGDH)| incub |  |
+|[Feather roots](https://www.shadertoy.com/view/WlSfRw)| defect | ABCD keine Drehungen |
+|[Burning Runes](https://www.shadertoy.com/view/MtSSRz)| incub | ! |
+|[Cool Lake [FORK] with Caustics](https://www.shadertoy.com/view/7tKyz3)| incub | Refract verhält sich anders |
+|[Water Surface Simulation](https://www.shadertoy.com/view/wl3cDj)| incub | ABC sehr gute Regentropfensimulation |
+|[Crosshatch](https://www.shadertoy.com/view/MdX3Dr)| incub |  |
+|[Perceptual Depth Poisson Solver](https://www.shadertoy.com/view/MlByW3)| incub | ABCD ! |
+|[simple refraction test](https://www.shadertoy.com/view/flcSW2)| Fuse | ShaderOfTheWeek 35/22 |
+|[Inky](https://www.shadertoy.com/view/4d3SD8)| incub | A |
 |[Mountains & Lakes](https://www.shadertoy.com/view/7tSSDD)| Fuse | ABCD !! |
 |[Tiny Planet Clouds](https://www.shadertoy.com/view/ldyXRw)| incub | ! |
 |[writings from hell](https://www.shadertoy.com/view/XltSzj)| incub | ABC ! |
