@@ -18,9 +18,9 @@ local SHADERFUSES_REACTOR_PACKAGE_DATE    = 'Oct 2022'
 
 --[[--/*
 
-  KissTracing.fuse
+  TwizzlyCircleMess.fuse
 
-  Based on https://www.shadertoy.com/view/sttXWX a WebGL shader created by tsaari42.
+  Based on https://www.shadertoy.com/view/sltGRj a WebGL shader created by SnoopethDuckDuck.
   Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
   Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
 
@@ -31,16 +31,16 @@ local SHADERFUSES_REACTOR_PACKAGE_DATE    = 'Oct 2022'
 
 -- /*
 -- MANDATORY -----------------------------------------------------------------
-local shadertoy_name       = "KISS Tracing 001: Spheres&Plane"
-local shadertoy_author     = "tsaari42"
-local shadertoy_id         = "sttXWX"
+local shadertoy_name       = "Twizzly Circle Mess"
+local shadertoy_author     = "SnoopethDuckDuck"
+local shadertoy_id         = "sltGRj"
 local shadertoy_license    = ""
-local dctlfuse_category    = "Cubemap"
-local dctlfuse_name        = "KissTracing"
+local dctlfuse_category    = "ShaderOfTheWeek"
+local dctlfuse_name        = "TwizzlyCircleMess"
 local dctlfuse_author      = "JiPi"
 -- OPTIONAL ------------------------------------------------------------------
 local dctlfuse_versionNo   = 1
-local dctlfuse_versionDate = "February 26, 2022"
+local dctlfuse_versionDate = "September 15, 2022"
 local dctlfuse_authorurl   = "https://www.youtube.com/c/JiPi_YT"
 local dctlfuse_authorlogo=nil
 
@@ -88,6 +88,8 @@ ShaderParameters =
   float  iResolution[2];
   float  iTime;
   float  iMouse[4];
+  float  Color[4];
+  float  Brightness;
 
   int    width,height;
   int    compOrder;
@@ -137,96 +139,48 @@ ShaderCompatibilityCode =
     #define swi2(A,a,b)     (A).a##b
     #define swi3(A,a,b,c)   (A).a##b##c
 
+    #define swi2S(a,b,c,d)   a.b##c = d
+
   #else
 
     #define swi2(A,a,b)     to_float2((A).a,(A).b)
     #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
 
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
   #endif
 
 // ----------------------------------------------------------------------------------------------------------
-// mat4 implementation
+// mat2 implementation
 // ----------------------------------------------------------------------------------------------------------
 
 #if defined(USE_NATIVE_METAL_IMPL)
 
-  typedef float4x4 mat4;
+  typedef float2x2 mat2;
 
-  __DEVICE__ inline mat4 to_mat4_f4( float4 a, float4 b, float4 c, float4 d ) { return mat4(a,b,c,d); }
-  __DEVICE__ inline float4 mul_mat4_f4( mat4 B, float4 A) { return (B*A); }
-  __DEVICE__ inline mat4 mul_mat4_mat4( mat4 A, mat4 B) { return (A*B); }
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
 
 #else
 
-  typedef struct { float4 r0; float4 r1; float4 r2; float4 r3; } mat4;
+  typedef struct { float2 r0; float2 r1; } mat2;
 
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
 
-__DEVICE__ inline mat4 to_mat4( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
-{
-  mat4 t;
-  t.r0.x = a; t.r0.y = b; t.r0.z = c; t.r0.w = d;
-  t.r1.x = e; t.r1.y = f; t.r1.z = g; t.r0.w = h;
-  t.r2.x = i; t.r2.y = j; t.r2.z = k; t.r0.w = l;
-  t.r3.x = m; t.r3.y = n; t.r3.z = o; t.r0.w = p;
-  return t;
-}
-
-
-__DEVICE__ inline mat4 to_mat4_f4( float4 A, float4 B, float4 C, float4 D)
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
   {
-    mat4 _ret;
-    _ret.r0 = A;
-    _ret.r1 = B;
-    _ret.r2 = C;
-    _ret.r3 = D;
-    return _ret;
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
   }
 
-__DEVICE__ inline float4 mul_mat4_f4( mat4 B, float4 A)
-  {
-    float4 C;
-    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x + A.w * B.r3.x;
-    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y + A.w * B.r3.y;
-    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z + A.w * B.r3.z;
-    C.w = A.x * B.r0.w + A.y * B.r1.w + A.z * B.r2.w + A.w * B.r3.w;
-    return C;
-}
-
-__DEVICE__ inline mat4 mul_mat4_mat4( mat4 B, mat4 A)
-{
-
-  float r[4][4];
-  float a[4][4] = {{A.r0.x, A.r0.y, A.r0.z, A.r0.w},
-                   {A.r1.x, A.r1.y, A.r1.z, A.r1.w},
-                   {A.r2.x, A.r2.y, A.r2.z, A.r2.w},
-                   {A.r3.x, A.r3.y, A.r3.z, A.r3.w}};
-  float b[4][4] = {{B.r0.x, B.r0.y, B.r0.z, B.r0.w},
-                   {B.r1.x, B.r1.y, B.r1.z, B.r1.w},
-                   {B.r2.x, B.r2.y, B.r2.z, B.r2.w},
-                   {B.r3.x, B.r3.y, B.r3.z, B.r3.w}};
-
-  for( int i = 0; i < 4; ++i)
-  {
-   for( int j = 0; j < 4; ++j)
-   {
-     r[i][j] = 0.0f;
-     for( int k = 0; k < 4; ++k)
-     {
-     r[i][j] = r[i][j] + a[i][k] * b[k][j];
-     }
-   }
-  }
-  mat4 R = to_mat4(r[0][0], r[0][1], r[0][2], r[0][3],
-                   r[1][0], r[1][1], r[1][2], r[1][3],
-                   r[2][0], r[2][1], r[2][2], r[2][3],
-                   r[3][0], r[3][1], r[3][2], r[3][3]);
-  return R;
-}
-#endif // end of mat4 implementation
+#endif // end of mat2 implementation
 
 #if defined(USE_NATIVE_METAL_IMPL)
 
- #define mod_f(a,b)  fmod((a),(b))
+ #define fract_f2(A) fract(A)
+
+ #define pow_f3(a,b) pow(a,b)
+ #define refract_f3(I,N,eta) refract(I,N,eta)
 
 #else
 
@@ -236,7 +190,17 @@ __DEVICE__ inline mat4 mul_mat4_mat4( mat4 B, mat4 A)
 
     #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
 
- #define mod_f(a,b) _fmod(a,b)
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define pow_f3(a,b) pow(a,b)
+
+__DEVICE__ float3 refract_f3(float3 I, float3 N, float eta) {
+   float dotNI = dot(N, I);
+   float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+   if (k < 0.0f) {
+      return to_float3_s(0.0f);
+   }
+   return eta * I - (eta * dotNI * _sqrtf(k)) * N; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+ }
 
  #else // Generic
 
@@ -246,7 +210,17 @@ __DEVICE__ inline mat4 mul_mat4_mat4( mat4 B, mat4 A)
 
     #define fract(a) ((a)-_floor(a))
 
- #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+ __DEVICE__ float3 refract_f3(float3 I, float3 N, float eta) {
+    float dotNI = dot(N, I);
+    float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+    if (k < 0.0f) {
+      return to_float3_s(0.0f);
+    }
+    return eta * I - (eta * dotNI * _sqrtf(k)) * N; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+ }
 
   #endif
 
@@ -296,196 +270,111 @@ ShaderKernelCode =
 // ----------------------------------------------------------------------------------
 // - Image                                                                          -
 // ----------------------------------------------------------------------------------
-// Connect Image 'Texture: Rock Tiles' to iChannel0
-// Connect Image 'Cubemap: St Peters Basilica_0' to iChannel1
+// Connect Image 'Cubemap: Uffizi Gallery_0' to iChannel0
+// Connect Image 'Cubemap: Uffizi Gallery Blurred_0' to iChannel1
 
-#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
 
-// Copyright (c) Timo Saarinen 2021
-// You can use this Work in a Good and Cool Spirit.
+// "RayMarching starting point"
+// by Martijn Steinrucken aka The Art of Code/BigWings - 2020
+// The MIT License
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// Email: countfrolic@gmail.com
+// Twitter: @The_ArtOfCode
+// YouTube: youtube.com/TheArtOfCodeIsCool
+// Facebook: https://www.facebook.com/groups/theartofcode/
 //
-// KISS Path Tracing 001: Spheres and a Plane
-//------------------------------------------------------------------------
-// There are two main approaches to rendering, rasterization
-// and ray tracing (RT). Like the name says, ray tracing is
-// just tracing through 3D space (usually), simple!
-//
-// Path Tracing is a type of ray tracing,
-// and at its heart.. very simple!
-//
-// From wikipedia [https://en.wikipedia.org/wiki/Path_tracing]:
-//   Path tracing is a computer graphics Monte Carlo method of rendering images of three-dimensional scenes such that the global illumination is faithful to reality. Fundamentally, the algorithm is integrating over all the illuminance arriving to a single point on the surface of an object. This illuminance is then reduced by a surface reflectance function (BRDF) to determine how much of it will go towards the viewpoint camera. This integration procedure is repeated for every pixel in the output image. When combined with physically accurate models of surfaces, accurate models of real light sources (light bulbs), and optically correct cameras, path tracing can produce still images that are indistinguishable from photographs.
-//   Path tracing naturally simulates many effects that have to be specifically added to other methods (conventional ray tracing or scanline rendering), such as soft shadows, depth of field, motion blur, caustics, ambient occlusion, and indirect lighting. Implementation of a renderer including these effects is correspondingly simpler. An extended version of the algorithm is realized by volumetric path tracing, which considers the light scattering of a scene.
-//   Due to its accuracy, unbiased nature, and algorithmic simplicity, path tracing is used to generate reference images when testing the quality of other rendering algorithms. However, the path tracing algorithm is relatively inefficient: a very large number of rays must be traced to get high-quality images free of noise artifacts. Several variants have been introduced which are more efficient than the original algorithm for many scenes, including bidirectional path tracing, volumetric path tracing, and Metropolis light transport.
-//
-// Spheres and planes are the common first examples of ray tracing,
-// with simple intersection code, so let's start with them..
-//
-// Unoptimized for clarity! Also disclaimer: WIP
-#define PI  3.141592f        // close enough
-#define EPSILON  0.0001f
-#define NOHIT  999999999.0f  // keep positive intersection miss, so can easily _fminf() the closest one
+// You can use this shader as a template for ray marching shaders
 
-#define ID_NONE        0
-#define ID_SPHERE01    1
-#define ID_SPHERE02    2
-#define ID_SPHERE03    3
-#define ID_PLANE       4
+// set these really low so my computer can handle it + dont mind the glitchy look
+#define MAX_STEPS 40
+#define MAX_DIST 20.0f
+#define SURF_DIST 0.05f
 
+#define S smoothstep
+#define T iTime
 
-
-// Animate sphere positions
-__DEVICE__ float3 sphere_center(int n, float sphere_radius, float iTime) {
-    float3 p;
-    // rotate around the world center, sphere bottom touching the floor
-    p.x = _sinf(iTime + (float)(n)*2.0f*PI/3.0f)*(sphere_radius + _fabs(_sinf(iTime))*sphere_radius);
-    p.z = _cosf(iTime + (float)(n)*2.0f*PI/3.0f)*(sphere_radius + _fabs(_sinf(iTime))*sphere_radius);
-    p.y = sphere_radius;
-
-    // and.. bounce!
-    float ifreq = 2.0f*PI;
-    float dur = 0.75f;
-    float t = (mod_f(iTime, ifreq) - (ifreq-dur)) / dur; // [0,1] if bouncing
-    if(t >= 0.0f) p.y += _fabs(_sinf(t*PI)*sphere_radius*2.0f); // jump!
-    return p;
+__DEVICE__ mat2 Rot(float a) {
+    float s=_sinf(a), c=_cosf(a);
+    return to_mat2(c, -s, s, c);
 }
 
-// Let's use full 4x4 transformation matrices here.
-//
-// One way is think them as 4 x vec4:
-//      to_float4(swi3(xaxis,x,y,z), translation.x)
-//      to_float4(swi3(yaxis,x,y,z), translation.y)
-//      to_float4(swi3(zaxis,x,y,z), translation.z)
-//      to_float4(0, 0, 0,   1.0f)
-//
-// TODO: open more?
-// TODO: looking "top-down" 4D vector .w component is
-//     0.0f for directions (X/Y/Z) and
-//     1.0f for locations (T)
-
-// Look from origin "o" to target point "p" with up vector "up"
-__DEVICE__ mat4 lookat(in float3 o, in float3 p, in float3 up)
-{
-    float3 delta = p - o;
-    float3 z = normalize(delta); // the direction to look at (Z-axis)
-    float3 x = normalize(cross(z, up)); // -> to-right direction (X-axis)
-    float3 y = normalize(cross(x, z)); // -> to-up direction (Y-axis)
-
-    // let's do it "unwrapped" for now..
-    mat4 translation = to_mat4_f4(
-        to_float4(1, 0, 0, -o.x),
-        to_float4(0, 1, 0, -o.y),
-        to_float4(0, 0, 1, -o.z),
-        to_float4(0, 0, 0, 1));
-
-    mat4 rotation = to_mat4_f4(
-        to_float4_aw(swi3(x,x,y,z), 0),
-        to_float4_aw(swi3(y,x,y,z), 0),
-        to_float4_aw(swi3(z,x,y,z), 0),
-        to_float4(0,0,0, 1));
-
-    return mul_mat4_mat4(rotation , translation);
+__DEVICE__ float h21 (float2 a) {
+    return fract(_sinf(dot(swi2(a,x,y), to_float2(12.9898f, 78.233f))) * 43758.5453123f);
 }
 
-// Transform a 3D direction vector by a 4x4 matrix
-__DEVICE__ float3 transform_dir(float3 dir, mat4 m) {
-    return swi3((mul_mat4_f4(m , to_float4_aw(dir, 0.0f))),x,y,z);
+__DEVICE__ float thc(float a, float b) {
+    return _tanhf(a * _cosf(b)) / _tanhf(a);
 }
 
-// Find an intersection between ray ro+t*rd, where t=[0, <NOHIT]
-// and a sphere located at "p" with radius "r".
-//
-// If hits, returns "t", otherwise NOHIT.
-__DEVICE__ float isect_ray_sphere(in float3 ro, in float3 rd, in float3 p, in float r) {
-    float3 oc = ro - p;
-    float b = dot(oc, rd);
-    float c = dot(oc, oc) - r*r;
-    float t = b*b - c;
-    float t2 = (t > 0.0f) ? -b - _sqrtf(t) : NOHIT;
-    return (t2 > 0.0f) ? t2 : NOHIT;
+__DEVICE__ float ths(float a, float b) {
+    return _tanhf(a * _sinf(b)) / _tanhf(a);
 }
 
-// Find an intersection between ray ro+t*rd, where t=[0, <NOHIT]
-// and a plane going through point "p" with normal "n".
-//
-// If hits, returns t >= 0.0f, otherwise NOHIT.
-__DEVICE__ float isect_ray_plane(in float3 ro, in float3 rd, in float3 p, in float3 n) {
+__DEVICE__ float GetDist(float3 p, float iTime) {
 
-    float denom = dot(rd, -n);
-    return (denom > 0.0f) ? -dot(p - ro, n) / denom : NOHIT;
+    float sd = length(p - to_float3(0,1.5f + 0.5f * _cosf(iTime),0))
+               - 0.6f  + 0.1f * _cosf(2.0f * iTime);
+
+    float a = _atan2f(p.x, p.z);
+    float l = length(swi2(p,x,z));
+    float lf = length(fract_f2(swi2(p,x,z))-0.5f);
+    //   p.y += 0.2f * thc(2.0f, 5.0f * l * (0.5f + 0.5f * thc(2.0f, 1.0f * l - iTime)) + a + 1.0f * iTime) / _coshf(0.35f * l);
+
+    // float2 ipos = _floor(swi2(p,x,z)) - 0.0f;
+    //vec2 fpos = fract(swi2(p,x,z)) - 0.25f;
+
+    //p.y += 1.0f/_coshf(_mix(12.0f,40.0f, 0.5f + 0.5f * thc(4.0f, iTime + 11.0f * h21(ipos))) * lf);
+    p.y *= 1.0f / _coshf(0.5f * l + _cosf(a + iTime));
+    p.y += _mix(0.0f, 0.15f, 0.5f + 0.5f * thc(2.0f, 4.0f * l +  iTime)) * thc(4.0f, 4.0f * l + iTime);
+    float d = dot(p, to_float3(0,1,0));//length(p) - 1.5f;
+
+    return  _fminf(d, 1.0f * sd);
 }
 
-// Sample background from cubemap
-__DEVICE__ float3 background(float3 dir, __TEXTURE2D__ iChannel1) {
-    return swi3(decube_f3(iChannel1, dir),x,y,z);
-}
+__DEVICE__ float RayMarch(float3 ro, float3 rd, float iTime) {
+    float dO=0.0f;
 
-// Returns "t" if hits something, otherwise NOHIT
-__DEVICE__ float hit(in float3 ro, in float3 rd, out float3 *hitp, out float3 *hitn, out int *id, float sphere_radius, float3 planen, float iTime) {
-    // scene: 3 spheres + plane
-    float3 scenter1 = sphere_center(0,sphere_radius,iTime);
-    float3 scenter2 = sphere_center(1,sphere_radius,iTime);
-    float3 scenter3 = sphere_center(2,sphere_radius,iTime);
-
-    float sphe1_t = isect_ray_sphere(ro, rd, scenter1, sphere_radius);
-    float sphe2_t = isect_ray_sphere(ro, rd, scenter2, sphere_radius);
-    float sphe3_t = isect_ray_sphere(ro, rd, scenter3, sphere_radius);
-    float plane_t = isect_ray_plane(ro, rd, to_float3(0,0,0), planen);
-
-    float t = _fminf(sphe1_t, _fminf(sphe2_t, _fminf(sphe3_t, plane_t))); // closest hit or NOHIT
-    *hitp = ro + t*rd; // world hit point
-
-    // object id + world hit normal
-    if( t == NOHIT   ) { *id = ID_NONE;     *hitn = -rd; } else
-    if( t == sphe1_t ) { *id = ID_SPHERE01; *hitn = normalize(*hitp - scenter1); } else
-    if( t == sphe2_t ) { *id = ID_SPHERE02; *hitn = normalize(*hitp - scenter2); } else
-    if( t == sphe3_t ) { *id = ID_SPHERE03; *hitn = normalize(*hitp - scenter3); } else
-    if( t == plane_t ) { *id = ID_PLANE;    *hitn = planen; }
-
-    // add some epsilon to position to compensate floating point inaccuracies
-    *hitp += EPSILON* *hitn;
-    return t;
-}
-
-// path tracing
-__DEVICE__ float3 trace(in float3 ro, in float3 rd, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, float sphere_radius, float3 planen, float plane_halfsize, float3 sun_dir, float iTime, float ratio) {
-    const int maxdepth = 3;
-    for(int depth=0; depth < maxdepth; ++depth) {
-        int id;
-        float3 hitp; // world position of hit point
-        float3 hitn; // world normal of hit point
-        float t = hit(ro, rd, &hitp, &hitn, &id, sphere_radius,planen,iTime); // sets "hitp", "hitn", "id"
-
-        switch(id) {
-            case ID_SPHERE01:
-            case ID_SPHERE02:
-            case ID_SPHERE03: {
-                // hits a sphere - 100% reflective, so continue path to reflection direction
-                float3 reflection = normalize(reflect(rd, hitn)); // reflect the ray around sphere normal
-                ro = hitp;
-                rd = reflection;
-                break;
-            }
-            default:
-                // make up rectangular floor plane area
-                if( id == ID_PLANE && _fabs(hitp.x) < plane_halfsize && _fabs(hitp.z) < plane_halfsize ) {
-                    float3 unused_p; float3 unused_n; int unused_id;
-                    float shadowhitt = hit(hitp, sun_dir, &unused_p, &unused_n, &unused_id, sphere_radius,planen,iTime); // shadow from sun, 1.0f if unblocked
-                    float3 shadowmul = _mix(to_float3_s(0.5f), to_float3_s(1), _fminf(1.0f, 0.25f*shadowhitt)); // fake gradient by shadower distance
-                    float2 tuv = to_float2( hitp.x*ratio, hitp.z);
-                    //float3 tex = swi3(texture(iChannel0, swi2(hitp,x,z)),x,y,z); // sample 2D floor texture
-                    float3 tex = swi3(texture(iChannel0, tuv),x,y,z); // sample 2D floor texture
-                    return shadowmul * tex;
-                } else {
-                    // misses scene objects -> background, terminate path
-                    return background(rd,iChannel1);
-                }
-        }
+    for(int i=0; i<MAX_STEPS; i++) {
+      float3 p = ro + rd*dO;
+        float dS = GetDist(p,iTime);
+        dO += dS;
+        if(dO>MAX_DIST || _fabs(dS)<SURF_DIST) break;
     }
-    return to_float3_s(0.0f);
+
+    return dO;
 }
 
-__KERNEL__ void KissTracingFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+__DEVICE__ float3 GetNormal(float3 p, float iTime) {
+  float d = GetDist(p, iTime);
+    float2 e = to_float2(0.001f, 0);
+
+    float3 n = d - to_float3(
+                            GetDist(p-swi3(e,x,y,y),iTime),
+                            GetDist(p-swi3(e,y,x,y),iTime),
+                            GetDist(p-swi3(e,y,y,x),iTime));
+
+    return normalize(n);
+}
+
+__DEVICE__ float3 GetRayDir(float2 uv, float3 p, float3 l, float z) {
+    float3 f = normalize(l-p),
+        r = normalize(cross(to_float3(0,1,0), f)),
+        u = cross(f,r),
+        c = f*z,
+        i = c + uv.x*r + uv.y*u,
+        d = normalize(i);
+    return d;
+}
+
+__DEVICE__ float3 Bg(float3 rd) {
+    float k = rd.y*0.5f + 0.5f;
+
+    float3 col = _mix(to_float3(0.5f,0.0f,0.0f),to_float3_s(0.0f),k);
+    return col;
+}
+
+
+__KERNEL__ void TwizzlyCircleMessFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
 {
    DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
 
@@ -499,30 +388,59 @@ __KERNEL__ void KissTracingFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ 
   float2 fragCoord   = to_float2(fusion_x,fusion_y);
 
 
+  float4 Color = to_float4(params->Color[0], params->Color[1], params->Color[2], params->Color[3]);
+  float  Brightness = params->Brightness;
 
   // --------
 
 
 
-    const float3 sun_dir = normalize(to_float3(1,1,1));
-    const float camera_distance = 1.5f;
-    const float sphere_radius = 0.5f;
-    const float3 planen = to_float3(0,1,0);
-    const float plane_halfsize = 3.0f; // floor "rectangle"
-    float ratio = iResolution.y/iResolution.x;
+    float2 uv = (fragCoord-0.5f*iResolution)/iResolution.y;
+    float2 m = swi2(iMouse,x,y)/iResolution;
+    float time = 0.25f * iTime;
+    float3 ro = to_float3(4.0f * thc(5.0f,time), _mix(2.0f, 5.0f, 0.5f + 0.5f * thc(3.0f, 1.5f * time)), 4.0f * ths(5.0f,time));
+    swi2S(ro,y,z, mul_f2_mat2(swi2(ro,y,z) , Rot(-m.y*3.14f+1.0f)));
+    swi2S(ro,x,z, mul_f2_mat2(swi2(ro,x,z) , Rot(-m.x*6.2831f)));
 
-    float2 rotation = swi2(iMouse,x,y) / iResolution; rotation.y = 1.0f - rotation.y; // Mouse [0,1] + tweak
-    float2 p = (2.0f*fragCoord - iResolution) / iResolution.y; // Pixel coordinates y=[-1,1], x=[-1*aspect,1*aspect] where aspect=width/height
+    float3 rd = GetRayDir(uv, ro, to_float3(0,0.0f,0), 1.0f);
+    float3 col = to_float3_s(0);
 
-    float3 ro = to_float3(_sinf(-rotation.x*PI)*camera_distance, 1.1f + _cosf(-rotation.y*PI)*1.0f, _cosf(-rotation.x*PI)*camera_distance); // Mouse rotation around the sphere -> ray origin (camera position)
-    mat4 m = lookat(ro, to_float3(0,sphere_radius,0), to_float3(0,1,0)); // Camera->World transformation matrix
-    float3 ldir = normalize(to_float3_aw(p, 1.0f)); // Local ray direction (Camera Space)
-    float3 rd = transform_dir(ldir, m); // -> World Space
+    float d = RayMarch(ro, rd, iTime);
 
-    float3 c = trace(ro, rd,iChannel0,iChannel1, sphere_radius, planen, plane_halfsize, sun_dir,iTime, ratio);
+    if(d<MAX_DIST) {
+        float3 p = ro + rd * d;
+        float3 n = GetNormal(p,iTime);
+        float3 r = reflect(rd, n);
+        float3 rf = refract_f3(rd, n,0.1f);
 
-    fragColor = to_float4_aw(c, 1.0f);
+        float dif = dot(n, normalize(to_float3(1,2,3)))*0.5f+0.5f;
+        col = 0.42f * to_float3_s(dif);
 
+        float b = 0.5f + 0.5f * _cosf(iTime);
+
+        uv = fragCoord / iResolution;
+        col += 0.9f * swi3(decube_f3(iChannel0, r / (0.5f + n) ),x,y,z);
+
+        float a = _atan2f(rf.z, rf.x);
+        float c = _atan2f(rf.z, rf.y);
+        col.x += 0.15f + (0.25f+Color.x) * thc(2.0f,10.0f * rf.x + iTime - 3.1415f / 2.0f);
+        col.y += 0.15f + (0.25f+Color.y) * thc(2.0f,10.0f * rf.y + iTime);
+        col.z += 0.15f + (0.25f+Color.z) * thc(2.0f,10.0f * rf.z + iTime + 3.1415f / 2.0f);
+
+        float l = length(p);
+        float pa = _atan2f(p.x ,p.z);
+        col *= 0.7f + 0.5f * Brightness * thc(6.0f + 6.0f * _cosf(20.0f * l + 10.0f * pa + iTime),
+                                              1.2f * l - 24.0f * pa - 0.5f * _cosf(l * 10.0f + 2.0f * pa + iTime) -  2.0f * iTime);
+       // col *= 1.5f;
+    } else {
+        col = swi3(decube_f3(iChannel0,rd),x,y,z);
+    }
+
+    col.y = 0.5f * (col.x + col.z);
+
+    col = pow_f3(col, to_float3_s(0.4545f));  // gamma correction
+
+    fragColor = to_float4_aw(col,1.0f);
 
   _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
 }
@@ -570,7 +488,6 @@ function Create()
     LINKID_DataType = "Point",
     INPID_InputControl = "OffsetControl",
     INP_DoNotifyChanged  = false,
-    --INP_Passive = true,
     INPID_PreviewControl = "CrosshairControl",
   })
   
@@ -578,7 +495,6 @@ function Create()
     LINKID_DataType = "Point",
     INPID_InputControl = "OffsetControl",
     INP_DoNotifyChanged  = false,
-    --INP_Passive = true,
     INPID_PreviewControl = "CrosshairControl",
     INP_Disabled = true,
   })
@@ -587,11 +503,38 @@ function Create()
     LINKID_DataType = "Number",
     INPID_InputControl = "CheckboxControl",
     INP_DoNotifyChanged  = false,
-    INP_Passive = true,
     INP_MinScale = 0,
     INP_MaxScale = 1,
     INP_Default = 0,
   })
+  self:BeginControlNest("Color", "Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorColorR = self:AddInput("Red",   "ColorRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InColorColorG = self:AddInput("Green", "ColorGreen", { INP_Default  = 0.0, IC_ControlID = 1, attrs})
+    InColorColorB = self:AddInput("Blue",  "ColorBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColorColorA = self:AddInput("Alpha", "ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InBrightnessSlider = self:AddInput("Brightness", "Brightness", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 5.0,
+      INP_Default        = 1.0,
+  })
+
 
 
   StandardShaderFuseBottomControls();
@@ -636,7 +579,7 @@ function Process(req)
   end
 
   local node = DVIPComputeNode(req,
-    "KissTracingFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "TwizzlyCircleMessFuse", ShaderCompatibilityCode..ShaderKernelCode,
     "Params", ShaderParameters
   )
 
@@ -704,6 +647,12 @@ function Process(req)
     params.iMouse[3] = params.iMouse[3] * Height
   end
 
+  params.Color = {
+    InColorColorR:GetValue(req).Value,
+    InColorColorG:GetValue(req).Value,
+    InColorColorB:GetValue(req).Value,InColorColorA:GetValue(req).Value
+  }
+  params.Brightness = InBrightnessSlider:GetValue(req).Value
   -- Resolution
 
   params.width  = dst.Width
