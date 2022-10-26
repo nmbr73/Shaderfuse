@@ -4,14 +4,8 @@ package.path = package.path .. ';../Modules/Lua/?.lua'
 
 bmd = require("Shadertoys/bmd")
 
-
-
 require("Shadertoys/function_writeAtom")
 writeAtom()
-
-
--- handle = util.readdir("/Users/nmbr73/*")
--- util.tprint(handle)
 
 
 -- ---------------------------------------------------
