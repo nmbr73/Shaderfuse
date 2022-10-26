@@ -27,6 +27,9 @@ based on [Coastal Landscape](https://www.shadertoy.com/view/fstyD4) written by [
 ## **[ColorProcessing](ColorProcessing.md)**
 based on [Color processing](https://www.shadertoy.com/view/7tfBzs) written by [sinvec](https://www.shadertoy.com/user/sinvec)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[ControllableMachinery](ControllableMachinery.md)**
+based on [Controllable Machinery](https://www.shadertoy.com/view/fsXyDj) written by [dr2](https://www.shadertoy.com/user/dr2)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[CubicDispersal](CubicDispersal.md)**
 based on [Cubic Dispersal](https://www.shadertoy.com/view/fldXWS) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
@@ -45,11 +48,17 @@ based on [FractalFlythrough](https://www.shadertoy.com/view/4s3SRN) written by [
 ## **[FractalGliding](FractalGliding.md)**
 based on [Fractal Gliding](https://www.shadertoy.com/view/ftGGDR) written by [AntoineC](https://www.shadertoy.com/user/AntoineC)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[FrozenWasteland](FrozenWasteland.md)**
+based on [Frozen wasteland](https://www.shadertoy.com/view/Xls3D2) written by [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[FuturisticTunnel](FuturisticTunnel.md)**
 based on [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd) written by [julianlumia](https://www.shadertoy.com/user/julianlumia)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[HyperDough](HyperDough.md)**
 based on [HyperDough](https://www.shadertoy.com/view/7tcGWB) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[JeweledVortex](JeweledVortex.md)**
+based on [Jeweled Vortex](https://www.shadertoy.com/view/fdjfDc) written by [ChunderFPV](https://www.shadertoy.com/user/ChunderFPV)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[Lover](Lover.md)**
 based on [Lover](https://www.shadertoy.com/view/fsjyR3) written by [wyatt](https://www.shadertoy.com/user/wyatt)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
@@ -74,6 +83,9 @@ based on [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt) written by [patu
 
 ## **[RecursiveDonut](RecursiveDonut.md)**
 based on [Recursive Donut](https://www.shadertoy.com/view/tls3WB) written by [ShnitzelKiller](https://www.shadertoy.com/user/ShnitzelKiller)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[SimpleRefractionTest](SimpleRefractionTest.md)** :boom:
+- *fuse category 'ShaderOftheWeek' does not match fuse's subdirectory*
 
 ## **[SimpleSphereRaymarching](SimpleSphereRaymarching.md)**
 based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
@@ -101,6 +113,9 @@ based on [Trippy Triangle](https://www.shadertoy.com/view/fslcDS) written by [Ta
 
 ## **[TruchetKaleidoscopeFTW](TruchetKaleidoscopeFTW.md)**
 based on [Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW) written by [mrange](https://www.shadertoy.com/user/mrange)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[TwizzlyCircleMess](TwizzlyCircleMess.md)**
+based on [Twizzly Circle Mess](https://www.shadertoy.com/view/sltGRj) written by [SnoopethDuckDuck](https://www.shadertoy.com/user/SnoopethDuckDuck)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[UndulatingColumns](UndulatingColumns.md)**
 based on [Undulating Columns](https://www.shadertoy.com/view/WlXXDH) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

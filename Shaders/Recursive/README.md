@@ -12,6 +12,9 @@
 
 # Recursive Shaders
 
+## **[AnisotropicBlurImage](AnisotropicBlurImage.md)**
+based on [Anisotropic Blur Image Warp](https://www.shadertoy.com/view/ldcSDB) written by [cornusammonis](https://www.shadertoy.com/user/cornusammonis)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[FallingCuteBombs](FallingCuteBombs.md)**
 based on [FallingCuteBombs](https://www.shadertoy.com/view/ldy3Rw) written by [Emil](https://www.shadertoy.com/user/Emil)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

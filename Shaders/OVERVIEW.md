@@ -359,6 +359,12 @@ Author: [Gijs](https://www.shadertoy.com/user/Gijs)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![Misc/MountainsLakes](Misc/MountainsLakes_320x180.png)\
+Fuse: [MountainsLakes](Misc/MountainsLakes.md) :boom:\
+Category: [Misc](Misc/README.md)\
+**thumbnail does not exists**
+
+
 ![Misc/Seascape](Misc/Seascape_320x180.png)\
 Fuse: [Seascape](Misc/Seascape.md) :four_leaf_clover:\
 Category: [Misc](Misc/README.md)\
@@ -531,6 +537,14 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 ## Recursive Shaders
 
 
+![Recursive/AnisotropicBlurImage](Recursive/AnisotropicBlurImage_320x180.png)\
+Fuse: [AnisotropicBlurImage](Recursive/AnisotropicBlurImage.md) :four_leaf_clover:\
+Category: [Recursive](Recursive/README.md)\
+Shadertoy: [Anisotropic Blur Image Warp](https://www.shadertoy.com/view/ldcSDB)\
+Author: [cornusammonis](https://www.shadertoy.com/user/cornusammonis)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![Recursive/FallingCuteBombs](Recursive/FallingCuteBombs_320x180.png)\
 Fuse: [FallingCuteBombs](Recursive/FallingCuteBombs.md) :four_leaf_clover:\
 Category: [Recursive](Recursive/README.md)\
@@ -615,6 +629,14 @@ Author: [sinvec](https://www.shadertoy.com/user/sinvec)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/ControllableMachinery](ShaderOfTheWeek/ControllableMachinery_320x180.png)\
+Fuse: [ControllableMachinery](ShaderOfTheWeek/ControllableMachinery.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Controllable Machinery](https://www.shadertoy.com/view/fsXyDj)\
+Author: [dr2](https://www.shadertoy.com/user/dr2)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/CubicDispersal](ShaderOfTheWeek/CubicDispersal_320x180.png)\
 Fuse: [CubicDispersal](ShaderOfTheWeek/CubicDispersal.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -663,6 +685,14 @@ Author: [AntoineC](https://www.shadertoy.com/user/AntoineC)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/FrozenWasteland](ShaderOfTheWeek/FrozenWasteland_320x180.png)\
+Fuse: [FrozenWasteland](ShaderOfTheWeek/FrozenWasteland.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Frozen wasteland](https://www.shadertoy.com/view/Xls3D2)\
+Author: [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel_320x180.png)\
 Fuse: [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -676,6 +706,14 @@ Fuse: [HyperDough](ShaderOfTheWeek/HyperDough.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [HyperDough](https://www.shadertoy.com/view/7tcGWB)\
 Author: [Tater](https://www.shadertoy.com/user/Tater)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/JeweledVortex](ShaderOfTheWeek/JeweledVortex_320x180.png)\
+Fuse: [JeweledVortex](ShaderOfTheWeek/JeweledVortex.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Jeweled Vortex](https://www.shadertoy.com/view/fdjfDc)\
+Author: [ChunderFPV](https://www.shadertoy.com/user/ChunderFPV)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -741,6 +779,12 @@ Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [Recursive Donut](https://www.shadertoy.com/view/tls3WB)\
 Author: [ShnitzelKiller](https://www.shadertoy.com/user/ShnitzelKiller)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest_320x180.png)\
+Fuse: [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :boom:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+**fuse category 'ShaderOftheWeek' does not match fuse's subdirectory**
 
 
 ![ShaderOfTheWeek/SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching_320x180.png)\
@@ -812,6 +856,14 @@ Fuse: [TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) :four_
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW)\
 Author: [mrange](https://www.shadertoy.com/user/mrange)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/TwizzlyCircleMess](ShaderOfTheWeek/TwizzlyCircleMess_320x180.png)\
+Fuse: [TwizzlyCircleMess](ShaderOfTheWeek/TwizzlyCircleMess.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Twizzly Circle Mess](https://www.shadertoy.com/view/sltGRj)\
+Author: [SnoopethDuckDuck](https://www.shadertoy.com/user/SnoopethDuckDuck)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -911,5 +963,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 106
+:four_leaf_clover: 111
+
+:boom: 2
 

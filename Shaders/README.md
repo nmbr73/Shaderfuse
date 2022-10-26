@@ -73,6 +73,7 @@
 - [FractalLand](Misc/FractalLand.md) (Shadertoy ID [XsBXWt](https://www.shadertoy.com/view/XsBXWt)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [IHeartFourier](Misc/IHeartFourier.md) (Shadertoy ID [tltSWr](https://www.shadertoy.com/view/tltSWr)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Legofied](Misc/Legofied.md) (Shadertoy ID [XtBSzy](https://www.shadertoy.com/view/XtBSzy)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [MountainsLakes](Misc/MountainsLakes.md) :boom:
 - [Seascape](Misc/Seascape.md) (Shadertoy ID [Ms2SD1](https://www.shadertoy.com/view/Ms2SD1)) ported by [nmbr73](../Site/Profiles/nmbr73.md)
 - [TruePinballPhysics](Misc/TruePinballPhysics.md) (Shadertoy ID [4tBGRm](https://www.shadertoy.com/view/4tBGRm)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
@@ -102,6 +103,7 @@
 
 
 **[Recursive Shaders](Recursive/README.md)**
+- [AnisotropicBlurImage](Recursive/AnisotropicBlurImage.md) (Shadertoy ID [ldcSDB](https://www.shadertoy.com/view/ldcSDB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FallingCuteBombs](Recursive/FallingCuteBombs.md) (Shadertoy ID [ldy3Rw](https://www.shadertoy.com/view/ldy3Rw)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [GrowingWeatheringRocks](Recursive/GrowingWeatheringRocks.md) (Shadertoy ID [ftSSDy](https://www.shadertoy.com/view/ftSSDy)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [LearningReactionDiffusion](Recursive/LearningReactionDiffusion.md) (Shadertoy ID [WlSGzy](https://www.shadertoy.com/view/WlSGzy)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -115,14 +117,17 @@
 - [ClubCave09](ShaderOfTheWeek/ClubCave09.md) (Shadertoy ID [ss3SD8](https://www.shadertoy.com/view/ss3SD8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [CoastalLandscape](ShaderOfTheWeek/CoastalLandscape.md) (Shadertoy ID [fstyD4](https://www.shadertoy.com/view/fstyD4)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) (Shadertoy ID [7tfBzs](https://www.shadertoy.com/view/7tfBzs)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [ControllableMachinery](ShaderOfTheWeek/ControllableMachinery.md) (Shadertoy ID [fsXyDj](https://www.shadertoy.com/view/fsXyDj)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [CubicDispersal](ShaderOfTheWeek/CubicDispersal.md) (Shadertoy ID [fldXWS](https://www.shadertoy.com/view/fldXWS)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) (Shadertoy ID [wlVSDK](https://www.shadertoy.com/view/wlVSDK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Day94](ShaderOfTheWeek/Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) (Shadertoy ID [NlsXDH](https://www.shadertoy.com/view/NlsXDH)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) (Shadertoy ID [4s3SRN](https://www.shadertoy.com/view/4s3SRN)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalGliding](ShaderOfTheWeek/FractalGliding.md) (Shadertoy ID [ftGGDR](https://www.shadertoy.com/view/ftGGDR)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [FrozenWasteland](ShaderOfTheWeek/FrozenWasteland.md) (Shadertoy ID [Xls3D2](https://www.shadertoy.com/view/Xls3D2)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) (Shadertoy ID [wdScRd](https://www.shadertoy.com/view/wdScRd)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [HyperDough](ShaderOfTheWeek/HyperDough.md) (Shadertoy ID [7tcGWB](https://www.shadertoy.com/view/7tcGWB)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [JeweledVortex](ShaderOfTheWeek/JeweledVortex.md) (Shadertoy ID [fdjfDc](https://www.shadertoy.com/view/fdjfDc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Lover](ShaderOfTheWeek/Lover.md) (Shadertoy ID [fsjyR3](https://www.shadertoy.com/view/fsjyR3)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [NightCircuit](ShaderOfTheWeek/NightCircuit.md) (Shadertoy ID [tdyBR1](https://www.shadertoy.com/view/tdyBR1)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale.md) (Shadertoy ID [stXyWN](https://www.shadertoy.com/view/stXyWN)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -131,6 +136,7 @@
 - [PigSquad](ShaderOfTheWeek/PigSquad.md) (Shadertoy ID [WdBcRh](https://www.shadertoy.com/view/WdBcRh)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RME4Crater](ShaderOfTheWeek/RME4Crater.md) (Shadertoy ID [MlSBDt](https://www.shadertoy.com/view/MlSBDt)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/tls3WB)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :boom:
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpaceShip](ShaderOfTheWeek/SpaceShip.md) (Shadertoy ID [NlsBzn](https://www.shadertoy.com/view/NlsBzn)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -140,6 +146,7 @@
 - [Terraform](ShaderOfTheWeek/Terraform.md) (Shadertoy ID [NsdXDs](https://www.shadertoy.com/view/NsdXDs)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TrippyTriangle](ShaderOfTheWeek/TrippyTriangle.md) (Shadertoy ID [fslcDS](https://www.shadertoy.com/view/fslcDS)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) (Shadertoy ID [7lKSWW](https://www.shadertoy.com/view/7lKSWW)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [TwizzlyCircleMess](ShaderOfTheWeek/TwizzlyCircleMess.md) (Shadertoy ID [sltGRj](https://www.shadertoy.com/view/sltGRj)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) (Shadertoy ID [WlXXDH](https://www.shadertoy.com/view/WlXXDH)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
