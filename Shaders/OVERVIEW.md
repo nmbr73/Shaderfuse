@@ -82,7 +82,7 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 ![Abstract/RainbowSlices](Abstract/RainbowSlices_320x180.png)\
 Fuse: [RainbowSlices](Abstract/RainbowSlices.md) :four_leaf_clover:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)\
+Shadertoy: [Rainbow Slices 12](https://www.shadertoy.com/view/XdsGD4)\
 Author: [fizzer](https://www.shadertoy.com/user/fizzer)\
 Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
 

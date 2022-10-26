@@ -37,7 +37,7 @@ based on [Other Worlds\bump experiment](https://www.shadertoy.com/view/Ns2XzR) w
 based on [Overstimulated Neurons](https://www.shadertoy.com/view/NdlSD8) written by [Chaotnix](https://www.shadertoy.com/user/Chaotnix)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[RainbowSlices](RainbowSlices.md)**
-based on [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+based on [Rainbow Slices 12](https://www.shadertoy.com/view/XdsGD4) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
 ## **[RainbowSpaghetti](RainbowSpaghetti.md)**
 based on [rainbow spaghetti](https://www.shadertoy.com/view/lsjGRV) written by [mattz](https://www.shadertoy.com/user/mattz)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
