@@ -66,6 +66,11 @@ function snippet.init(path,type,redoable)
     end
 
     local content=snippet.Snippets[marker]
+
+    if content == nil or content == '' then
+      print("no content for marker '"..marker.."', path '".. path .."'")
+    end
+
     assert(content~=nil)
     assert(content~='')
 
