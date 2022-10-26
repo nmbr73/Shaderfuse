@@ -1,6 +1,6 @@
 require("string")
 
-function writeAtom() 
+function writeAtom()
 
     local image       = require("Shadertoys/image")
 
@@ -94,21 +94,21 @@ function writeAtom()
 
         fuse.fuse_sourceCode=[[
 
-    --
-    --       _____        _   _       _   ______    _ _ _
-    --      |  __ \      | \ | |     | | |  ____|  | (_) |
-    --      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
-    --      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
-    --      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
-    --      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
-    --
-    --   ... this File is managed by some scripts and can be
-    --    overwritten at any time and without further notice!
-    --         pls. see https://github.com/nmbr73/Shadertoys
-    --                                           for details
-    --
+--
+--       _____        _   _       _   ______    _ _ _
+--      |  __ \      | \ | |     | | |  ____|  | (_) |
+--      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+--      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+--      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+--      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+--
+--   ... this File is managed by some scripts and can be
+--    overwritten at any time and without further notice!
+--         pls. see https://github.com/nmbr73/Shadertoys
+--                                           for details
+--
 
-    ]]
+]]
 
         .."local SHADERFUSES_REACTOR_PACKAGE_VERSION = '"..YourPackageVersion.."'\n"
         .."local SHADERFUSES_REACTOR_PACKAGE_DATE    = '"..(os.date("%b %Y")).."'\n\n"
