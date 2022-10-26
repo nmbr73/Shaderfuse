@@ -16,8 +16,11 @@ function updateMarkdown()
 
   local overview = io.open(user_config.pathToRepository..'Shaders/OVERVIEW.md',"w")
   local readme   = io.open(user_config.pathToRepository..'Shaders/README.md',"w")
+  local csv      = io.open(user_config.pathToRepository..'Shaders.csv',"w")
 
-  if not(overview) or not(readme) then
+
+
+  if not(overview) or not(readme) or not(csv) then
     print("We have a Problem")
     os.exit(10)
   end
@@ -39,6 +42,7 @@ function updateMarkdown()
 
   overview:write(header)
   readme:write(header)
+  csv:write("Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issues\n")
 
   local links=''
 
@@ -144,6 +148,10 @@ function updateMarkdown()
 
       readme_cat:write('## **['..fuse.file_fusename..']('..fuse.file_fusename..'.md)**\nbased on ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..') written by ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')<br />and ported to DaFusion by ['..fuse.dctlfuse_author..'](../../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n\n')
     --print("Okay '"..fuse.file_fusename.."' ")
+
+--    Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issues
+--    "ltsXDB","metabog","BumpyReflectingBalls","Abstract","BumpyReflectingBalls","JiPi",""
+
     else
 
 
@@ -154,6 +162,16 @@ function updateMarkdown()
       readme_cat:write('## **['..fuse.file_fusename..']('..fuse.file_fusename..'.md)** :boom:\n- *'..fuse.error..'*\n\n')
 
     end
+
+    csv:write(
+        '"'.. fuse.shadertoy_id ..'",' ..
+        '"'.. fuse.shadertoy_author ..'",' ..
+        '"'.. fuse.shadertoy_name ..'",' ..
+        '"'.. fuse.file_category ..'",' ..
+        '"'.. fuse.file_fusename ..'",' ..
+        '"'.. fuse.dctlfuse_author ..'",' ..
+        '"'.. (not(fuse.error) and '' or fuse.error) ..'"\n'
+    )
 
     overview:write('\n')
 
@@ -176,6 +194,7 @@ function updateMarkdown()
 
   overview:close()
   readme:close()
+  csv:close()
 
 
 end
