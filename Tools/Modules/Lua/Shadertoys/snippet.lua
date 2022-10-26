@@ -63,6 +63,8 @@ function snippet.init(path,type,redoable)
     if handle then
       snippet.Snippets[marker]=handle:read("*all")
       handle:close()
+    else
+      print("failed to open file '".. path..'Tools/Snippets/'..marker..'.'..type..'.lua' .."'")
     end
 
     local content=snippet.Snippets[marker]
