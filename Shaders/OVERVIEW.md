@@ -360,9 +360,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Misc/MountainsLakes](Misc/MountainsLakes_320x180.png)\
-Fuse: [MountainsLakes](Misc/MountainsLakes.md) :boom:\
+Fuse: [MountainsLakes](Misc/MountainsLakes.md) :four_leaf_clover:\
 Category: [Misc](Misc/README.md)\
-**thumbnail does not exists**
+Shadertoy: [Mountains & Lakes](https://www.shadertoy.com/view/7tSSDD)\
+Author: [xjorma](https://www.shadertoy.com/user/xjorma)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Misc/Seascape](Misc/Seascape_320x180.png)\
@@ -965,7 +967,5 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 112
-
-:boom: 1
+:four_leaf_clover: 113
 

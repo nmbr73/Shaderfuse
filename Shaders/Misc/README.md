@@ -27,8 +27,8 @@ based on [IHeartFourier](https://www.shadertoy.com/view/tltSWr) written by [harr
 ## **[Legofied](Legofied.md)**
 based on [Legofied](https://www.shadertoy.com/view/XtBSzy) written by [Gijs](https://www.shadertoy.com/user/Gijs)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[MountainsLakes](MountainsLakes.md)** :boom:
-- *thumbnail does not exists*
+## **[MountainsLakes](MountainsLakes.md)**
+based on [Mountains & Lakes](https://www.shadertoy.com/view/7tSSDD) written by [xjorma](https://www.shadertoy.com/user/xjorma)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[Seascape](Seascape.md)**
 based on [Seascape](https://www.shadertoy.com/view/Ms2SD1) written by [TDM](https://www.shadertoy.com/user/TDM)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
