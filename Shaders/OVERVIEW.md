@@ -782,9 +782,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest_320x180.png)\
-Fuse: [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :boom:\
+Fuse: [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-**fuse category 'ShaderOftheWeek' does not match fuse's subdirectory**
+Shadertoy: [simple refraction test](https://www.shadertoy.com/view/flcSW2)\
+Author: [drschizzo](https://www.shadertoy.com/user/drschizzo)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching_320x180.png)\
@@ -963,7 +965,7 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 111
+:four_leaf_clover: 112
 
-:boom: 2
+:boom: 1
 

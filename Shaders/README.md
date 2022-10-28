@@ -136,7 +136,7 @@
 - [PigSquad](ShaderOfTheWeek/PigSquad.md) (Shadertoy ID [WdBcRh](https://www.shadertoy.com/view/WdBcRh)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RME4Crater](ShaderOfTheWeek/RME4Crater.md) (Shadertoy ID [MlSBDt](https://www.shadertoy.com/view/MlSBDt)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) (Shadertoy ID [tls3WB](https://www.shadertoy.com/view/tls3WB)) ported by [JiPi](../Site/Profiles/JiPi.md)
-- [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :boom:
+- [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) (Shadertoy ID [flcSW2](https://www.shadertoy.com/view/flcSW2)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [wdjSRc](https://www.shadertoy.com/view/wdjSRc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpaceShip](ShaderOfTheWeek/SpaceShip.md) (Shadertoy ID [NlsBzn](https://www.shadertoy.com/view/NlsBzn)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) (Shadertoy ID [Ns3XWf](https://www.shadertoy.com/view/Ns3XWf)) ported by [JiPi](../Site/Profiles/JiPi.md)

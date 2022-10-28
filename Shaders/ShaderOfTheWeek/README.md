@@ -84,8 +84,8 @@ based on [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt) written by [patu
 ## **[RecursiveDonut](RecursiveDonut.md)**
 based on [Recursive Donut](https://www.shadertoy.com/view/tls3WB) written by [ShnitzelKiller](https://www.shadertoy.com/user/ShnitzelKiller)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[SimpleRefractionTest](SimpleRefractionTest.md)** :boom:
-- *fuse category 'ShaderOftheWeek' does not match fuse's subdirectory*
+## **[SimpleRefractionTest](SimpleRefractionTest.md)**
+based on [simple refraction test](https://www.shadertoy.com/view/flcSW2) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[SimpleSphereRaymarching](SimpleSphereRaymarching.md)**
 based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
