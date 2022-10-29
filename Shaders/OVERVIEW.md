@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Audio](Audio/README.md) · [Blob](Blob/README.md) · [Cubemap](Cubemap/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md)
+[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Audio](Audio/README.md) · [Blob](Blob/README.md) · [Cubemap](Cubemap/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md) · [Wedding](Wedding/README.md)
 
 # Shaders
 
@@ -967,5 +967,17 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 113
+
+## Wedding Shaders
+
+
+![Wedding/Valentwine](Wedding/Valentwine_320x180.png)\
+Fuse: [Valentwine](Wedding/Valentwine.md) :four_leaf_clover:\
+Category: [Wedding](Wedding/README.md)\
+Shadertoy: [Valentwine](https://www.shadertoy.com/view/fsffW4)\
+Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+:four_leaf_clover: 114
 
