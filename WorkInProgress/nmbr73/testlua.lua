@@ -1,7 +1,14 @@
 
-version = 000001
+info = { Fuse = {}}
 
-print("'"..version.."'")
+if info.Fuse.Version == nil then info.Fuse.Version = "v0.0.0" end
+major, minor, patch = info.Fuse.Version:match("^v([0-9]+)%.([0-9]+)%.([0-9]+)$")
+
+major = major ~=nil and major or 'nil'
+print("'".. info.Fuse.Version .."' = '"..major.."'")
+-- assert(, "Fuse.Version must be v<MAJOR>.<MINOR>.<PATCH>")
+--info.Fuse.Version = info.Fuse.Version .. '-alpha' -- in Dev it's always 'alpha'; via installer it's 'beta'; in atom its 'rc';
+
 
 os.exit(0)
 
