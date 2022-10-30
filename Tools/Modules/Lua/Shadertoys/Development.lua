@@ -39,6 +39,10 @@
 
 function ShaderFuse_CreateTopControls(INFO)
 
+    -- default:    {ShaderFuseControls_InfoTxt, ShaderFuseControls_BandImg, ShaderFuseControls_InfoBtn, ShaderFuseControls_AuthImg}
+    -- nmbr73:     {ShaderFuseControls_InfoBtn, ShaderFuseControls_BandImg, ShaderFuseControls_InfoTxt, ShaderFuseControls_AuthImg}
+    -- JiPi:       {ShaderFuseControls_BandImg, ShaderFuseControls_AuthImg, ShaderFuseControls_InfoBtn, ShaderFuseControls_InfoTxt}
+
     if FC_ITEMORDER         == nil then FC_ITEMORDER       = {ShaderFuseControls_InfoTxt,ShaderFuseControls_BandImg,ShaderFuseControls_InfoBtn,ShaderFuseControls_AuthImg} end
     if FC_SHOWBRANDIMG      == nil then FC_SHOWBRANDIMG    = true                  end
     if FC_AUTHBASEDLAYOUT   == nil then FC_AUTHBASEDLAYOUT = true                  end
