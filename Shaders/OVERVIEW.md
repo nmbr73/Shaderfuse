@@ -971,6 +971,12 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 ## Wedding Shaders
 
 
+![Wedding/HeartU2015](Wedding/HeartU2015_320x180.png)\
+Fuse: [HeartU2015](Wedding/HeartU2015.md) :boom:\
+Category: [Wedding](Wedding/README.md)\
+**fuse category 'Incubator' does not match fuse's subdirectory**
+
+
 ![Wedding/Valentwine](Wedding/Valentwine_320x180.png)\
 Fuse: [Valentwine](Wedding/Valentwine.md) :four_leaf_clover:\
 Category: [Wedding](Wedding/README.md)\
@@ -980,4 +986,6 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 :four_leaf_clover: 114
+
+:boom: 1
 
