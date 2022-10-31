@@ -12,8 +12,8 @@
 
 # Wedding Shaders
 
-## **[HeartU2015](HeartU2015.md)** :boom:
-- *fuse category 'Incubator' does not match fuse's subdirectory*
+## **[HeartU2015](HeartU2015.md)**
+based on [heart u 2015](https://www.shadertoy.com/view/lts3RX) written by [mattz](https://www.shadertoy.com/user/mattz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[Valentwine](Valentwine.md)**
 based on [Valentwine](https://www.shadertoy.com/view/fsffW4) written by [Mipmap](https://www.shadertoy.com/user/Mipmap)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

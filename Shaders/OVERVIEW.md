@@ -972,9 +972,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Wedding/HeartU2015](Wedding/HeartU2015_320x180.png)\
-Fuse: [HeartU2015](Wedding/HeartU2015.md) :boom:\
+Fuse: [HeartU2015](Wedding/HeartU2015.md) :four_leaf_clover:\
 Category: [Wedding](Wedding/README.md)\
-**fuse category 'Incubator' does not match fuse's subdirectory**
+Shadertoy: [heart u 2015](https://www.shadertoy.com/view/lts3RX)\
+Author: [mattz](https://www.shadertoy.com/user/mattz)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Wedding/Valentwine](Wedding/Valentwine_320x180.png)\
@@ -985,7 +987,5 @@ Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 114
-
-:boom: 1
+:four_leaf_clover: 115
 
