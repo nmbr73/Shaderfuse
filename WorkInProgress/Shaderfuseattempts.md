@@ -13,6 +13,82 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Wednesday messing around](https://www.shadertoy.com/view/NtcyDn)| fuse | Shader of the Week 44/22 |
+|[ring worm](https://www.shadertoy.com/view/ttsfRf)| defect | ABC Drehungen verhalten sich anders |
+|[simply liquid](https://www.shadertoy.com/view/cdj3RW)| defect | verhält sich anders - Bild läuft - Mit Parameter korrigiert ! |
+|[Simple reaction-diffusion](https://www.shadertoy.com/view/MlySzh)| incub | A ! |
+|[Soap bubble attempt](https://www.shadertoy.com/view/ms23RR)| incub |  |
+|[Virtual DJ teem](https://www.shadertoy.com/view/cdsGWs)| incub | Audioshader |
+|[Offendomatic](https://www.shadertoy.com/view/7tdXWX)| incub | Cooles Feuer |
+|[entropy 2](https://www.shadertoy.com/view/slt3Dl)| incub | ! |
+|[What is that in the water](https://www.shadertoy.com/view/DslGDX)| incub | ABC !! |
+|[Slime Battles](https://www.shadertoy.com/view/DssGRf)| defect | kein Bild |
+|[The Beautiful Pollution](https://www.shadertoy.com/view/ddX3Dr)| incub | ABCD Blending ! |
+|[Aura-warper](https://www.shadertoy.com/view/mslGRX)| incub | ABCD ! |
+|[Pilot waves 2](https://www.shadertoy.com/view/Md3BWX)| defect | keine Particle |
+|[Fluid Flood Flavor](https://www.shadertoy.com/view/dslGW8)| incub | A ! sehr cooler Effekt Wasser läuft an Scheibe  |
+|[CombFuse: FFT (Fire For Techno)](https://www.shadertoy.com/view/msl3W8 )| defect | Audiosignal wird nicht verarbeitet |
+|[CombFuse: Fire Fighter Fever](https://www.shadertoy.com/view/msf3WH )| incub | A toller Effekt ! Warp-Einstellung ! |
+|[Fluid Simulation With Obstacles](https://www.shadertoy.com/view/mdsGW8)| defect | Strömungsrichtung sehr stark nach oben links |
+|[CombFuse:Cream Crane Consultant](https://www.shadertoy.com/view/ddX3WN)| incub | A ! Blending |
+|[CombFuse:Ghost Got Game](https://www.shadertoy.com/view/msX3WN)| incub | A ! Blending |
+|[CombFuse:Bobby Blob Booping](https://www.shadertoy.com/view/msX3W4)| incub | A ! Blending |
+|[Video glass plate](https://www.shadertoy.com/view/ldyGzy)| defect | Reflektion/Refraktion paßt nicht |
+|[Interesting Particle Automata](https://www.shadertoy.com/view/ftsBRN)| incub | AB |
+|[Burning desire](https://www.shadertoy.com/view/XdlSRj)| fuse | ! |
+|[wave equation single source](https://www.shadertoy.com/view/cdXGR7)| incub | A ! |
+|[flow streamlines - grey contours](https://www.shadertoy.com/view/ddf3RM)| defect | dFdx / dFdy |
+|[CombFuse:wave distort](https://www.shadertoy.com/view/mslGz4)| incub |  |
+|[CombFuse:Cat Volleyball](https://www.shadertoy.com/view/7ll3zS)| incub | ! |
+|[Shiny Metal](https://www.shadertoy.com/view/flVBDt)| incub | AB |
+|[Neural Cellular Automaton Worms](https://www.shadertoy.com/view/Dsl3Rn)| defect | keine automation |
+|[Julia Islands](https://www.shadertoy.com/view/Nl2Gzw)| incub | A ! Regen |
+|[Fluid at heart](https://www.shadertoy.com/view/Nd3SW7)| incub | ABCD ! Blending |
+|[failed fluid simulation](https://www.shadertoy.com/view/sdy3W1)| incub | A ! |
+|[Mouse position fog](https://www.shadertoy.com/view/XdBGzw)| incub |  |
+|[Ondulation/déformation circ](https://www.shadertoy.com/view/ftGBzt)| incub |  |
+|[Ripleys Believe It](https://www.shadertoy.com/view/7lyfWD)| incub | ABCD ! _powf ! |
+|[Ball pit](https://www.shadertoy.com/view/wlj3RR)| incub | AB |
+|[Fluid Automata](https://www.shadertoy.com/view/WlcGDH)| incub | ABCD ! Blending |
+|[Lattice Boltzmann Fireball](https://www.shadertoy.com/view/7tcyDX)| incub | AB |
+|[Single Pass Fluid Sim](https://www.shadertoy.com/view/stdfzl)| Fuse | A ! Blending wie Spilled |
+|[NavierStokeish](https://www.shadertoy.com/view/ltcfRn)| incub | ABC !! Blending |
+|[Temperatures](https://www.shadertoy.com/view/fsf3zS)| Fuse | ABCD ! Blending |
+|[Image Morph Bleed Effect (v.Fab)](https://www.shadertoy.com/view/ssS3DV)| incub | A cooler Effekt - leider zu langsam |
+|[Complex Fourier Epicycles](https://www.shadertoy.com/view/ttGcRW)| defect | Skalierung fehlerhaft |
+|[シャボン玉](https://www.shadertoy.com/view/3d3yWs)| defect | Seifenblase - Nähte, kein Reflektion |
+|[Convolution maze (fork)](https://www.shadertoy.com/view/7ld3zs)| incub | A ! Blending |
+|[Gravitation Field 3D](https://www.shadertoy.com/view/4dVfWy)| incub | AB  |
+|[giant clockwork](https://www.shadertoy.com/view/WddXWB)| incub | Performancefresser |
+|[Local Interaction](https://www.shadertoy.com/view/ttXXzf)| incub | A ! Blending |
+|[reaction diffusion + dual vortex](https://www.shadertoy.com/view/lsfcD7)| incub | AB sehr merkwürdig |
+|[Dynamical Graph](https://www.shadertoy.com/view/wdGSWK)| incub | ABCD ! StartTex |
+|[Eggstruction](https://www.shadertoy.com/view/Nl2yzt)| incub | ! Kran ! |
+|[Soap bubble (improved)](https://www.shadertoy.com/view/XdXXzB)| incub | ! |
+|[CombiFuse:DIGITAL BURN FADE](https://www.shadertoy.com/view/lsjSRK)| incub |  |
+|[CombiFuse:chasers](https://www.shadertoy.com/view/Xl33D7)| incub |  |
+|[CombiFuse:Spreading Frost ](https://www.shadertoy.com/view/XddcRr)| incub |  |
+|[CombiFuse:Pixel perfect outline ](https://www.shadertoy.com/view/stjGWD)| incub | Sobel |
+|[CombiFuse:Opposing Fire](https://www.shadertoy.com/view/3lyXzD)| incub | Flammen ! |
+|[Fast Thin-Film Interference](https://www.shadertoy.com/view/ld3SDl)| incub | auch repariert |
+|[Thin-Film Interference Bubble](https://www.shadertoy.com/view/XddXRj)| incub | ! Cubemap korrigert , _powf korrigiert ||[kundalinguini](https://www.shadertoy.com/view/WtXfzX)| incub | ABC !! Particle Blending |
+|[Michael's Cool Algorithm](https://www.shadertoy.com/view/ttsyzs)| incub | ABCD !! Blending  |
+|[Combust](https://www.shadertoy.com/view/stlGzl)| incub | ABCD ! Blending |
+|[Wax Sculpture](https://www.shadertoy.com/view/ts3yDn)| incub | ABCD ! |
+|[Optimized Fluid](https://www.shadertoy.com/view/tt2GRV)| incub | ABCD ! Blending |
+|[Ripple Texture Transition](https://www.shadertoy.com/view/3ljfzV)| incub | sehr schöner Übergang |
+|[Bubble Magic](https://www.shadertoy.com/view/MltGDH)| incub | Wobbelnde Sprechblase |
+|[Easter eggs](https://www.shadertoy.com/view/sdjGDR)| incub | Drei tanzende Eier |
+|[Gravifluid](https://www.shadertoy.com/view/WlVGzw)| incub | ABCD ! Symetrie unterschiedlich |
+|[Pink Void](https://www.shadertoy.com/view/wt2Gzc)| incub | cool ! |
+|[oil spill / chocolate syrup](https://www.shadertoy.com/view/4dlcRH)| incub | ABC ! |
+|[Jean Claude van Minecraft](https://www.shadertoy.com/view/ldKXRR)| incub | lustiger Effekt |
+|[LEGO](https://www.shadertoy.com/view/3tBczt)| defect | kein Bild |
+|[Refractive JCVD](https://www.shadertoy.com/view/XsK3WK)| incub |  |
+|[Inception Totem](https://www.shadertoy.com/view/wl3czM)| incub |  |
+|[Vorofluid](https://www.shadertoy.com/view/3sdXRX)| incub | ABCD ! Blending |
+|[Tannins](https://www.shadertoy.com/view/3sdczN)| incub | ABCD ! Blending |
+|[fast liquid research](https://www.shadertoy.com/view/lljBWy)| incub | !! |
 |[Twizzly Circle Mess](https://www.shadertoy.com/view/sltGRj)| incub | ShaderOfTheWeek |
 |[Cyborg Signature](https://www.shadertoy.com/view/7lcfz7)| defect | glow funktioniert nicht, step |
 |[bubble moving](https://www.shadertoy.com/view/sdt3zH)| incub | ! |
