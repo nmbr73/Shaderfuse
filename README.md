@@ -70,7 +70,7 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 [**Current Shader of the Week (02th of November 2022):**](Shaders/ShaderOfTheWeek/WednesdayMessingAround.md)
 
 [![WednesdayMessingAround](https://user-images.githubusercontent.com/78935215/199586416-e9cbca39-9d1c-41d2-be33-695a25e075f3.gif)
-](Shaders/ShaderOfTheWeek/WednesdayMessingArounds.md)
+](Shaders/ShaderOfTheWeek/WednesdayMessingAround.md)
 
 
 
