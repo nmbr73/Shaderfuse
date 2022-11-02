@@ -879,6 +879,14 @@ Author: [fizzer](https://www.shadertoy.com/user/fizzer)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/WednesdayMessingAround](ShaderOfTheWeek/WednesdayMessingAround_320x180.png)\
+Fuse: [WednesdayMessingAround](ShaderOfTheWeek/WednesdayMessingAround.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Wednesday messing around](https://www.shadertoy.com/view/NtcyDn)\
+Author: [mrange](https://www.shadertoy.com/user/mrange)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 
 ## Simple Shaders
 
@@ -987,5 +995,5 @@ Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 115
+:four_leaf_clover: 116
 

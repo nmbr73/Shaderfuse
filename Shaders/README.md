@@ -148,6 +148,7 @@
 - [TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) (Shadertoy ID [7lKSWW](https://www.shadertoy.com/view/7lKSWW)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [TwizzlyCircleMess](ShaderOfTheWeek/TwizzlyCircleMess.md) (Shadertoy ID [sltGRj](https://www.shadertoy.com/view/sltGRj)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) (Shadertoy ID [WlXXDH](https://www.shadertoy.com/view/WlXXDH)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [WednesdayMessingAround](ShaderOfTheWeek/WednesdayMessingAround.md) (Shadertoy ID [NtcyDn](https://www.shadertoy.com/view/NtcyDn)) ported by [JiPi](../Site/Profiles/JiPi.md)
 
 
 **[Simple Shaders](Simple/README.md)**

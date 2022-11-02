@@ -120,3 +120,6 @@ based on [Twizzly Circle Mess](https://www.shadertoy.com/view/sltGRj) written by
 ## **[UndulatingColumns](UndulatingColumns.md)**
 based on [Undulating Columns](https://www.shadertoy.com/view/WlXXDH) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[WednesdayMessingAround](WednesdayMessingAround.md)**
+based on [Wednesday messing around](https://www.shadertoy.com/view/NtcyDn) written by [mrange](https://www.shadertoy.com/user/mrange)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
