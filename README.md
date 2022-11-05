@@ -165,6 +165,9 @@ Here are the AudioShaderfuses:
 - [ReactiveVoronoi](Shaders/Audio/ReactiveVoronoi.md)
 - [Rlstyle](Shaders/Audio/Rlstyle.md)
 - [ShadertoyAudioDisplay](Shaders/Audio/ShadertoyAudioDisplay.md)
+- [InerciaIntended](Shaders/Audio/Inerciaintended.md) :new:
+
+[![InerciaIntended](https://user-images.githubusercontent.com/78935215/200139202-3c5b2c15-bd43-4998-84d6-a06820255d5d.gif)](Shaders/Audio/Inerciaintended.md)
 
 
 # Cubemap Shader
