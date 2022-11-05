@@ -18,6 +18,9 @@ based on [Audio heightfield 1](https://www.shadertoy.com/view/ldXGzN) written by
 ## **[AudioWaveformVisualizer](AudioWaveformVisualizer.md)**
 based on [Audio Waveform Visualizer v3](https://www.shadertoy.com/view/wd3Bzl) written by [oneshade](https://www.shadertoy.com/user/oneshade)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[InerciaIntended](InerciaIntended.md)** :boom:
+- *markdown does not exists*
+
 ## **[JamSession](JamSession.md)**
 based on [Jam Session](https://www.shadertoy.com/view/XdsyW4) written by [Passion](https://www.shadertoy.com/user/Passion)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
