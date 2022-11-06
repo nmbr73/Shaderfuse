@@ -32,3 +32,4 @@ Have fun playing
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - NOT running on Windows/OpenCL, because of missing functionality
+
