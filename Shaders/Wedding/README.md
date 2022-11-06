@@ -12,6 +12,9 @@
 
 # Wedding Shaders
 
+## **[HappyValentinesDay](HappyValentinesDay.md)**
+based on [HappyValentinesDay](https://www.shadertoy.com/view/XsVGzK) written by [RobotPenguin](https://www.shadertoy.com/user/RobotPenguin)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[HeartU2015](HeartU2015.md)**
 based on [heart u 2015](https://www.shadertoy.com/view/lts3RX) written by [mattz](https://www.shadertoy.com/user/mattz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

@@ -985,6 +985,14 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 ## Wedding Shaders
 
 
+![Wedding/HappyValentinesDay](Wedding/HappyValentinesDay_320x180.png)\
+Fuse: [HappyValentinesDay](Wedding/HappyValentinesDay.md) :four_leaf_clover:\
+Category: [Wedding](Wedding/README.md)\
+Shadertoy: [HappyValentinesDay](https://www.shadertoy.com/view/XsVGzK)\
+Author: [RobotPenguin](https://www.shadertoy.com/user/RobotPenguin)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![Wedding/HeartU2015](Wedding/HeartU2015_320x180.png)\
 Fuse: [HeartU2015](Wedding/HeartU2015.md) :four_leaf_clover:\
 Category: [Wedding](Wedding/README.md)\
@@ -1009,7 +1017,7 @@ Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 117
+:four_leaf_clover: 118
 
 :boom: 1
 
