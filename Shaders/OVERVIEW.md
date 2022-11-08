@@ -712,9 +712,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4_320x180.png)\
-Fuse: [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) :boom:\
+Fuse: [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-**fuse category 'Incubator' does not match fuse's subdirectory**
+Shadertoy: [generative art deco 4](https://www.shadertoy.com/view/mds3DX)\
+Author: [morisil](https://www.shadertoy.com/user/morisil)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/HyperDough](ShaderOfTheWeek/HyperDough_320x180.png)\
@@ -1025,7 +1027,5 @@ Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 119
-
-:boom: 1
+:four_leaf_clover: 120
 

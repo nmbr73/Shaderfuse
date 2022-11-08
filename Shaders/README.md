@@ -127,7 +127,7 @@
 - [FractalGliding](ShaderOfTheWeek/FractalGliding.md) (Shadertoy ID [ftGGDR](https://www.shadertoy.com/view/ftGGDR)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FrozenWasteland](ShaderOfTheWeek/FrozenWasteland.md) (Shadertoy ID [Xls3D2](https://www.shadertoy.com/view/Xls3D2)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) (Shadertoy ID [wdScRd](https://www.shadertoy.com/view/wdScRd)) ported by [JiPi](../Site/Profiles/JiPi.md)
-- [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) :boom:
+- [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) (Shadertoy ID [mds3DX](https://www.shadertoy.com/view/mds3DX)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [HyperDough](ShaderOfTheWeek/HyperDough.md) (Shadertoy ID [7tcGWB](https://www.shadertoy.com/view/7tcGWB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [JeweledVortex](ShaderOfTheWeek/JeweledVortex.md) (Shadertoy ID [fdjfDc](https://www.shadertoy.com/view/fdjfDc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Lover](ShaderOfTheWeek/Lover.md) (Shadertoy ID [fsjyR3](https://www.shadertoy.com/view/fsjyR3)) ported by [JiPi](../Site/Profiles/JiPi.md)
