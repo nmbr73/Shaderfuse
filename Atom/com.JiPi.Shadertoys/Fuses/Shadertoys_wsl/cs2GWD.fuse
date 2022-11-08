@@ -1,0 +1,1676 @@
+
+--
+--       _____        _   _       _   ______    _ _ _
+--      |  __ \      | \ | |     | | |  ____|  | (_) |
+--      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+--      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+--      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+--      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+--
+--   ... this File is managed by some scripts and can be
+--    overwritten at any time and without further notice!
+--         pls. see https://github.com/nmbr73/Shadertoys
+--                                           for details
+--
+
+local SHADERFUSES_REACTOR_PACKAGE_VERSION = '1.1'
+local SHADERFUSES_REACTOR_PACKAGE_DATE    = 'Nov 2022'
+
+--[[--/*
+
+  InerciaIntended.fuse
+
+  Based on https://www.shadertoy.com/view/cs2GWD a WebGL shader created by 0b5vr
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+-- MANDATORY -----------------------------------------------------------------
+local shadertoy_name       = " 20221105_inercia intended one"
+local shadertoy_author     = "0b5vr"
+local shadertoy_id         = "cs2GWD"
+local shadertoy_license    = ""
+local dctlfuse_category    = "Audio"
+local dctlfuse_name        = "InerciaIntended"
+local dctlfuse_author      = "JiPi"
+-- OPTIONAL ------------------------------------------------------------------
+local dctlfuse_versionNo   = 1
+local dctlfuse_versionDate = "November 05, 2022"
+local dctlfuse_authorurl   = "https://www.youtube.com/c/JiPi_YT"
+local dctlfuse_authorlogo=nil
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(
+
+
+  dctlfuse_name, CT_SourceTool, {
+  REGS_Category      = "Shadertoys\\"..dctlfuse_category,
+  REGS_OpIconString  = "ST-"..shadertoy_id,
+  REGS_OpDescription = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..") created by "..shadertoy_author.." and ported by "..dctlfuse_author..(shadertoy_license == "" and ". Copyright "..shadertoy_author.." (CC BY-NC-SA 3.0)" or ". "..shadertoy_license)..". This port is by no means meant to take advantage of anyone or to do anyone wrong : Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) if you see your rights abused or your intellectual property violated by this work.",
+  REG_Fuse_NoEdit    = true,
+  REG_Fuse_NoReload  = true,
+  REGS_Company       = dctlfuse_company==nil and dctlfuse_author or dctlfuse_company,
+  REGS_URL           = dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl,
+--REGS_URL           = 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html',
+  REG_Version        = dctlfuse_versionNo==nil and 1 or dctlfuse_versionNo,
+
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  FinalColor[4];
+  float  SpecColor[4];
+  float  MTL0Color[4];
+  float  MTL1Color[4];
+  float  MTL2Color[4];
+  float  MTL3Color[4];
+  float  MTL4Color[4];
+  float  MTL5Color[4];
+  float  SpecPower;
+  float  AnimationSpeed;
+  float  Anim1[4];
+  float  Anim2[4];
+  float  MTL0Sin;
+  float  MTL1Size[2];
+  bool   ManualLineLevel;
+  float  Freq;
+  float  LevelAudio;
+  float  LevelAudioOffset;
+  float  Zoom;
+  float  Wavefreq;
+  bool   TexOn;
+  bool   TexOnAlpha;
+  float  AlphaThres;
+  float  TexSize;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define sin_f3(i) sin(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define sin_f3(i) sin(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define sin_f3(i) to_float3( _sinf((i).x), _sinf((i).y), _sinf((i).z))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Audio' to iChannel0
+// Connect Image 'Texture: Bild' to iChannel1
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+#define lofi(i,j) (_floor((i)/(j))*(j))
+#define lofir(i,j) (round((i)/(j))*(j))
+
+#define PI    _acosf(-1.0f)
+#define TAU   PI*2.0f
+
+__DEVICE__ mat2 r2d(float t){
+  float c=_cosf(t),s=_sinf(t);
+  return to_mat2(c,s,-s,c);
+}
+
+__DEVICE__ mat3 orthbas(float3 z){
+  z=normalize(z);
+  float3 up=_fabs(z.y)>0.999f?to_float3(0,0,1):to_float3(0,1,0);
+  float3 x=normalize(cross(up,z));
+  return to_mat3_f3(x,cross(z,x),z);
+}
+
+__DEVICE__ uint3 pcg3d(uint3 s){
+  s=s*1145141919u+1919810u;
+  //s+=swi3(s,y,z,x)*swi3(s,z,x,y);
+  s = s + make_uint3(s.y * s.z , s.z * s.x, s.x * s.y);
+  //s^=s>>(uint)16;
+  s = make_uint3(s.x^s.x>>(uint)16,s.y^s.y>>(uint)16,s.z^s.z>>(uint)16);
+  //s+=swi3(s,y,z,x)*swi3(s,z,x,y);
+  s = s + make_uint3(s.y * s.z, s.z * s.x, s.x * s.y);
+  return s;
+}
+
+union Zahl
+ {
+   float3  _Float; //32bit float
+   uint3  _Uint;  //32bit unsigend integer
+ };
+
+
+__DEVICE__ float3 pcg3df(float3 s){
+
+  Zahl z;
+
+  z._Float = s;
+
+  //uint3 r = pcg3d(floatBitsToUint(s));
+  uint3 r = pcg3d(z._Uint);
+  return make_float3(r)/(float)(0xffffffffu);
+}
+
+struct Grid{
+  float3 s;
+  float3 c;
+  float3 h;
+  int i;
+  float d;
+};
+
+__DEVICE__ Grid dogrid(float3 ro,float3 rd){
+  Grid r;
+  r.s=to_float3(2,2,100);
+  for(int i=0;i<3;i++){
+    r.c=(_floor(ro/r.s)+0.5f)*r.s;
+    r.h=pcg3df(r.c);
+    r.i=i;
+
+    if(r.h.x<0.4f){
+      break;
+    }else if(i==0){
+      r.s=to_float3(2,1,100);
+    }else if(i==1){
+      r.s=to_float3(1,1,100);
+    }
+  }
+
+  float3 src=-1.0f*(ro-r.c)/rd;
+  float3 dst=abs_f3(0.501f*r.s/rd);
+  float3 bv=src+dst;
+  float b=_fminf(_fminf(bv.x,bv.y),bv.z);
+  r.d=b;
+
+  return r;
+}
+
+__DEVICE__ float sdbox(float3 p,float3 s){
+  float3 d=abs_f3(p)-s;
+  return length(_fmaxf(d,to_float3_s(0.0f)))+_fminf(0.0f,_fmaxf(_fmaxf(d.x,d.y),d.z));
+}
+
+__DEVICE__ float sdbox(float2 p,float2 s){
+  float2 d=abs_f2(p)-s;
+  return length(_fmaxf(d,to_float2_s(0.0f)))+_fminf(0.0f,_fmaxf(d.x,d.y));
+}
+
+__DEVICE__ float4 map(float3 p,Grid grid,float iTime, float Wavefreq, float Zoom){
+  p-=grid.c;
+  //p.z+=0.4f*_sinf(2.0f*iTime+1.0f*fract(grid.h.z*28.0f)+0.3f*(grid.c.x+grid.c.y));
+  p.z+=0.4f*_sinf(Wavefreq*iTime+1.0f*fract(grid.h.z*28.0f)+0.3f*(grid.c.x+grid.c.y))+Zoom;
+
+  float3 psize=grid.s/2.0f;
+  psize.z=1.0f;
+  psize-=0.02f;
+  float d=sdbox(p+to_float3(0,0,1),psize)-0.02f;
+
+  float pcol=1.0f;
+
+  float3 pt=p;
+
+  if(grid.i==0){//2x2
+    if(grid.h.y<0.3f){//speaker
+      float3 c=to_float3_s(0);
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(PI/4.0f)));
+      swi2S(c,x,y, lofir(swi2(pt,x,y),0.1f));
+      pt=pt-c;
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(-PI/4.0f)));
+
+      float r=0.02f*smoothstep(0.9f,0.7f,_fabs(p.x))*smoothstep(0.9f,0.7f,_fabs(p.y));
+      float hole=length(swi2(pt,x,y))-r;
+      d=_fmaxf(d,-hole);
+
+      return to_float4(d,6.0,pcol,0); // Speaker identifizieren
+
+    }else if(grid.h.y<0.5f){//eq
+      float3 c=to_float3_s(0);
+      c.x=clamp(lofir(pt.x,0.2f),-0.6f,0.6f);
+      pt-=c;
+      float hole=sdbox(swi2(pt,x,y),to_float2(0.0f,0.7f))-0.03f;
+      d=_fmaxf(d,-hole);
+
+      pt.y-=0.5f-smoothstep(-0.5f,0.5f,_sinf(iTime+c.x+grid.h.z*100.0f));
+      float d2=sdbox(pt,to_float3(0.02f,0.07f,0.07f))-0.03f;
+
+      if(d2<d){
+        float l=step(_fabs(pt.y),0.02f);
+        return to_float4(d2,2.0f*l,l,0);
+      }
+
+      pt=p;
+      c.y=clamp(lofir(pt.y,0.2f),-0.6f,0.6f);
+      pt-=c;
+      pcol*=smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y),to_float2(0.07f,0.0f))-0.005f);
+
+      pt=p;
+      c.y=clamp(lofir(pt.y,0.6f),-0.6f,0.6f);
+      pt-=c;
+      pcol*=smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y),to_float2(0.1f,0.0f))-0.01f);
+
+      pcol=_mix(1.0f,pcol,smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y),to_float2(0.03f,1.0f))-0.01f));
+
+    }else if(grid.h.y<0.6f){//kaosspad
+      float hole=sdbox(swi2(p,x,y),to_float2(0.9f,0.9f)+0.02f);
+      d=_fmaxf(d,-hole);
+
+      float d2=sdbox(p,to_float3(0.9f,0.9f,0.05f));
+
+      if(d2<d){
+        float l=step(_fabs(p.x),0.7f)*step(_fabs(p.y),0.7f);
+        return to_float4(d2,4.0f*l,0,0);
+      }
+    }else if(grid.h.y<1.0f){//bigass knob
+      float ani=smoothstep(-0.5f,0.5f,_sinf(iTime+grid.h.z*100.0f));
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(PI/6.0f*5.0f*_mix(-1.0f,1.0f,ani))));
+
+      float metal=step(length(swi2(pt,x,y)),0.45f);
+      float wave=metal*_sinf(length(swi2(pt,x,y))*500.0f)/1000.0f;
+      float d2=length(swi2(pt,x,y))-0.63f+0.05f*pt.z-0.02f*_cosf(8.0f*_atan2f(pt.y,pt.x));
+      d2=_fmaxf(d2,_fabs(pt.z)-0.4f-wave);
+
+      float d2b=length(swi2(pt,x,y))-0.67f+0.05f*pt.z;
+      d2b=_fmaxf(d2b,_fabs(pt.z)-0.04f);
+      d2=_fminf(d2,d2b);
+
+      if(d2<d){
+        float l=smoothstep(0.01f,0.0f,length(swi2(pt,x,y)-to_float2(0,0.53f))-0.03f);
+        return to_float4(d2,3.0f*metal,l,0);
+      }
+
+      pt=p;
+      float a=clamp(lofir(_atan2f(-pt.x,pt.y),PI/12.0f),-PI/6.0f*5.0f,PI/6.0f*5.0f);
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(a)));
+      pcol*=smoothstep(0.0f,0.01f,length(swi2(pt,x,y)-to_float2(0,0.74f))-0.015f);
+
+      pt=p;
+      a=clamp(lofir(_atan2f(-pt.x,pt.y),PI/6.0f*5.0f),-PI/6.0f*5.0f,PI/6.0f*5.0f);
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(a)));
+      pcol*=smoothstep(0.0f,0.01f,length(swi2(pt,x,y)-to_float2(0,0.74f))-0.03f);
+
+      float d3=length(p-to_float3(0.7f,-0.7f,0))-0.05f;
+
+      if(d3<d){
+        float led=1.0f-ani;
+        led*=0.5f+0.5f*_sinf(iTime*_exp2f(3.0f+3.0f*grid.h.z));
+        return to_float4(d3,2,led,0);
+      }
+    }
+  }else if(grid.i==1){//2x1
+    if(grid.h.y<0.4f){//fader
+      float hole=sdbox(swi2(p,x,y),to_float2(0.9f,0.05f));
+      d=_fmaxf(d,-hole);
+
+      float ani=smoothstep(-0.2f,0.2f,_sinf(iTime+grid.h.z*100.0f));
+      pt.x-=_mix(-0.8f,0.8f,ani);
+
+      float d2=sdbox(pt,to_float3(0.07f,0.25f,0.4f))+0.05f*p.z;
+      d2=_fmaxf(d2,-p.z);
+
+      if(d2<d){
+        float l=smoothstep(0.01f,0.0f,_fabs(p.y)-0.02f);
+        return to_float4(d2,0,l,0);
+      }
+
+      pt=p;
+      float3 c=to_float3_s(0);
+      c.x=clamp(lofir(pt.x,0.2f),-0.8f,0.8f);
+      pt-=c;
+      pcol*=smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y),to_float2(0.0f,0.15f))-0.005f);
+
+      pt=p;
+      c=to_float3_s(0);
+      c.x=clamp(lofir(pt.x,0.8f),-0.8f,0.8f);
+      pt-=c;
+      pcol*=smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y),to_float2(0.0f,0.18f))-0.01f);
+
+      pcol=_mix(1.0f,pcol,smoothstep(0.0f,0.01f,sdbox(swi2(p,x,y),to_float2(1.0f,0.08f))));
+    }else if(grid.h.y<0.5f){//button
+      float3 c=to_float3_s(0);
+      c.x=clamp(lofi(pt.x,0.44f)+0.44f/2.0f,-0.44f*1.5f,0.44f*1.5f);
+      pt-=c;
+
+      float hole=sdbox(swi2(pt,x,y),to_float2(0.19f,0.33f))-0.01f;
+      d=_fmaxf(d,-hole);
+
+      float ani=smoothstep(0.8f,0.9f,_sinf(10.0f*iTime-c.x*2.2f+grid.h.z*100.0f));
+
+      float4 fuck=to_float4(d,0,0,0);
+      float d3=length(pt-to_float3(0,0.22f,0.04f))-0.05f;
+
+      if(d3<fuck.x){
+        float led=ani;
+        fuck=to_float4(d3,2,led,0);
+      }
+
+      float d2=sdbox(pt,to_float3(0.17f,0.3f,0.05f))-0.01f;
+      d2=_fminf(d2,sdbox(pt-to_float3(0,-0.1f,0),to_float3(0.17f,0.2f,0.08f))-0.01f)+0.5f*pt.z;
+
+      if(d2<fuck.x){
+        fuck=to_float4(d2,5,fract(grid.h.z*8.89f),0);
+      }
+
+      if(fuck.x<d){
+        return fuck;
+      }
+
+    }else if(grid.h.y<1.0f){//meter
+      float hole=sdbox(swi2(p,x,y),to_float2(0.9f,0.3f)+0.02f);
+      d=_fmaxf(d,-hole);
+
+      float d2=sdbox(p,to_float3(0.9f,0.3f,0.1f));
+
+      if(d2<d){
+        float l=step(_fabs(p.x),0.8f)*step(_fabs(p.y),0.2f);
+        return to_float4(d2,l,0,0);
+      }
+    }
+  }else{//1x1
+    if(grid.h.y<0.5f){//knob
+      float hole=length(swi2(p,x,y))-0.25f;
+      d=_fmaxf(d,-hole);
+
+      float ani=smoothstep(-0.5f,0.5f,_sinf(2.0f*iTime+grid.h.z*100.0f));
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(PI/6.0f*5.0f*_mix(-1.0f,1.0f,ani))));
+
+      float d2=length(swi2(pt,x,y))-0.23f+0.05f*pt.z;
+      d2=_fmaxf(d2,_fabs(pt.z)-0.4f);
+
+      if(d2<d){
+        float l=smoothstep(0.01f,0.0f,_fabs(pt.x)-0.015f);
+        l*=smoothstep(0.01f,0.0f,-pt.y+0.05f);
+        return to_float4(d2,0,l,0);
+      }
+
+      pt=p;
+      float a=clamp(lofir(_atan2f(-pt.x,pt.y),PI/6.0f),-PI/6.0f*5.0f,PI/6.0f*5.0f);
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(a)));
+      pcol*=smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y)-to_float2(0,0.34f),to_float2(0.0f,0.02f))-0.005f);
+
+      pt=p;
+      a=clamp(lofir(_atan2f(-pt.x,pt.y),PI/6.0f*5.0f),-PI/6.0f*5.0f,PI/6.0f*5.0f);
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(a)));
+      pcol*=smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y)-to_float2(0,0.34f),to_float2(0.0f,0.03f))-0.01f);
+    }else if(grid.h.y<0.8f){//jack
+      float hole=length(swi2(p,x,y))-0.1f;
+      d=_fmaxf(d,-hole);
+
+      float d2=length(swi2(p,x,y))-0.15f;
+      d2=_fmaxf(d2,_fabs(p.z)-0.12f);
+
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(100.0f*grid.h.z)));
+      float d3=_fabs(pt.y)-0.2f;
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(PI/3.0f*2.0f)));
+      d3=_fmaxf(d3,_fabs(pt.y)-0.2f);
+      swi2S(pt,x,y, mul_f2_mat2(swi2(pt,x,y),r2d(PI/3.0f*2.0f)));
+      d3=_fmaxf(d3,_fabs(pt.y)-0.2f);
+      d3=_fmaxf(d3,_fabs(p.z)-0.03f);
+
+      d2=_fminf(d2,d3);
+      d2=_fmaxf(d2,-hole);
+
+      if(d2<d){
+        return to_float4(d2,3,0,0);
+      }
+    }else if(grid.h.y<0.99f){//button
+      pt.y+=0.08f;
+
+      float hole=sdbox(swi2(pt,x,y),to_float2_s(0.22f))-0.05f;
+      d=_fmaxf(d,-hole);
+
+      float ani=_sinf(2.0f*iTime+grid.h.z*100.0f);
+      float push=smoothstep(0.3f,0.0f,_fabs(ani));
+      ani=smoothstep(-0.1f,0.1f,ani);
+      pt.z+=0.06f*push;
+
+      float d2=sdbox(pt,to_float3(0.2f,0.2f,0.05f))-0.05f;
+
+      if(d2<d){
+        return to_float4(d2,0,0,0);
+      }
+
+      float d3=length(p-to_float3(0,0.3f,0))-0.05f;
+
+      if(d3<d){
+        float led=ani;
+        return to_float4(d3,2,led,0);
+      }
+    }else if(grid.h.y<1.0f){//0b5vr
+      pt=abs_f3(pt);
+      swi2S(pt,x,y, pt.x<pt.y?swi2(pt,y,x):swi2(pt,x,y));
+      pcol*=smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y),to_float2_s(0.05f)));
+      pcol*=smoothstep(0.0f,0.01f,sdbox(swi2(pt,x,y)-to_float2(0.2f,0),to_float2(0.05f,0.15f)));
+      pcol=1.0f-pcol;
+    }
+  }
+
+  return to_float4(d,0,pcol,0);
+}
+
+__DEVICE__ float3 nmap(float3 p,Grid grid,float dd, float iTime, float Wavefreq, float Zoom){
+  float2 d=to_float2(0,dd);
+  return normalize(to_float3(
+                            map(p+swi3(d,y,x,x),grid,iTime,Wavefreq,Zoom).x-map(p-swi3(d,y,x,x),grid,iTime,Wavefreq,Zoom).x,
+                            map(p+swi3(d,x,y,x),grid,iTime,Wavefreq,Zoom).x-map(p-swi3(d,x,y,x),grid,iTime,Wavefreq,Zoom).x,
+                            map(p+swi3(d,x,x,y),grid,iTime,Wavefreq,Zoom).x-map(p-swi3(d,x,x,y),grid,iTime,Wavefreq,Zoom).x
+                          ));
+}
+
+struct March{
+  float4 isect;
+  float3 rp;
+  float rl;
+  Grid grid;
+};
+
+__DEVICE__ March domarch(float3 ro,float3 rd,int iter, float iTime, float Wavefreq, float Zoom){
+  float rl=1E-2;
+  float3 rp=ro+rd*rl;
+  float4 isect;
+  Grid grid;
+  float gridlen=rl;
+
+  for(int i=0;i<iter;i++){
+    if(gridlen<=rl){
+      grid=dogrid(rp,rd);
+      gridlen+=grid.d;
+    }
+
+    isect=map(rp,grid,iTime,Wavefreq,Zoom);
+    rl=_fminf(rl+isect.x*0.8f,gridlen);
+    rp=ro+rd*rl;
+
+    if(_fabs(isect.x)<1E-4){break;}
+    if(rl>50.0f){break;}
+  }
+
+  March r;
+  r.isect=isect;
+  r.rp=rp;
+  r.rl=rl;
+  r.grid=grid;
+
+  return r;
+}
+
+__KERNEL__ void InerciaintendedFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 FinalColor = to_float4(params->FinalColor[0], params->FinalColor[1], params->FinalColor[2], params->FinalColor[3]);
+  float4 SpecColor = to_float4(params->SpecColor[0], params->SpecColor[1], params->SpecColor[2], params->SpecColor[3]);
+  float4 MTL0Color = to_float4(params->MTL0Color[0], params->MTL0Color[1], params->MTL0Color[2], params->MTL0Color[3]);
+  float4 MTL1Color = to_float4(params->MTL1Color[0], params->MTL1Color[1], params->MTL1Color[2], params->MTL1Color[3]);
+  float4 MTL2Color = to_float4(params->MTL2Color[0], params->MTL2Color[1], params->MTL2Color[2], params->MTL2Color[3]);
+  float4 MTL3Color = to_float4(params->MTL3Color[0], params->MTL3Color[1], params->MTL3Color[2], params->MTL3Color[3]);
+  float4 MTL4Color = to_float4(params->MTL4Color[0], params->MTL4Color[1], params->MTL4Color[2], params->MTL4Color[3]);
+  float4 MTL5Color = to_float4(params->MTL5Color[0], params->MTL5Color[1], params->MTL5Color[2], params->MTL5Color[3]);
+  float  SpecPower = params->SpecPower;
+  float  AnimationSpeed = params->AnimationSpeed;
+  float4 Anim1 = to_float4(params->Anim1[0], params->Anim1[1], params->Anim1[2], params->Anim1[3]);
+  float4 Anim2 = to_float4(params->Anim2[0], params->Anim2[1], params->Anim2[2], params->Anim2[3]);
+  float  MTL0Sin = params->MTL0Sin;
+  float2 MTL1Size = to_float2(params->MTL1Size[0], params->MTL1Size[1]);
+  bool   ManualLineLevel = params->ManualLineLevel;
+  float  Freq = params->Freq;
+  float  LevelAudio = params->LevelAudio;
+  float  LevelAudioOffset = params->LevelAudioOffset;
+  float  Zoom = params->Zoom;
+  float  Wavefreq = params->Wavefreq;
+  bool   TexOn = params->TexOn;
+  bool   TexOnAlpha = params->TexOnAlpha;
+  float  AlphaThres = params->AlphaThres;
+  float  TexSize = params->TexSize;
+
+  // --------
+
+  //CONNECT_COLOR0(Color, 0.0f, 0.0f, 0.0f, 1.0f);
+
+  float2 uv = to_float2(fragCoord.x / iResolution.x, fragCoord.y / iResolution.y);
+  float2 p=uv*2.0f-1.0f;
+  p.x*=iResolution.x/iResolution.y;
+
+  float3 col=to_float3_s(0);
+
+  float canim=smoothstep(-0.2f,0.2f,_sinf(iTime*AnimationSpeed));
+  float3 co=_mix(swi3(Anim1,x,y,z),swi3(Anim2,x,y,z),canim);
+
+  float2 m =  swi2(iMouse,x,y)/iResolution;
+
+  float3 ct=to_float3(0,0,-50);
+  float cr=_mix(0.5f,0.0f,canim);
+  swi2S(co,x,y, swi2(co,x,y) + iTime);
+  swi2S(ct,x,y, swi2(ct,x,y) + iTime);
+
+  mat3 cb = orthbas(co-ct);
+  float3 ro = co+mul_mat3_f3(cb , to_float3_aw(4.0f* mul_f2_mat2(p,r2d(cr)),0));
+
+  ro.x += 1.0f-m.x-0.5f;
+  ro.y += m.y-0.5f;
+
+  float3 rd = mul_mat3_f3(cb , normalize(to_float3(0,0,-2)));
+
+  March march=domarch(ro,rd,100,iTime,Wavefreq,Zoom);
+
+  float mtl;
+
+  if(march.isect.x<1E-2){
+    float3 basecol=to_float3_s(0.5f); //swi3(BaseColor,x,y,z);//
+    float3 speccol=swi3(SpecColor,x,y,z);//to_float3_s(0.2f);
+    float specpow=30.0f * SpecPower;
+    float ndelta=1E-4;
+
+          mtl=march.isect.y;
+    float mtlp=march.isect.z;
+    if(mtl==0.0f){
+      mtlp=_mix(mtlp,1.0f-mtlp,step(fract(march.grid.h.z*66.0f),0.1f));
+      float3 c=0.9f+MTL0Sin*sin_f3(0.1f*(march.grid.c.x+march.grid.c.y)+march.grid.h.z+to_float3(0,2,3));
+      basecol=_mix(to_float3_s(0.04f),c,mtlp) + swi3(MTL0Color,x,y,z) - 0.5f;
+    }else if(mtl==1.0f){
+      basecol=to_float3_s(0);
+      speccol=to_float3_s(0.5f);
+      specpow=60.0f;
+
+      float2 size=to_float2(0.05f,0.2f) + MTL1Size;
+      float2 pp=swi2((march.rp-march.grid.c),x,y);
+      float2 c=lofi(swi2(pp,x,y),size)+size/2.0f;
+      float2 cc=pp-c;
+      float3 led=to_float3_s(1);
+      led*=_expf(-60.0f*sdbox(cc,to_float2(0.0f,0.08f)));
+      led*=c.x>0.5f?to_float3(5,1,2):to_float3(1,5,2);
+      //float lv=texture(iChannel0,to_float2(march.grid.h.z,0)).x*1.0f;
+      float lv = (texture(iChannel0,to_float2(Freq,0)).x-LevelAudioOffset)*LevelAudio*1.0f;
+
+      if(ManualLineLevel) lv = LevelAudio;
+
+      col+=led*step(c.x,-0.8f+1.6f*lv);
+      basecol=0.04f*led + swi3(MTL1Color,x,y,z)-0.5f;
+    }else if(mtl==2.0f){//led
+      basecol=to_float3_s(0);
+      speccol=to_float3_s(1.0f);
+      specpow=100.0f;
+
+      col+=mtlp*swi3(MTL2Color,x,y,z);//to_float3(2,0.5f,0.5f);
+    }else if(mtl==3.0f){//metal
+      basecol=swi3(MTL3Color,x,y,z);//to_float3_s(0.2f);
+      speccol=to_float3_s(1.8f);
+      specpow=100.0f;
+      ndelta=3E-2;
+    }else if(mtl==4.0f){//kaoss
+      basecol=to_float3_s(0);
+      speccol=to_float3_s(0.5f);
+      specpow=60.0f;
+
+      float2 size=to_float2_s(0.1f);
+      float2 pp=swi2((march.rp-march.grid.c),x,y);
+      float2 c=lofi(swi2(pp,x,y),size)+size/2.0f;
+      float2 cc=pp-c;
+      float3 led=to_float3_s(1);
+      led*=_expf(-60.0f*sdbox(cc,to_float2(0.0f,0.0f)));
+      led*=to_float3(2,1,2);
+      float plasma=_sinf(length(c)*10.0f-10.0f*iTime+march.grid.h.z*0.7f);
+      plasma+=_sinf(c.y*10.0f-7.0f*iTime);
+      led*=0.5f+0.5f*_sinf(plasma);
+      col+=2.0f*led;
+      basecol=0.04f*led + swi3(MTL4Color,x,y,z)-0.5f;;
+    }else if(mtl==5.0f){//808
+      //basecol=to_float3(0.9f,mtlp + (MTL5Color.y-0.5f),0.02f);
+      basecol=to_float3(MTL5Color.x,mtlp + (MTL5Color.y-0.5f),MTL5Color.z);
+    }else if(mtl==6.0f){//Speaker
+      //basecol=to_float3(0.9f,mtlp + (MTL5Color.y-0.5f),0.02f);
+      //basecol=swi3(texture(iChannel1,fragCoord/iResolution),x,y,z); //klappt
+      if(TexOn && canim == 1.0f) basecol=swi3(texture(iChannel1,swi2(ro,x,y)*1.0f/TexSize),x,y,z); //klappt
+    }
+
+    float3 n=nmap(march.rp,march.grid,ndelta,iTime,Wavefreq,Zoom);
+    float3 v=-rd;
+
+    {
+      float3 l=normalize(to_float3(1,3,5));
+      float3 h=normalize(l+v);
+      float dotnl=_fmaxf(0.0f,dot(n,l));
+      float dotnh=_fmaxf(0.0f,dot(n,h));
+      float shadow=step(1E-1,domarch(march.rp,l,30,iTime,Wavefreq,Zoom).isect.x);
+      float3 diff=basecol/PI;
+      float3 spec=speccol*_powf(dotnh,specpow);
+      col+=swi3(FinalColor,x,y,z)*shadow*dotnl*(diff+spec);
+    }
+    {
+      float3 l=normalize(to_float3(-1,-1,5));
+      float3 h=normalize(l+v);
+      float dotnl=_fmaxf(0.0f,dot(n,l));
+      float dotnh=_fmaxf(0.0f,dot(n,h));
+      float shadow=step(1E-1,domarch(march.rp,l,30,iTime,Wavefreq,Zoom).isect.x);
+      float3 diff=basecol/PI;
+      float3 spec=speccol*_powf(dotnh,specpow);
+      col+=shadow*dotnl*(diff+spec);
+    }
+  }
+
+  if(TexOnAlpha && mtl==6.0f && canim == 1.0f)
+  {
+     float4 Texcol = texture(iChannel1,swi2(ro,x,y)*1.0f/TexSize);
+     col = Texcol.w > AlphaThres ? swi3(Texcol,x,y,z) : col;
+  }
+
+  col=pow_f3(col,to_float3_s(0.4545f));
+  col=smoothstep(to_float3(0,-0.1f,-0.2f),to_float3(1,1.1f,1.2f),col);
+  fragColor = to_float4_aw(col,FinalColor.w);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  StandardShaderFuseTopControls();
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  
+self:BeginControlNest("Colors", "Colors", false, {})  
+  self:BeginControlNest("FinalColor", "FinalColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FinalColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFinalColorColorR = self:AddInput("Red",   "FinalColorRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InFinalColorColorG = self:AddInput("Green", "FinalColorGreen", { INP_Default  = 0.6, IC_ControlID = 1, attrs})
+    InFinalColorColorB = self:AddInput("Blue",  "FinalColorBlue",  { INP_Default  = 0.7, IC_ControlID = 2, attrs})
+    InFinalColorColorA = self:AddInput("Alpha", "FinalColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("SpecColor", "SpecColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "SpecColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InSpecColorColorR = self:AddInput("Red",   "SpecColorRed",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InSpecColorColorG = self:AddInput("Green", "SpecColorGreen", { INP_Default  = 0.2, IC_ControlID = 1, attrs})
+    InSpecColorColorB = self:AddInput("Blue",  "SpecColorBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InSpecColorColorA = self:AddInput("Alpha", "SpecColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MTL0Color", "MTL0Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MTL0Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMTL0ColorColorR = self:AddInput("Red",   "MTL0ColorRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InMTL0ColorColorG = self:AddInput("Green", "MTL0ColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InMTL0ColorColorB = self:AddInput("Blue",  "MTL0ColorBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InMTL0ColorColorA = self:AddInput("Alpha", "MTL0ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MTL1Color", "MTL1Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MTL1Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMTL1ColorColorR = self:AddInput("Red",   "MTL1ColorRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InMTL1ColorColorG = self:AddInput("Green", "MTL1ColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InMTL1ColorColorB = self:AddInput("Blue",  "MTL1ColorBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InMTL1ColorColorA = self:AddInput("Alpha", "MTL1ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MTL2Color", "MTL2Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MTL2Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMTL2ColorColorR = self:AddInput("Red",   "MTL2ColorRed",   { INP_Default  = 2.0, IC_ControlID = 0, attrs})
+    InMTL2ColorColorG = self:AddInput("Green", "MTL2ColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InMTL2ColorColorB = self:AddInput("Blue",  "MTL2ColorBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InMTL2ColorColorA = self:AddInput("Alpha", "MTL2ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MTL3Color", "MTL3Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MTL3Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMTL3ColorColorR = self:AddInput("Red",   "MTL3ColorRed",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InMTL3ColorColorG = self:AddInput("Green", "MTL3ColorGreen", { INP_Default  = 0.2, IC_ControlID = 1, attrs})
+    InMTL3ColorColorB = self:AddInput("Blue",  "MTL3ColorBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InMTL3ColorColorA = self:AddInput("Alpha", "MTL3ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MTL4Color", "MTL4Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MTL4Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMTL4ColorColorR = self:AddInput("Red",   "MTL4ColorRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InMTL4ColorColorG = self:AddInput("Green", "MTL4ColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InMTL4ColorColorB = self:AddInput("Blue",  "MTL4ColorBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InMTL4ColorColorA = self:AddInput("Alpha", "MTL4ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MTL5Color", "MTL5Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MTL5Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMTL5ColorColorR = self:AddInput("Red",   "MTL5ColorRed",   { INP_Default  = 0.9, IC_ControlID = 0, attrs})
+    InMTL5ColorColorG = self:AddInput("Green", "MTL5ColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InMTL5ColorColorB = self:AddInput("Blue",  "MTL5ColorBlue",  { INP_Default  = 0.02, IC_ControlID = 2, attrs})
+    InMTL5ColorColorA = self:AddInput("Alpha", "MTL5ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+self:EndControlNest()
+
+
+  InSpecPowerSlider = self:AddInput("SpecPower", "SpecPower", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InAnimationSpeedSlider = self:AddInput("AnimationSpeed", "AnimationSpeed", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 100.0,
+          INP_Default        = 1.0,
+      })
+
+  self:BeginControlNest("AnimationPositions", "Anim1", false, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+    attrs = {
+      ICS_Name = "Anim1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InAnim1ColorR = self:AddInput("Red",   "Anim1Red",   { INP_Default  = -6.0, IC_ControlID = 0, attrs})
+    InAnim1ColorG = self:AddInput("Green", "Anim1Green", { INP_Default  = -8.0, IC_ControlID = 1, attrs})
+    InAnim1ColorB = self:AddInput("Blue",  "Anim1Blue",  { INP_Default  = -40.0, IC_ControlID = 2, attrs})
+    InAnim1ColorA = self:AddInput("Alpha", "Anim1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+  
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+    attrs = {
+      ICS_Name = "Anim2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InAnim2ColorR = self:AddInput("Red",   "Anim2Red",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InAnim2ColorG = self:AddInput("Green", "Anim2Green", { INP_Default  = -2.0, IC_ControlID = 1, attrs})
+    InAnim2ColorB = self:AddInput("Blue",  "Anim2Blue",  { INP_Default  = -40.0, IC_ControlID = 2, attrs})
+    InAnim2ColorA = self:AddInput("Alpha", "Anim2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InMTL0SinSlider = self:AddInput("SinusColorize", "MTL0Sin", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InMTL1SizePoint = self:AddInput("Level meter", "MTL1Size", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  
+  
+  InManualLineLevelCheckbox = self:AddInput("ManualLineLevel", "ManualLineLevel", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InFreqSlider = self:AddInput("Freq", "Freq", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.2,
+      })
+
+  InLevelAudioSlider = self:AddInput("LevelAudio", "LevelAudio", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InLevelAudioOffsetSlider = self:AddInput("LevelAudioOffset", "LevelAudioOffset", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.2,
+      })
+
+  InZoomSlider = self:AddInput("Zoom", "Zoom", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          IC_Visible         = false,
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 100.0,
+          INP_Default        = 0.0,
+      })
+
+  InWavefreqSlider = self:AddInput("Wavefreq", "Wavefreq", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 2.0,
+      })
+
+  InTexOnCheckbox = self:AddInput("TexOn", "TexOn", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTexOnAlphaCheckbox = self:AddInput("TexOnAlpha", "TexOnAlpha", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAlphaThresSlider = self:AddInput("AlphaThres", "AlphaThres", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0,
+      })
+
+  InTexSizeSlider = self:AddInput("TexSize", "TexSize", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 4.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 102), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	  IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 1.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+    --{ MBTNC_AddButton = "No Normalized", MBTNCD_ButtonWidth = 5/16, }, 
+  }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  StandardShaderFuseBottomControls();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+    node = DVIPComputeNode(req,
+          "InerciaintendedFuse", ShaderCompatibilityCode..ShaderKernelCode,
+          "Params", ShaderParameters )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.FinalColor = {
+    InFinalColorColorR:GetValue(req).Value,
+    InFinalColorColorG:GetValue(req).Value,
+    InFinalColorColorB:GetValue(req).Value,InFinalColorColorA:GetValue(req).Value
+  }
+  params.SpecColor = {
+    InSpecColorColorR:GetValue(req).Value,
+    InSpecColorColorG:GetValue(req).Value,
+    InSpecColorColorB:GetValue(req).Value,InSpecColorColorA:GetValue(req).Value
+  }
+  params.MTL0Color = {
+    InMTL0ColorColorR:GetValue(req).Value,
+    InMTL0ColorColorG:GetValue(req).Value,
+    InMTL0ColorColorB:GetValue(req).Value,InMTL0ColorColorA:GetValue(req).Value
+  }
+  params.MTL1Color = {
+    InMTL1ColorColorR:GetValue(req).Value,
+    InMTL1ColorColorG:GetValue(req).Value,
+    InMTL1ColorColorB:GetValue(req).Value,InMTL1ColorColorA:GetValue(req).Value
+  }
+  params.MTL2Color = {
+    InMTL2ColorColorR:GetValue(req).Value,
+    InMTL2ColorColorG:GetValue(req).Value,
+    InMTL2ColorColorB:GetValue(req).Value,InMTL2ColorColorA:GetValue(req).Value
+  }
+  params.MTL3Color = {
+    InMTL3ColorColorR:GetValue(req).Value,
+    InMTL3ColorColorG:GetValue(req).Value,
+    InMTL3ColorColorB:GetValue(req).Value,InMTL3ColorColorA:GetValue(req).Value
+  }
+  params.MTL4Color = {
+    InMTL4ColorColorR:GetValue(req).Value,
+    InMTL4ColorColorG:GetValue(req).Value,
+    InMTL4ColorColorB:GetValue(req).Value,InMTL4ColorColorA:GetValue(req).Value
+  }
+  params.MTL5Color = {
+    InMTL5ColorColorR:GetValue(req).Value,
+    InMTL5ColorColorG:GetValue(req).Value,
+    InMTL5ColorColorB:GetValue(req).Value,InMTL5ColorColorA:GetValue(req).Value
+  }
+  params.SpecPower = InSpecPowerSlider:GetValue(req).Value
+  params.AnimationSpeed = InAnimationSpeedSlider:GetValue(req).Value
+  params.Anim1 = {
+    InAnim1ColorR:GetValue(req).Value,
+    InAnim1ColorG:GetValue(req).Value,
+    InAnim1ColorB:GetValue(req).Value,InAnim1ColorA:GetValue(req).Value
+  }
+  params.Anim2 = {
+    InAnim2ColorR:GetValue(req).Value,
+    InAnim2ColorG:GetValue(req).Value,
+    InAnim2ColorB:GetValue(req).Value,InAnim2ColorA:GetValue(req).Value
+  }
+  params.MTL0Sin = InMTL0SinSlider:GetValue(req).Value
+  params.MTL1Size = {InMTL1SizePoint:GetValue(req).X,InMTL1SizePoint:GetValue(req).Y}
+  params.ManualLineLevel = InManualLineLevelCheckbox:GetValue(req).Value
+  params.Freq = InFreqSlider:GetValue(req).Value
+  params.LevelAudio = InLevelAudioSlider:GetValue(req).Value
+  params.LevelAudioOffset = InLevelAudioOffsetSlider:GetValue(req).Value
+  params.Zoom = InZoomSlider:GetValue(req).Value
+  params.Wavefreq = InWavefreqSlider:GetValue(req).Value
+  params.TexOn = InTexOnCheckbox:GetValue(req).Value
+  params.TexOnAlpha = InTexOnAlphaCheckbox:GetValue(req).Value
+  params.AlphaThres = InAlphaThresSlider:GetValue(req).Value
+  params.TexSize = InTexSizeSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+   
+    node:AddInput("iChannel0",iChannel0) -- Audio 
+    node:AddInput("iChannel1",iChannel1) -- Logo
+    node:AddOutput("dst", dst)
+  
+   
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
+
+-- /* ====================== DO NOT TOUCH OR APPEND ANY CODE HERE ===========================================
+
+
+function StandardShaderFuseTopControls()
+  -- Branding
+  self:AddInput('<p align="center"><a href="https://github.com/nmbr73/Shadertoys"><img height="20" width="210" src="data:image/png;base64,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" /></a></p>',
+  "DctlFuseBrandLabel", {
+    IC_ControlPage = -1 ,
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    LBLC_MultiLine = true,
+    IC_NoLabel = true,
+    IC_NoReset = true,
+    INP_External = false,
+    INP_Passive = true,
+  })
+end
+
+function StandardShaderFuseBottomControls()
+
+  local version_info=''
+
+  if dctlfuse_versionNo == nil then dctlfuse_versionNo='' end
+  if dctlfuse_versionDate == nil then dctlfuse_versionDate='' end
+
+  if dctlfuse_versionNo=='' and dctlfuse_versionDate=='' then
+    version_info=''
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate=='' then
+    version_info='Fuse version '..dctlfuse_versionNo
+  elseif dctlfuse_versionNo == '' and dctlfuse_versionDate~='' then
+    version_info=dctlfuse_versionDate
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate~='' then
+    version_info='Version '..dctlfuse_versionNo..' - '..dctlfuse_versionDate
+  end
+
+  if version_info ~= '' then
+    version_info=version_info..'<br />'
+  end
+
+  -- self:BeginControlNest("Shaderfuse Info", "Shaderfuse_Info", true, {})
+
+  -- Separator
+  self:AddInput( '<br />',"DctlFuseSeparatorLabel",{LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+  -- Info Btn
+  self:AddInput(dctlfuse_name.." Info ...", "DctlFuseInfoButton", {IC_ControlPage = 1,LINKID_DataType = "Text",INPID_InputControl = "ButtonControl",INP_DoNotifyChanged = false,INP_External = false,BTNCS_Execute = 'bmd.openurl("'..(dctlfuse_infourl~=nil and dctlfuse_infourl or 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html')..'")'})
+  -- Info Txt
+  self:AddInput('<p align="center">'
+    ..'Shadertoy <a href="https://www.shadertoy.com/view/'..shadertoy_id..'" style="color:white; text-decoration:none; ">'..shadertoy_name..'</a> by <a href="https://www.shadertoy.com/user/'..shadertoy_author..'" style="color:#a0a060; text-decoration:none; ">'..shadertoy_author..'</a><br />'
+    ..'<span style="color:#a06060; ">'..(shadertoy_license == "" and '&copy; '..shadertoy_author..' (CC BY-NC-SA 3.0)' or shadertoy_license)..'</span><br />'
+    ..'DCTLified and DaFused by <a href="'..(dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl)..'" style="color:#a0a060; text-decoration:none; ">'..dctlfuse_author..'</a><br />'
+    ..version_info
+    ..'Reactor package v'..SHADERFUSES_REACTOR_PACKAGE_VERSION..' created '..SHADERFUSES_REACTOR_PACKAGE_DATE..'<br />'
+    ,"DctlFuseInfoLabel", {IC_ControlPage = 1, LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+
+    -- self:EndControlNest()
+
+  end
+
+-- */
