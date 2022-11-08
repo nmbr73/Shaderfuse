@@ -54,6 +54,9 @@ based on [Frozen wasteland](https://www.shadertoy.com/view/Xls3D2) written by [D
 ## **[FuturisticTunnel](FuturisticTunnel.md)**
 based on [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd) written by [julianlumia](https://www.shadertoy.com/user/julianlumia)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[GenerativeArtDeco4](GenerativeArtDeco4.md)** :boom:
+- *fuse category 'Incubator' does not match fuse's subdirectory*
+
 ## **[HyperDough](HyperDough.md)**
 based on [HyperDough](https://www.shadertoy.com/view/7tcGWB) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

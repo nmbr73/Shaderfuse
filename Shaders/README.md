@@ -31,7 +31,7 @@
 **[Audio Shaders](Audio/README.md)**
 - [AudioHeightfield1](Audio/AudioHeightfield1.md) (Shadertoy ID [ldXGzN](https://www.shadertoy.com/view/ldXGzN)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) (Shadertoy ID [wd3Bzl](https://www.shadertoy.com/view/wd3Bzl)) ported by [JiPi](../Site/Profiles/JiPi.md)
-- [InerciaIntended](Audio/InerciaIntended.md) :boom:
+- [InerciaIntended](Audio/InerciaIntended.md) (Shadertoy ID [cs2GWD](https://www.shadertoy.com/view/cs2GWD)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [JamSession](Audio/JamSession.md) (Shadertoy ID [XdsyW4](https://www.shadertoy.com/view/XdsyW4)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ReactiveVoronoi](Audio/ReactiveVoronoi.md) (Shadertoy ID [Ml3GDX](https://www.shadertoy.com/view/Ml3GDX)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Rlstyle](Audio/Rlstyle.md) (Shadertoy ID [llXyzN](https://www.shadertoy.com/view/llXyzN)) ported by [JiPi](../Site/Profiles/JiPi.md)
@@ -127,6 +127,7 @@
 - [FractalGliding](ShaderOfTheWeek/FractalGliding.md) (Shadertoy ID [ftGGDR](https://www.shadertoy.com/view/ftGGDR)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FrozenWasteland](ShaderOfTheWeek/FrozenWasteland.md) (Shadertoy ID [Xls3D2](https://www.shadertoy.com/view/Xls3D2)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) (Shadertoy ID [wdScRd](https://www.shadertoy.com/view/wdScRd)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) :boom:
 - [HyperDough](ShaderOfTheWeek/HyperDough.md) (Shadertoy ID [7tcGWB](https://www.shadertoy.com/view/7tcGWB)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [JeweledVortex](ShaderOfTheWeek/JeweledVortex.md) (Shadertoy ID [fdjfDc](https://www.shadertoy.com/view/fdjfDc)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Lover](ShaderOfTheWeek/Lover.md) (Shadertoy ID [fsjyR3](https://www.shadertoy.com/view/fsjyR3)) ported by [JiPi](../Site/Profiles/JiPi.md)

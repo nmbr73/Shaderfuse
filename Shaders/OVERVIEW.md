@@ -124,9 +124,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/InerciaIntended](Audio/InerciaIntended_320x180.png)\
-Fuse: [InerciaIntended](Audio/InerciaIntended.md) :boom:\
+Fuse: [InerciaIntended](Audio/InerciaIntended.md) :four_leaf_clover:\
 Category: [Audio](Audio/README.md)\
-**markdown does not exists**
+Shadertoy: [ 20221105_inercia intended one](https://www.shadertoy.com/view/cs2GWD)\
+Author: [0b5vr](https://www.shadertoy.com/user/0b5vr)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/JamSession](Audio/JamSession_320x180.png)\
@@ -709,6 +711,12 @@ Author: [julianlumia](https://www.shadertoy.com/user/julianlumia)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4_320x180.png)\
+Fuse: [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) :boom:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+**fuse category 'Incubator' does not match fuse's subdirectory**
+
+
 ![ShaderOfTheWeek/HyperDough](ShaderOfTheWeek/HyperDough_320x180.png)\
 Fuse: [HyperDough](ShaderOfTheWeek/HyperDough.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -1017,7 +1025,7 @@ Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 118
+:four_leaf_clover: 119
 
 :boom: 1
 
