@@ -13,6 +13,26 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[generative art deco 4](https://www.shadertoy.com/view/mds3DX)| fuse | ShaderOfTheWeek 45/22 |
+|[Oil and water](https://www.shadertoy.com/view/wtVGzW)| incub | ABCD ! Blending |
+|[Reaction Diffusion Fluid](https://www.shadertoy.com/view/mdB3zV)| incub | ABCD ! Blending |
+|[JackOLantern](https://www.shadertoy.com/view/mdj3WW)| fuse | ABC ! mit Textur - sehr gute Rauchsimulation |
+|[2d ripples + displacement](https://www.shadertoy.com/view/Nslfzs)| incub | AB Waterripples Blending ! |
+|[Engraved Face](https://www.shadertoy.com/view/4lyyRR)| incub | Cooler Bumpmap - Lichtposition anpassen |
+|[20221105_inercia intended one](cs2GWD)| fuse | Cooles Audiomischpult -Audioshader |
+|[[MIGJRV] Happy Valentine's Day](https://www.shadertoy.com/view/XsVGzK)| fuse | !  |
+|[The wall of speakers](https://www.shadertoy.com/view/DdSGWh)| fuse | !!! Supercoole Lautsprecherwand |
+|[Yet Another Black Hole](https://www.shadertoy.com/view/Xtcczs)| incub | Merkwürdige Maskenberechnung |
+|[///105---/// shades](https://www.shadertoy.com/view/XdcBWl)| incub | A ! spilled ! Diffusionberechnung fehlerhaft ! Shadertoy korigiert - DCTL nicht !!  |
+|[city bokeh blur](https://www.shadertoy.com/view/lljGDw)| incub | Netter Bokeheffekt, aber schwer zu parametrisieren |
+|[Glow shader test 2](https://www.shadertoy.com/view/MdSfWG)| incub | Netter Feuerring |
+|[RGB Smoke](https://www.shadertoy.com/view/XsBfz1)| fuse | A ! cooler Effekt - Blending  |
+|[Viscous Fingering REMIX](https://www.shadertoy.com/view/4sjfzW)| incub | AB ! sehr cooler Effekt - Blending  |
+|[maze dither - alt](https://www.shadertoy.com/view/Mt33zX)| fuse (defect) | fwidth funktioniert anders - trotzdem nett |
+|[Copa caramba](https://www.shadertoy.com/view/MtK3zw)| fuse | A Video Trail |
+|[Nematomorpha](https://www.shadertoy.com/view/ltdfR7)| fuse | ! |
+|[Erosion Simulation](https://www.shadertoy.com/view/DsS3Rm)| incub | ABC Blending |
+|[Noise plasma 2](https://www.shadertoy.com/view/3sd3Rl)| incub | uint3 ! (in der Anfangszeit defekt) jetzt erfolgreich |
 |[Wednesday messing around](https://www.shadertoy.com/view/NtcyDn)| fuse | Shader of the Week 44/22 |
 |[ring worm](https://www.shadertoy.com/view/ttsfRf)| defect | ABC Drehungen verhalten sich anders |
 |[simply liquid](https://www.shadertoy.com/view/cdj3RW)| defect | verhält sich anders - Bild läuft - Mit Parameter korrigiert ! |

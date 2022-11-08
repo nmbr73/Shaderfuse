@@ -68,10 +68,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (02th of November 2022):**](Shaders/ShaderOfTheWeek/WednesdayMessingAround.md)
+[**Current Shader of the Week (08th of November 2022):**](Shaders/ShaderOfTheWeek/GenerativeArtDeco4.md)
 
-[![WednesdayMessingAround](https://user-images.githubusercontent.com/78935215/199586416-e9cbca39-9d1c-41d2-be33-695a25e075f3.gif)
-](Shaders/ShaderOfTheWeek/WednesdayMessingAround.md)
+[![GenerativeArtDeco4](https://user-images.githubusercontent.com/78935215/200687263-7aee7e94-a670-48ad-9e1e-7f29f44f8fa6.gif)
+](Shaders/ShaderOfTheWeek/GenerativeArtDeco4.md)
 
 
 
