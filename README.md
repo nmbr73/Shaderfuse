@@ -53,6 +53,7 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=VwIa6QokOFk" target="_blank"><img src="http://img.youtube.com/vi/VwIa6QokOFk/0.jpg" alt="Demo 23" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/VwIa6QokOFk?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ArkJzr2Aej0" target="_blank"><img src="http://img.youtube.com/vi/ArkJzr2Aej0/0.jpg" alt="Demo 24" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ArkJzr2Aej0?style=social" /></a></td>
 </tr>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=JtOvp7-Cmzg" target="_blank"><img src="http://img.youtube.com/vi/JtOvp7-Cmzg/0.jpg" alt="Demo 25" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/JtOvp7-Cmzg?style=social" /></a></td>
 </table>
 </center>
 
@@ -68,10 +69,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (08th of November 2022):**](Shaders/ShaderOfTheWeek/GenerativeArtDeco4.md)
+[**Current Shader of the Week (30th of November 2022):**](Shaders/ShaderOfTheWeek/Energeticflyby.md)
 
-[![GenerativeArtDeco4](https://user-images.githubusercontent.com/78935215/200687263-7aee7e94-a670-48ad-9e1e-7f29f44f8fa6.gif)
-](Shaders/ShaderOfTheWeek/GenerativeArtDeco4.md)
+[![Energeticflyby](https://user-images.githubusercontent.com/78935215/204669901-f1eda61f-dcf6-4506-85a0-9c41f3ff9944.gif)
+](Shaders/ShaderOfTheWeek/Energeticflyby.md)
 
 
 

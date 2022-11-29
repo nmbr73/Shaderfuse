@@ -13,6 +13,32 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[[Inércia 2022] Energetic Flyby](https://www.shadertoy.com/view/csjGDD)| fuse | ShaderOfTheWeek 48/22 |
+|[name this](https://www.shadertoy.com/view/mdsSD2)| fuse | ABC !! Blending |
+|[lit](https://www.shadertoy.com/view/cslSRX)| fuse | ABC ! Blending warp ! NaN/inf |
+|[swirl explosion](https://www.shadertoy.com/view/cdfSWM)| incub | ABC in "point Step" integriert aber noch NaNs |
+|[point step](https://www.shadertoy.com/view/DsfSz2)| incub | ABC ! NaN und inf -> Shadertoy setzt dann auf Null !!!!!! |
+|[Elastic fluid](https://www.shadertoy.com/view/wdtfDj)| incub | ABCD  |
+|[dirty wigglers](https://www.shadertoy.com/view/ddj3R3)| defect | kein Bild |
+|[Artober - Hanabi](https://www.shadertoy.com/view/dsB3zc)| incub | ABC Blending |
+|[BaraBara](https://www.shadertoy.com/view/msfXW7)| incub |  |
+|[Fork Water Flow mehow_one 396](https://www.shadertoy.com/view/csXSDM)| incub | A |
+|[Dark Plasma Star](https://www.shadertoy.com/view/dsXXD4)| incub | A |
+|[Reaction Diffusion Bloody](https://www.shadertoy.com/view/dssSD4)| incub | AB |
+|[Watery Ripples](https://www.shadertoy.com/view/dsfXWr)| incub | A |
+|[Dark Plasma Star](https://www.shadertoy.com/view/dsXXD4)| incub | A ! |
+|[bubbles (slow)](https://www.shadertoy.com/view/DdlXWn)| incub | A |
+|[Birthday of the Dead](https://www.shadertoy.com/view/dsXXRH)| incub | ABCD ! Blending |
+|[Sliced Gyroid Fly Though](https://www.shadertoy.com/view/dssXzN)| incub |  |
+|[Failed flow field](https://www.shadertoy.com/view/ms2GW3)| incub | AB |
+|[Fungus looking for jelly V3](https://www.shadertoy.com/view/cdXXDn)| defect | A |
+|[Dripping Red Wax](https://www.shadertoy.com/view/mdjGWt)| incub |  |
+|[ThereHeIs ]( )| incub |  |
+|[CA Paste](https://www.shadertoy.com/view/tsGczh)| incub | AB Blending |
+|[Sublimation](https://www.shadertoy.com/view/3ljSWy)| fuse | ABCD ! Blending |
+|[Viscous Fingering 3d](https://www.shadertoy.com/view/WlBSRh)| incub | AB |
+|[React Diffuse](https://www.shadertoy.com/view/Wt23W1)| incub | ABCD |
+|[smoke on the Jean-Claude](https://www.shadertoy.com/view/cd23z3)| incub | A ! netter Effekt |
 |[generative art deco 4](https://www.shadertoy.com/view/mds3DX)| fuse | ShaderOfTheWeek 45/22 |
 |[Oil and water](https://www.shadertoy.com/view/wtVGzW)| incub | ABCD ! Blending |
 |[Reaction Diffusion Fluid](https://www.shadertoy.com/view/mdB3zV)| incub | ABCD ! Blending |
