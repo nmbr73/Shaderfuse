@@ -122,6 +122,7 @@
 - [CubicDispersal](ShaderOfTheWeek/CubicDispersal.md) (Shadertoy ID [fldXWS](https://www.shadertoy.com/view/fldXWS)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) (Shadertoy ID [wlVSDK](https://www.shadertoy.com/view/wlVSDK)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [Day94](ShaderOfTheWeek/Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [Energeticflyby](ShaderOfTheWeek/Energeticflyby.md) (Shadertoy ID [csjGDD](https://www.shadertoy.com/view/csjGDD)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) (Shadertoy ID [NlsXDH](https://www.shadertoy.com/view/NlsXDH)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) (Shadertoy ID [4s3SRN](https://www.shadertoy.com/view/4s3SRN)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [FractalGliding](ShaderOfTheWeek/FractalGliding.md) (Shadertoy ID [ftGGDR](https://www.shadertoy.com/view/ftGGDR)) ported by [JiPi](../Site/Profiles/JiPi.md)

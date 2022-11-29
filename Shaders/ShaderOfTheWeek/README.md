@@ -39,6 +39,9 @@ based on [DangerNoodle](https://www.shadertoy.com/view/wlVSDK) written by [BigWI
 ## **[Day94](Day94.md)**
 based on [Day94](https://www.shadertoy.com/view/tdXcWM) written by [jeyko](https://www.shadertoy.com/user/jeyko)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[Energeticflyby](Energeticflyby.md)**
+based on [[Inércia 2022] Energetic Flyby](https://www.shadertoy.com/view/csjGDD) written by [Kali](https://www.shadertoy.com/user/Kali)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[ExitTheMatrix](ExitTheMatrix.md)**
 based on [Exit the Matrix](https://www.shadertoy.com/view/NlsXDH) written by [Kali](https://www.shadertoy.com/user/Kali)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

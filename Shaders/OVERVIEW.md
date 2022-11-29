@@ -671,6 +671,14 @@ Author: [jeyko](https://www.shadertoy.com/user/jeyko)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/Energeticflyby](ShaderOfTheWeek/Energeticflyby_320x180.png)\
+Fuse: [Energeticflyby](ShaderOfTheWeek/Energeticflyby.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [[Inércia 2022] Energetic Flyby](https://www.shadertoy.com/view/csjGDD)\
+Author: [Kali](https://www.shadertoy.com/user/Kali)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix_320x180.png)\
 Fuse: [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -1027,5 +1035,5 @@ Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 120
+:four_leaf_clover: 121
 
