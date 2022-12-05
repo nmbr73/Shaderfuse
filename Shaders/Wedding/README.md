@@ -18,6 +18,9 @@ based on [HappyValentinesDay](https://www.shadertoy.com/view/XsVGzK) written by 
 ## **[HeartU2015](HeartU2015.md)**
 based on [heart u 2015](https://www.shadertoy.com/view/lts3RX) written by [mattz](https://www.shadertoy.com/user/mattz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[Heartdemo](Heartdemo.md)**
+based on [HeartDemo](https://www.shadertoy.com/view/wttXD7) written by [17dpn01](https://www.shadertoy.com/user/17dpn01)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[Nematomorpha](Nematomorpha.md)**
 based on [Nematomorpha](https://www.shadertoy.com/view/ltdfR7) written by [PianiGiani](https://www.shadertoy.com/user/PianiGiani)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
