@@ -115,6 +115,7 @@
 
 **[ShaderOfTheWeek Shaders](ShaderOfTheWeek/README.md)**
 - [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md) (Shadertoy ID [ttyGzW](https://www.shadertoy.com/view/ttyGzW)) ported by [JiPi](../Site/Profiles/JiPi.md)
+- [AudioFlightv2](ShaderOfTheWeek/AudioFlightv2.md) (Shadertoy ID [7tfyRl](https://www.shadertoy.com/view/7tfyRl)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ClubCave09](ShaderOfTheWeek/ClubCave09.md) (Shadertoy ID [ss3SD8](https://www.shadertoy.com/view/ss3SD8)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [CoastalLandscape](ShaderOfTheWeek/CoastalLandscape.md) (Shadertoy ID [fstyD4](https://www.shadertoy.com/view/fstyD4)) ported by [JiPi](../Site/Profiles/JiPi.md)
 - [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) (Shadertoy ID [7tfBzs](https://www.shadertoy.com/view/7tfBzs)) ported by [JiPi](../Site/Profiles/JiPi.md)

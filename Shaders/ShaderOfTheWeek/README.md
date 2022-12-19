@@ -18,6 +18,9 @@ On the home page of [Shadertoy.com](https://www.shadertoy.com) the "[Shader of t
 ## **[AlexanderHornedSphereZoom](AlexanderHornedSphereZoom.md)**
 based on [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW) written by [tmst](https://www.shadertoy.com/user/tmst)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[AudioFlightv2](AudioFlightv2.md)**
+based on [Audio Flight v2 (strobes)](https://www.shadertoy.com/view/7tfyRl) written by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[ClubCave09](ClubCave09.md)**
 based on [20210930_CLUB-CAVE-09](https://www.shadertoy.com/view/ss3SD8) written by [0b5vr](https://www.shadertoy.com/user/0b5vr)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

@@ -615,6 +615,14 @@ Author: [tmst](https://www.shadertoy.com/user/tmst)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/AudioFlightv2](ShaderOfTheWeek/AudioFlightv2_320x180.png)\
+Fuse: [AudioFlightv2](ShaderOfTheWeek/AudioFlightv2.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Audio Flight v2 (strobes)](https://www.shadertoy.com/view/7tfyRl)\
+Author: [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/ClubCave09](ShaderOfTheWeek/ClubCave09_320x180.png)\
 Fuse: [ClubCave09](ShaderOfTheWeek/ClubCave09.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -1043,5 +1051,5 @@ Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 122
+:four_leaf_clover: 123
 
