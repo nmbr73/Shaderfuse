@@ -13,6 +13,22 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Audio Flight v2 (strobes)](https://www.shadertoy.com/view/7tfyRl)| fuse | ShaderOfTheWeek 51/22 |
+|[Papier](https://www.shadertoy.com/view/cdBGzG)| incub | Lustig |
+|[Free Lightning](https://www.shadertoy.com/view/mts3zH)| incub | Cool ! |
+|[Gegell Boids](https://www.shadertoy.com/view/ms2SW3)| incub | AB |
+|[Audio Flight v2 (strobes)](https://www.shadertoy.com/view/7tfyRl)| defect | Vermutung mod_f verhält sich anders |
+|[Wave Series](https://www.shadertoy.com/view/3scGRl)| incub | AB ! Blending |
+|[Pistons with Motion Blur](https://www.shadertoy.com/view/7lsGRf)| incub | ! |
+|[Heart Demo](https://www.shadertoy.com/view/wttXD7)| fuse | ! |
+|[Separable Scharr Filter](https://www.shadertoy.com/view/DdlSDB)| incub | ABC ! |
+|[wet hair](https://www.shadertoy.com/view/mdSSRw)| incub | ABC ! Blending |
+|[GOL Star Warp Filter](https://www.shadertoy.com/view/WtdGWn)| incub | ABC ! Blending |
+|[Edge of the univrse w background](https://www.shadertoy.com/view/ldcXRH)| incub |  |
+|[Fractures](https://www.shadertoy.com/view/wsKcRG)| incub | ABCD |
+|[Wave PDE](https://www.shadertoy.com/view/MlcfRM)| incub | AB ! Regentropfen |
+|[Thermal Fluid](https://www.shadertoy.com/view/wdyfDK)| incub | ABCD ! Blending |
+|[The 2D wave equation](https://www.shadertoy.com/view/dsjSzR)| incub | A! Blending |
 |[[Inércia 2022] Energetic Flyby](https://www.shadertoy.com/view/csjGDD)| fuse | ShaderOfTheWeek 48/22 |
 |[name this](https://www.shadertoy.com/view/mdsSD2)| fuse | ABC !! Blending |
 |[lit](https://www.shadertoy.com/view/cslSRX)| fuse | ABC ! Blending warp ! NaN/inf |

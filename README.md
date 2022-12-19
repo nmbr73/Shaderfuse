@@ -69,10 +69,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (30th of November 2022):**](Shaders/ShaderOfTheWeek/Energeticflyby.md)
+[**Current Shader of the Week (19th of December 2022):**](Shaders/ShaderOfTheWeek/AudioFlightv2.md)
 
-[![Energeticflyby](https://user-images.githubusercontent.com/78935215/204669901-f1eda61f-dcf6-4506-85a0-9c41f3ff9944.gif)
-](Shaders/ShaderOfTheWeek/Energeticflyby.md)
+[![AudioFlightV2](https://user-images.githubusercontent.com/78935215/208448587-a6e76de5-87cc-4f92-9472-51f5ca98a11f.gif)
+](Shaders/ShaderOfTheWeek/AudioFlightv2.md)
 
 
 
