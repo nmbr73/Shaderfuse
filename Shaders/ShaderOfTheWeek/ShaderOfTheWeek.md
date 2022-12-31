@@ -3,6 +3,17 @@
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ---
+## 08th of November 2022
+#### GenerativeArtDeco4 (Shadertoy ID [mds3DX](https://www.shadertoy.com/view/mds3DX))
+[![GenerativeArtDeco4](https://user-images.githubusercontent.com/78935215/200687263-7aee7e94-a670-48ad-9e1e-7f29f44f8fa6.gif)
+](GenerativeArtDeco4.md)
+---
+## 02th of November 2022
+#### WednesdayMessingAround (Shadertoy ID [NtcyDn](https://www.shadertoy.com/view/NtcyDn))
+[![WednesdayMessingAround](https://user-images.githubusercontent.com/78935215/199586416-e9cbca39-9d1c-41d2-be33-695a25e075f3.gif)
+](WednesdayMessingAround.md)
+
+---
 ## 13th of September 2022
 #### TwizzlyCircleMess (Shadertoy ID [sltGRj](https://www.shadertoy.com/view/flcSW2))
 [![TwizzlyCircleMess](https://user-images.githubusercontent.com/78935215/190479840-983ccaea-02d8-4d22-8166-202edc6c0053.gif)

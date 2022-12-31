@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Audio](Audio/README.md) · [Blob](Blob/README.md) · [Cubemap](Cubemap/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md)
+[README](README.md) · **OVERVIEW** · [Abstract](Abstract/README.md) · [Audio](Audio/README.md) · [Blob](Blob/README.md) · [Cubemap](Cubemap/README.md) · [Distortion](Distortion/README.md) · [Fractals](Fractals/README.md) · [Misc](Misc/README.md) · [Object](Object/README.md) · [Planet](Planet/README.md) · [Recursive](Recursive/README.md) · [ShaderOfTheWeek](ShaderOfTheWeek/README.md) · [Simple](Simple/README.md) · [Tunnel](Tunnel/README.md) · [Wedding](Wedding/README.md)
 
 # Shaders
 
@@ -120,6 +120,14 @@ Fuse: [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) :four_leaf_clo
 Category: [Audio](Audio/README.md)\
 Shadertoy: [Audio Waveform Visualizer v3](https://www.shadertoy.com/view/wd3Bzl)\
 Author: [oneshade](https://www.shadertoy.com/user/oneshade)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Audio/InerciaIntended](Audio/InerciaIntended_320x180.png)\
+Fuse: [InerciaIntended](Audio/InerciaIntended.md) :four_leaf_clover:\
+Category: [Audio](Audio/README.md)\
+Shadertoy: [ 20221105_inercia intended one](https://www.shadertoy.com/view/cs2GWD)\
+Author: [0b5vr](https://www.shadertoy.com/user/0b5vr)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -360,9 +368,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Misc/MountainsLakes](Misc/MountainsLakes_320x180.png)\
-Fuse: [MountainsLakes](Misc/MountainsLakes.md) :boom:\
+Fuse: [MountainsLakes](Misc/MountainsLakes.md) :four_leaf_clover:\
 Category: [Misc](Misc/README.md)\
-**thumbnail does not exists**
+Shadertoy: [Mountains & Lakes](https://www.shadertoy.com/view/7tSSDD)\
+Author: [xjorma](https://www.shadertoy.com/user/xjorma)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Misc/Seascape](Misc/Seascape_320x180.png)\
@@ -605,6 +615,14 @@ Author: [tmst](https://www.shadertoy.com/user/tmst)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/AudioFlightv2](ShaderOfTheWeek/AudioFlightv2_320x180.png)\
+Fuse: [AudioFlightv2](ShaderOfTheWeek/AudioFlightv2.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Audio Flight v2 (strobes)](https://www.shadertoy.com/view/7tfyRl)\
+Author: [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/ClubCave09](ShaderOfTheWeek/ClubCave09_320x180.png)\
 Fuse: [ClubCave09](ShaderOfTheWeek/ClubCave09.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -661,6 +679,14 @@ Author: [jeyko](https://www.shadertoy.com/user/jeyko)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
+![ShaderOfTheWeek/Energeticflyby](ShaderOfTheWeek/Energeticflyby_320x180.png)\
+Fuse: [Energeticflyby](ShaderOfTheWeek/Energeticflyby.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [[Inércia 2022] Energetic Flyby](https://www.shadertoy.com/view/csjGDD)\
+Author: [Kali](https://www.shadertoy.com/user/Kali)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
 ![ShaderOfTheWeek/ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix_320x180.png)\
 Fuse: [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
@@ -698,6 +724,14 @@ Fuse: [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) :four_leaf_clover:
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd)\
 Author: [julianlumia](https://www.shadertoy.com/user/julianlumia)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4_320x180.png)\
+Fuse: [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [generative art deco 4](https://www.shadertoy.com/view/mds3DX)\
+Author: [morisil](https://www.shadertoy.com/user/morisil)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -782,9 +816,11 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest_320x180.png)\
-Fuse: [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :boom:\
+Fuse: [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :four_leaf_clover:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-**fuse category 'ShaderOftheWeek' does not match fuse's subdirectory**
+Shadertoy: [simple refraction test](https://www.shadertoy.com/view/flcSW2)\
+Author: [drschizzo](https://www.shadertoy.com/user/drschizzo)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching_320x180.png)\
@@ -872,6 +908,14 @@ Fuse: [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) :four_leaf_clove
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
 Shadertoy: [Undulating Columns](https://www.shadertoy.com/view/WlXXDH)\
 Author: [fizzer](https://www.shadertoy.com/user/fizzer)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![ShaderOfTheWeek/WednesdayMessingAround](ShaderOfTheWeek/WednesdayMessingAround_320x180.png)\
+Fuse: [WednesdayMessingAround](ShaderOfTheWeek/WednesdayMessingAround.md) :four_leaf_clover:\
+Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
+Shadertoy: [Wednesday messing around](https://www.shadertoy.com/view/NtcyDn)\
+Author: [mrange](https://www.shadertoy.com/user/mrange)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
@@ -963,7 +1007,49 @@ Author: [Shane](https://www.shadertoy.com/user/Shane)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
-:four_leaf_clover: 111
 
-:boom: 2
+## Wedding Shaders
+
+
+![Wedding/HappyValentinesDay](Wedding/HappyValentinesDay_320x180.png)\
+Fuse: [HappyValentinesDay](Wedding/HappyValentinesDay.md) :four_leaf_clover:\
+Category: [Wedding](Wedding/README.md)\
+Shadertoy: [HappyValentinesDay](https://www.shadertoy.com/view/XsVGzK)\
+Author: [RobotPenguin](https://www.shadertoy.com/user/RobotPenguin)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Wedding/HeartU2015](Wedding/HeartU2015_320x180.png)\
+Fuse: [HeartU2015](Wedding/HeartU2015.md) :four_leaf_clover:\
+Category: [Wedding](Wedding/README.md)\
+Shadertoy: [heart u 2015](https://www.shadertoy.com/view/lts3RX)\
+Author: [mattz](https://www.shadertoy.com/user/mattz)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Wedding/Heartdemo](Wedding/Heartdemo_320x180.png)\
+Fuse: [Heartdemo](Wedding/Heartdemo.md) :four_leaf_clover:\
+Category: [Wedding](Wedding/README.md)\
+Shadertoy: [HeartDemo](https://www.shadertoy.com/view/wttXD7)\
+Author: [17dpn01](https://www.shadertoy.com/user/17dpn01)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Wedding/Nematomorpha](Wedding/Nematomorpha_320x180.png)\
+Fuse: [Nematomorpha](Wedding/Nematomorpha.md) :four_leaf_clover:\
+Category: [Wedding](Wedding/README.md)\
+Shadertoy: [Nematomorpha](https://www.shadertoy.com/view/ltdfR7)\
+Author: [PianiGiani](https://www.shadertoy.com/user/PianiGiani)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+![Wedding/Valentwine](Wedding/Valentwine_320x180.png)\
+Fuse: [Valentwine](Wedding/Valentwine.md) :four_leaf_clover:\
+Category: [Wedding](Wedding/README.md)\
+Shadertoy: [Valentwine](https://www.shadertoy.com/view/fsffW4)\
+Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
+Ported by: [JiPi](../Site/Profiles/JiPi.md)
+
+
+:four_leaf_clover: 123
 

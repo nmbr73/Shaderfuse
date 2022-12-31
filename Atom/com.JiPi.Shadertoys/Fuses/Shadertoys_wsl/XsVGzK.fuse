@@ -1,0 +1,1537 @@
+
+--
+--       _____        _   _       _   ______    _ _ _
+--      |  __ \      | \ | |     | | |  ____|  | (_) |
+--      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+--      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+--      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+--      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+--
+--   ... this File is managed by some scripts and can be
+--    overwritten at any time and without further notice!
+--         pls. see https://github.com/nmbr73/Shadertoys
+--                                           for details
+--
+
+local SHADERFUSES_REACTOR_PACKAGE_VERSION = '1.1'
+local SHADERFUSES_REACTOR_PACKAGE_DATE    = 'Dec 2022'
+
+--[[--/*
+
+  HappyValentinesDay.fuse
+
+  Based on https://www.shadertoy.com/view/XsVGzK a WebGL shader created by RobotPenguin
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+-- MANDATORY -----------------------------------------------------------------
+local shadertoy_name       = "HappyValentinesDay"
+local shadertoy_author     = "RobotPenguin"
+local shadertoy_id         = "XsVGzK"
+local shadertoy_license    = ""
+local dctlfuse_category    = "Wedding"
+local dctlfuse_name        = "HappyValentinesDay"
+local dctlfuse_author      = "JiPi"
+-- OPTIONAL ------------------------------------------------------------------
+local dctlfuse_versionNo   = 1
+local dctlfuse_versionDate = "November 05, 2022"
+local dctlfuse_authorurl   = "https://www.youtube.com/c/JiPi_YT"
+local dctlfuse_authorlogo=nil
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(
+
+
+  dctlfuse_name, CT_SourceTool, {
+  REGS_Category      = "Shadertoys\\"..dctlfuse_category,
+  REGS_OpIconString  = "ST-"..shadertoy_id,
+  REGS_OpDescription = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..") created by "..shadertoy_author.." and ported by "..dctlfuse_author..(shadertoy_license == "" and ". Copyright "..shadertoy_author.." (CC BY-NC-SA 3.0)" or ". "..shadertoy_license)..". This port is by no means meant to take advantage of anyone or to do anyone wrong : Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) if you see your rights abused or your intellectual property violated by this work.",
+  REG_Fuse_NoEdit    = true,
+  REG_Fuse_NoReload  = true,
+  REGS_Company       = dctlfuse_company==nil and dctlfuse_author or dctlfuse_company,
+  REGS_URL           = dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl,
+--REGS_URL           = 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html',
+  REG_Version        = dctlfuse_versionNo==nil and 1 or dctlfuse_versionNo,
+
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  bool   Tex;
+  float  Alphathres;
+  float  HeartColor[4];
+  float  SkyColor[4];
+  float  SkyHorizont[4];
+  float  MoonDirection[4];
+  float  MoonColor[4];
+  float  MoonSkyColor[4];
+  float  kMoonCosRange;
+  float  AnimSpeed;
+  float  WaveTimeOffset;
+  float  HeartPositionXY[2];
+  float  HeartPositionZ;
+  float  MoonPositionXY[2];
+  float  MoonSize;
+  float  HeartMorph[2];
+  float  HeartColoring[2];
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f2(a) _fabs(a)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f2(a) fabs(a)
+ #define distance_f3( p1, p2) distance(p1, p2)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+ #if defined(DEVICE_IS_CUDA)
+   #define radians(a) a * M_PI/180.0f
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Bild' to iChannel0
+
+// -- Uniforms -----------------------------------------------------------------
+// -- Constants ----------------------------------------------------------------
+
+
+// RayMarching constants
+
+#define kMaxSteps  70                              // Max number of raymarching steps
+#define kMaxDistance 55.0f                         // Max raymarching distance
+#define kBias   0.01f                              // Bias offset for normal estimation
+#define kNoHit  -1.0f                              // No intersection distance.
+
+// Material constants.
+#define kMaterialNone   0.0f
+#define kMaterialHeart  1.0f
+#define kMaterialWater  2.0f
+
+// Other constants
+
+//const float3 kOnes = to_float3(1.0f, -1.0f, 0.0f);               // Helper vector with ones.
+#define kPI 3.14159265359f                       // PI
+
+// --------------------------------------------------------------
+__DEVICE__ float _powcf(float x, float y) {
+    float ret = _powf(x,y);
+    if (isnan(ret)) {
+        ret = 0.0001f;
+    }
+    return ret;
+}
+
+// -- Structures ---------------------------------------------------------------
+
+struct Ray
+{
+    float3 origin;
+    float3 direction;
+};
+
+struct RayHit
+{
+    float time;
+    float material;
+};
+
+struct DistanceSample
+{
+    float dist;
+    float stepRatio;
+    float material;
+};
+
+
+// --- Math funcs --------------------------------------------------------------
+
+// Build quaternion from axis angle
+__DEVICE__ float4 QuatFromAxisAngle(float3 axis, float angle)
+{
+    float theta = 0.5f * angle;
+    float sine = _sinf(theta);
+    return to_float4_aw(_sinf(theta) * axis, _cosf(theta));
+}
+
+// Builds the conjugate quaternion
+__DEVICE__ float4 QuatConjugate(float4 q)
+{
+    return to_float4_aw(swi3(q,x,y,z), -q.w);
+}
+
+// Rotates a vector around the quaternion
+__DEVICE__ float3 QuatTransformVec(float3 v, float4 q)
+{
+    float3 t = 2.0f * cross(swi3(q,x,y,z), v);
+    return v + q.w * t + cross(swi3(q,x,y,z), t);
+}
+
+// -- Noise funcs --------------------------------------------------------------
+
+// Hash noise function from I. Quilez
+__DEVICE__ float Hash(float p)
+{
+    float h = p * 127.1f;
+    return fract(_sinf(h)*43758.5453123f);
+}
+
+// Hash noise function from I. Quilez
+__DEVICE__ float Hash_f2(float2 p)
+{
+    float h = dot(p, to_float2(127.1f,311.7f));
+    return fract(_sinf(h)*43758.5453123f);
+}
+
+// Modified Hash noise function for 3D hashing.
+__DEVICE__ float Hash_f3(float3 p)
+{
+    float h = dot(p, to_float3(127.1f, 311.7f, 511.9f));
+    return fract(_sinf(h)*43758.5453123f);
+}
+
+// 2D Perlin Noise
+__DEVICE__ float PerlinNoise(float2 p)
+{
+    const float3 kOnes = to_float3(1.0f, -1.0f, 0.0f);               // Helper vector with ones.
+
+    float2 i = _floor(p);
+    float2 f = fract(p);
+    float2 u = smoothstep(to_float2_s(0.0f), to_float2_s(1.0f), f);
+
+    float f00 = _mix(Hash_f2(i + swi2(kOnes,z,z)), Hash_f2(i + swi2(kOnes,x,z)), u.x);
+    float f01 = _mix(Hash_f2(i + swi2(kOnes,z,x)), Hash_f2(i + swi2(kOnes,x,x)), u.x);
+    float f1 = _mix(f00, f01, u.y);
+
+    return 2.0f * f1 - 1.0f;
+}
+
+// 3D Perlin Noise
+__DEVICE__ float PerlinNoise_f3(float3 p)
+{
+    const float3 kOnes = to_float3(1.0f, -1.0f, 0.0f);               // Helper vector with ones.
+
+    float3 i = _floor(p);
+    float3 f = fract(p);
+    float3 u = smoothstep(to_float3_s(0.0f), to_float3_s(1.0f), f);
+
+    float f00 = _mix(Hash_f3(i + swi3(kOnes,z,z,z)), Hash_f3(i + swi3(kOnes,x,z,z)), u.x);
+    float f01 = _mix(Hash_f3(i + swi3(kOnes,z,x,z)), Hash_f3(i + swi3(kOnes,x,x,z)), u.x);
+    float f02 = _mix(Hash_f3(i + swi3(kOnes,z,z,x)), Hash_f3(i + swi3(kOnes,x,z,x)), u.x);
+    float f03 = _mix(Hash_f3(i + swi3(kOnes,z,x,x)), Hash_f3(i + swi3(kOnes,x,x,x)), u.x);
+
+    float f10 = _mix(f00, f01, u.y);
+    float f11 = _mix(f02, f03, u.y);
+
+    float f2 = _mix(f10, f11, u.z);
+
+    return 2.0f * f2 - 1.0f;
+}
+
+// Fractional Brownian Motion from I. Quilez
+// https://iquilezles.org/articles/warp
+// In the end, it's a sum of Perlin Noise functions with increasing frequencies
+// and decreasing amplitudes. To enhance the noise, a rotation matrix is applied
+// at each step.
+
+
+
+__DEVICE__ float FBM(float2 p)
+{
+    const mat2 FBM_M2 = to_mat2(0.84147f, 0.54030f, 0.54030f, -0.84147f);
+
+    float f = 0.0f;
+    f += 0.5000f*PerlinNoise(p); p = mul_mat2_f2(FBM_M2 , p )* 2.02f;
+    f += 0.2500f*PerlinNoise(p); p = mul_mat2_f2(FBM_M2 , p )* 2.03f;
+    f += 0.1250f*PerlinNoise(p); p = mul_mat2_f2(FBM_M2 , p )* 2.01f;
+    //f += 0.0625f*PerlinNoise(p);
+    //return f/(0.9375f);
+    return f/(0.8750f);
+}
+
+__DEVICE__ float FBM_f3(float3 p)
+{
+    const mat3 FBM_M3 = to_mat3(0.00f, 0.90f, 0.60f, -0.90f, 0.36f, -0.48f, -0.60f, -0.48f, 0.34f );
+    float f = 0.0f;
+    f += 0.5000f*PerlinNoise_f3(p); p = mul_mat3_f3(FBM_M3 , p )* 2.02f;
+    f += 0.2500f*PerlinNoise_f3(p); p = mul_mat3_f3(FBM_M3 , p )* 2.33f;
+    f += 0.1250f*PerlinNoise_f3(p); p = mul_mat3_f3(FBM_M3 , p )* 2.01f;
+    f += 0.0625f*PerlinNoise_f3(p);
+    return f/(0.9175f);
+}
+
+// -- Camera funcs -------------------------------------------------------------
+
+__DEVICE__ struct Ray ViewportToRay(float2 uv, float3 offs, float4 rot, float kFOV)
+{
+    struct Ray ray;
+    ray.direction = QuatTransformVec(normalize(to_float3_aw(uv * _tanf(kFOV * 0.5f), -1.0f)), rot);
+    ray.origin = offs;
+
+    return ray;
+}
+
+__DEVICE__ struct Ray ReflectRay(struct Ray ray, float d, float3 n)
+{
+    ray.origin += ray.direction * d;
+    ray.direction = reflect(ray.direction, n);
+    return ray;
+}
+
+__DEVICE__ struct DistanceSample NewDistanceSample(float d, float s, float m)
+{
+    struct DistanceSample h;
+    h.dist = d;
+    h.stepRatio = s;
+    h.material = m;
+    return h;
+}
+
+__DEVICE__ struct RayHit NewRayHit(float t, float m)
+{
+    struct RayHit h;
+    h.time = t;
+    h.material = m;
+    return h;
+}
+
+// -- Water funcs --------------------------------------------------------------
+
+// Computes the height of a wave at the specified point
+__DEVICE__ float WaveDirectional(float2 p, float wavelength, float speed, float2 direction, float amplitude, float gAnimTime)
+{
+    float freq = 2.0f * kPI / wavelength;
+    float phase = speed * freq;
+    float theta = dot(direction, p);
+
+    return amplitude * _powcf(sin(theta * freq + gAnimTime * phase), 3.0f);
+}
+
+__DEVICE__ float WavePunctual(float2 p, float wavelength, float speed, float2 perturb, float amplitude, float waveTime)
+{
+    float freq = 2.0f * kPI / wavelength;
+    float phase = speed * freq;
+    float dist = -length(p - perturb);
+    amplitude /= 1.0f + (0.3f * -dist) + (0.15f * waveTime * waveTime);
+
+    return amplitude * _powcf(sin(_fmaxf(0.0f, dist * freq + waveTime * phase)), 3.0f);
+}
+
+// -- SDF funcs ----------------------------------------------------------------
+
+// Signed Distance Field of a point to a heart located at the origin. It works by computing
+// the SDF of a sphere whose space has been distorted by a polar function
+__DEVICE__ struct DistanceSample SDFHeart(float3 p, float gHeartMorph, float gAnimTime, float2 iResolution, float4 iMouse)
+{
+    // Apply noise to position when it's a drop.
+    if (gHeartMorph < 1.0f)
+        p += 0.16f * FBM_f3(p + to_float3(0, gAnimTime * 2.5f, 0)) * (1.0f - gHeartMorph);
+
+    // Apply domain distortion for heart.
+    float a0 = _atan2f(p.x, p.y);
+    float a1 = _atan2f(p.x, p.z);
+    float b0 = _fabs(a0 / kPI);
+    float b1 = _fabs(a1);
+    float l = length(swi2(p,x,y));
+
+    // Constants computed with Octave:
+    // x = [   0; 0.35f;  0.53f;   1; ];
+    // y = [ 0.6f;  1.0f;  0.9f; 1.2f; ];
+    // K = polyfit(x, y, 3);
+    const float4 K = to_float4(6.34975f, -9.8705f, 4.39112f, 0.4f);
+    float4 B = to_float4(b0 * b0 * b0, b0 * b0, b0, 1.0f);
+
+    float d0 = dot(K, B);
+    d0 = _mix(1.0f, d0, smoothstep(0.0f, 0.7f, l));
+    float d1 = 1.0f - 0.5f*_fabs(_cosf(a1));
+
+    swi2S(p,x,y, swi2(p,x,y) / _mix(1.0f, d0, gHeartMorph));
+    p.z  /= _mix(1.0f, d1, gHeartMorph);
+
+    // Increase size whenever the mouse is close.
+    float mouseOverSize = 1.0f+0.7f*smoothstep(0.2f, 0.0f, length((swi2(iMouse,x,y) / iResolution) - 0.5f));
+
+    // Compute sphere's SDF
+    return NewDistanceSample(length(p) - 0.8f - 0.5f * gHeartMorph * mouseOverSize, 0.5f, kMaterialHeart);
+}
+
+// Signed Distance Field of a point to the water plane located at the origin.
+// It's simply the distance to a plane distorted by the wave field.
+__DEVICE__ struct DistanceSample SDFWater(float3 p, float gAnimTime, float gWaveTime)
+{
+    const float overallSpeed = 0.7f;
+    float height = 0.0f;
+    height -= FBM_f3(to_float3_aw(swi2(p,x,z) * 0.5f, 0.75f * gAnimTime)) * 0.05f;
+    height += WavePunctual(swi2(p,x,z), 12.0f, 1.5f, to_float2(0.0f, -12.0f), 2.0f, gWaveTime);
+
+    return NewDistanceSample(p.y - 1.5f * height, 1.0f, kMaterialWater);
+}
+
+// -- SDF CGS funcs ------------------------------------------------------------
+
+__DEVICE__ struct DistanceSample OpUnion(struct DistanceSample d1, struct DistanceSample d2)
+{
+    if (d1.dist < d2.dist) return d1; return d2;
+}
+
+__DEVICE__ struct DistanceSample OpSubstract(struct DistanceSample d1, struct DistanceSample d2)
+{
+    d2.dist = -d2.dist;
+    if (d1.dist > d2.dist) return d1; return d2;
+}
+
+__DEVICE__ struct DistanceSample OpIntersect(struct DistanceSample d1, struct DistanceSample d2)
+{
+    if (d1.dist > d2.dist) return d1; return d2;
+}
+
+__DEVICE__ struct DistanceSample OpSmoothMin(struct DistanceSample d1, struct DistanceSample d2, float k)
+{
+    float h = clamp(0.5f+0.5f*(d2.dist - d1.dist)/k, 0.0f, 1.0f);
+
+    struct DistanceSample d;
+    d.dist = _mix(d2.dist, d1.dist, h) - k * h * (1.0f-h);
+    d.stepRatio = _fminf(d2.stepRatio, d1.stepRatio);
+    d.material = _mix(d2.material, d1.material, h);
+
+    return d;
+}
+
+// -- Transform funcs ----------------------------------------------------------
+
+__DEVICE__ float3 Tx(float3 p, float3 tx)
+{
+    return (p - tx);
+}
+
+__DEVICE__ float3 Txq(float3 p, float3 tx, float4 q)
+{
+    p -= tx;
+    return QuatTransformVec(p, QuatConjugate(q));
+}
+
+// --- Scene funcs -------------------------------------------------------------
+
+__DEVICE__ struct DistanceSample Scene(float3 position, float gHeartMorph, float gAnimTime, float2 iResolution, float4 iMouse, float gWaveTime, float3 gHeartPos)
+{
+    // Evaluate scene distances.
+    struct DistanceSample d0 = SDFHeart(Txq(position, gHeartPos, QuatFromAxisAngle(to_float3(0.0f,1.0f,0.0f), gAnimTime*1.7f)), gHeartMorph, gAnimTime, iResolution, iMouse);
+    struct DistanceSample d1 = SDFWater(Tx(position, to_float3(0+gHeartPos.x,-2,0)), gAnimTime, gWaveTime);
+    return OpSmoothMin(d0, d1, 0.8f);
+}
+
+__DEVICE__ float3 SceneNormal(float3 position, float gHeartMorph, float gAnimTime, float2 iResolution, float4 iMouse, float gWaveTime, float3 gHeartPos)
+{
+    float2 offset = to_float2(kBias, 0.0f);
+    float d = Scene(position, gHeartMorph, gAnimTime, iResolution, iMouse, gWaveTime, gHeartPos).dist;
+
+    return normalize(to_float3
+    (
+        Scene(position + swi3(offset,x,y,y), gHeartMorph, gAnimTime, iResolution, iMouse, gWaveTime,gHeartPos).dist - d,
+        Scene(position + swi3(offset,y,x,y), gHeartMorph, gAnimTime, iResolution, iMouse, gWaveTime,gHeartPos).dist - d,
+        Scene(position + swi3(offset,y,y,x), gHeartMorph, gAnimTime, iResolution, iMouse, gWaveTime,gHeartPos).dist - d
+    ));
+}
+
+__DEVICE__ float3 SkyColor(float3 n, float3 kSkyColor, float3 kSkyHorzColor, float3 kMoonDir, float3 kMoonColor, float3 kMoonSkyByColor, float kMoonCosRange,
+                           bool Tex, __TEXTURE2D__ iChannel0, float ratio, float alphathres, float2 MoonPosition, float MoonSize )
+{
+    // Compute the sky color from hemisphere.
+    float h = 1.0f - _powcf(_fabs(n.y), 0.4f);
+    float3 color = _mix(kSkyColor, kSkyHorzColor, h);
+
+    // Add stars.
+    float s = _powcf(_fmaxf(0.0f, PerlinNoise_f3(n * 4e2f)), 18.0f);
+
+
+      color += to_float3(s, s, s);
+
+      // Add moon and moon light.
+      float dotNM = dot(n+to_float3_aw(MoonPosition,0.0), kMoonDir-to_float3_aw(MoonPosition,0.0)); // Naja
+      //float dotNM = dot(n+to_float3_aw(MoonPosition,0.0), n+kMoonDir);
+
+      //float dotNM = distance_f3(n+to_float3_aw(MoonPosition,0.0), kMoonDir) < MoonSize ? 1.0f : 0.0f; // Kein Halo :(
+
+      color = _mix(color, kMoonColor, smoothstep(0.0f, 0.0001f, dotNM - kMoonCosRange));
+      color += kMoonSkyByColor * _powcf(_fmaxf(0.0f, dotNM), 100.0f);
+
+      if(Tex)
+      {
+        float4 SkyTex = _tex2DVecN(iChannel0,(n.x*ratio+0.5f),n.y,15);
+        color = SkyTex.w > alphathres ? swi3(SkyTex,x,y,z) + to_float3(s, s, s) : color;
+      }
+
+    return color;
+}
+
+__DEVICE__ struct RayHit Raymarch(struct Ray ray, float gHeartMorph, float gAnimTime, float2 iResolution, float4 iMouse, float gWaveTime, float3 gHeartPos)
+{
+    float t = 0.0f;
+    struct DistanceSample d;
+
+    for (int i = 0; (i < kMaxSteps); i++)
+    {
+        d = Scene(ray.origin + ray.direction * t, gHeartMorph, gAnimTime, iResolution, iMouse, gWaveTime,gHeartPos);
+        t += d.dist * d.stepRatio;
+
+        if ((d.dist < 0.0f) || (t >= kMaxDistance))
+            break;
+    }
+
+    if (t < kMaxDistance)
+        return NewRayHit(t, d.material);
+
+    return NewRayHit(kNoHit, kMaterialNone);
+}
+
+__DEVICE__ float SparkCircle(float2 uv, float2 center, float rad)
+{
+    float d = length(uv - center);
+    return smoothstep(rad, 0.0f, d);
+}
+
+__DEVICE__ float SparkRect(float2 uv, float2 center, float2 size, float ang)
+{
+    float2 cs = to_float2(_cosf(ang), _sinf(ang));
+    uv -= center;
+    uv = to_float2(dot(uv, cs), dot(swi2(uv,y,x) * to_float2(-1.0f, 1.0f), cs));
+
+    float2 x = smoothstep(size*0.5f, to_float2(0.0f, 0.0f), abs_f2(uv));
+    return _powcf(x.x * x.y, 3.0f);
+}
+
+__DEVICE__ float Spark(float2 uv, float2 center, float ang)
+{
+    float f = 0.0f;
+    f += SparkRect(uv, center, to_float2(0.4f, 0.008f), ang);
+    f += SparkRect(uv, center, to_float2(0.4f, 0.008f), ang+radians(60.0f));
+    f += SparkRect(uv, center, to_float2(0.4f, 0.008f), ang+radians(120.0f));
+    f += SparkCircle(uv, center, 0.01f);
+    return f;
+}
+
+__DEVICE__ float3 Colorize(struct Ray ray, struct RayHit hit, float gHeartMorph, float gAnimTime, float2 iResolution, float4 iMouse, float gWaveTime, float gHeartColoring, float3 gHeartPos,
+                           float3 kSkyColor, float3 kSkyHorzColor, float3 kMoonDir, float3 kMoonColor, float3 kMoonSkyByColor, float kMoonCosRange,
+                           bool Tex, __TEXTURE2D__ iChannel0, float ratio, float alphathres, float2 MoonPosition, float MoonSize, float3 HeartColor)
+{
+    float3 color = to_float3(0.0f, 0.0f, 0.0f);
+    color = SkyColor(ray.direction,kSkyColor,kSkyHorzColor,kMoonDir,kMoonColor,kMoonSkyByColor,kMoonCosRange,Tex,iChannel0,ratio,alphathres,MoonPosition,MoonSize);
+
+    // If there was an intersection, compute normal and the hit surface color.
+    if (hit.material != kMaterialNone)
+    {
+        float3 p = ray.direction * hit.time + ray.origin;
+        float3 n = SceneNormal(p, gHeartMorph, gAnimTime, iResolution, iMouse, gWaveTime,gHeartPos);
+
+        color = _mix(to_float3(0.0f, 0.0f, 0.0f), SkyColor(reflect(ray.direction, n),kSkyColor,kSkyHorzColor,kMoonDir,kMoonColor,kMoonSkyByColor,kMoonCosRange,Tex,iChannel0,ratio,alphathres,MoonPosition,MoonSize), 1.0f - _powcf(length(swi2(n,x,z)), 16.0f));
+
+        if (hit.material == kMaterialHeart)
+        {
+            color += gHeartColoring * HeartColor;//to_float3(0.4f, 0, 0);
+        }
+
+        //color = SceneNormal(p);//0.3f + 0.7f*_powcf(_fmaxf(0.0f, Normal(p).z), 30.0f);
+    }
+
+    return color;
+}
+
+// --- Main --------------------------------------------------------------------
+
+__KERNEL__ void HappyvalentinesdayJipiFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Tex = params->Tex;
+  float  Alphathres = params->Alphathres;
+  float4 HeartColor = to_float4(params->HeartColor[0], params->HeartColor[1], params->HeartColor[2], params->HeartColor[3]);
+  float4 SkyColor = to_float4(params->SkyColor[0], params->SkyColor[1], params->SkyColor[2], params->SkyColor[3]);
+  float4 SkyHorizont = to_float4(params->SkyHorizont[0], params->SkyHorizont[1], params->SkyHorizont[2], params->SkyHorizont[3]);
+  float4 MoonDirection = to_float4(params->MoonDirection[0], params->MoonDirection[1], params->MoonDirection[2], params->MoonDirection[3]);
+  float4 MoonColor = to_float4(params->MoonColor[0], params->MoonColor[1], params->MoonColor[2], params->MoonColor[3]);
+  float4 MoonSkyColor = to_float4(params->MoonSkyColor[0], params->MoonSkyColor[1], params->MoonSkyColor[2], params->MoonSkyColor[3]);
+  float  kMoonCosRange = params->kMoonCosRange;
+  float  AnimSpeed = params->AnimSpeed;
+  float  WaveTimeOffset = params->WaveTimeOffset;
+  float2 HeartPositionXY = to_float2(params->HeartPositionXY[0], params->HeartPositionXY[1]);
+  float  HeartPositionZ = params->HeartPositionZ;
+  float2 MoonPositionXY = to_float2(params->MoonPositionXY[0], params->MoonPositionXY[1]);
+  float  MoonSize = params->MoonSize;
+  float2 HeartMorph = to_float2(params->HeartMorph[0], params->HeartMorph[1]);
+  float2 HeartColoring = to_float2(params->HeartColoring[0], params->HeartColoring[1]);
+
+  // --------
+
+    // Camera constants
+    const float kFOV = 0.785398f;                           // Camera field of view
+    const float3 kOnes = to_float3(1.0f, -1.0f, 0.0f);
+
+    // Scene constants.
+    float3 kSkyColor     = swi3(SkyColor,x,y,z);//to_float3(0.1f, 0.12f, 0.15f);          // Night sky color.
+    float3 kSkyHorzColor = swi3(SkyHorizont,x,y,z);//to_float3(0.4f, 0.2f, 0.87f);       // Night sky horizon color.
+
+    float3 kMoonDir      = swi3(MoonDirection,x,y,z);//to_float3(-0.18443f, 0.3688f, -0.9221f); // Moon direction.
+    float3 kMoonColor    = swi3(MoonColor,x,y,z);//to_float3(1.0f, 1.0f, 0.8f);           // Moon color.
+    float3 kMoonSkyByColor = swi3(MoonSkyColor,x,y,z);//to_float3(0.9f, 0.6f, 1.2f);      // Moon glow color.
+//    float kMoonCosRange  = 0.999f;                  // Moon cosine range.
+
+
+
+  // Setup globals.
+    float gAnimTime      = mod_f(AnimSpeed * iTime, 20.0f);
+    float3 gHeartPos     = to_float3(0.0f, -3.5f + 5.0f * smoothstep(1.0f, 3.0f, gAnimTime), -12.0f) + to_float3_aw(HeartPositionXY,HeartPositionZ);
+    float gHeartMorph    = smoothstep(2.5f+HeartMorph.x, 4.0f+HeartMorph.y, gAnimTime);
+    float gHeartColoring = smoothstep(4.0f+HeartColoring.x, 6.0f+HeartColoring.y, gAnimTime);
+    float gWaveTime      = _fmaxf(0.0f, gAnimTime - 0.8f + WaveTimeOffset);
+    float gMsgFadeInTime = smoothstep(7.0f, 9.0f, gAnimTime);
+    float gFadeTime      = smoothstep(0.0f, 1.0f, gAnimTime) * smoothstep(20.0f, 19.0f, gAnimTime);
+
+
+    // Get uvs in [-1 1] range and correct them with the aspect ratio.
+    float2 uv = 2.0f*(fragCoord / iResolution)-1.0f;
+    uv *= to_float2(iResolution.x / iResolution.y, 1.0f);
+
+    float ratio = iResolution.y/iResolution.x;
+
+    // Generate first ray and raymarch along scene.
+    struct Ray ray = ViewportToRay(uv, swi3(kOnes,z,z,z), QuatFromAxisAngle(to_float3(1.0f, 0.0f, 0.0f), radians(6.0f)),kFOV);
+    struct RayHit hit = Raymarch(ray, gHeartMorph, gAnimTime, iResolution, iMouse, gWaveTime, gHeartPos );
+
+    // Initialize background color.
+    float3 color = Colorize(ray, hit, gHeartMorph, gAnimTime, iResolution, iMouse, gWaveTime, gHeartColoring, gHeartPos,
+                            kSkyColor, kSkyHorzColor,kMoonDir, kMoonColor, kMoonSkyByColor,kMoonCosRange,Tex,iChannel0,ratio,Alphathres,MoonPositionXY,MoonSize,swi3(HeartColor,x,y,z));
+
+    // Show sparks around the heart
+    for(int i = 0; i < 8; i++)
+    {
+        float t = _fmaxf(0.0f, (gAnimTime + ((float)(i)) * 0.2f) - 6.0f);
+        float s = _floor(t / 0.4f);
+        float sTime = fract(t / 0.4f);
+        float2 sPos = to_float2(Hash(s * 61.0f), Hash(s * 17.0f)) + to_float2(gHeartPos.x*0.7f,(gHeartPos.y-1.5f)*0.7f);
+        sPos = 2.0f * sPos - 1.0f;
+        sPos *= 0.15f;
+        color += _sinf(sTime * kPI) * Spark(uv, sPos, 0.0f) * to_float3(1.0f, 0.4f, 0.4f);
+    }
+
+    // Show the valentine's message
+    /*
+    if (gMsgFadeInTime > 0.0f)
+    {
+        float2 texAspect = to_float2(1.0f, -4.0f);
+        float2 texUv = uv * texAspect;
+        texUv = clamp(texUv * 0.5f + 0.5f, 0.0f, 1.0f);
+
+        float2 texMsg = _tex2DVecN(iChannel0,texUv.x,texUv.y,15).rg;
+        color += gMsgFadeInTime * (texMsg.y * to_float3(0.4f, 0.0f, 0.0f) + swi3(texMsg,x,x,x));
+    }
+    */
+
+    // Apply vignetting effect.
+    color -= swi3(color,x,y,z)*0.2f*dot(uv, uv);
+
+    fragColor = to_float4_aw(gFadeTime * color, 1.0f);
+
+    _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  StandardShaderFuseTopControls();
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  
+  InTexCheckbox = self:AddInput("Tex", "Tex", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAlphathresSlider = self:AddInput("Alphathres", "Alphathres", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0,
+      })
+
+self:BeginControlNest("Colors", "Colors", false, {})  
+  
+  self:BeginControlNest("HeartColor", "HeartColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "HeartColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHeartColorColorR = self:AddInput("Red",   "HeartColorRed",   { INP_Default  = 0.4, IC_ControlID = 0, attrs})
+    InHeartColorColorG = self:AddInput("Green", "HeartColorGreen", { INP_Default  = 0.0, IC_ControlID = 1, attrs})
+    InHeartColorColorB = self:AddInput("Blue",  "HeartColorBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+  self:BeginControlNest("SkyColor", "SkyColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "SkyColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InSkyColorColorR = self:AddInput("Red",   "SkyColorRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InSkyColorColorG = self:AddInput("Green", "SkyColorGreen", { INP_Default  = 0.12, IC_ControlID = 1, attrs})
+    InSkyColorColorB = self:AddInput("Blue",  "SkyColorBlue",  { INP_Default  = 0.15, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+  self:BeginControlNest("SkyHorizont", "SkyHorizont", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "SkyHorizont",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InSkyHorizontColorR = self:AddInput("Red",   "SkyHorizontRed",   { INP_Default  = 0.4, IC_ControlID = 0, attrs})
+    InSkyHorizontColorG = self:AddInput("Green", "SkyHorizontGreen", { INP_Default  = 0.2, IC_ControlID = 1, attrs})
+    InSkyHorizontColorB = self:AddInput("Blue",  "SkyHorizontBlue",  { INP_Default  = 0.87, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MoonDirection", "MoonDirection", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MoonDirection",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMoonDirectionColorR = self:AddInput("Red",   "MoonDirectionRed",   { INP_Default  = -0.18443, IC_ControlID = 0, attrs})
+    InMoonDirectionColorG = self:AddInput("Green", "MoonDirectionGreen", { INP_Default  = 0.3688, IC_ControlID = 1, attrs})
+    InMoonDirectionColorB = self:AddInput("Blue",  "MoonDirectionBlue",  { INP_Default  = -0.9221, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MoonColor", "MoonColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MoonColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMoonColorColorR = self:AddInput("Red",   "MoonColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InMoonColorColorG = self:AddInput("Green", "MoonColorGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InMoonColorColorB = self:AddInput("Blue",  "MoonColorBlue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MoonSkyColor", "MoonSkyColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MoonSkyColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMoonSkyColorColorR = self:AddInput("Red",   "MoonSkyColorRed",   { INP_Default  = 0.9, IC_ControlID = 0, attrs})
+    InMoonSkyColorColorG = self:AddInput("Green", "MoonSkyColorGreen", { INP_Default  = 0.6, IC_ControlID = 1, attrs})
+    InMoonSkyColorColorB = self:AddInput("Blue",  "MoonSkyColorBlue",  { INP_Default  = 1.2, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+  
+self:EndControlNest()  
+
+  InkMoonCosRangeSlider = self:AddInput("kMoonCosRange", "kMoonCosRange", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.999,
+      })
+
+  InAnimSpeedSlider = self:AddInput("AnimSpeed", "AnimSpeed", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.5,
+      })
+
+  InWaveTimeOffsetSlider = self:AddInput("WaveTimeOffset", "WaveTimeOffset", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InHeartPositionXYPoint = self:AddInput("HeartPositionXY", "HeartPositionXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InHeartPositionZSlider = self:AddInput("HeartPositionZ", "HeartPositionZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InMoonPositionXYPoint = self:AddInput("MoonPositionXY", "MoonPositionXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InMoonSizeSlider = self:AddInput("MoonSize", "MoonSize", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 0.3,
+          INP_Default        = 0.1,
+      })
+
+  InHeartMorphPoint = self:AddInput("HeartMorph", "HeartMorph", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InHeartColoringPoint = self:AddInput("HeartColoring", "HeartColoring", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 102), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	  IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+    --{ MBTNC_AddButton = "No Normalized", MBTNCD_ButtonWidth = 5/16, }, 
+  }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  StandardShaderFuseBottomControls();
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+
+  node = DVIPComputeNode(req,
+      "HappyvalentinesdayJipiFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters)
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.Tex = InTexCheckbox:GetValue(req).Value
+  params.Alphathres = InAlphathresSlider:GetValue(req).Value
+  params.HeartColor = {
+    InHeartColorColorR:GetValue(req).Value,
+    InHeartColorColorG:GetValue(req).Value,
+    InHeartColorColorB:GetValue(req).Value
+  }
+  params.SkyColor = {
+    InSkyColorColorR:GetValue(req).Value,
+    InSkyColorColorG:GetValue(req).Value,
+    InSkyColorColorB:GetValue(req).Value
+  }
+  params.SkyHorizont = {
+    InSkyHorizontColorR:GetValue(req).Value,
+    InSkyHorizontColorG:GetValue(req).Value,
+    InSkyHorizontColorB:GetValue(req).Value
+  }
+  params.MoonDirection = {
+    InMoonDirectionColorR:GetValue(req).Value,
+    InMoonDirectionColorG:GetValue(req).Value,
+    InMoonDirectionColorB:GetValue(req).Value
+  }
+  params.MoonColor = {
+    InMoonColorColorR:GetValue(req).Value,
+    InMoonColorColorG:GetValue(req).Value,
+    InMoonColorColorB:GetValue(req).Value
+  }
+  params.MoonSkyColor = {
+    InMoonSkyColorColorR:GetValue(req).Value,
+    InMoonSkyColorColorG:GetValue(req).Value,
+    InMoonSkyColorColorB:GetValue(req).Value
+  }
+  params.kMoonCosRange = InkMoonCosRangeSlider:GetValue(req).Value
+  params.AnimSpeed = InAnimSpeedSlider:GetValue(req).Value
+  params.WaveTimeOffset = InWaveTimeOffsetSlider:GetValue(req).Value
+  params.HeartPositionXY = {InHeartPositionXYPoint:GetValue(req).X,InHeartPositionXYPoint:GetValue(req).Y}
+  params.HeartPositionZ = InHeartPositionZSlider:GetValue(req).Value
+  params.MoonPositionXY = {InMoonPositionXYPoint:GetValue(req).X,InMoonPositionXYPoint:GetValue(req).Y}
+  params.MoonSize = InMoonSizeSlider:GetValue(req).Value
+  params.HeartMorph = {InHeartMorphPoint:GetValue(req).X,InHeartMorphPoint:GetValue(req).Y}
+  params.HeartColoring = {InHeartColoringPoint:GetValue(req).X,InHeartColoringPoint:GetValue(req).Y}
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+  
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+
+  collectgarbage();
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
+
+-- /* ====================== DO NOT TOUCH OR APPEND ANY CODE HERE ===========================================
+
+
+function StandardShaderFuseTopControls()
+  -- Branding
+  self:AddInput('<p align="center"><a href="https://github.com/nmbr73/Shadertoys"><img height="20" width="210" src="data:image/png;base64,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" /></a></p>',
+  "DctlFuseBrandLabel", {
+    IC_ControlPage = -1 ,
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    LBLC_MultiLine = true,
+    IC_NoLabel = true,
+    IC_NoReset = true,
+    INP_External = false,
+    INP_Passive = true,
+  })
+end
+
+function StandardShaderFuseBottomControls()
+
+  local version_info=''
+
+  if dctlfuse_versionNo == nil then dctlfuse_versionNo='' end
+  if dctlfuse_versionDate == nil then dctlfuse_versionDate='' end
+
+  if dctlfuse_versionNo=='' and dctlfuse_versionDate=='' then
+    version_info=''
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate=='' then
+    version_info='Fuse version '..dctlfuse_versionNo
+  elseif dctlfuse_versionNo == '' and dctlfuse_versionDate~='' then
+    version_info=dctlfuse_versionDate
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate~='' then
+    version_info='Version '..dctlfuse_versionNo..' - '..dctlfuse_versionDate
+  end
+
+  if version_info ~= '' then
+    version_info=version_info..'<br />'
+  end
+
+  -- self:BeginControlNest("Shaderfuse Info", "Shaderfuse_Info", true, {})
+
+  -- Separator
+  self:AddInput( '<br />',"DctlFuseSeparatorLabel",{LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+  -- Info Btn
+  self:AddInput(dctlfuse_name.." Info ...", "DctlFuseInfoButton", {IC_ControlPage = 1,LINKID_DataType = "Text",INPID_InputControl = "ButtonControl",INP_DoNotifyChanged = false,INP_External = false,BTNCS_Execute = 'bmd.openurl("'..(dctlfuse_infourl~=nil and dctlfuse_infourl or 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html')..'")'})
+  -- Info Txt
+  self:AddInput('<p align="center">'
+    ..'Shadertoy <a href="https://www.shadertoy.com/view/'..shadertoy_id..'" style="color:white; text-decoration:none; ">'..shadertoy_name..'</a> by <a href="https://www.shadertoy.com/user/'..shadertoy_author..'" style="color:#a0a060; text-decoration:none; ">'..shadertoy_author..'</a><br />'
+    ..'<span style="color:#a06060; ">'..(shadertoy_license == "" and '&copy; '..shadertoy_author..' (CC BY-NC-SA 3.0)' or shadertoy_license)..'</span><br />'
+    ..'DCTLified and DaFused by <a href="'..(dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl)..'" style="color:#a0a060; text-decoration:none; ">'..dctlfuse_author..'</a><br />'
+    ..version_info
+    ..'Reactor package v'..SHADERFUSES_REACTOR_PACKAGE_VERSION..' created '..SHADERFUSES_REACTOR_PACKAGE_DATE..'<br />'
+    ,"DctlFuseInfoLabel", {IC_ControlPage = 1, LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+
+    -- self:EndControlNest()
+
+  end
+
+-- */

@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · **Audio** · [Blob](../Blob/README.md) · [Cubemap](../Cubemap/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md)
+[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · **Audio** · [Blob](../Blob/README.md) · [Cubemap](../Cubemap/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md) · [Wedding](../Wedding/README.md)
 
 # Audio Shaders
 
@@ -17,6 +17,9 @@ based on [Audio heightfield 1](https://www.shadertoy.com/view/ldXGzN) written by
 
 ## **[AudioWaveformVisualizer](AudioWaveformVisualizer.md)**
 based on [Audio Waveform Visualizer v3](https://www.shadertoy.com/view/wd3Bzl) written by [oneshade](https://www.shadertoy.com/user/oneshade)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[InerciaIntended](InerciaIntended.md)**
+based on [ 20221105_inercia intended one](https://www.shadertoy.com/view/cs2GWD) written by [0b5vr](https://www.shadertoy.com/user/0b5vr)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[JamSession](JamSession.md)**
 based on [Jam Session](https://www.shadertoy.com/view/XdsyW4) written by [Passion](https://www.shadertoy.com/user/Passion)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)

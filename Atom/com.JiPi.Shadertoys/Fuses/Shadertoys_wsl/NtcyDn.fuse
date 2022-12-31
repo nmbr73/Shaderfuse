@@ -1,0 +1,1112 @@
+
+--
+--       _____        _   _       _   ______    _ _ _
+--      |  __ \      | \ | |     | | |  ____|  | (_) |
+--      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+--      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+--      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+--      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+--
+--   ... this File is managed by some scripts and can be
+--    overwritten at any time and without further notice!
+--         pls. see https://github.com/nmbr73/Shadertoys
+--                                           for details
+--
+
+local SHADERFUSES_REACTOR_PACKAGE_VERSION = '1.1'
+local SHADERFUSES_REACTOR_PACKAGE_DATE    = 'Dec 2022'
+
+--[[--/*
+
+  WednesdayMessingAround.fuse
+
+  Based on https://www.shadertoy.com/view/NtcyDn a WebGL shader created by mrange.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+-- MANDATORY -----------------------------------------------------------------
+local shadertoy_name       = "Wednesday messing around"
+local shadertoy_author     = "mrange"
+local shadertoy_id         = "NtcyDn"
+local shadertoy_license    = ""
+local dctlfuse_category    = "ShaderOfTheWeek"
+local dctlfuse_name        = "WednesdayMessingAround"
+local dctlfuse_author      = "JiPi"
+-- OPTIONAL ------------------------------------------------------------------
+local dctlfuse_versionNo   = 1
+local dctlfuse_versionDate = "November 02, 2022"
+local dctlfuse_authorurl   = "https://www.youtube.com/c/JiPi_YT"
+local dctlfuse_authorlogo=nil
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(
+
+
+  dctlfuse_name, CT_SourceTool, {
+  REGS_Category      = "Shadertoys\\"..dctlfuse_category,
+  REGS_OpIconString  = "ST-"..shadertoy_id,
+  REGS_OpDescription = "Shadertoy '"..shadertoy_name.."' (ID: "..shadertoy_id..") created by "..shadertoy_author.." and ported by "..dctlfuse_author..(shadertoy_license == "" and ". Copyright "..shadertoy_author.." (CC BY-NC-SA 3.0)" or ". "..shadertoy_license)..". This port is by no means meant to take advantage of anyone or to do anyone wrong : Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) if you see your rights abused or your intellectual property violated by this work.",
+  REG_Fuse_NoEdit    = true,
+  REG_Fuse_NoReload  = true,
+  REGS_Company       = dctlfuse_company==nil and dctlfuse_author or dctlfuse_company,
+  REGS_URL           = dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl,
+--REGS_URL           = 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html',
+  REG_Version        = dctlfuse_versionNo==nil and 1 or dctlfuse_versionNo,
+
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  LightPosition[4];
+  float  LightColor[4];
+  float  OverColor[4];
+  float  ColorBurn[4];
+  float  Background[4];
+  int    bars;
+  float  twist;
+  float  dist;
+  float  rounding;
+  bool   AutoPeriod;
+  int    Period;
+  bool   ChangeBackground;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f2(a) sign(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f2(a) sign(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define sign_f2(a) to_float2((a).x==0.0f?0.0f:(a).x>0.0f?1.0f:-1.0f, (a).y==0.0f?0.0f:(a).y>0.0f?1.0f:-1.0f)
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+// CC0: Wednesday messing around
+// Tinkered a bit with an earlier shader
+// Thought while similar it turned out distinct enough to share
+
+#define COLORBURN
+#define SKYDOME
+#define PERIOD        10.0f
+
+#define PI            3.141592654f
+#define ROT(a)        to_mat2(_cosf(a), _sinf(a), -_sinf(a), _cosf(a))
+
+#define TAU         (2.0f*PI)
+#define TIME        iTime
+#define RESOLUTION  iResolution
+
+#define MAX_RAY_LENGTH  15.0f
+#define MAX_RAY_MARCHES 70
+
+
+// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
+__DEVICE__ float3 hsv2rgb(float3 c) {
+  const float4 hsv2rgb_K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+
+  float3 p = abs_f3(fract_f3(swi3(c,x,x,x) + swi3(hsv2rgb_K,x,y,z)) * 6.0f - swi3(hsv2rgb_K,w,w,w));
+  return c.z * _mix(swi3(hsv2rgb_K,x,x,x), clamp(p - swi3(hsv2rgb_K,x,x,x), 0.0f, 1.0f), c.y);
+}
+
+__DEVICE__ float3 band_color(float ny) {
+  float3 hsv = to_float3_s(0.0f);
+  float ramp = 1.0f/_fabs(ny);
+  if (_fabs(ny) < 4.0f) {
+    hsv = to_float3(0.0f, 0.0f, 0.0f);
+  } else if (ny > 0.0f) {
+    hsv = to_float3(0.88f, 2.5f*ramp,0.8f);
+  } else {
+    hsv = to_float3(0.53f, 4.0f*ramp, 0.8f);
+  }
+
+  return hsv2rgb(hsv);
+}
+
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
+__DEVICE__ float box(float2 p, float2 b, float4 r) {
+  swi2S(r,x,y, (p.x>0.0f)?swi2(r,x,y) : swi2(r,z,w));
+  r.x  = (p.y>0.0f)?r.x  : r.y;
+  float2 q = abs_f2(p)-b+r.x;
+  return _fminf(_fmaxf(q.x,q.y),0.0f) + length(_fmaxf(q,to_float2_s(0.0f))) - r.x;
+}
+
+__DEVICE__ float fadeIn(float x, float iTime) {
+  return _mix(-0.1f, 1.0f, smoothstep(-0.9f, -0.5f, -_cosf(-0.1f*x+TAU*TIME/PERIOD)));
+}
+
+__DEVICE__ float df_bars1(float3 p, float iTime, inout int *g_hit, float twist, float dist, int bars, float rounding) {
+  p.y += dist*_sinf(0.5f*p.x+0.5f*p.z+TIME);
+  float2 bp = swi2(p,z,y);
+
+  float d = 1E6;
+
+  float bs = 0.25f*fadeIn(p.x,iTime);
+  float2 bsz = to_float2_s(bs);
+  float4 brd = to_float4_s(bs*rounding);
+
+  for (int i = 0; i < bars; ++i) {
+    float ii = (float)(i);
+    float2 pp = bp;
+    float a = -TIME+0.5f*ii;
+    float b = ii+p.x-2.0f*TIME;
+    pp.y += _sinf(a);
+    mat2 rot = ROT(-PI/4.0f*_cosf(a+twist*b));
+    pp.x -= bsz.x*_sqrtf(2.0f)*ii;
+    pp = mul_f2_mat2(pp,rot);
+    float dd = box(pp, bsz, brd);
+    if (dd < d) {
+      *g_hit = i;
+      d = dd;
+    }
+  }
+
+  return d;
+}
+
+__DEVICE__ float df_bars2(float3 p, float iTime, inout int *g_hit, float rounding, float dist) {
+  p.y += 0.5f*dist*_sinf(-0.9f*p.x+TIME);
+  float2 p2 = swi2(p,y,z);
+  p2 = mul_f2_mat2(p2,ROT(TIME+p.x));
+  float2 s2 = sign_f2(p2);
+  p2 = abs_f2(p2);
+  p2 -= 0.3f;
+  *g_hit = 3+(int)(s2.y+2.0f*s2.x)-1;
+  float bs = 0.25f*fadeIn(p.x,iTime);
+  float2 bsz = to_float2_s(bs);
+  float4 brd = to_float4_s(bs*rounding);
+  return length(p2)-bs;
+}
+
+__DEVICE__ float df_bars3(float3 p, float iTime, inout int *g_hit, float rounding, float dist) {
+  const float r = 0.25f;
+  p.y += 0.5f*dist*_sinf(-0.9f*p.x+TIME);
+  mat2 rot = ROT(TIME+p.x);
+  float2 p2 = swi2(p,y,z);
+  float2 s2 = to_float2_s(0.0f);
+
+  p2 = mul_f2_mat2(p2,rot);
+  s2 += 2.0f*sign_f2(p2);
+  p2 = abs_f2(p2);
+  p2 -= 2.0f*r;
+
+  p2 = mul_f2_mat2(p2,rot);
+  s2 += 1.0f*sign_f2(p2);
+  p2 = abs_f2(p2);
+  p2 -= 1.0f*r;
+
+  *g_hit = 3+(int)(s2.y+2.0f*s2.x)-1;
+
+  float bs = (0.9f*r)*fadeIn(p.x,iTime);
+  float2 bsz = to_float2_s(bs);
+  float4 brd = to_float4_s(bs*rounding);
+  float d0 = length(p2)-bs;
+  float d1 = box(p2, bsz, brd);
+  float d = d0;
+  return d;
+}
+
+__DEVICE__ float df_bars4(float3 p, float iTime, inout int *g_hit, float rounding, float dist) {
+  p.y += 0.5f*dist*_sinf(-0.9f*p.x+TIME);
+  float2 p2 = swi2(p,y,z);
+  p2 = mul_f2_mat2(p2,ROT(TIME+p.x));
+  float2 s2 = sign_f2(p2);
+  p2 = abs_f2(p2);
+  p2 -= 0.3f;
+  *g_hit = 3+(int)(s2.y+2.0f*s2.x)-1;
+
+  float bs = 0.25f*fadeIn(p.x,iTime);
+
+  float2 bsz = to_float2_s(bs);
+  float4 brd = to_float4_s(bs*rounding);
+  return box(p2, bsz, brd);
+}
+
+__DEVICE__ float df(float3 p, float iTime, inout int *g_hit, float twist, int bars, float rounding, float dist, mat2 trans, int g_period) {
+  swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , trans));
+  switch(g_period) {
+  case 0:
+    return df_bars1(p,iTime,g_hit,twist,dist,bars,rounding);
+  case 1:
+    return df_bars2(p,iTime,g_hit,rounding,dist);
+  case 2:
+    return df_bars3(p,iTime,g_hit,rounding,dist);
+  case 3:
+    return df_bars4(p,iTime,g_hit,rounding,dist);
+  default:
+    return length(p) - 0.5f;
+  }
+}
+
+__DEVICE__ float rayMarch(float3 ro, float3 rd, float ti, float iTime, inout int *g_hit, float twist, int bars, float rounding, float dist, mat2 trans, int g_period, float TOLERANCE, float raymarchFactor) {
+  float t = ti;
+  int i = 0;
+  float2 dti = to_float2(1e10,0.0f);
+  for (i = 0; i < MAX_RAY_MARCHES; i++) {
+    float d = df(ro + rd*t,iTime,g_hit,twist,bars,rounding,dist,trans,g_period);
+    if (d < TOLERANCE || t > MAX_RAY_LENGTH) break;
+    if (d<dti.x) { dti=to_float2(d,t); }
+    t += raymarchFactor*d;
+  }
+  if(i==MAX_RAY_MARCHES) { t=dti.y; }
+  return t;
+}
+
+__DEVICE__ float3 normal(float3 pos, float iTime, inout int *g_hit, float twist, int bars, float rounding, float dist, mat2 trans, int g_period, float NORM_OFF) {
+  float2  eps = to_float2(NORM_OFF,0.0f);
+  float3 nor;
+  nor.x = df(pos+swi3(eps,x,y,y),iTime,g_hit,twist,bars,rounding,dist,trans,g_period) - df(pos-swi3(eps,x,y,y),iTime,g_hit,twist,bars,rounding,dist,trans,g_period);
+  nor.y = df(pos+swi3(eps,y,x,y),iTime,g_hit,twist,bars,rounding,dist,trans,g_period) - df(pos-swi3(eps,y,x,y),iTime,g_hit,twist,bars,rounding,dist,trans,g_period);
+  nor.z = df(pos+swi3(eps,y,y,x),iTime,g_hit,twist,bars,rounding,dist,trans,g_period) - df(pos-swi3(eps,y,y,x),iTime,g_hit,twist,bars,rounding,dist,trans,g_period);
+  return normalize(nor);
+}
+
+
+
+__DEVICE__ float3 skyColor(float3 ro, float3 rd, float3 lightPos, float3 lightCol, float3 overCol) {
+  float3  ld    = normalize(lightPos - ro);
+  float dif   = _fmaxf(dot(ld, rd), 0.0f);
+
+  float3  col   = to_float3_s(0.0f);
+
+  if ((rd.y > _fabs(rd.x)*1.0f) && (rd.y > _fabs(rd.z*0.25f))) {
+    col = 2.0f*overCol*rd.y;
+  }
+  float rb = length(_fmaxf(abs_f2(swi2(rd,x,z)/_fmaxf(0.0f,rd.y))-to_float2(0.9f, 4.0f),to_float2_s(0.0f)))-0.1f;
+
+  col += overCol*_powf(clamp(1.0f - rb*0.5f, 0.0f, 1.0f), 6.0f);
+  col += lightCol*_powf(dif, 8.0f);
+  col += 4.0f*lightCol*_powf(dif, 40.0f);
+  return col;
+}
+
+__DEVICE__ float3 effect(float2 p, float iTime, inout int *g_hit, float twist, int bars, float rounding, float dist, mat2 trans, int g_period, float TOLERANCE, float raymarchFactor, float NORM_OFF,
+                         float3 lightPos, float3 lightCol, float3 overCol, inout float *Hit) {
+  float3 ro = to_float3(0.0f, 0.0f, -5.0f);
+  float3 la = to_float3(0.0f, 0.0f, 0.0f);
+  float3 ww = normalize(la-ro);
+  float3 uu = normalize(cross(to_float3(0.0f,1.0f,0.0f), ww ));
+  float3 vv = normalize(cross(ww,uu));
+  const float fov = 3.0f;
+  float3 rd = normalize(-p.x*uu + p.y*vv + fov*ww );
+
+  *g_hit = -1;
+  float t = rayMarch(ro, rd, 3.0f, iTime, g_hit, twist, bars, rounding, dist, trans, g_period, TOLERANCE, raymarchFactor);
+  int hit = *g_hit;
+  *Hit = t;
+
+  float3 col = to_float3_s(1.0f);
+  float3 bcol = band_color(-4.0f*(float)(hit-(bars-1)/2));
+  bcol *= bcol;
+  if (t < MAX_RAY_LENGTH) {
+    float3 p = ro + rd*t;
+    float3 n = normal(p, iTime, g_hit, twist, bars, rounding, dist, trans, g_period, NORM_OFF);
+    float3 r = reflect(rd, n);
+    float3 ld= normalize(lightPos-p);
+
+    float dif = _fmaxf(dot(ld, n), 0.0f);
+    col = bcol*_mix(0.5f, 1.0f, dif);
+#ifdef SKYDOME
+    float3 rs= skyColor(p, r, lightPos, lightCol, overCol);
+    float fre = 1.0f+dot(rd, n);
+    fre *= fre;
+    float rf  = _mix(0.05f, 1.0f, fre);
+    col += rf*rs;
+    // Just some fine-tuning, don't judge me
+    col += smoothstep(0.5f, 1.0f, fre)*_fmaxf(n.y, 0.0f);
+#else
+    float spe = _powf(_fmaxf(dot(ld, r), 0.0f), 30.0f);
+    col += spe;
+#endif
+  }
+  return col;
+}
+
+
+__KERNEL__ void WednesdayMessingAroundFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 LightPosition = to_float4(params->LightPosition[0], params->LightPosition[1], params->LightPosition[2], params->LightPosition[3]);
+  float4 LightColor = to_float4(params->LightColor[0], params->LightColor[1], params->LightColor[2], params->LightColor[3]);
+  float4 OverColor = to_float4(params->OverColor[0], params->OverColor[1], params->OverColor[2], params->OverColor[3]);
+  float4 ColorBurn = to_float4(params->ColorBurn[0], params->ColorBurn[1], params->ColorBurn[2], params->ColorBurn[3]);
+  float4 Background = to_float4(params->Background[0], params->Background[1], params->Background[2], params->Background[3]);
+  int    bars = params->bars;
+  float  twist = params->twist;
+  float  dist = params->dist;
+  float  rounding = params->rounding;
+  bool   AutoPeriod = params->AutoPeriod;
+  int    Period = params->Period;
+  bool   ChangeBackground = params->ChangeBackground;
+
+  // --------
+  //CONNECT_SLIDER3(raymarchFactor, -1.0f, 2.0f, 0.8f);
+
+  //CONNECT_SLIDER4(TOLERANCE, -1.0f, 1.0f, 0.001f);
+  //CONNECT_SLIDER5(NORM_OFF, -1.0f, 1.0f, 0.005f);
+
+  //CONNECT_SLIDER6(Hit_Thres, -10.0f, 10.0f, 0.0f);
+
+
+  //const int   bars     = 7;
+  const mat2  trans    = ROT(PI/9.0f);
+  //const float twist    = 1.0f;
+  //const float dist     = 0.5f;
+  //const float rounding = 0.125f;
+
+  const float raymarchFactor = 0.8f;
+
+  const float4 hsv2rgb_K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+
+  //#define TOLERANCE       0.001f
+  float TOLERANCE = 0.001f;
+  //#define NORM_OFF        0.005f
+  float NORM_OFF = 0.005f;
+
+  int g_hit     = 0;
+  int g_period  = 0;
+  float Hit     = 0;
+
+  const float3 lightPos = swi3(LightPosition,x,y,z);//to_float3(2.0f, 3.0f, -5.0f);
+  const float3 lightCol = swi3(LightColor,x,y,z);//(hsv2rgb(to_float3(0.53f, 0.5f, 1.0f)));
+  const float3 overCol  = swi3(OverColor,x,y,z);//(hsv2rgb(to_float3(0.88f, 0.25f, 0.8f)));
+
+  float2 q = fragCoord/swi2(RESOLUTION,x,y);
+  float2 p  = -1.0f + 2.0f * q;
+  p.x     *= RESOLUTION.x/RESOLUTION.y;
+  g_period = (int)(mod_f(1.0f+_floor(TIME/PERIOD), 4.0f));
+
+  if(AutoPeriod == false)
+    g_period = Period;
+
+  float3 col  = effect(p,iTime, &g_hit,twist,bars,rounding,dist,trans,g_period,TOLERANCE,raymarchFactor,NORM_OFF,lightPos,lightCol,overCol, &Hit);
+#if defined(COLORBURN)
+  col -= swi3(ColorBurn,x,y,z);//to_float3(0.2f, 0.3f, 0.2f);
+#endif
+  col = clamp(col, 0.0f, 1.0f);
+  col = sqrt_f3(col);
+
+  fragColor = to_float4_aw(col, Background.w);
+
+  //if(ChangeBackground) fragColor = (col.x == col.z && col.x != 0.0f) ? Background : to_float4_aw(col,1.0f);
+  if(ChangeBackground) fragColor = (Hit < 10.0f) ? to_float4_aw(col,1.0f) : Background;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  StandardShaderFuseTopControls();
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  self:BeginControlNest("LightPosition", "LightPosition", false, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "LightPosition",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InLightPositionColorR = self:AddInput("Red",   "LightPositionRed",   { INP_Default  = 2.0, IC_ControlID = 0, attrs})
+    InLightPositionColorG = self:AddInput("Green", "LightPositionGreen", { INP_Default  = 3.0, IC_ControlID = 1, attrs})
+    InLightPositionColorB = self:AddInput("Blue",  "LightPositionBlue",  { INP_Default  = -5.0, IC_ControlID = 2, attrs})
+    
+  self:EndControlNest()
+
+
+self:BeginControlNest("Colors", "Colors", false, {})
+
+  self:BeginControlNest("LightColor", "LightColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "LightColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InLightColorColorR = self:AddInput("Red",   "LightColorRed",   { INP_Default  = 0.53, IC_ControlID = 0, attrs})
+    InLightColorColorG = self:AddInput("Green", "LightColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InLightColorColorB = self:AddInput("Blue",  "LightColorBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    
+  self:EndControlNest()
+
+  self:BeginControlNest("OverColor", "OverColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "OverColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InOverColorColorR = self:AddInput("Red",   "OverColorRed",   { INP_Default  = 0.88, IC_ControlID = 0, attrs})
+    InOverColorColorG = self:AddInput("Green", "OverColorGreen", { INP_Default  = 0.25, IC_ControlID = 1, attrs})
+    InOverColorColorB = self:AddInput("Blue",  "OverColorBlue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorBurn", "ColorBurn", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBurn",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBurnColorR = self:AddInput("Red",   "ColorBurnRed",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InColorBurnColorG = self:AddInput("Green", "ColorBurnGreen", { INP_Default  = 0.3, IC_ControlID = 1, attrs})
+    InColorBurnColorB = self:AddInput("Blue",  "ColorBurnBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+self:EndControlNest()
+
+  InbarsSlider = self:AddInput("bars", "bars", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 1,
+      INP_MaxScale       = 12,
+      INP_Default        = 7,
+      INP_Integer        = true,
+  })
+
+  IntwistSlider = self:AddInput("twist", "twist", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  IndistSlider = self:AddInput("dist", "dist", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 2.0,
+      INP_Default        = 0.5,
+  })
+
+  InroundingSlider = self:AddInput("rounding", "rounding", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.125,
+  })
+
+  InAutoPeriodCheckbox = self:AddInput("AutoPeriod", "AutoPeriod", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_DoNotifyChanged = true,
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InPeriodSlider = self:AddInput("Period", "Period", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 4,
+      INP_Default        = 1,
+      IC_Visible         = false,
+      INP_Integer        = true,
+  })
+
+  InChangeBackgroundCheckbox = self:AddInput("ChangeBackground", "ChangeBackground", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_DoNotifyChanged = true,
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+
+  self:BeginControlNest("Background", "Background", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Background",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_Visible      = false,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBackgroundColorR = self:AddInput("Red",   "BackgroundRed",   { INP_Default  = 0.9, IC_ControlID = 0, attrs})
+    InBackgroundColorG = self:AddInput("Green", "BackgroundGreen", { INP_Default  = 0.84, IC_ControlID = 1, attrs})
+    InBackgroundColorB = self:AddInput("Blue",  "BackgroundBlue",  { INP_Default  = 0.9, IC_ControlID = 2, attrs})
+    InBackgroundColorA = self:AddInput("Alpha", "BackgroundAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+
+  Sep3 = self:AddInput(string.rep("_", 92), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	  IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  StandardShaderFuseBottomControls();
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "WednesdayMessingAroundFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters)
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+  params = node:GetParamBlock(ShaderParameters)
+
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.LightPosition = {
+    InLightPositionColorR:GetValue(req).Value,
+    InLightPositionColorG:GetValue(req).Value,
+    InLightPositionColorB:GetValue(req).Value,
+  }
+  params.LightColor = {
+    InLightColorColorR:GetValue(req).Value,
+    InLightColorColorG:GetValue(req).Value,
+    InLightColorColorB:GetValue(req).Value,
+  }
+  params.OverColor = {
+    InOverColorColorR:GetValue(req).Value,
+    InOverColorColorG:GetValue(req).Value,
+    InOverColorColorB:GetValue(req).Value,
+  }
+  params.ColorBurn = {
+    InColorBurnColorR:GetValue(req).Value,
+    InColorBurnColorG:GetValue(req).Value,
+    InColorBurnColorB:GetValue(req).Value,
+  }
+  params.Background = {
+    InBackgroundColorR:GetValue(req).Value,
+    InBackgroundColorG:GetValue(req).Value,
+    InBackgroundColorB:GetValue(req).Value,InBackgroundColorA:GetValue(req).Value
+  }
+  params.bars = InbarsSlider:GetValue(req).Value
+  params.twist = IntwistSlider:GetValue(req).Value
+  params.dist = IndistSlider:GetValue(req).Value
+  params.rounding = InroundingSlider:GetValue(req).Value
+  params.AutoPeriod = InAutoPeriodCheckbox:GetValue(req).Value
+  params.Period = InPeriodSlider:GetValue(req).Value
+  params.ChangeBackground = InChangeBackgroundCheckbox:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  
+  
+  node:AddOutput("dst", dst)
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+    
+    if inp == InAutoPeriodCheckbox then
+			if param.Value == 0 then
+				InPeriodSlider:SetAttrs({ IC_Visible = true, })
+			else
+				InPeriodSlider:SetAttrs({ IC_Visible = false, })
+			end
+		end
+    
+    if inp == InChangeBackgroundCheckbox then
+			if param.Value == 1 then
+				InBackgroundColorR:SetAttrs({ IC_Visible = true, })
+			else
+				InBackgroundColorR:SetAttrs({ IC_Visible = false, })
+			end
+		end
+    
+
+ 	end
+end
+
+
+-- */
+
+-- /* ====================== DO NOT TOUCH OR APPEND ANY CODE HERE ===========================================
+
+
+function StandardShaderFuseTopControls()
+  -- Branding
+  self:AddInput('<p align="center"><a href="https://github.com/nmbr73/Shadertoys"><img height="20" width="210" src="data:image/png;base64,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" /></a></p>',
+  "DctlFuseBrandLabel", {
+    IC_ControlPage = -1 ,
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    LBLC_MultiLine = true,
+    IC_NoLabel = true,
+    IC_NoReset = true,
+    INP_External = false,
+    INP_Passive = true,
+  })
+end
+
+function StandardShaderFuseBottomControls()
+
+  local version_info=''
+
+  if dctlfuse_versionNo == nil then dctlfuse_versionNo='' end
+  if dctlfuse_versionDate == nil then dctlfuse_versionDate='' end
+
+  if dctlfuse_versionNo=='' and dctlfuse_versionDate=='' then
+    version_info=''
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate=='' then
+    version_info='Fuse version '..dctlfuse_versionNo
+  elseif dctlfuse_versionNo == '' and dctlfuse_versionDate~='' then
+    version_info=dctlfuse_versionDate
+  elseif dctlfuse_versionNo ~= '' and dctlfuse_versionDate~='' then
+    version_info='Version '..dctlfuse_versionNo..' - '..dctlfuse_versionDate
+  end
+
+  if version_info ~= '' then
+    version_info=version_info..'<br />'
+  end
+
+  -- self:BeginControlNest("Shaderfuse Info", "Shaderfuse_Info", true, {})
+
+  -- Separator
+  self:AddInput( '<br />',"DctlFuseSeparatorLabel",{LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+  -- Info Btn
+  self:AddInput(dctlfuse_name.." Info ...", "DctlFuseInfoButton", {IC_ControlPage = 1,LINKID_DataType = "Text",INPID_InputControl = "ButtonControl",INP_DoNotifyChanged = false,INP_External = false,BTNCS_Execute = 'bmd.openurl("'..(dctlfuse_infourl~=nil and dctlfuse_infourl or 'https://nmbr73.github.io/Shadertoys/Shaders/'..dctlfuse_category..'/'..dctlfuse_name..'.html')..'")'})
+  -- Info Txt
+  self:AddInput('<p align="center">'
+    ..'Shadertoy <a href="https://www.shadertoy.com/view/'..shadertoy_id..'" style="color:white; text-decoration:none; ">'..shadertoy_name..'</a> by <a href="https://www.shadertoy.com/user/'..shadertoy_author..'" style="color:#a0a060; text-decoration:none; ">'..shadertoy_author..'</a><br />'
+    ..'<span style="color:#a06060; ">'..(shadertoy_license == "" and '&copy; '..shadertoy_author..' (CC BY-NC-SA 3.0)' or shadertoy_license)..'</span><br />'
+    ..'DCTLified and DaFused by <a href="'..(dctlfuse_authorurl==nil and "https://nmbr73.github.io/Shadertoys/" or dctlfuse_authorurl)..'" style="color:#a0a060; text-decoration:none; ">'..dctlfuse_author..'</a><br />'
+    ..version_info
+    ..'Reactor package v'..SHADERFUSES_REACTOR_PACKAGE_VERSION..' created '..SHADERFUSES_REACTOR_PACKAGE_DATE..'<br />'
+    ,"DctlFuseInfoLabel", {IC_ControlPage = 1, LINKID_DataType="Text",INPID_InputControl="LabelControl",LBLC_MultiLine=true,IC_NoLabel=true,IC_NoReset=true,INP_External=false,INP_Passive=true})
+
+
+    -- self:EndControlNest()
+
+  end
+
+-- */

@@ -1,6 +1,7 @@
 <center>
 <a href="https://youtu.be/oyndG0pLEQQ"><img src="Site/img_subscribe.png" /></a>
 </center>
+<!-- Test -->
 
 # Shadertoys
 
@@ -52,6 +53,7 @@ See the following videos to get an idea what these Fuses look like:
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=VwIa6QokOFk" target="_blank"><img src="http://img.youtube.com/vi/VwIa6QokOFk/0.jpg" alt="Demo 23" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/VwIa6QokOFk?style=social" /></a></td>
 <td><a href="http://www.youtube.com/watch?feature=player_embedded&v=ArkJzr2Aej0" target="_blank"><img src="http://img.youtube.com/vi/ArkJzr2Aej0/0.jpg" alt="Demo 24" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/ArkJzr2Aej0?style=social" /></a></td>
 </tr>
+<td><a href="http://www.youtube.com/watch?feature=player_embedded&v=JtOvp7-Cmzg" target="_blank"><img src="http://img.youtube.com/vi/JtOvp7-Cmzg/0.jpg" alt="Demo 25" width="120" height="90" border="10" /><br /><img src="https://img.shields.io/youtube/views/JtOvp7-Cmzg?style=social" /></a></td>
 </table>
 </center>
 
@@ -67,10 +69,10 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (13th of September 2022):**](Shaders/ShaderOfTheWeek/TwizzlyCircleMess.md)
+[**Current Shader of the Week (19th of December 2022):**](Shaders/ShaderOfTheWeek/AudioFlightv2.md)
 
-[![TwizzlyCircleMess](https://user-images.githubusercontent.com/78935215/190479840-983ccaea-02d8-4d22-8166-202edc6c0053.gif)
-](Shaders/ShaderOfTheWeek/TwizzlyCircleMess.md)
+[![AudioFlightV2](https://user-images.githubusercontent.com/78935215/208448587-a6e76de5-87cc-4f92-9472-51f5ca98a11f.gif)
+](Shaders/ShaderOfTheWeek/AudioFlightv2.md)
 
 
 
@@ -165,6 +167,9 @@ Here are the AudioShaderfuses:
 - [ReactiveVoronoi](Shaders/Audio/ReactiveVoronoi.md)
 - [Rlstyle](Shaders/Audio/Rlstyle.md)
 - [ShadertoyAudioDisplay](Shaders/Audio/ShadertoyAudioDisplay.md)
+- [InerciaIntended](Shaders/Audio/Inerciaintended.md) :new:
+
+[![InerciaIntended](https://user-images.githubusercontent.com/78935215/200139202-3c5b2c15-bd43-4998-84d6-a06820255d5d.gif)](Shaders/Audio/Inerciaintended.md)
 
 
 # Cubemap Shader

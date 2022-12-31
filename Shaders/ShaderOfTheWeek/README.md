@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Audio](../Audio/README.md) · [Blob](../Blob/README.md) · [Cubemap](../Cubemap/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · **ShaderOfTheWeek** · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md)
+[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Audio](../Audio/README.md) · [Blob](../Blob/README.md) · [Cubemap](../Cubemap/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · [Misc](../Misc/README.md) · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · **ShaderOfTheWeek** · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md) · [Wedding](../Wedding/README.md)
 
 # ShaderOfTheWeek Shaders
 
@@ -17,6 +17,9 @@ On the home page of [Shadertoy.com](https://www.shadertoy.com) the "[Shader of t
 
 ## **[AlexanderHornedSphereZoom](AlexanderHornedSphereZoom.md)**
 based on [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW) written by [tmst](https://www.shadertoy.com/user/tmst)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[AudioFlightv2](AudioFlightv2.md)**
+based on [Audio Flight v2 (strobes)](https://www.shadertoy.com/view/7tfyRl) written by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[ClubCave09](ClubCave09.md)**
 based on [20210930_CLUB-CAVE-09](https://www.shadertoy.com/view/ss3SD8) written by [0b5vr](https://www.shadertoy.com/user/0b5vr)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
@@ -39,6 +42,9 @@ based on [DangerNoodle](https://www.shadertoy.com/view/wlVSDK) written by [BigWI
 ## **[Day94](Day94.md)**
 based on [Day94](https://www.shadertoy.com/view/tdXcWM) written by [jeyko](https://www.shadertoy.com/user/jeyko)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
+## **[Energeticflyby](Energeticflyby.md)**
+based on [[Inércia 2022] Energetic Flyby](https://www.shadertoy.com/view/csjGDD) written by [Kali](https://www.shadertoy.com/user/Kali)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
 ## **[ExitTheMatrix](ExitTheMatrix.md)**
 based on [Exit the Matrix](https://www.shadertoy.com/view/NlsXDH) written by [Kali](https://www.shadertoy.com/user/Kali)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
@@ -53,6 +59,9 @@ based on [Frozen wasteland](https://www.shadertoy.com/view/Xls3D2) written by [D
 
 ## **[FuturisticTunnel](FuturisticTunnel.md)**
 based on [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd) written by [julianlumia](https://www.shadertoy.com/user/julianlumia)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[GenerativeArtDeco4](GenerativeArtDeco4.md)**
+based on [generative art deco 4](https://www.shadertoy.com/view/mds3DX) written by [morisil](https://www.shadertoy.com/user/morisil)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[HyperDough](HyperDough.md)**
 based on [HyperDough](https://www.shadertoy.com/view/7tcGWB) written by [Tater](https://www.shadertoy.com/user/Tater)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
@@ -84,8 +93,8 @@ based on [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt) written by [patu
 ## **[RecursiveDonut](RecursiveDonut.md)**
 based on [Recursive Donut](https://www.shadertoy.com/view/tls3WB) written by [ShnitzelKiller](https://www.shadertoy.com/user/ShnitzelKiller)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[SimpleRefractionTest](SimpleRefractionTest.md)** :boom:
-- *fuse category 'ShaderOftheWeek' does not match fuse's subdirectory*
+## **[SimpleRefractionTest](SimpleRefractionTest.md)**
+based on [simple refraction test](https://www.shadertoy.com/view/flcSW2) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[SimpleSphereRaymarching](SimpleSphereRaymarching.md)**
 based on [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc) written by [drschizzo](https://www.shadertoy.com/user/drschizzo)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
@@ -119,4 +128,7 @@ based on [Twizzly Circle Mess](https://www.shadertoy.com/view/sltGRj) written by
 
 ## **[UndulatingColumns](UndulatingColumns.md)**
 based on [Undulating Columns](https://www.shadertoy.com/view/WlXXDH) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+
+## **[WednesdayMessingAround](WednesdayMessingAround.md)**
+based on [Wednesday messing around](https://www.shadertoy.com/view/NtcyDn) written by [mrange](https://www.shadertoy.com/user/mrange)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

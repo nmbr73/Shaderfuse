@@ -8,7 +8,7 @@
   <!--                                                             -->
 
 
-[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Audio](../Audio/README.md) · [Blob](../Blob/README.md) · [Cubemap](../Cubemap/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · **Misc** · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md)
+[README](../README.md) · [OVERVIEW](../OVERVIEW.md) · [Abstract](../Abstract/README.md) · [Audio](../Audio/README.md) · [Blob](../Blob/README.md) · [Cubemap](../Cubemap/README.md) · [Distortion](../Distortion/README.md) · [Fractals](../Fractals/README.md) · **Misc** · [Object](../Object/README.md) · [Planet](../Planet/README.md) · [Recursive](../Recursive/README.md) · [ShaderOfTheWeek](../ShaderOfTheWeek/README.md) · [Simple](../Simple/README.md) · [Tunnel](../Tunnel/README.md) · [Wedding](../Wedding/README.md)
 
 # Misc Shaders
 
@@ -27,8 +27,8 @@ based on [IHeartFourier](https://www.shadertoy.com/view/tltSWr) written by [harr
 ## **[Legofied](Legofied.md)**
 based on [Legofied](https://www.shadertoy.com/view/XtBSzy) written by [Gijs](https://www.shadertoy.com/user/Gijs)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[MountainsLakes](MountainsLakes.md)** :boom:
-- *thumbnail does not exists*
+## **[MountainsLakes](MountainsLakes.md)**
+based on [Mountains & Lakes](https://www.shadertoy.com/view/7tSSDD) written by [xjorma](https://www.shadertoy.com/user/xjorma)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[Seascape](Seascape.md)**
 based on [Seascape](https://www.shadertoy.com/view/Ms2SD1) written by [TDM](https://www.shadertoy.com/user/TDM)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
