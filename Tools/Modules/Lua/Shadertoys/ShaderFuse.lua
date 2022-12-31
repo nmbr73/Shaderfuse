@@ -188,15 +188,11 @@ function ShaderFuse.init(filepath)
     }
 
 
-    if SHADERFUSE ~= nil then
-        print("Exists !?!?")
-    end
-
 
     filepath = filepath ~= nil and filepath or debug.getinfo(2, "S").source:sub(2)
     assert(filepath,"filepath could not be determined")
 
-    print("init: '".. filepath .."'")
+    -- print("init: '".. filepath .."'")
 
 
     local path, category, fusefilename = filepath:match("(.*/)([^/]+)/(.+)%.fuse")
