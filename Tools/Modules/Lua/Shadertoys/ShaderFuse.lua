@@ -198,7 +198,7 @@ function ShaderFuse.init(filepath)
     local path, category, fusefilename = filepath:match("(.*/)([^/]+)/(.+)%.fuse")
     assert(path ~= nil and category ~= nil and fusefilename ~= nil, "filepath missmatch")
 
-    dofile(path .. category .. '/' .. fusefilename .. '.info')
+    dofile(path .. category .. '/' .. fusefilename .. '_info.lua')
 
     -- mandatory fields
     assert(info ~= nil, "no info")
