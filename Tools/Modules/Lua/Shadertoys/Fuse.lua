@@ -289,6 +289,9 @@ function Fuse:read(options)
         f:write([[
 info = {
 
+    -- https://www.shadertoy.com/view/]].. self.shadertoy_id ..[[
+
+
     Shadertoy = {
         Name = "]].. self.shadertoy_name ..[[",
         Author = "]].. self.shadertoy_author ..[[",
