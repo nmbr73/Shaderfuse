@@ -1,10 +1,10 @@
 
--- Shadertoy.Name = "Rainbow Slices", -- optional, but should be given; the original name (defaults to Fuse.Name)
+-- Shadertoy.Name = "Rainbow Slices", -- mandatory; the original name
 -- Shadertoy.Author = "fizzer",       -- mandatory
 -- Shadertoy.ID = "XdsGD4",           -- mandatory
 -- Shadertoy.License = "",            -- optional (defaults to CC BY-NC-SA)
 -- Shadertoy.InfoURL ,                -- auto
--- Fuse.Name = "RainbowSlices",       -- optional (defaults to Fuse.FileName)
+-- Fuse.Name                          -- auto (!) (same as Fuse.FileName)
 -- Fuse.Author = "nmbr73",            -- mandatory
 -- Fuse.AuthorURL                     -- optional (nil for default, '' to supress)
 -- Fuse.AuthorLogo                    -- optional (nil for default, '' to supress)
@@ -246,13 +246,15 @@ function ShaderFuse.init(filepath)
     assert(info ~= nil, "no info")
     assert(info.Shadertoy ~= nil, "no info.Shadertoy")
     assert(info.Shadertoy.ID ~= nil, "no info.Shadertoy.ID")
+    assert(info.Shadertoy.Name ~= nil, "no info.Shadertoy.Name")
     assert(info.Shadertoy.Author ~= nil, "no info.Shadertoy.Author")
     assert(info.Fuse ~= nil, "no info.Fuse")
-    assert(info.Fuse.Author ~= nil, "no info.Fuse.AUthor")
+    assert(info.Fuse.Author ~= nil, "no info.Fuse.Author")
 
     -- auto fields
     assert(info.Shadertoy.InfoURL == nil, "Shadertoy.InfoURL must not be set explicitely")
     assert(info.Fuse.Category == nil, "Fuse.Category must not be set explicitely")
+    assert(info.Fuse.Name == nil, "Fuse.Name must not be set explicitely")
     assert(info.Fuse.FuRegister == nil, "Fuse.FuRegister must not be set explicitely")
     assert(info.Fuse.isCompatible == nil, "Fuse.isCompatible must not be set explicitely")
     assert(info.Fuse.InfoURL == nil, "Fuse.InfoURL must not be set explicitely")
@@ -263,16 +265,15 @@ function ShaderFuse.init(filepath)
 
 
     info.Fuse.Category = category
+    info.Fuse.Name     = fusefilename
     info.Fuse.filepath = path .. category .. '/'
     info.Fuse.basename = fusefilename
 
     -- defaults / optional
-    if info.Fuse.Name == nil then info.Fuse.Name = fusefilename end -- Fuse.Name defaults to filename
-    if info.Shadertoy.Name == nil then info.Shadertoy.Name = info.Fuse.Name end -- Shadertoy.Name defaults to Fuse.Name
+    -- if info.Shadertoy.Name == nil then info.Shadertoy.Name = info.Fuse.Name end -- Shadertoy.Name defaults to Fuse.Name
     if info.Shadertoy.License == nil then info.Shadertoy.License = "© "..info.Shadertoy.Author.." (CC BY-NC-SA 3.0)" end -- Shadertoy.com licenses defaults to CC BY-NC-SA 3.0 if not explicitely stated otherwise
     if info.Fuse.Description == nil then info.Fuse.Description = '' end
     if info.Shadertoy.Tags == nil then info.Shadertoy.Tags = {} end
-
 
 
     if info.Fuse.AuthorLogo == nil then
