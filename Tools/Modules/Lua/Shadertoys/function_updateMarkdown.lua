@@ -7,7 +7,7 @@ function updateMarkdown()
 
  local user_config = require("Shadertoys/~user_config")
  local fuses       = require("Shadertoys/fuses")
- local image       = require("Shadertoys/image")
+-- local image       = require("Shadertoys/image")
 
 
     -- print("update markdown files")
