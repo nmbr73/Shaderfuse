@@ -1,10 +1,21 @@
+--- Mock some simple bmd methods.
+--
+-- A silly attempt to mimic some basic bmd functions (readdir, fileexists, createdir) to
+-- make scripts using these work, even if called not from within Fusion.
+--
+--    bmd = require("Shadertoys/bmd")
+--    ...
+--
+-- @module bmd
+
+
 local bmd = {}
 
 
 
--- A silly attempt to mimic bmd.readdir to make scripts using
--- this function work even if called not from within Fusion
-
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Mock the bmd readdir function.
+--
 function bmd.readdir(directory)
 
   local dir, file = directory:match'(.*/)(.*)'
@@ -26,6 +37,9 @@ end
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Mock the bmd fileexists function.
+--
 function bmd.fileexists(filepath)
     local filehandle=io.open(filepath,"r")
     if filehandle~=nil then
@@ -36,10 +50,14 @@ function bmd.fileexists(filepath)
  end
 
 
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Mock the bmd createdir function.
+--
 function bmd.createdir(dirname)
     os.execute("mkdir -p '" .. dirname.."'")
 end
 
 
-return bmd
 
+return bmd
