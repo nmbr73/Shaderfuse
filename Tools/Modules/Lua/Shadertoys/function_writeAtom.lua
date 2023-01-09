@@ -19,8 +19,8 @@ function writeAtom()
     local PackageIdentifier='com.JiPi.Shadertoys'
     local TargetFilepath=user_config.pathToRepository..'Atom/'
     local YourPackageVersion='1.1'
-    local YourPackageDate=os.date("%Y,%m,%d")
-
+    local YourPackageDate="2022,12,19"      -- os.date("%Y,%m,%d")  -- !!!!!!
+    local YourPackageDateFuse="Dec 2022"    -- os.date("%b %Y")     -- !!!!!!
 
     -- com.YourCompanyName.YourPackageName (folder)
     --     com.YourCompanyName.YourPackageName.atom (file)
@@ -111,7 +111,7 @@ function writeAtom()
 ]]
 
         .."local SHADERFUSES_REACTOR_PACKAGE_VERSION = '"..YourPackageVersion.."'\n"
-        .."local SHADERFUSES_REACTOR_PACKAGE_DATE    = '"..(os.date("%b %Y")).."'\n\n"
+        .."local SHADERFUSES_REACTOR_PACKAGE_DATE    = '"..YourPackageDateFuse.."'\n\n"
         ..fuse.fuse_sourceCode
 
 
