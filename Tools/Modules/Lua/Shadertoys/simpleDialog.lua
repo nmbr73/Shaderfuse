@@ -6,7 +6,6 @@ local image           = require("Shadertoys/image")
 function simpleDialog.window(ui,dispatcher,params)
 
   assert(params~=nil)
-  assert(params.fuses~=nil)
 
   local thumbWidth=107 -- 160
   local thumbHeight=60 -- 90
@@ -66,7 +65,7 @@ function simpleDialog.window(ui,dispatcher,params)
 
   function win.On.Okay.Clicked(ev)
     win:Hide()
-    params.onOkay(params.fuses)
+    params.onOkay()
   end
 
 
