@@ -128,6 +128,8 @@ function Fuse:init(filepath)
     self.error=ShaderFuse.error
   end
 
+  self.hasThumbnail = ShaderFuse.hasThumbnail
+  self.Compatibility = ShaderFuse.Compatibility
 
 
   return true

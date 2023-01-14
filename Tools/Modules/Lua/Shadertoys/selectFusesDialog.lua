@@ -121,13 +121,15 @@ function selectFusesDialog.window(ui,dispatcher,params)
   hdr.Text[1] = 'Fuse Name'
   hdr.Text[2] = 'Author'
   hdr.Text[3] = 'Port'
+  hdr.Text[4] = 'Status'
   itm.Files:SetHeaderItem(hdr)
-  itm.Files.ColumnCount = 4
+  itm.Files.ColumnCount = 5
 
   itm.Files.ColumnWidth[0] = 120
-  itm.Files.ColumnWidth[1] = 500
+  itm.Files.ColumnWidth[1] = 440
   itm.Files.ColumnWidth[2] = 80
   itm.Files.ColumnWidth[3] = 60
+  itm.Files.ColumnWidth[4] = 60
 
   -- g_useShortcutPrefix = itm.UseShortcutPrefix
   -- g_useShadertoyID    = itm.UseShadertoyID
@@ -143,6 +145,23 @@ function selectFusesDialog.window(ui,dispatcher,params)
     newitem.Text[1] = f.Name
     newitem.Text[2] = f.shadertoy_author
     newitem.Text[3] = (f.error and '🚫 ' or '')..f.dctlfuse_author
+
+    local green = '✔︎' -- '🟢'
+    local gray = '·' -- '⚫️'
+    local red = '𐄂' -- '🔴'
+
+
+    local status = (f.hasThumbnail and green or red)
+    for _ , k in pairs({'Windows_CUDA','Windows_OpenCL','macOS_Metal','macOS_OpenCL'}) do
+      status = status .. ((f.Compatibility[k] == nil) and gray or (f.Compatibility[k] and green or red))
+    end
+
+    if status == green .. green .. green .. green .. green then
+      status = ' okay'
+    end
+    newitem.Text[4] = status
+
+
     itm.Files:AddTopLevelItem(newitem)
 
     if f.error==nil then
