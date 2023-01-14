@@ -220,13 +220,13 @@ end
 
 
 
-function ShaderFuse.init( filepath, mode )
+function ShaderFuse.init( filepath, mode, noAssert )
 
     mode = mode or 'development'
 
     assert(mode == 'development' or mode == 'installer' or mode == 'reactor', "bad mode")
 
-    -- ShaderFuse.noAssert = noAssert
+    ShaderFuse.noAssert = noAssert
     ShaderFuse.error = nil
     ShaderFuse.FuRegister = nil
     ShaderFuse.Compatibility = nil

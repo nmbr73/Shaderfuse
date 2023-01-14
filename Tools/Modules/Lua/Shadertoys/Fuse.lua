@@ -122,6 +122,14 @@ function Fuse:init(filepath)
   end
 
 
+
+  ShaderFuse.init(filepath,'development',true)
+  if ShaderFuse.error then
+    self.error=ShaderFuse.error
+  end
+
+
+
   return true
 end
 
