@@ -46,7 +46,7 @@ local fuses = {
 --
 function fuses.get_fuse(category,fusename)
   for i, f in ipairs(fuses.list) do
-    if f.file_category == category and f.file_fusename == fusename then
+    if f.Category == category and f.Name == fusename then
       return f
     end
   end
@@ -90,15 +90,15 @@ function fuses.fetch(path, details, list)
       end
     end
 
-    table.sort(list,function(a,b) return a.file_category < b.file_category or (a.file_category == b.file_category and a.file_fusename < b.file_fusename ) end)
+    table.sort(list,function(a,b) return a.Category < b.Category or (a.Category == b.Category and a.Name < b.Name ) end)
 
     fuses.list = list
 
     fuses.categories = {}
     local cat = ''
     for i, fuse in ipairs(fuses.list) do
-      if fuse.file_category~=cat then
-        cat=fuse.file_category
+      if fuse.Category~=cat then
+        cat=fuse.Category
         table.insert(fuses.categories,cat)
       end
     end

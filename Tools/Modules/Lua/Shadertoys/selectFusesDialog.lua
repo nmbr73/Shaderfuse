@@ -93,7 +93,7 @@ function selectFusesDialog.window(ui,dispatcher,params)
 
     if fuse~=nil then
       -- bmd.openurl("https://www.shadertoy.com/view/"..fuse.shadertoy_id)
-      bmd.openurl('https://nmbr73.github.io/Shadertoys/Shaders/'..fuse.file_category..'/'..fuse.file_fusename..'.html')
+      bmd.openurl('https://nmbr73.github.io/Shadertoys/Shaders/'..fuse.Category..'/'..fuse.Name..'.html')
     end
   end
 
@@ -108,7 +108,7 @@ function selectFusesDialog.window(ui,dispatcher,params)
     if fuse==nil then return end
 
     itm.Thumbnail.Text='<img src="file:/Users/nmbr73/Projects/Shadertoys/Shaders/'
-      ..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
+      ..fuse.Category..'/'..fuse.Name..'_320x180.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
 
     itm.Info.Text = fuse.error and '<span style="color:#ff9090; ">'..fuse.error.."</span>" or defaultInfoText
   end
@@ -137,10 +137,10 @@ function selectFusesDialog.window(ui,dispatcher,params)
 
   for i, f in ipairs(params.fuses.list) do
 
-    -- print("add "..f.file_category.."/"..f.file_fusename)
+    -- print("add "..f.Category.."/"..f.Name)
     local newitem = itm.Files:NewItem()
-    newitem.Text[0] = f.file_category
-    newitem.Text[1] = f.file_fusename
+    newitem.Text[0] = f.Category
+    newitem.Text[1] = f.Name
     newitem.Text[2] = f.shadertoy_author
     newitem.Text[3] = (f.error and '🚫 ' or '')..f.dctlfuse_author
     itm.Files:AddTopLevelItem(newitem)

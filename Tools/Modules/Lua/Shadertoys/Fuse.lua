@@ -2,15 +2,17 @@
 --
 -- Class to help to work with a fuse file.
 --
--- Dependencies: `bmd.fileexists`
+-- Dependencies: `bmd.fileexists`, `Shadertoys/ShaderFuse`
 -- @classmod Fuse
 
+
+ShaderFuse = require("Shadertoys/ShaderFuse")
+
 local Fuse = {
-    file_filepath='',
-    file_basepath='',
-    file_category='', -- Fuse.Category
-    file_fusename='', -- Fuse.Name
-    file_filename='', -- Fuse.FileName
+    Name='', -- Fuse (file)name (without suffix)
+    FilePath='', -- Fuse filepath (full path, incl. category and suffix)
+    DirName='',  -- Fuse path (incl. Category, without trailing slash)
+    Category='',
 
     thumbnail_exists = false,
     markdown_exists  = false,
@@ -32,9 +34,8 @@ local Fuse = {
 
 
 -- function Fuse:clear()
---   self.file_filepath=''
---   self.file_basepath=''
---   self.file_category=''
+--   self.FilePath=''
+--   self.Category=''
 --   self.file_name=''
 
 --   self.error = nil
@@ -79,28 +80,33 @@ end
 -- Initialize the object.
 --
 function Fuse:init(filepath)
+
+  -- ShaderFuse.init(filepath)
+
+
+
   assert(filepath~=nil)
 
-  self.file_filepath=filepath
+  self.FilePath=filepath
 
-  self.file_basepath, self.file_category, self.file_fusename =
+  self.DirName, self.Category, self.Name =
     filepath:match('^(.+[/\\]Shaders/)([^/]+)/([^%.]+)%.fuse$')
 
-  if self.file_basepath==nil or self.file_category==nil or self.file_fusename==nil then
-    self.error="filepath '"..self.file_filepath.."' does not match the expected schema"
+  if self.DirName==nil or self.Category==nil or self.Name==nil then
+    self.error="filepath '"..self.FilePath.."' does not match the expected schema"
     return false
   end
 
-  self.file_filename=self.file_fusename..'.fuse'
+  self.DirName = self.DirName .. self.Category
 
-  if bmd.fileexists(self.file_basepath..self.file_category..'/'..self.file_fusename..'.md') then
+  if bmd.fileexists(self.DirName..'/'..self.Name..'.md') then
     self.markdown_exists=true
   else
     self.markdown_exists=false
     self.error="markdown does not exists"
   end
 
-  if bmd.fileexists(self.file_basepath..self.file_category..'/'..self.file_fusename..'_320x180.png') then
+  if bmd.fileexists(self.DirName..'/'..self.Name..'_320x180.png') then
     self.thumbnail_exists=true
   else
     self.thumbnail_exists=false
@@ -108,7 +114,7 @@ function Fuse:init(filepath)
   end
 
 
-  if bmd.fileexists(self.file_basepath..self.file_category..'/'..self.file_fusename..'.sfi') then
+  if bmd.fileexists(self.DirName..'/'..self.Name..'.sfi') then
     self.fuseinfo_exists=true
   else
     self.fuseinfo_exists=false
@@ -122,8 +128,8 @@ end
 
 function Fuse:setError(txt,rv)
   assert(txt~=nil and txt~='')
-  -- assert(self.file_fusename~=nil and self.file_fusename~='')
-  -- self.error="in '"..self.file_category..'/'..self.file_fusename..".fuse': "..txt
+  -- assert(self.Name~=nil and self.Name~='')
+  -- self.error="in '"..self.Category..'/'..self.Name..".fuse': "..txt
   self.error=txt
   return rv
 end
@@ -139,7 +145,7 @@ end
 
 function Fuse:isValid()
   assert(self ~= nil)
-  if self:hasErrors() or self.file_filepath==nil or self.file_filepath=='' then
+  if self:hasErrors() or self.FilePath==nil or self.FilePath=='' then
     return false
   end
   return true
@@ -160,14 +166,14 @@ function Fuse:read(options)
 
 --  if not self:isValid() then return false end
 
-  local f = io.open(self.file_filepath, "r")
+  local f = io.open(self.FilePath, "r")
 
-  if not f then return self:setError("failed to read '"..self.file_filepath.."'",false) end
+  if not f then return self:setError("failed to read '"..self.FilePath.."'",false) end
 
   self.fuse_sourceCode = f:read("*all")
   f:close()
 
-  if self.fuse_sourceCode==nil or self.fuse_sourceCode=='' then return self:setError("failed to read content of file '"..self.file_filepath.."'",false) end
+  if self.fuse_sourceCode==nil or self.fuse_sourceCode=='' then return self:setError("failed to read content of file '"..self.FilePath.."'",false) end
 
   local fields = {'shadertoy_name', 'shadertoy_author', 'shadertoy_id', 'dctlfuse_author', 'dctlfuse_name', 'dctlfuse_category', 'shadertoy_license'}
 
@@ -180,7 +186,7 @@ function Fuse:read(options)
 
     if value=='' and name~='shadertoy_license' then return self:setError("'"..name.."' could not be determined",false) end
 
-    if name=='dctlfuse_name' and value~=self.file_fusename then return self:setError("Fuse name does not correspond to filename´",false) end
+    if name=='dctlfuse_name' and value~=self.Name then return self:setError("Fuse name does not correspond to filename´",false) end
 
     self[name]=value
   end
@@ -188,9 +194,9 @@ function Fuse:read(options)
 
 
   if not self.dctlfuse_name:match('^[A-Za-z][A-Za-z0-9_]*[A-Za-z0-9]$') then return self:setError("invalid fuse name '"..self.dctlfuse_name.."'",false) end
-  if self.dctlfuse_name ~= self.file_fusename then return self:setError("fuse name '"..self.dctlfuse_name.."' does not match filename",false) end
+  if self.dctlfuse_name ~= self.Name then return self:setError("fuse name '"..self.dctlfuse_name.."' does not match filename",false) end
   if not self.dctlfuse_category:match('^[A-Z][A-Za-z]+$') then return self:setError("invalid category name '"..self.dctlfuse_category.."'",false) end
-  if self.dctlfuse_category ~= self.file_category then return self:setError("fuse category '"..self.dctlfuse_category.."' does not match fuse's subdirectory",false) end
+  if self.dctlfuse_category ~= self.Category then return self:setError("fuse category '"..self.dctlfuse_category.."' does not match fuse's subdirectory",false) end
 
   local markers={
       '-- >>> SCHNIPP::FUREGISTERCLASS.version="MonumentsAndSites"',
@@ -218,9 +224,9 @@ end
 
 function Fuse:write(path,filename)
 
-  path = path and path or self.file_basepath..self.file_category..'/'
+  path = path and path or self.DirName..'/'
 
-  filename = filename and filename or self.file_filename
+  filename = filename and filename or self.Name .. '.fuse'
 
   assert(self.fuse_sourceCode~=nil)
   assert(self.fuse_sourceCode~='')
@@ -238,11 +244,10 @@ end
 
 function Fuse:print(indent)
   indent = indent and indent or ""
-  print(indent.."file_filepath='"..self.file_filepath.."'")
-  print(indent.."file_basepath='"..self.file_basepath.."'")
-  print(indent.."file_category='"..self.file_category.."'")
-  print(indent.."file_fusename='"..self.file_fusename.."'")
-  print(indent.."file_filename='"..self.file_filename.."'")
+  print(indent.."FilePath='"..self.FilePath.."'")
+  print(indent.."DirName='"..self.DirName.."'")
+  print(indent.."Category='"..self.Category.."'")
+  print(indent.."Name='"..self.Name.."'")
 
   if self:hasErrors() then
     print(indent.."error: ".. self:getErrorText())
