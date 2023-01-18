@@ -5,7 +5,8 @@ package.path = package.path .. ';../Modules/Lua/?.lua'
 bmd = require("Shadertoys/bmd")
 
 require("Shadertoys/function_createInstaller")
-createInstaller()
+
+createInstaller("/Users/nmbr73/Projects/Shadertoys/Shaders/Wedding/Heartdemo.fuse")
 
 
 -- ---------------------------------------------------

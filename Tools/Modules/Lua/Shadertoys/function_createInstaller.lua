@@ -1,12 +1,12 @@
 require("string")
 
--- fuse.name
--- fuse.author
+-- Fuse.Name
+-- Fuse.Author
 -- fuse.author_url
--- shadertoy.id
--- shadertoy.name
--- shadertoy.author
--- shadertoy.license (default '(c) AUTHOR (CC BY-NC-SA 3.0)')
+-- Shadertoy.ID
+-- Shadertoy.Name
+-- Shadertoy.Author
+-- Shadertoy.License (default '(c) AUTHOR (CC BY-NC-SA 3.0)')
 
 -- minilogo.image (default: '') ... '<img src="data:image/png;base64,..." />'
 -- minilogo.width (default: 0)
@@ -19,18 +19,35 @@ require("string")
 -- (x) minilogo.data (default: '')
 -- (x) minilogo.exists (defaut: false)
 
+Fuse = require("Shadertoys/Fuse")
 
-function createInstaller()
+function createInstaller(fusefilepath)
 
-    local user_config = require("Shadertoys/~user_config")
-    local fuses       = require("Shadertoys/fuses")
 
-    fuses.fetch(user_config.pathToRepository..'Shaders/',false)
+    local fuse = Fuse:new(fusefilepath)
+
+    if fuse:hasErrors() then
+        print("ERROR: " .. fuse:getErrorText() )
+        return
+    end
+
+    fuse:readInfo()
+    print("Name: '".. fuse.Name .."'")
+    print("License: '".. fuse.Shadertoy.License .."'")
+
+end
+
+
+function createInstallers(repositorypath)
+
+    -- local fuse = Fuse:new("/Users/nmbr73/Projects/Shadertoys/Shaders/Wedding/Heartdemo.fuse")
+
+    fuses.fetch(repositorypath..'/Shaders/',false)
 
     for i, fuse in ipairs(fuses.list) do
 
-        fuse:read()
-
+        print("Name: '".. fuse.Name .."'")
+        -- fuse:read()
         -- fuse.fuse_sourceCode=snippet.replace(fuse.fuse_sourceCode)
 
 
@@ -38,3 +55,4 @@ function createInstaller()
 
 
 end
+

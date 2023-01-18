@@ -12,9 +12,9 @@
 --
 --   =========================================================================
 --
---   Fuse:    {{> fuse.name <}} by {{> fuse.author <}}
---   Shader:  {{> shadertoy.id <}} (https://www.shadertoy.com/view/{{> shadertoy.id <}})
---   License: {{> shadertoy.license <}}
+--   Fuse:    {{> Fuse.Name <}} by {{> Fuse.Author <}}
+--   Shader:  {{> Shadertoy.ID <}} (https://www.shadertoy.com/view/{{> Shadertoy.ID <}})
+--   License: {{> Shadertoy.License <}}
 --   Version: {{> fuse.hash <}} (beta)
 --   Date:    {{> fuse.date <}}
 --
@@ -71,11 +71,11 @@ end
 
 function InstallWindow()
 
-    local fuseFileExists = file_exists(fusion:MapPath('Fuses:/Shaderfuse_beta'), '{{> shadertoy.id <}}_b.fuse')
+    local fuseFileExists = file_exists(fusion:MapPath('Fuses:/Shaderfuse_beta'), '{{> Shadertoy.ID <}}_b.fuse')
 
     local installWindow = uidispatcher:AddWindow({
         ID = 'InstallWindow',
-        WindowTitle = '{{> fuse.name <}} Installer',
+        WindowTitle = '{{> Fuse.Name <}} Installer',
         Geometry = {100, 100, 1024, 270},
         Spacing = 10,
 
@@ -99,15 +99,15 @@ function InstallWindow()
                     Alignment = { AlignHCenter = false, AlignVCenter = false, },
 
                     Text = [[
-                        <h2 style="color:#efbd78; ">Welcome to the {{> fuse.name <}} Setup</h2>
+                        <h2 style="color:#efbd78; ">Welcome to the {{> Fuse.Name <}} Setup</h2>
                         <p style="font-size:large; color:#ffffff; ">
-                            <a href="https://www.shadertoy.com/view/{{> shadertoy.id <}}" style="color:rgb(139,155,216); text-decoration:none; ">{{> shadertoy.name <}}</a> created by
-                            <a href="https://www.shadertoy.com/user/{{> shadertoy.author <}}" style="color:rgb(139,155,216); text-decoration:none; ">{{> shadertoy.author <}}</a>
-                            and ported by <a href="{{> fuse.author_url <}}" style="color:rgb(139,155,216); text-decoration:none; ">{{> fuse.author <}}</a><br />
-                            <span style="color:gray; font-size:small; "{{> shadertoy.license <}}&nbsp;</span>
+                            <a href="https://www.shadertoy.com/view/{{> Shadertoy.ID <}}" style="color:rgb(139,155,216); text-decoration:none; ">{{> Shadertoy.Name <}}</a> created by
+                            <a href="https://www.shadertoy.com/user/{{> Shadertoy.Author <}}" style="color:rgb(139,155,216); text-decoration:none; ">{{> Shadertoy.Author <}}</a>
+                            and ported by <a href="{{> Fuse.AuthorURL <}}" style="color:rgb(139,155,216); text-decoration:none; ">{{> Fuse.Author <}}</a><br />
+                            <span style="color:gray; font-size:small; "{{> Shadertoy.License <}}&nbsp;</span>
                         </p>
                         <p>
-                            This script will install \'Shaderfuse_beta/{{> shadertoy.id <}}_b.fuse\' on your computer.<br />
+                            This script will install \'Shaderfuse_beta/{{> Shadertoy.ID <}}_b.fuse\' on your computer.<br />
                             THIS IS AT YOUR OWN RISK AND WITHOUT WARRANTY OF ANY KIND!<br />
                             Click 'Cancel' to exit the setup.
                         </p>'
@@ -172,7 +172,7 @@ function EndScreen(text)
 
     local endScreen = uidispatcher:AddWindow({
         ID = 'EndScreen',
-        WindowTitle = '{{> fuse.name <}} Installed',
+        WindowTitle = '{{> Fuse.Name <}} Installed',
         Geometry = {300, 100, 640, 270},
 
         ui:VGroup{
@@ -210,14 +210,14 @@ end
 
 function write_fuse()
 
-    local f = io.open(fusion:MapPath('Fuses:/Shaderfuse_beta/{{> shadertoy.id <}}_b.fuse'),"wb")
+    local f = io.open(fusion:MapPath('Fuses:/Shaderfuse_beta/{{> Shadertoy.ID <}}_b.fuse'),"wb")
 
     if not f then return false end
 
     writeFuseCode(f);
     f:close()
 
-    local t = io.open(fusion:MapPath('Fuses:/Shaderfuse_beta/{{> shadertoy.id <}}_b.png'),"wb")
+    local t = io.open(fusion:MapPath('Fuses:/Shaderfuse_beta/{{> Shadertoy.ID <}}_b.png'),"wb")
 
     if not t then return false end
 
@@ -240,25 +240,25 @@ function install_action(overwrite)
 
         if not overwrite then
             text = [[
-                <h2>Installation of <span style="color:#ffffff; ">{{> fuse.name <}}</span> (hopefully) completed</h2>
+                <h2>Installation of <span style="color:#ffffff; ">{{> Fuse.Name <}}</span> (hopefully) completed</h2>
                 <p>
                     In order to use the newly installed fuse (aka tool; kind of a plug-in) you will need to restart DaVinci Resolve / Fusion.
                 </p>
                 <p>
-                    Then go into your Fusion composition workspace, smash the \'Shift+Space\' shortcut and search for "{{> fuse.name <}}"
+                    Then go into your Fusion composition workspace, smash the \'Shift+Space\' shortcut and search for "{{> Fuse.Name <}}"
                     to add this type of node - and then ...
                 </p>
                 <p style="color:#ffffff; ">Have Fun!</p>
             ]]
         else
             text = [[
-                <h2>Update of <span style="color:#ffffff; ">{{> fuse.name <}}</span> (hopefully) done</h2>
+                <h2>Update of <span style="color:#ffffff; ">{{> Fuse.Name <}}</span> (hopefully) done</h2>
                 <p>
                     As you already had this Fuse installed, you may not need to restart the application. But chances are,
                     that you have just overwritten the same version and will not find anything new.
                 </p>
                 <p>
-                    However, just add a "{{> fuse.name <}}" node to your composition to check it out - and then ...
+                    However, just add a "{{> Fuse.Name <}}" node to your composition to check it out - and then ...
                 </p>
                 <p style="color:#ffffff; ">Enjoy!</p>
             ]]
@@ -267,9 +267,9 @@ function install_action(overwrite)
     else
 
         text = [[
-            <h2>Installation of <span style="color:#ffffff; ">{{> fuse.name <}}</span> failed!</h2>
+            <h2>Installation of <span style="color:#ffffff; ">{{> Fuse.Name <}}</span> failed!</h2>
             <p>
-                Tried to write '{{> shadertoy.id <}}_b.fuse' and '{{> shadertoy.id <}}_b.png' files
+                Tried to write '{{> Shadertoy.ID <}}_b.fuse' and '{{> Shadertoy.ID <}}_b.png' files
                 into the 'Shaderfuse_beta' subfolder of your 'Fuses' directory, but ...
             <h2 style="color:#ff0000; ">Something went terribly wrong!</h2>
             <p style="color:#ffffff; ">Dang!</p>
@@ -285,20 +285,20 @@ end
 
 function uninstall_action()
 
-    local fusefilepath = fusion:MapPath('Fuses:/Shaderfuse_beta/{{> shadertoy.id <}}_b.fuse')
-    local thumbfilepath = fusion:MapPath('Fuses:/Shaderfuse_beta/{{> shadertoy.id <}}_b.png')
+    local fusefilepath = fusion:MapPath('Fuses:/Shaderfuse_beta/{{> Shadertoy.ID <}}_b.fuse')
+    local thumbfilepath = fusion:MapPath('Fuses:/Shaderfuse_beta/{{> Shadertoy.ID <}}_b.png')
 
     os.remove(fusefilepath)
     os.remove(thumbfilepath)
 
     local text = [[
-        <h2><span style="color:#ffffff; ">{{> fuse.name <}}</span> has (hopefully) been <span style="color:#ff0000; ">uninstalled</span></h2>
+        <h2><span style="color:#ffffff; ">{{> Fuse.Name <}}</span> has (hopefully) been <span style="color:#ff0000; ">uninstalled</span></h2>
         <p>
-            This should have removed the '{{> shadertoy.id <}}_b.fuse' and '{{> shadertoy.id <}}_b.png' files from
+            This should have removed the '{{> Shadertoy.ID <}}_b.fuse' and '{{> Shadertoy.ID <}}_b.png' files from
             the 'Shaderfuse_beta' folder in your 'Fuses' directory.
         </p>
         <p>
-            However, if you restart DaFusion, then the "{{> fuse.name <}}" tool should be gone with the wind ...
+            However, if you restart DaFusion, then the "{{> Fuse.Name <}}" tool should be gone with the wind ...
         </p>
         <p style="color:#ffffff; ">Cheers!</p>
     ]]

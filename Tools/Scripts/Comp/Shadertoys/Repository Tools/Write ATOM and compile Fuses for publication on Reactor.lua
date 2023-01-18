@@ -2,7 +2,7 @@
 require("string")
 require("Shadertoys/function_writeAtom")
 
-local simpleDialog = require("Shadertoys/simpleDialog")
+local simpleDialog  = require("Shadertoys/simpleDialog")
 local ui_manager    = fu.UIManager
 local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 
