@@ -172,7 +172,7 @@ function Fuse:readInfo(mode)
       Name = '',
       Author = '',
       License = 'CC BY-NC-SA 3.0',
-      InfoURL = 'https://www.shadertoy.com/,
+      InfoURL = 'https://www.shadertoy.com/',
     }
 
   else
@@ -289,6 +289,7 @@ function Fuse:readInfo(mode)
         else
           self:addError("unknown Fuse.AuthorLogo in sfi file")
         end
+
       end
 
     else
@@ -336,6 +337,7 @@ function Fuse:readInfo(mode)
         else
           assert(false, "unknown mode")
         end
+      end
     end
 
     -- ----------
@@ -360,40 +362,139 @@ function Fuse:readInfo(mode)
         self.Created = info.Fuse.Created
       end
     end
+  end
 
-    -- ----------
-    -- Auto: Fuse.hasThumbnail
 
-    if info.Fuse.hasThumbnail ~= nil then self:addError("Fuse.hasThumbnail must not be set in sfi file") end
+  -- ----------
+  -- Auto: Fuse.hasThumbnail
 
-    Fuse.hasThumbail = false
+  if info.Fuse.hasThumbnail ~= nil then self:addError("Fuse.hasThumbnail must not be set in sfi file") end
 
-    local thumb = io.open(path .. category .. '/' .. fusefilename .. '.png', "rb")
+  Fuse.hasThumbail = false
 
-    if not thumb then
-      self:addError("Thumbnail file does not exist")
-    else
-        local bytes = thumb:read(24)
-        thumb:close()
+  --local thumb = io.open(path .. category .. '/' .. fusefilename .. '.png', "rb")
+  local thumb = io.open(self.DirName .. '/' .. self.Name .. '.png', "rb")
 
-        local signature = ''
-        for i = 1, 8 do
-            signature  = signature .. string.format( "%02x",string.byte( bytes, i ))
-        end
-        signature = signature .. 'XXXXXXXX'
-        for i = 13, 24 do
-            signature  = signature .. string.format( "%02x",string.byte( bytes, i ))
-        end
+  if not thumb then
+    self:addError("Thumbnail file does not exist")
+  else
+      local bytes = thumb:read(24)
+      thumb:close()
 
-        if signature ~= "89504e470d0a1a0aXXXXXXXX4948445200000140000000b4" then
-          self:addError("Thumbnail seems to be not a 320x180 pixel PNG")
-        else
-          Fuse.hasThumbail = true
-        end
+      local signature = ''
+      for i = 1, 8 do
+          signature  = signature .. string.format( "%02x",string.byte( bytes, i ))
+      end
+      signature = signature .. 'XXXXXXXX'
+      for i = 13, 24 do
+          signature  = signature .. string.format( "%02x",string.byte( bytes, i ))
+      end
+
+      if signature ~= "89504e470d0a1a0aXXXXXXXX4948445200000140000000b4" then
+        self:addError("Thumbnail seems to be not a 320x180 pixel PNG")
+      else
+        Fuse.hasThumbail = true
+      end
+  end
+
+
+  -- ----------
+  -- Optional (kind of): Compatibility
+  -- Auto: Compatibility_issues
+  -- Auto: isCompatible
+
+
+  if not info.Compatibility then
+    self.isCompatible = false
+    self.CompatbilityIssues = { Windows_CUDA = 'not checked', Windows_OpenCL = 'not checked', macOS_Metal = 'not checked', macOS_OpenCL = 'not checked', }
+    self.Compatibility = {}
+  elseif info.Compatibility == 15 then
+    self.isCompatible = true
+    self.Compatibility = {  Windows_CUDA = true, Windows_OpenCL = true, macOS_Metal = true, macOS_OpenCL = true, }
+    self.CompatbilityIssues = {  macOS_Metal = '', macOS_OpenCL = '', Windows_CUDA = '', Windows_OpenCL = '', }
+  else
+
+
+    for k , _ in pairs(info.Compatibility) do
+      if k ~= 'macOS_Metal' and k ~= 'macOS_OpenCL' and k ~= 'Windows_CUDA' and k ~= 'Windows_OpenCL' then
+        self:addError("unknown compatibility key '"..k.."'")
+      end
+    end
+
+    self.isCompatible = true
+    self.Compatibility = {}
+    self.CompatbilityIssues = {}
+
+    for _ , k in pairs({'macOS_Metal','macOS_OpenCL','Windows_CUDA','Windows_OpenCL'}) do
+
+      local value = info.Compatibility[k]
+      local issue = ''
+
+      if value == nil then
+          issue = 'not checked'
+      elseif value == true then
+          issue = ''
+      elseif value == false then
+          issue = 'does not work; no more details given'
+      else
+          issue = '' .. value
+          value = false
+      end
+
+      self.Compatibility[k] = value
+      self.CompatbilityIssues[k] = issue
+
+      self.isCompatible = self.isCompatible and value
     end
   end
 
 
+  -- ----------
+  -- Auto: FuRegister
+
+  -- Depends on many of the previous entries!
+
+  ShaderFuse.assert(info.Fuse.FuRegister == nil, "Fuse.FuRegister must not be set explicitely")
+
+  local regs_name
+  local regs_category
+  local regs_opiconstring
+
+  if mode == 'development' then
+      regs_name         = '_DEV'
+      regs_category     = 'Shaderfuse (dev)'
+      regs_opiconstring = 'SF.a-'
+  elseif mode == 'installer' then
+      regs_name         = '_BETA'
+      regs_category = 'Shaderfuse (beta)'
+      regs_opiconstring = 'SF.b-'
+  elseif mode == 'reactor' then
+      regs_name = ''
+      regs_category = 'Shaderfuse'
+      regs_opiconstring = 'SF-'
+  else
+      assert(false, "unknown mode")
+  end
+
+
+  self.FuRegister = {}
+  self.FuRegister.Name = "Shaderfuse_" .. info.Shadertoy.ID .. "_" .. mode
+  self.FuRegister.Attributes = {
+      REGS_Name = self.Name .. regs_name,
+      REGS_Category = regs_category .. "\\" .. self.Category,
+      REGS_OpIconString = regs_opiconstring .. self.Shadertoy.ID,
+      REGS_Company = self.Author,
+      REGS_URL = (self.AuthorURL == nil or self.AuthorURL == '') and "https://nmbr73.github.io/Shadertoys/" or self.AuthorURL,
+      REGS_OpDescription =
+          "Shadertoy '".. self.Shadertoy.Name .."' (ID: ".. self.Shadertoy.ID ..") created by "
+          .. self.Shadertoy.Author .." and ported by ".. self.Author .. ". ".. self.Shadertoy.License .. "."
+          .. (self.Description ~= '' and " ".. self.Description .." " or " ")
+          .. "This port is by no means meant to take advantage of anyone or to do anyone wrong: "
+          .. "Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) "
+          .. "if you see your rights abused or your intellectual property violated by this work.",
+      REG_Fuse_NoEdit     = ( mode ~= 'development'),
+      REG_Fuse_NoReload   = ( mode ~= 'development'),
+  }
 
 end
 
