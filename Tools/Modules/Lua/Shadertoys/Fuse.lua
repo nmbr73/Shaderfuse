@@ -5,7 +5,7 @@
 -- Dependencies: `bmd.fileexists`, `Shadertoys/ShaderFuse`
 -- @classmod Fuse
 
-ShaderFuse = require("Shadertoys/ShaderFuse")
+-- ShaderFuse = require("Shadertoys/ShaderFuse")
 
 local Fuse = {
     FilePath  = '', -- Fuse filepath (full path, incl. category and suffix)
@@ -61,11 +61,11 @@ local Fuse = {
 ------------------------------------------------------------------------------
 -- Create an instance.
 --
-function Fuse:new(filepath)
+function Fuse:new(filepath,phase)
   local o = {}
   setmetatable(o, self)
   self.__index = self
-  o:init(filepath)
+  o:init(filepath,phase)
 
   return o
 end
@@ -84,11 +84,14 @@ end
 ------------------------------------------------------------------------------
 -- Initialize the object.
 --
-function Fuse:init(filepath)
+function Fuse:init(filepath, phase)
 
+  assert(phase ~= nil, "phase must be specified")
+  assert(phase == 'development' or phase == 'installer' or phase == 'reactor', "bad phase")
   assert(filepath ~= nil, "filepath must be specified")
 
-  self.FilePath=filepath
+  self.Phase = phase
+  self.FilePath = filepath
 
   -- kann in 'Shaders' (wenn ich etwas erzeuge), oder aber in 'Shadertoys_dev' (wenn in Fusion aufgerufen) liegen.
   self.DirName, self.Category, self.Name =
@@ -128,33 +131,15 @@ function Fuse:init(filepath)
     self.error="fuse info file does not exists"
   end
 
-
-
-
-
-
-
-
-
-  -- ShaderFuse.init(filepath,'development',true)
- --  if ShaderFuse.error then
-  --  self.error=ShaderFuse.error
-  --end
-
-  self.hasThumbnail = ShaderFuse.hasThumbnail
-  self.Compatibility = ShaderFuse.Compatibility
-
-
   return true
 end
 
 
 
-function Fuse:readInfo(mode)
+function Fuse:readInfo()
 
   assert(self ~= nil, "call as INSTANCE:readInfo()")
   assert(self.DirName ~= '' and self.Name ~= '', "call only if init ran without errors")
-  assert(mode ~= nil, "mode must be development|reactor|installer")
 
   dofile(self.DirName .. '/' .. self.Name .. '.sfi')
 
@@ -205,9 +190,9 @@ function Fuse:readInfo(mode)
     -- ----------
     -- Auto: Shadertoy.InfoURL
 
-    if info.Shadertoy.InfoURL ~= nil then
-      self:addError("Shadertoy.InfoURL must not be set in sfi file")
-    end
+    -- if info.Shadertoy.InfoURL ~= nil then
+    --   self:addError("Shadertoy.InfoURL must not be set in sfi file")
+    -- end
 
     info.Shadertoy.InfoURL = 'https://www.shadertoy.com/view/'.. info.Shadertoy.ID
 
@@ -224,10 +209,10 @@ function Fuse:readInfo(mode)
 
   else
 
-    if info.Fuse.FilePath ~= nil then self:addError("Fuse.Category must not be set in sfi file") end
-    if info.Fuse.Category ~= nil then self:addError("Fuse.Category must not be set in sfi file") end
-    if info.Fuse.Name ~= nil then self:addError("Fuse.Name must not be set in sfi file") end
-    if info.Fuse.DirName ~= nil then self:addError("Fuse.DirName must not be set in sfi file") end
+    -- if info.Fuse.FilePath ~= nil then self:addError("Fuse.Category must not be set in sfi file") end
+    -- if info.Fuse.Category ~= nil then self:addError("Fuse.Category must not be set in sfi file") end
+    -- if info.Fuse.Name ~= nil then self:addError("Fuse.Name must not be set in sfi file") end
+    -- if info.Fuse.DirName ~= nil then self:addError("Fuse.DirName must not be set in sfi file") end
 
     -- ----------
     -- Auto: Fuse.InfoURL
@@ -236,7 +221,7 @@ function Fuse:readInfo(mode)
     --    der Shadertoy-ID abgelegt werden. Dabei ggf. eine Variant für Dev und eine für Reactor
     --    generieren.
 
-    if info.Fuse.InfoURL ~= nil then self:addError("Fuse.InfoURL must not be set in sfi file") end
+    -- if info.Fuse.InfoURL ~= nil then self:addError("Fuse.InfoURL must not be set in sfi file") end
 
     if self.Category ~= '' and self.Name ~= '' then
       self.InfoURL = 'https://nmbr73.github.io/Shadertoys/Shaders/'.. self.Category ..'/'.. self.Name ..'.html'
@@ -328,14 +313,14 @@ function Fuse:readInfo(mode)
       if not info.Fuse.Version:match("^v([0-9]+)%.([0-9]+)%.([0-9]+)$") then
         self:addError("Fuse.Version must be v<MAJOR>.<MINOR>.<PATCH>")
       else
-        if mode == 'development' then
+        if self.Phase == 'development' then
           self.Version = info.Fuse.Version .. '-alpha'
-        elseif mode == 'installer' then
+        elseif self.Phase == 'installer' then
           self.Version = info.Fuse.Version .. '-beta'
-        elseif mode == 'reactor' then
+        elseif self.Phase == 'reactor' then
           self.Version = info.Fuse.Version
         else
-          assert(false, "unknown mode")
+          assert(false, "unknown phase '"..self.Phase.."'")
         end
       end
     end
@@ -368,7 +353,7 @@ function Fuse:readInfo(mode)
   -- ----------
   -- Auto: Fuse.hasThumbnail
 
-  if info.Fuse.hasThumbnail ~= nil then self:addError("Fuse.hasThumbnail must not be set in sfi file") end
+  -- if info.Fuse.hasThumbnail ~= nil then self:addError("Fuse.hasThumbnail must not be set in sfi file") end
 
   Fuse.hasThumbail = false
 
@@ -378,23 +363,23 @@ function Fuse:readInfo(mode)
   if not thumb then
     self:addError("Thumbnail file does not exist")
   else
-      local bytes = thumb:read(24)
-      thumb:close()
+    local bytes = thumb:read(24)
+    thumb:close()
 
-      local signature = ''
-      for i = 1, 8 do
-          signature  = signature .. string.format( "%02x",string.byte( bytes, i ))
-      end
-      signature = signature .. 'XXXXXXXX'
-      for i = 13, 24 do
-          signature  = signature .. string.format( "%02x",string.byte( bytes, i ))
-      end
+    local signature = ''
+    for i = 1, 8 do
+      signature  = signature .. string.format( "%02x",string.byte( bytes, i ))
+    end
+    signature = signature .. 'XXXXXXXX'
+    for i = 13, 24 do
+      signature  = signature .. string.format( "%02x",string.byte( bytes, i ))
+    end
 
-      if signature ~= "89504e470d0a1a0aXXXXXXXX4948445200000140000000b4" then
-        self:addError("Thumbnail seems to be not a 320x180 pixel PNG")
-      else
-        Fuse.hasThumbail = true
-      end
+    if signature ~= "89504e470d0a1a0aXXXXXXXX4948445200000140000000b4" then
+      self:addError("Thumbnail seems to be not a 320x180 pixel PNG")
+    else
+      Fuse.hasThumbail = true
+    end
   end
 
 
@@ -431,14 +416,14 @@ function Fuse:readInfo(mode)
       local issue = ''
 
       if value == nil then
-          issue = 'not checked'
+        issue = 'not checked'
       elseif value == true then
-          issue = ''
+        issue = ''
       elseif value == false then
-          issue = 'does not work; no more details given'
+        issue = 'does not work; no more details given'
       else
-          issue = '' .. value
-          value = false
+        issue = '' .. value
+        value = false
       end
 
       self.Compatibility[k] = value
@@ -454,31 +439,31 @@ function Fuse:readInfo(mode)
 
   -- Depends on many of the previous entries!
 
-  ShaderFuse.assert(info.Fuse.FuRegister == nil, "Fuse.FuRegister must not be set explicitely")
+  -- ShaderFuse.assert(info.Fuse.FuRegister == nil, "Fuse.FuRegister must not be set explicitely")
 
   local regs_name
   local regs_category
   local regs_opiconstring
 
-  if mode == 'development' then
-      regs_name         = '_DEV'
-      regs_category     = 'Shaderfuse (dev)'
-      regs_opiconstring = 'SF.a-'
-  elseif mode == 'installer' then
-      regs_name         = '_BETA'
-      regs_category = 'Shaderfuse (beta)'
-      regs_opiconstring = 'SF.b-'
-  elseif mode == 'reactor' then
-      regs_name = ''
-      regs_category = 'Shaderfuse'
-      regs_opiconstring = 'SF-'
+  if self.Phase == 'development' then
+    regs_name         = '_DEV'
+    regs_category     = 'Shaderfuse (dev)'
+    regs_opiconstring = 'SF.a-'
+  elseif self.Phase == 'installer' then
+    regs_name         = '_BETA'
+    regs_category = 'Shaderfuse (beta)'
+    regs_opiconstring = 'SF.b-'
+  elseif self.Phase == 'reactor' then
+    regs_name = ''
+    regs_category = 'Shaderfuse'
+    regs_opiconstring = 'SF-'
   else
-      assert(false, "unknown mode")
+    assert(false, "unknown phase '"..self.Phase.."'")
   end
 
 
   self.FuRegister = {}
-  self.FuRegister.Name = "Shaderfuse_" .. info.Shadertoy.ID .. "_" .. mode
+  self.FuRegister.Name = "Shaderfuse_" .. info.Shadertoy.ID .. "_" .. self.Phase
   self.FuRegister.Attributes = {
       REGS_Name = self.Name .. regs_name,
       REGS_Category = regs_category .. "\\" .. self.Category,
@@ -492,8 +477,8 @@ function Fuse:readInfo(mode)
           .. "This port is by no means meant to take advantage of anyone or to do anyone wrong: "
           .. "Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) "
           .. "if you see your rights abused or your intellectual property violated by this work.",
-      REG_Fuse_NoEdit     = ( mode ~= 'development'),
-      REG_Fuse_NoReload   = ( mode ~= 'development'),
+      REG_Fuse_NoEdit     = ( self.Phase ~= 'development'),
+      REG_Fuse_NoReload   = ( self.Phase ~= 'development'),
   }
 
 end
