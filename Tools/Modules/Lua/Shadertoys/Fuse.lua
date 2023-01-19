@@ -86,6 +86,8 @@ end
 --
 function Fuse:init(filepath, phase)
 
+  self.errors = {}
+
   assert(phase ~= nil, "phase must be specified")
   assert(phase == 'development' or phase == 'installer' or phase == 'reactor', "bad phase")
   assert(filepath ~= nil, "filepath must be specified")
@@ -355,9 +357,8 @@ function Fuse:readInfo()
 
   -- if info.Fuse.hasThumbnail ~= nil then self:addError("Fuse.hasThumbnail must not be set in sfi file") end
 
-  Fuse.hasThumbail = false
+  self.hasThumbnail = false
 
-  --local thumb = io.open(path .. category .. '/' .. fusefilename .. '.png', "rb")
   local thumb = io.open(self.DirName .. '/' .. self.Name .. '.png', "rb")
 
   if not thumb then
@@ -378,7 +379,7 @@ function Fuse:readInfo()
     if signature ~= "89504e470d0a1a0aXXXXXXXX4948445200000140000000b4" then
       self:addError("Thumbnail seems to be not a 320x180 pixel PNG")
     else
-      Fuse.hasThumbail = true
+      self.hasThumbnail = true
     end
   end
 
@@ -393,6 +394,11 @@ function Fuse:readInfo()
     self.isCompatible = false
     self.CompatbilityIssues = { Windows_CUDA = 'not checked', Windows_OpenCL = 'not checked', macOS_Metal = 'not checked', macOS_OpenCL = 'not checked', }
     self.Compatibility = {}
+    self:addError('Windows_CUDA compatibility not checked')
+    self:addError('Windows_OpenCL compatibility not checked')
+    self:addError('macOS_Metal compatibility not checked')
+    self:addError('macOS_OpenCL compatibility not checked')
+
   elseif info.Compatibility == 15 then
     self.isCompatible = true
     self.Compatibility = {  Windows_CUDA = true, Windows_OpenCL = true, macOS_Metal = true, macOS_OpenCL = true, }
@@ -417,13 +423,16 @@ function Fuse:readInfo()
 
       if value == nil then
         issue = 'not checked'
+        self:addError(k ..' compatibility not checked')
       elseif value == true then
         issue = ''
       elseif value == false then
         issue = 'does not work; no more details given'
+        self:addError('does not work for '.. k ..'; no more details given')
       else
         issue = '' .. value
         value = false
+        self:addError(k ..' compatibility: '.. issue)
       end
 
       self.Compatibility[k] = value
@@ -484,11 +493,10 @@ function Fuse:readInfo()
 end
 
 
-function Fuse:addError(txt,rv)
+function Fuse:addError(txt)
   assert(self ~= nil)
   assert(txt~=nil and txt~='')
   table.insert(self.errors,txt)
-  return rv
 end
 
 
@@ -517,6 +525,26 @@ function Fuse:getErrorText()
 
   return self.errors[1]
 end
+
+
+function Fuse:getErrorsHTML()
+  assert(self ~= nil)
+
+  if #self.errors == 0 then
+    return ''
+  end
+
+  local html = "Number of problems: ".. #self.errors .."<ul>\n"
+
+  for i, err in ipairs(self.errors) do
+    html = html .. "<li>".. err .. "</li>\n"
+  end
+
+  html = html .. "</ul>\n"
+
+  return html
+end
+
 
 
 function Fuse:read(options)
