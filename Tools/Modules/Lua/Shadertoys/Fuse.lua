@@ -5,50 +5,13 @@
 -- Dependencies: `bmd.fileexists`, `Shadertoys/ShaderFuse`
 -- @classmod Fuse
 
--- ShaderFuse = require("Shadertoys/ShaderFuse")
 
-local Fuse = {
-    FilePath  = '', -- Fuse filepath (full path, incl. category and suffix)
-    Category  = '',
-    Name      = '', -- Fuse (file)name (without suffix)
-    DirName   = '', -- Fuse path (incl. Category, without trailing slash)
-    Author    = '',
-    Description = '',
-    AuthorLogo = nil, -- { Width, Height, Data }
-    InfoURL = 'https://nmbr73.github.io/Shadertoys/',
-
-    errors = {},
-
-    shadertoy_name = '',
-    shadertoy_author = '',
-    shadertoy_id = '',
-    shadertoy_license = '',
-    dctlfuse_category = '',
-    dctlfuse_name = '',
-    dctlfuse_author = '',
+-- Für die Versionierung (später): Ein git log -n 1 --pretty="format:%h %cs" -- <FILE>
+-- zum Beispile liefert '97f7ee0 2022-12-19', was ja schon mal ganz brauchbar wäre.
 
 
-    fuse_sourceCode = nil,
-}
 
-
--- function Fuse:clear()
---   self.FilePath=''
---   self.Category=''
---   self.file_name=''
-
---   self.error = nil
-
---   self.shadertoy_name = ''
---   self.shadertoy_author = ''
---   self.shadertoy_id = ''
---   self.shadertoy_license = ''
---   self.dctlfuse_category = ''
---   self.dctlfuse_name = ''
---   self.dctlfuse_author = ''
-
---   self.fuse_sourceCode = nil
--- end
+local Fuse = {}
 
 
 
@@ -62,6 +25,31 @@ function Fuse:new(filepath,phase,read_info)
   o:init(filepath,phase,read_info)
 
   return o
+end
+
+
+
+------------------------------------------------------------------------------
+-- Clear an instance's data.
+--
+
+function Fuse:clear()
+  self.Name         = '' -- Fuse (file)name (without suffix)
+  self.DirName      = '' -- Fuse path (incl. Category, without trailing slash)
+  self.FilePath     = '' -- Fuse filepath (full path, incl. category and suffix)
+  self.Category     = ''
+  self.InfoURL      = 'https://nmbr73.github.io/Shadertoys/'
+  self.Description  = ''
+  self.Author       = ''
+  self.AuthorLogo   = nil -- { Width, Height, Data }
+  -- ...
+
+  self.errors = {}
+
+  self.Shadertoy = {}
+  self.Compatibility = {}
+  self.CompatibilityIssues = {}
+  self.FuRegister = {}
 end
 
 
@@ -103,42 +91,25 @@ function Fuse:init(filepath, phase, read_info)
   self.FilePath = filepath
 
   -- kann in 'Shaders' (wenn ich etwas erzeuge), oder aber in 'Shadertoys_dev' (wenn in Fusion aufgerufen) liegen.
-  self.DirName, self.Category, self.Name =
-    filepath:match('^(.+[/\\]Shaders/)([^/]+)/([^%.]+)%.fuse$')
 
-  if self.DirName == '' or self.Category == '' or self.Name == '' then
+  if phase == 'development' then
     self.DirName, self.Category, self.Name =
       filepath:match('^(.+[/\\]Shadertoys_dev/)([^/]+)/([^%.]+)%.fuse$')
+  else
+    self.DirName, self.Category, self.Name =
+      filepath:match('^(.+[/\\]Shaders/)([^/]+)/([^%.]+)%.fuse$')
   end
 
-  if self.DirName == '' or self.Category == '' or self.Name == '' then
+  if (self.DirName or '') == '' or (self.Category or '') == '' or (self.Name or '') == '' then
     self:addError("filepath '"..self.FilePath.."' does not match the expected schema")
     return false
   end
 
   self.DirName = self.DirName .. self.Category
 
-  -- if bmd.fileexists(self.DirName..'/'..self.Name..'.md') then
-  --   self.markdown_exists=true
-  -- else
-  --   self.markdown_exists=false
-  --   self.error="markdown does not exists"
+  -- if not bmd.fileexists(self.DirName..'/'..self.Name..'.md') then
+  --   self:addError("markdown file does not exist")
   -- end
-
-  if bmd.fileexists(self.DirName..'/'..self.Name..'_320x180.png') then
-    self.thumbnail_exists=true
-  else
-    self.thumbnail_exists=false
-    self.error="thumbnail does not exists"
-  end
-
-
-  if bmd.fileexists(self.DirName..'/'..self.Name..'.sfi') then
-    self.fuseinfo_exists=true
-  else
-    self.fuseinfo_exists=false
-    self.error="fuse info file does not exists"
-  end
 
   if read_info then
     return self:readInfo()
@@ -153,6 +124,11 @@ function Fuse:readInfo()
 
   assert(self ~= nil, "call as INSTANCE:readInfo()")
   assert(self.DirName ~= '' and self.Name ~= '', "call only if init ran without errors")
+
+  if not bmd.fileexists(self.DirName..'/'..self.Name..'.sfi') then
+    self:addError("shaderfuse info (.sfi) file does not exist")
+    return false
+  end
 
   dofile(self.DirName .. '/' .. self.Name .. '.sfi')
 
@@ -178,20 +154,9 @@ function Fuse:readInfo()
     -- ----------
     -- Mandatory: Shadertoy.ID, .Name, .Author
 
-    if (info.Shadertoy.ID or '') == '' then
-      info.Shadertoy.ID = ''
-      self:addError("no Shadertoy.ID in sfi file")
-    end
-
-    if (info.Shadertoy.Name or '') == '' then
-      info.Shadertoy.Name = ''
-      self:addError("no Shadertoy.Name in sfi file")
-    end
-
-    if (info.Shadertoy.Author or '') == '' then
-      info.Shadertoy.Author = ''
-      self:addError("no Shadertoy.Author in sfi file")
-    end
+    if (info.Shadertoy.ID or '') == '' then info.Shadertoy.ID = ''; self:addError("no Shadertoy.ID in sfi file") end
+    if (info.Shadertoy.Name or '') == '' then info.Shadertoy.Name = ''; self:addError("no Shadertoy.Name in sfi file") end
+    if (info.Shadertoy.Author or '') == '' then info.Shadertoy.Author = ''; self:addError("no Shadertoy.Author in sfi file") end
 
     -- ----------
     -- Optional (kind of): Shadertoy.License
@@ -202,10 +167,6 @@ function Fuse:readInfo()
 
     -- ----------
     -- Auto: Shadertoy.InfoURL
-
-    -- if info.Shadertoy.InfoURL ~= nil then
-    --   self:addError("Shadertoy.InfoURL must not be set in sfi file")
-    -- end
 
     info.Shadertoy.InfoURL = 'https://www.shadertoy.com/view/'.. info.Shadertoy.ID
 
@@ -221,11 +182,6 @@ function Fuse:readInfo()
     -- ...
 
   else
-
-    -- if info.Fuse.FilePath ~= nil then self:addError("Fuse.Category must not be set in sfi file") end
-    -- if info.Fuse.Category ~= nil then self:addError("Fuse.Category must not be set in sfi file") end
-    -- if info.Fuse.Name ~= nil then self:addError("Fuse.Name must not be set in sfi file") end
-    -- if info.Fuse.DirName ~= nil then self:addError("Fuse.DirName must not be set in sfi file") end
 
     -- ----------
     -- Auto: Fuse.InfoURL
@@ -560,6 +516,8 @@ end
 
 
 function Fuse:read(options)
+  assert(false, "rewrite")
+
 	assert(self.fuse_sourceCode==nil)
 
 --  if not self:isValid() then return false end
