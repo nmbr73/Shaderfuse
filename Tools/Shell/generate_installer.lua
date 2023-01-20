@@ -6,7 +6,11 @@ bmd = require("Shadertoys/bmd")
 
 require("Shadertoys/function_createInstaller")
 
-createInstaller("/Users/nmbr73/Projects/Shadertoys/Shaders/Wedding/Heartdemo.fuse")
+local error = createInstaller("/Users/nmbr73/Projects/Shadertoys/Shaders/Wedding/Heartdemo.fuse")
+
+if error then
+    print("ERROR: "..error)
+end
 
 
 -- ---------------------------------------------------

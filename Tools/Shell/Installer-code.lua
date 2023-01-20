@@ -13,10 +13,12 @@
 --   =========================================================================
 --
 --   Fuse:    {{> Fuse.Name <}} by {{> Fuse.Author <}}
---   Shader:  {{> Shadertoy.ID <}} (https://www.shadertoy.com/view/{{> Shadertoy.ID <}})
+--   Version: {{> version <}} (beta)
+--            https://github.com/nmbr73/Shadertoys/commit/{{> hash15 <}} ...
+--   Date:    {{> modified <}}
+--   Shader:  {{> Shadertoy.Name <}} (https://www.shadertoy.com/view/{{> Shadertoy.ID <}})
+--            by {{> Shadertoy.Author <}} (https://www.shadertoy.com/user/{{> Shadertoy.Author <}})
 --   License: {{> Shadertoy.License <}}
---   Version: {{> fuse.hash <}} (beta)
---   Date:    {{> fuse.date <}}
 --
 --   -------------------------------------------------------------------------
 --
@@ -31,8 +33,6 @@
 local ui            = fu.UIManager
 local uidispatcher  = bmd.UIDispatcher(ui)
 
--- git log -n 1 --pretty="format:%h %cs" -- <FILE>
--- liefert: '97f7ee0 2022-12-19'
 
 
 function dec(data)
