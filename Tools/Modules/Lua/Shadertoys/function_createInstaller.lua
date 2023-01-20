@@ -24,16 +24,9 @@ Fuse = require("Shadertoys/Fuse")
 function createInstaller(fusefilepath)
 
 
-    local fuse = Fuse:new(fusefilepath)
+    local fuse = Fuse:new(fusefilepath,'installer',true)
 
-    if fuse:hasErrors() then
-        print("ERROR: " .. fuse:getErrorText() )
-        return
-    end
-
-    fuse:readInfo()
-    print("Name: '".. fuse.Name .."'")
-    print("License: '".. fuse.Shadertoy.License .."'")
+    fuse:print()
 
 end
 

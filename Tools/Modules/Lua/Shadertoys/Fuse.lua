@@ -12,17 +12,11 @@ local Fuse = {
     Category  = '',
     Name      = '', -- Fuse (file)name (without suffix)
     DirName   = '', -- Fuse path (incl. Category, without trailing slash)
-    InfoURL   = '',
     Author    = '',
     Description = '',
     AuthorLogo = nil, -- { Width, Height, Data }
     InfoURL = 'https://nmbr73.github.io/Shadertoys/',
 
-    -- thumbnail_exists = false,
-    -- markdown_exists  = false,
-    -- fuseinfo_exists  = false,
-
-    -- error = nil,
     errors = {},
 
     shadertoy_name = '',
@@ -648,22 +642,27 @@ end
 
 function Fuse:print(indent)
   indent = indent and indent or ""
-  print(indent.."FilePath='"..self.FilePath.."'")
-  print(indent.."DirName='"..self.DirName.."'")
-  print(indent.."Category='"..self.Category.."'")
-  print(indent.."Name='"..self.Name.."'")
+
+  print(indent.."Fuse:")
+  print(indent.."  FilePath = '"..self.FilePath.."'")
+  print(indent.."  DirName = '"..self.DirName.."'")
+  print(indent.."  Category = '"..self.Category.."'")
+  print(indent.."  Name = '"..self.Name.."'")
+  print(indent.."  Author = '"..self.Author.."'")
 
   if self:hasErrors() then
-    print(indent.."error: ".. self:getErrorText())
-  else
-    print(indent.."shadertoy_name='"..self.shadertoy_name.."'")
-    print(indent.."shadertoy_author='"..self.shadertoy_author.."'")
-    print(indent.."shadertoy_id='"..self.shadertoy_id.."'")
-    print(indent.."shadertoy_license='"..self.shadertoy_license.."'")
-    print(indent.."dctlfuse_category='"..self.dctlfuse_category.."'")
-    print(indent.."dctlfuse_name='"..self.dctlfuse_name.."'")
-    print(indent.."dctlfuse_author='"..self.dctlfuse_author.."'")
+    print(indent.."Errors:")
+    for _, err in ipairs(self.errors) do
+      print(indent.."  - "..err)
+    end
   end
+
+  print(indent.."Shadertoy:")
+  print(indent.."  Name = '"..self.Shadertoy.Name.."'")
+  print(indent.."  Author = '"..self.Shadertoy.Author.."'")
+  print(indent.."  ID = '"..self.Shadertoy.ID.."'")
+  print(indent.."  License = '"..self.Shadertoy.License.."'")
+
 end
 
 
