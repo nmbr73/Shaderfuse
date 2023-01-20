@@ -64,9 +64,10 @@ end
 -- @param[type=string] path The path to search through for fuse files.
 -- @param[type=bool,opt=false] details true, if the fuses should be read for details
 --
-function fuses.fetch(path, details, list)
+function fuses.fetch(path, phase, list)
 
   -- 'list' parameter is only for internal use to recursively call 'fetch()''.
+  assert(phase)
 
   assert(path)
 
@@ -81,14 +82,14 @@ function fuses.fetch(path, details, list)
       path = path.."/"
     end
 
-    fuses.fetch(path, false, list)
+    fuses.fetch(path, phase, list)
 
-    if details~=nil and details then
-      for i, f in ipairs(list) do
-        f:read()
-        f:purge()
-      end
-    end
+    -- if details~=nil and details then
+    --   for i, f in ipairs(list) do
+    --     f:read()
+    --     f:purge()
+    --   end
+    -- end
 
     table.sort(list,function(a,b) return a.Category < b.Category or (a.Category == b.Category and a.Name < b.Name ) end)
 
@@ -113,10 +114,10 @@ function fuses.fetch(path, details, list)
       if (v.Name ~= nil and string.sub(v.Name,0,1) ~= ".") then
         if (v.IsDir == false) then
           if string.sub(v.Name,-5) == '.fuse' and v.Name ~= "FragmentShader.fuse" then
-            table.insert(list,Fuse:new(path..v.Name))
+            table.insert(list,Fuse:new(path..v.Name,phase,true))
           end
         else
-          fuses.fetch(path..v.Name.."/", false, list )
+          fuses.fetch(path..v.Name.."/", phase, list )
         end
       end
     end

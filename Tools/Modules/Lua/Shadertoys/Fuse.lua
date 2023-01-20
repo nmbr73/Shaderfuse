@@ -61,11 +61,11 @@ local Fuse = {
 ------------------------------------------------------------------------------
 -- Create an instance.
 --
-function Fuse:new(filepath,phase)
+function Fuse:new(filepath,phase,read_info)
   local o = {}
   setmetatable(o, self)
   self.__index = self
-  o:init(filepath,phase)
+  o:init(filepath,phase,read_info)
 
   return o
 end
@@ -82,11 +82,24 @@ end
 
 
 ------------------------------------------------------------------------------
+-- Keys for the compatibility checks.
+--
+
+function Fuse:compatibilityKeys()
+  return {'Windows_CUDA','Windows_OpenCL','macOS_Metal','macOS_OpenCL'}
+end
+
+
+
+------------------------------------------------------------------------------
 -- Initialize the object.
 --
-function Fuse:init(filepath, phase)
+function Fuse:init(filepath, phase, read_info)
 
+  read_info = read_info or false
   self.errors = {}
+  self.Compatibility = {}
+  self.Shadertoy = {}
 
   assert(phase ~= nil, "phase must be specified")
   assert(phase == 'development' or phase == 'installer' or phase == 'reactor', "bad phase")
@@ -131,6 +144,10 @@ function Fuse:init(filepath, phase)
   else
     self.fuseinfo_exists=false
     self.error="fuse info file does not exists"
+  end
+
+  if read_info then
+    return self:readInfo()
   end
 
   return true
@@ -490,6 +507,7 @@ function Fuse:readInfo()
       REG_Fuse_NoReload   = ( self.Phase ~= 'development'),
   }
 
+  return true
 end
 
 
@@ -501,7 +519,7 @@ end
 
 
 function Fuse:hasErrors()
-  assert(self ~= nil)
+  assert(self ~= nil, "call as INSTANCE:hasErrors()")
   return #self.errors > 0
 end
 

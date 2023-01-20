@@ -92,7 +92,6 @@ function selectFusesDialog.window(ui,dispatcher,params)
     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
 
     if fuse~=nil then
-      -- bmd.openurl("https://www.shadertoy.com/view/"..fuse.shadertoy_id)
       bmd.openurl('https://nmbr73.github.io/Shadertoys/Shaders/'..fuse.Category..'/'..fuse.Name..'.html')
     end
   end
@@ -100,67 +99,50 @@ function selectFusesDialog.window(ui,dispatcher,params)
   local defaultInfoText=""
 
   function win.On.Files.CurrentItemChanged(ev)
-    -- print("CurrentItemChanged "..ev.item.Text[1])
-
 
     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
 
     if fuse==nil then return end
 
-    itm.Thumbnail.Text='<img src="file:/Users/nmbr73/Projects/Shadertoys/Shaders/'
-      ..fuse.Category..'/'..fuse.Name..'_320x180.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
+    if fuse.hasThumbnail then
+      itm.Thumbnail.Text='<img src="' .. fuse.DirName .. '/' .. fuse.Name .. '.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
+    else
+      itm.Thumbnail.Text=''
+    end
 
-    itm.Info.Text = fuse.error and '<span style="color:#ff9090; ">'..fuse.error.."</span>" or defaultInfoText
+    itm.Info.Text = fuse:hasErrors() and '<span style="color:#ff9090; ">'..fuse:getErrorText().."</span>" or defaultInfoText
   end
 
 
 
-
   local hdr = itm.Files:NewItem()
+
   hdr.Text[0] = 'Category'
   hdr.Text[1] = 'Fuse Name'
   hdr.Text[2] = 'Author'
   hdr.Text[3] = 'Port'
   hdr.Text[4] = 'Status'
+
   itm.Files:SetHeaderItem(hdr)
   itm.Files.ColumnCount = 5
 
-  itm.Files.ColumnWidth[0] = 120
-  itm.Files.ColumnWidth[1] = 440
-  itm.Files.ColumnWidth[2] = 80
+  itm.Files.ColumnWidth[0] = 160
+  itm.Files.ColumnWidth[1] = 380
+  itm.Files.ColumnWidth[2] = 100
   itm.Files.ColumnWidth[3] = 60
   itm.Files.ColumnWidth[4] = 60
 
-  -- g_useShortcutPrefix = itm.UseShortcutPrefix
-  -- g_useShadertoyID    = itm.UseShadertoyID
-  -- g_useCategoryPathes = itm.UseCategoryPathes
-
   local numFuses=0
 
-  for i, f in ipairs(params.fuses.list) do
+  for _, f in ipairs(params.fuses.list) do
 
-    -- print("add "..f.Category.."/"..f.Name)
     local newitem = itm.Files:NewItem()
+
     newitem.Text[0] = f.Category
     newitem.Text[1] = f.Name
-    newitem.Text[2] = f.shadertoy_author
-    newitem.Text[3] = (f.error and '🚫 ' or '')..f.dctlfuse_author
-
-    local green = '✔︎' -- '🟢'
-    local gray = '·' -- '⚫️'
-    local red = '𐄂' -- '🔴'
-
-
-    local status = (f.hasThumbnail and green or red)
-    for _ , k in pairs({'Windows_CUDA','Windows_OpenCL','macOS_Metal','macOS_OpenCL'}) do
-      status = status .. ((f.Compatibility[k] == nil) and gray or (f.Compatibility[k] and green or red))
-    end
-
-    if status == green .. green .. green .. green .. green then
-      status = ' okay'
-    end
-    newitem.Text[4] = status
-
+    newitem.Text[2] = f.Shadertoy.Author
+    newitem.Text[3] = f.Author
+    newitem.Text[4] = (f:hasErrors() and '   🚫' or '   ✔︎')
 
     itm.Files:AddTopLevelItem(newitem)
 
@@ -172,13 +154,11 @@ function selectFusesDialog.window(ui,dispatcher,params)
   itm.Files:SortByColumn(1, "AscendingOrder")
   itm.Files:SortByColumn(0, "AscendingOrder")
 
-  defaultInfoText=numFuses.." valid fuses found"
+  defaultInfoText = numFuses.." valid fuses found"
 
   return win
 
 end
-
-
 
 
 

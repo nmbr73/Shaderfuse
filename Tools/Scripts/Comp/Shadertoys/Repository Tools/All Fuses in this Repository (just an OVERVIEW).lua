@@ -14,7 +14,7 @@ local ui_manager    = fu.UIManager
 local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 
 
-fuses.fetch(user_config.pathToRepository..'Shaders/',true)
+fuses.fetch(user_config.pathToRepository..'Shaders/','development')
 
 
 
