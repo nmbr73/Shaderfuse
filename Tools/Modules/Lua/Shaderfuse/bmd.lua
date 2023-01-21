@@ -3,7 +3,7 @@
 -- A silly attempt to mimic some basic bmd functions (readdir, fileexists, createdir) to
 -- make scripts using these work, even if called not from within Fusion.
 --
---    bmd = require("Shadertoys/bmd")
+--    bmd = require("Shaderfuse/bmd")
 --    ...
 --
 -- @module bmd

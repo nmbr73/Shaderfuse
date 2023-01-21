@@ -2,11 +2,11 @@ require("string")
 
 function writeAtom()
 
-    local image       = require("Shadertoys/image")
+    local image       = require("Shaderfuse/image")
 
-    local user_config = require("Shadertoys/~user_config")
-    local snippet     = require("Shadertoys/snippet")
-    local fuses       = require("Shadertoys/fuses")
+    local user_config = require("Shaderfuse/~user_config")
+    local snippet     = require("Shaderfuse/snippet")
+    local fuses       = require("Shaderfuse/fuses")
 
 
     snippet.init(user_config.pathToRepository,'reactor',false)

@@ -14,7 +14,7 @@
 
 
 
-Fuse = require("Shadertoys/Fuse")
+Fuse = require("Shaderfuse/Fuse")
 
 
 

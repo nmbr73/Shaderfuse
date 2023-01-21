@@ -29,20 +29,27 @@ function init()
   local fusepath          = fusion:MapPath("Fuses:/")
         repositorypath    = debug.getinfo(2, "S").source:sub(2):match("(.*[/\\])Tools[/\\]")
 
-  image=assert(loadfile(repositorypath.."Tools/Modules/Lua/Shadertoys/image.lua"))()
+  image=assert(loadfile(repositorypath.."Tools/Modules/Lua/Shaderfuse/image.lua"))()
 
   assert(bmd.direxists(repositorypath..'.git/'))
 
-  paths.bmddir_mods= fusion:MapPath("LuaModules:/")..'Shadertoys'
-  paths.bmddir_comp= fusion:MapPath("Scripts:/")..'Comp'..pathseparator..'Shadertoys'
-  paths.gitdir_mods= repositorypath.. ('Tools/Modules/Lua/Shadertoys'):gsub('/',pathseparator)
-  paths.gitdir_comp= repositorypath.. ('Tools/Scripts/Comp/Shadertoys'):gsub('/',pathseparator)
-  paths.bmddir_atom= fusepath.. 'Shadertoys_wsl'
-  paths.gitdir_atom= repositorypath.. ('Atom/com.JiPi.Shadertoys/Fuses/Shadertoys_wsl/'):gsub('/',pathseparator)
-  paths.bmddir_fuse= fusepath.. 'Shadertoys_dev'
+  paths.bmddir_mods= fusion:MapPath("LuaModules:/")..'Shaderfuse'
+  paths.gitdir_mods= repositorypath.. ('Tools/Modules/Lua/Shaderfuse'):gsub('/',pathseparator)
+  paths.bmddir_comp= fusion:MapPath("Scripts:/")..'Comp'..pathseparator..'Shaderfuse'
+  paths.gitdir_comp= repositorypath.. ('Tools/Scripts/Comp/Shaderfuse'):gsub('/',pathseparator)
+  paths.bmddir_atom= fusepath.. 'Shaderfuse_wsl'
+  paths.gitdir_atom= repositorypath.. ('Atom/com.JiPi.Shadertoys/Fuses/Shaderfuse_wsl/'):gsub('/',pathseparator)
+  paths.bmddir_fuse= fusepath.. 'Shaderfuse_dev'
   paths.gitdir_fuse= repositorypath.. ('Shaders/'):gsub('/',pathseparator)
 
-  usrcfg_filename  = repositorypath.. ('Tools/Modules/Lua/Shadertoys/'):gsub('/',pathseparator)..'~user_config.lua'
+
+  paths.bmddir_mods_old= fusion:MapPath("LuaModules:/")..'Shadertoys'
+  paths.bmddir_comp_old= fusion:MapPath("Scripts:/")..'Comp'..pathseparator..'Shadertoys'
+  paths.bmddir_atom_old= fusepath.. 'Shadertoys_wsl'
+  paths.bmddir_fuse_old= fusepath.. 'Shadertoys_dev'
+
+
+  usrcfg_filename  = repositorypath.. ('Tools/Modules/Lua/Shaderfuse/'):gsub('/',pathseparator)..'~user_config.lua'
 
   for key, path in pairs(paths) do
     exists[key]  = bmd.direxists(path)
@@ -52,6 +59,7 @@ function init()
 
   for i, key in ipairs( {'bmddir_mods', 'bmddir_comp', 'bmddir_atom', 'bmddir_fuse', }) do
     checked[key]  = exists[key]
+    checked[key..'_old']  = exists[key..'_old']
   end
 
 end
@@ -111,6 +119,14 @@ function setup()
     end
   end
 
+  for i, key in ipairs( {'mods_old', 'comp_old', 'atom_old', 'fuse_old', }) do
+    if checked['bmddir_'..key] == false and exists['bmddir_'..key] == true then
+        -- uninstall
+       cmd_rm( paths['bmddir_'..key] )
+    end
+  end
+
+
 end
 
 
@@ -120,7 +136,7 @@ function usrcfg_dialog()
   local win = ui_dispatcher:AddWindow({
 
     ID = "Dialog",
-    WindowTitle = "Shadertoys Setup",
+    WindowTitle = "Shaderfuse Setup",
     Geometry = { 100, 100, 500, 180 },
 
     ui:VGroup {
@@ -207,7 +223,7 @@ function setup_dialog()
   local win = ui_dispatcher:AddWindow({
 
     ID = "Dialog",
-    WindowTitle = "Shadertoys Setup",
+    WindowTitle = "Shaderfuse Setup",
     Geometry = { 100, 100, 500, 160 },
 
     ui:VGroup {
@@ -224,9 +240,10 @@ function setup_dialog()
 
         ui:VGroup {
           Weight=0,
-          ui:CheckBox{ID = 'Tools',   Text = "Integrate the repository Tools into Script menu",           Checked=checked.bmddir_comp,  Enabled=exists.gitdir_comp and exists.gitdir_mods, },
-          ui:CheckBox{ID = 'Fuse',    Text = "Use Fuses under Shaders straight out of the repository",    Checked=checked.bmddir_fuse,  Enabled=exists.gitdir_fuse,  },
-          ui:CheckBox{ID = 'Atom',    Text = "Make Atom Fuses available to test them",                    Checked=checked.bmddir_atom,  Enabled=exists.gitdir_atom,   },
+          ui:CheckBox{ID = 'Tools',   Text = "Repository tools integrated into Script menu",   Checked=checked.bmddir_comp,  Enabled=exists.gitdir_comp and exists.gitdir_mods, },
+          ui:CheckBox{ID = 'Fuse',    Text = "Fuses usable straight out of the repository",    Checked=checked.bmddir_fuse,  Enabled=exists.gitdir_fuse,  },
+          ui:CheckBox{ID = 'Atom',    Text = "Atom versions usable out of the repository",     Checked=checked.bmddir_atom,  Enabled=exists.gitdir_atom,   },
+          -- ui:CheckBox{ID = 'Old',     Text = "Deprecated folder links",                        Checked=checked.bmddir_comp_old or checked.bmddir_fuse_old or checked.bmddir_atom_old or checked.bmddir_mods_old,  Enabled=checked.bmddir_comp_old or checked.bmddir_fuse_old or checked.bmddir_atom_old or checked.bmddir_mods_old,   },
         },
 
         ui:HGap(5),
@@ -298,7 +315,7 @@ function restart_dialog()
   local win = ui_dispatcher:AddWindow({
 
     ID = "Dialog",
-    WindowTitle = "Shadertoys Setup",
+    WindowTitle = "Shaderfuse Setup",
     Geometry = { 100, 100, 500, 150 },
 
     ui:VGroup {

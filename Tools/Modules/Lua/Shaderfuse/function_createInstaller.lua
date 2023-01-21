@@ -15,7 +15,7 @@ require("string")
 -- thumbnail.data (always exists, and always has a size of 320x180px)
 
 
-Fuse = require("Shadertoys/Fuse")
+Fuse = require("Shaderfuse/Fuse")
 
 
 

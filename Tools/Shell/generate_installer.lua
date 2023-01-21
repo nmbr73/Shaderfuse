@@ -2,9 +2,9 @@
 
 package.path = package.path .. ';../Modules/Lua/?.lua'
 
-bmd = require("Shadertoys/bmd")
+bmd = require("Shaderfuse/bmd")
 
-require("Shadertoys/function_createInstaller")
+require("Shaderfuse/function_createInstaller")
 
 local error = createInstaller("/Users/nmbr73/Projects/Shadertoys/Shaders/Wedding/Heartdemo.fuse")
 
