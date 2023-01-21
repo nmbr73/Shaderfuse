@@ -1,8 +1,8 @@
 require("string")
 
-require("Shadertoys/function_updateMarkdown")
+require("Shaderfuse/function_updateMarkdown")
 
-local simpleDialog = require("Shadertoys/simpleDialog")
+local simpleDialog = require("Shaderfuse/simpleDialog")
 local ui_manager    = fu.UIManager
 local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 
@@ -20,8 +20,8 @@ simpleDialog.window(
       end,
 
       text=
-      [[<p>By clicking 'okay' all README.md files in the 'Shaders/' folder and all its subdirectories will be rewritten.
-      Also the 'Shaders/OVERVIEW.md' file will be recreated.
+      [[<p>By clicking 'okay' all README.md files in the 'docs/' folder and all its subdirectories will be rewritten.
+      Also the 'docs/OVERVIEW.md' and 'Shaders.csv' files will be recreated.
       </p>
             ]]
     }):Show()

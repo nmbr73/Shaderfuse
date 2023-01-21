@@ -14,8 +14,11 @@ function updateMarkdown()
   fuses.fetch(user_config.pathToRepository..'Shaders/',true)
 
 
-  local overview = io.open(user_config.pathToRepository..'Shaders/OVERVIEW.md',"w")
-  local readme   = io.open(user_config.pathToRepository..'Shaders/README.md',"w")
+  bmd.createdir(user_config.pathToRepository..'docs')
+
+
+  local overview = io.open(user_config.pathToRepository..'docs/OVERVIEW.md',"w")
+  local readme   = io.open(user_config.pathToRepository..'docs/README.md',"w")
   local csv      = io.open(user_config.pathToRepository..'Shaders.csv',"w")
 
 
