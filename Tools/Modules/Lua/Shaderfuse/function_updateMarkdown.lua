@@ -15,10 +15,11 @@ function updateMarkdown()
 
 
   bmd.createdir(user_config.pathToRepository..'docs')
+  bmd.createdir(user_config.pathToRepository..'docs/Shaders')
 
 
-  local overview = io.open(user_config.pathToRepository..'docs/OVERVIEW.md',"w")
-  local readme   = io.open(user_config.pathToRepository..'docs/README.md',"w")
+  local overview = io.open(user_config.pathToRepository..'docs/Shaders/OVERVIEW.md',"w")
+  local readme   = io.open(user_config.pathToRepository..'docs/Shaders/README.md',"w")
   local csv      = io.open(user_config.pathToRepository..'Shaders.csv',"w")
 
 
@@ -45,7 +46,7 @@ function updateMarkdown()
 
   overview:write(header)
   readme:write(header)
-  csv:write("Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issues\n")
+  csv:write("Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issue\n")
 
   local links=''
 
@@ -87,7 +88,10 @@ function updateMarkdown()
 
       readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
 
-      readme_cat   = io.open(user_config.pathToRepository..'Shaders/'..fuse.Category..'/README.md',"w")
+
+      bmd.createdir(user_config.pathToRepository..'docs/Shaders/'..fuse.Category)
+
+      readme_cat   = io.open(user_config.pathToRepository..'docs/Shaders/'..fuse.Category..'/README.md',"w")
       readme_cat:write(header)
 
       local links='[README](../README.md) · [OVERVIEW](../OVERVIEW.md)'
@@ -174,6 +178,7 @@ function updateMarkdown()
         '"'.. fuse.Name ..'",' ..
         '"'.. fuse.Author ..'",' ..
         '"'.. (not(fuse:hasErrors()) and '' or fuse:getErrorText()) ..'"\n'
+
     )
 
     overview:write('\n')
