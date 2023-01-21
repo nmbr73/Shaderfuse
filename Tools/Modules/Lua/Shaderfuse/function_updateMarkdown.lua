@@ -11,7 +11,7 @@ function updateMarkdown()
 
 
     -- print("update markdown files")
-  fuses.fetch(user_config.pathToRepository..'Shaders/',true)
+  fuses.fetch(user_config.pathToRepository..'Shaders/','development')
 
 
   bmd.createdir(user_config.pathToRepository..'docs')
@@ -69,7 +69,7 @@ function updateMarkdown()
 
   for i, fuse in ipairs(fuses.list) do
 
-    if fuse.file_category ~= currentCategory then
+    if fuse.Category ~= currentCategory then
 
       if currentCategory~='' then
         overview:write('\n\n')
@@ -79,15 +79,15 @@ function updateMarkdown()
         end
       end
 
-      currentCategory=fuse.file_category
+      currentCategory=fuse.Category
 
 
 
-      overview:write("## "..fuse.file_category.." Shaders\n\n")
+      overview:write("## "..fuse.Category.." Shaders\n\n")
 
-      readme:write('\n\n**['..fuse.file_category..' Shaders]('..fuse.file_category..'/README.md)**\n')
+      readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
 
-      readme_cat   = io.open(user_config.pathToRepository..'Shaders/'..fuse.file_category..'/README.md',"w")
+      readme_cat   = io.open(user_config.pathToRepository..'Shaders/'..fuse.Category..'/README.md',"w")
       readme_cat:write(header)
 
       local links='[README](../README.md) · [OVERVIEW](../OVERVIEW.md)'
@@ -101,10 +101,10 @@ function updateMarkdown()
       end
 
       readme_cat:write(links.."\n\n")
-      readme_cat:write("# "..fuse.file_category.." Shaders\n\n")
+      readme_cat:write("# "..fuse.Category.." Shaders\n\n")
 
 
-      local description_cat = io.open(user_config.pathToRepository..'Shaders/'..fuse.file_category..'/DESCRIPTION.md',"r")
+      local description_cat = io.open(user_config.pathToRepository..'Shaders/'..fuse.Category..'/DESCRIPTION.md',"r")
       local description = ''
 
       if description_cat then
@@ -119,38 +119,38 @@ function updateMarkdown()
 
     end
 
-    if fuse.error then
+    if fuse:hasErrors() then
       boom=boom+1
     else
       okay=okay+1
     end
 
     if readme_cat==nil then
-      print("Okay '"..fuse.file_fusename.."' causing some trouble!")
-      print("Category is '"..fuse.file_category.."'")
+      print("Okay '"..fuse.Name.."' causing some trouble!")
+      print("Category is '"..fuse.Category.."'")
     end
 
 
     overview:write(
         '\n'
-      ..'!['..fuse.file_category..'/'..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'_320x180.png)\\\n'
-      ..'Fuse: ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) '..(not(fuse.error) and ':four_leaf_clover:' or ':boom:')..'\\\n'
-      ..'Category: ['..fuse.file_category..']('..fuse.file_category..'/README.md)\\\n'
+      ..'!['..fuse.Category..'/'..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'_320x180.png)\\\n'
+      ..'Fuse: ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) '..(not(fuse:hasErrors()) and ':four_leaf_clover:' or ':boom:')..'\\\n'
+      ..'Category: ['..fuse.Category..']('..fuse.Category..'/README.md)\\\n'
       )
 
 
 
-    if (not(fuse.error)) then
+    if (not(fuse:hasErrors())) then
       overview:write(
-          'Shadertoy: ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')\\\n'
-        ..'Author: ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')\\\n'
-        ..'Ported by: ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n'
+          'Shadertoy: ['..fuse.Shadertoy.Name..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')\\\n'
+        ..'Author: ['..fuse.Shadertoy.Author..'](https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..')\\\n'
+        ..'Ported by: ['..fuse.Author..'](../Site/Profiles/'..fuse.Author..'.md)\n'
         )
 
-      readme:write('- ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) (Shadertoy ID ['..fuse.shadertoy_id..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..')) ported by ['..fuse.dctlfuse_author..'](../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n')
+      readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) (Shadertoy ID ['..fuse.Shadertoy.ID..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')) ported by ['..fuse.Author..'](../Site/Profiles/'..fuse.Author..'.md)\n')
 
-      readme_cat:write('## **['..fuse.file_fusename..']('..fuse.file_fusename..'.md)**\nbased on ['..fuse.shadertoy_name..'](https://www.shadertoy.com/view/'..fuse.shadertoy_id..') written by ['..fuse.shadertoy_author..'](https://www.shadertoy.com/user/'..fuse.shadertoy_author..')<br />and ported to DaFusion by ['..fuse.dctlfuse_author..'](../../Site/Profiles/'..fuse.dctlfuse_author..'.md)\n\n')
-    --print("Okay '"..fuse.file_fusename.."' ")
+      readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)**\nbased on ['..fuse.Shadertoy.Name..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..') written by ['..fuse.Shadertoy.Author..'](https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..')<br />and ported to DaFusion by ['..fuse.Author..'](../../Site/Profiles/'..fuse.Author..'.md)\n\n')
+    --print("Okay '"..fuse.Name.."' ")
 
 --    Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issues
 --    "ltsXDB","metabog","BumpyReflectingBalls","Abstract","BumpyReflectingBalls","JiPi",""
@@ -158,22 +158,22 @@ function updateMarkdown()
     else
 
 
-      overview:write('**'..fuse.error..'**\n')
+      overview:write('**'..fuse:getErrorText()..'**\n')
 
-      readme:write('- ['..fuse.file_fusename..']('..fuse.file_category..'/'..fuse.file_fusename..'.md) :boom:\n')
+      readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) :boom:\n')
 
-      readme_cat:write('## **['..fuse.file_fusename..']('..fuse.file_fusename..'.md)** :boom:\n- *'..fuse.error..'*\n\n')
+      readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)** :boom:\n- *'..fuse:getErrorText()..'*\n\n')
 
     end
 
     csv:write(
-        '"'.. fuse.shadertoy_id ..'",' ..
-        '"'.. fuse.shadertoy_author ..'",' ..
-        '"'.. fuse.shadertoy_name ..'",' ..
-        '"'.. fuse.file_category ..'",' ..
-        '"'.. fuse.file_fusename ..'",' ..
-        '"'.. fuse.dctlfuse_author ..'",' ..
-        '"'.. (not(fuse.error) and '' or fuse.error) ..'"\n'
+        '"'.. fuse.Shadertoy.ID ..'",' ..
+        '"'.. fuse.Shadertoy.Author ..'",' ..
+        '"'.. fuse.Shadertoy.Name ..'",' ..
+        '"'.. fuse.Category ..'",' ..
+        '"'.. fuse.Name ..'",' ..
+        '"'.. fuse.Author ..'",' ..
+        '"'.. (not(fuse:hasErrors()) and '' or fuse:getErrorText()) ..'"\n'
     )
 
     overview:write('\n')
