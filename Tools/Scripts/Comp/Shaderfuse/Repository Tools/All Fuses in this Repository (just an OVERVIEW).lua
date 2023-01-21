@@ -1,9 +1,9 @@
 require("string")
 
-local user_config = require("Shadertoys/~user_config")
-local fuses       = require("Shadertoys/fuses")
-local image       = require("Shadertoys/image")
-local selectFusesDialog = require("Shadertoys/selectFusesDialog")
+local user_config = require("Shaderfuse/~user_config")
+local fuses       = require("Shaderfuse/fuses")
+local image       = require("Shaderfuse/image")
+local selectFusesDialog = require("Shaderfuse/selectFusesDialog")
 
 -- print("sep '"..util.path_separator.."'")
 -- print("path '".. user_config.pathToRepository .."'")
