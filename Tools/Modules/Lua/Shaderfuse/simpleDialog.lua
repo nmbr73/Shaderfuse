@@ -1,6 +1,6 @@
 local simpleDialog={}
 
-local image           = require("Shadertoys/image")
+local image           = require("Shaderfuse/image")
 
 
 function simpleDialog.window(ui,dispatcher,params)

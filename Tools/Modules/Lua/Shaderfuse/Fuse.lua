@@ -90,17 +90,33 @@ function Fuse:init(filepath, phase, read_info)
   self.Phase = phase
   self.FilePath = filepath
 
-  -- kann in 'Shaders' (wenn ich etwas erzeuge), oder aber in 'Shadertoys_dev' (wenn in Fusion aufgerufen) liegen.
+  -- folder is 'Shaderfuse_dev' if called from within Fusio (on the repository link);
+  -- it is 'Shaders' (i.e. called from a shell script) otherwise.
 
-  if phase == 'development' then
+  self.DirName, self.Category, self.Name =
+    filepath:match('^(.+[/\\]Shaders/)([^/]+)/([^%.]+)%.fuse$')
+
+  if ((self.DirName or '') == '') and (phase == 'development') then
     self.DirName, self.Category, self.Name =
-      filepath:match('^(.+[/\\]Shadertoys_dev/)([^/]+)/([^%.]+)%.fuse$')
-  else
-    self.DirName, self.Category, self.Name =
-      filepath:match('^(.+[/\\]Shaders/)([^/]+)/([^%.]+)%.fuse$')
+      filepath:match('^(.+[/\\]Shaderfuse_dev/)([^/]+)/([^%.]+)%.fuse$')
+
+    -- -- alterantively try the
+    -- -- old (deprecated) folder
+    -- if (self.DirName or '') == '' then
+
+    --   self.DirName, self.Category, self.Name =
+    --     filepath:match('^(.+[/\\]Shadertoys_dev/)([^/]+)/([^%.]+)%.fuse$')
+
+    --   if (self.DirName or '') ~= '' then
+    --     self:addError("you are using the deprecated Shadertoys_dev link - run Setup.lua to fix it!")
+    --   end
+    -- end
+
   end
 
   if (self.DirName or '') == '' or (self.Category or '') == '' or (self.Name or '') == '' then
+
+    print("filepath '"..self.FilePath.."' does not match the expected schema for "..phase)
     self:addError("filepath '"..self.FilePath.."' does not match the expected schema")
     return false
   end
