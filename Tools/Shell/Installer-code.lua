@@ -107,15 +107,15 @@ function InstallWindow()
                             <span style="color:gray; font-size:small; "{{> Shadertoy.License <}}&nbsp;</span>
                         </p>
                         <p>
-                            This script will install \'Shaderfuse_beta/{{> Shadertoy.ID <}}_b.fuse\' on your computer.<br />
+                            This script will install 'Shaderfuse_beta/{{> Shadertoy.ID <}}_b.fuse' on your computer.<br />
                             THIS IS AT YOUR OWN RISK AND WITHOUT WARRANTY OF ANY KIND!<br />
                             Click 'Cancel' to exit the setup.
-                        </p>'
+                        </p>
                         <p style="color:#ffffff; ">
                             Visit us on <a href="https://github.com/nmbr73/Shadertoys" style="color: rgb(139,155,216); text-decoration:none; ">GitHub</a> for more cute little ShaderFuses!
-                        </p>'
+                        </p>
                         ]]
-                        ..(fuseFileExists and [[<p align="center"><span style="color:#ffffff; "><span sytle="background-color:#ff0000; ">&nbsp;ATTENTION!&nbsp;</span><span style="background-color:#000000; ">&nbsp;Fuse already exists and will be deleted resp. overwritten!&nbsp;</span></span></p>]] or ''),
+                        ..(fuseFileExists and [[<p align="center"><span style="color:#ffffff; "><span style="background-color:#ff0000; ">&nbsp;ATTENTION!&nbsp;</span><span style="background-color:#000000; ">&nbsp;Fuse already exists and will be deleted resp. overwritten!&nbsp;</span></span></p>]] or ''),
                 },
             },
 
@@ -214,7 +214,7 @@ function write_fuse()
 
     if not f then return false end
 
-    writeFuseCode(f);
+    f:write(dec("{{> fusecode.data <}}"))
     f:close()
 
     local t = io.open(fusion:MapPath('Fuses:/Shaderfuse_beta/{{> Shadertoy.ID <}}_b.png'),"wb")
@@ -224,6 +224,7 @@ function write_fuse()
     t:write(dec("{{> thumbnail.data <}}"))
     t:close()
 
+    return true
 end
 
 
@@ -277,7 +278,7 @@ function install_action(overwrite)
 
     end
 
-    local endScreen = endScreen(text)
+    local endScreen = EndScreen(text)
     endScreen:Show()
 end
 
@@ -303,17 +304,11 @@ function uninstall_action()
         <p style="color:#ffffff; ">Cheers!</p>
     ]]
 
-    local endScreen = endScreen(text)
+    local endScreen = EndScreen(text)
     endScreen:Show()
 
 end
 
-
-
-function goForIt()
-
-    local installWindow = InstallWindow()
-    installWindow:Show()
-    uidispatcher:RunLoop()
-
-end
+local installWindow = InstallWindow()
+installWindow:Show()
+uidispatcher:RunLoop()

@@ -6,10 +6,11 @@ bmd = require("Shaderfuse/bmd")
 
 require("Shaderfuse/function_createInstaller")
 
-local error = createInstaller("/Users/nmbr73/Projects/Shadertoys/Shaders/Wedding/Heartdemo.fuse")
-
-if error then
-    print("ERROR: "..error)
+code = installer_code("/Users/nmbr73/Projects/Shadertoys/Shaders/Wedding/Heartdemo.fuse")
+if has_error() then
+    print("ERROR: ".. get_error())
+else
+    print(code)
 end
 
 
