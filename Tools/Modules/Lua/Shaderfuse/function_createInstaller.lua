@@ -240,7 +240,7 @@ function installer_code(fuse)
     handle:close()
 
     handle = io.open(fuse.DirName..'/'..fuse.Name..'.fuse', "r")
-    if not handle then return set_error("failed to open "..fuse.DirName..'/'..fuse.Name..'.fuse'); return nil end
+    if not handle then set_error("failed to open "..fuse.DirName..'/'..fuse.Name..'.fuse'); return nil end
     local fuse_code = handle:read("*all")
     handle:close()
 
