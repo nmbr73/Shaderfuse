@@ -271,7 +271,7 @@ function create_installer(fuse,repositorypath)
 
   if has_error() then print("ERROR: ".. get_error()); return false end
 
-  local fpath = repositorypath..'build/installer/'..fuse.Category
+  local fpath = repositorypath..'docs/Installers/'..fuse.Category
   bmd.createdir(fpath)
 
   local fname = fuse.Name ..'-Installer.lua'
