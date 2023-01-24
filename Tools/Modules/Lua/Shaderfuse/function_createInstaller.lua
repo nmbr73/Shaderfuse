@@ -16,6 +16,7 @@ require("string")
 
 
 Fuse = require("Shaderfuse/Fuse")
+local fuses       = require("Shaderfuse/fuses")
 
 local _error = nil
 
@@ -252,31 +253,62 @@ function installer_code(fuse)
     -- fuse.Code = { Data = base64_encode(fuse_code),}
     installer_code = patch_installer_code(fuse,installer_code,fuse_code)
 
-
-
-    -- print(fuse_code)
-    -- print(git_output)
-    -- print(installer_code)
-    -- fuse:print()
     return installer_code
+end
+
+
+
+
+function create_installer(fuse,repositorypath)
+
+  if type(fuse) == 'string' then
+    fuse = Fuse:new(fuse,'installer',true)
+  end
+
+  if not fuse:isValid() then return false end
+
+  code = installer_code(fuse)
+
+  if has_error() then print("ERROR: ".. get_error()); return false end
+
+  local fpath = repositorypath..'build/installer/'..fuse.Category
+  bmd.createdir(fpath)
+
+  local fname = fuse.Name ..'-Installer.lua'
+  local f = io.open(fpath..'/'..fname,"wb")
+  if not f then print("ERROR: failed to open "..fname); return false end
+  f:write(code)
+  f:close()
+
+
 end
 
 
 function createInstallers(repositorypath)
 
+    if not repositorypath then
+      if user_config then
+        repositorypath = user_config.pathToRepository
+      else
+        local user_config = require("Shaderfuse/~user_config")
+        repositorypath = user_config.pathToRepository
+      end
+    end
+
     -- local fuse = Fuse:new("/Users/nmbr73/Projects/Shadertoys/Shaders/Wedding/Heartdemo.fuse")
 
-    fuses.fetch(repositorypath..'/Shaders/',false)
+    fuses.fetch(repositorypath..'/Shaders/','installer')
 
     for i, fuse in ipairs(fuses.list) do
+        create_installer(fuse,repositorypath)
 
-        print("Name: '".. fuse.Name .."'")
+        -- print("Name: '".. fuse.Name .."'")
         -- fuse:read()
         -- fuse.fuse_sourceCode=snippet.replace(fuse.fuse_sourceCode)
-
-
     end
 
 
 end
+
+
 
