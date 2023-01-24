@@ -235,12 +235,12 @@ function installer_code(fuse)
     local handle
 
     handle = io.open("Installer-code.lua", "r")
-    if not handle then return "failed to open Installer-code.lua" end
+    if not handle then set_error("failed to open Installer-code.lua"); return nil end
     local installer_code = handle:read("*all")
     handle:close()
 
     handle = io.open(fuse.DirName..'/'..fuse.Name..'.fuse', "r")
-    if not handle then return "failed to open "..fuse.DirName..'/'..fuse.Name..'.fuse' end
+    if not handle then return set_error("failed to open "..fuse.DirName..'/'..fuse.Name..'.fuse'); return nil end
     local fuse_code = handle:read("*all")
     handle:close()
 
