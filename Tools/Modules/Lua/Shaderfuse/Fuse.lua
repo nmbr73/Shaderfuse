@@ -310,26 +310,19 @@ function Fuse:readInfo()
       end
     end
 
-    -- ----------
-    -- Deprecated: Fuse.Date
-
-    if info.Fuse.Date then
-      self:addError("Fuse.Date is deprecated; use Fuse.Created instead")
-    end
-
 
     -- ----------
-    -- Optional: Fuse.Created
+    -- Optional: Fuse.Date
     --
     --    TODO Auto: Fuse.Modified
 
-    self.Created = ''
+    self.Date = ''
 
-    if info.Fuse.Created then
-      if not info.Fuse.Created:match("^([0-9][0-9][0-9][0-9])%-([0-9][0-9])%-([0-9][0-9])$") then
-        self:addError("Fuse.Created must be YYYY-MM-DD")
+    if info.Fuse.Date then
+      if not info.Fuse.Date:match("^([0-9][0-9][0-9][0-9])%-([0-9][0-9])%-([0-9][0-9])$") then
+        self:addError("Fuse.Date must be YYYY-MM-DD")
       else
-        self.Created = info.Fuse.Created
+        self.Date = info.Fuse.Date
       end
     end
   end

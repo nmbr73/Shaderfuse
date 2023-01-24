@@ -248,7 +248,7 @@ function ShaderFuse.init( filepath, mode, noAssert )
 
     ShaderFuse.Fuse = {}
 
-    for _ , k in pairs({'FilePath', 'Category', 'Name', 'DirName', 'InfoURL', 'Author', 'AuthorURL', 'AuthorLogo', 'Description', 'InfoURL', 'Version', 'Created', 'hasThumbnail', }) do
+    for _ , k in pairs({'FilePath', 'Category', 'Name', 'DirName', 'InfoURL', 'Author', 'AuthorURL', 'AuthorLogo', 'Description', 'InfoURL', 'Version', 'Date', 'hasThumbnail', }) do
         ShaderFuse.Fuse[k] = fuse[k]
     end
 
@@ -256,8 +256,6 @@ function ShaderFuse.init( filepath, mode, noAssert )
     ShaderFuse.Compatibility = fuse.Compatibility
     ShaderFuse.CompatibilityIssues = fuse.CompatibilityIssues
     ShaderFuse.FuRegister = fuse.FuRegister
-
-    ShaderFuse.Fuse.Date = ShaderFuse.Fuse.Created -- TODO: it's the date created for the time being; add the modification date some day
 
     ShaderFuse.hasErrors = false
     ShaderFuse.errorsHtml = nil
