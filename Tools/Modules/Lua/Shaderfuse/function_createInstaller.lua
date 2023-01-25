@@ -206,7 +206,7 @@ function get_fuse_commit_info(fuse)
 
   if fuse.Commit then return fuse.Commit end
 
-  local handle = io.popen('git log -n 1 --pretty="format:%H %cs" -- '..fuse.DirName..'/'..fuse.Name..'.fuse')
+  local handle = io.popen('cd \''.. fuse.DirName.. '\' ; git log -n 1 --pretty="format:%H %cs" -- \''..fuse.Name..'.fuse\'')
   if not handle then set_error("failed to run 'git log'"); return nil end
   local git_output = handle:read("*a")
   handle:close()
