@@ -14,6 +14,7 @@ P._error = nil
 
 
 function P.set_error(err)
+  assert(err)
   if not P._error then
     P._error = err
   end

@@ -232,7 +232,7 @@ function create_installers(repositorypath)
   fuses.fetch(repositorypath..'/Shaders/','installer')
 
   for i, fuse in ipairs(fuses.list) do
-    util.set_error(nil)
+    util.clr_error()
     create_installer(fuse,repositorypath)
     if util.has_error() then
       print("installer for '".. fuse.Name .."' failed: ".. util.get_error())
