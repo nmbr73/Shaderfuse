@@ -14,7 +14,7 @@ simpleDialog.window(
       -- onOkay=do_update,
 
       onOkay= function()
-        createInstallers()
+        create_installers()
         print("Installers created")
         ui_dispatcher:ExitLoop()
       end,

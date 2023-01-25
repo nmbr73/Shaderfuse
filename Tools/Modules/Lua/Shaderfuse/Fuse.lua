@@ -50,16 +50,9 @@ function Fuse:clear()
   self.Compatibility = {}
   self.CompatibilityIssues = {}
   self.FuRegister = {}
+
 end
 
-
-
-------------------------------------------------------------------------------
--- Save some memory.
---
-function Fuse:purge()
-  self.fuse_sourceCode = ''
-end
 
 
 
@@ -70,6 +63,8 @@ end
 function Fuse:compatibilityKeys()
   return {'Windows_CUDA','Windows_OpenCL','macOS_Metal','macOS_OpenCL'}
 end
+
+
 
 
 
@@ -90,7 +85,7 @@ function Fuse:init(filepath, phase, read_info)
   self.Phase = phase
   self.FilePath = filepath
 
-  -- folder is 'Shaderfuse_dev' if called from within Fusio (on the repository link);
+  -- folder is 'Shaderfuse_dev' if called from within Fusion (on the repository link);
   -- it is 'Shaders' (i.e. called from a shell script) otherwise.
 
   self.DirName, self.Category, self.Name =
@@ -99,24 +94,9 @@ function Fuse:init(filepath, phase, read_info)
   if ((self.DirName or '') == '') and (phase == 'development') then
     self.DirName, self.Category, self.Name =
       filepath:match('^(.+[/\\]Shaderfuse_dev/)([^/]+)/([^%.]+)%.fuse$')
-
-    -- -- alterantively try the
-    -- -- old (deprecated) folder
-    -- if (self.DirName or '') == '' then
-
-    --   self.DirName, self.Category, self.Name =
-    --     filepath:match('^(.+[/\\]Shadertoys_dev/)([^/]+)/([^%.]+)%.fuse$')
-
-    --   if (self.DirName or '') ~= '' then
-    --     self:addError("you are using the deprecated Shadertoys_dev link - run Setup.lua to fix it!")
-    --   end
-    -- end
-
   end
 
   if (self.DirName or '') == '' or (self.Category or '') == '' or (self.Name or '') == '' then
-
-    print("filepath '"..self.FilePath.."' does not match the expected schema for "..phase)
     self:addError("filepath '"..self.FilePath.."' does not match the expected schema")
     return false
   end
@@ -433,15 +413,15 @@ function Fuse:readInfo()
   if self.Phase == 'development' then
     regs_name         = '_DEV'
     regs_category     = 'Shaderfuse (dev)'
-    regs_opiconstring = 'SF.a-'
+    regs_opiconstring = 'sf-a.'
   elseif self.Phase == 'installer' then
     regs_name         = '_BETA'
     regs_category = 'Shaderfuse (beta)'
-    regs_opiconstring = 'SF.b-'
+    regs_opiconstring = 'sf-b.'
   elseif self.Phase == 'reactor' then
     regs_name = ''
     regs_category = 'Shaderfuse'
-    regs_opiconstring = 'SF-'
+    regs_opiconstring = 'sf.'
   else
     assert(false, "unknown phase '"..self.Phase.."'")
   end
@@ -470,11 +450,13 @@ function Fuse:readInfo()
 end
 
 
+
 function Fuse:addError(txt)
   assert(self ~= nil)
   assert(txt~=nil and txt~='')
   table.insert(self.errors,txt)
 end
+
 
 
 function Fuse:hasErrors()
@@ -493,6 +475,7 @@ function Fuse:isValid()
 end
 
 
+
 function Fuse:getErrorText()
   assert(self ~= nil)
 
@@ -502,6 +485,7 @@ function Fuse:getErrorText()
 
   return self.errors[1]
 end
+
 
 
 function Fuse:getErrorsHTML()
@@ -520,89 +504,6 @@ function Fuse:getErrorsHTML()
   html = html .. "</ul>\n"
 
   return html
-end
-
-
-
-function Fuse:read(options)
-  assert(false, "rewrite")
-
-	assert(self.fuse_sourceCode==nil)
-
---  if not self:isValid() then return false end
-
-  local f = io.open(self.FilePath, "r")
-
-  if not f then return self:setError("failed to read '"..self.FilePath.."'",false) end
-
-  self.fuse_sourceCode = f:read("*all")
-  f:close()
-
-  if self.fuse_sourceCode==nil or self.fuse_sourceCode=='' then return self:setError("failed to read content of file '"..self.FilePath.."'",false) end
-
-  local fields = {'shadertoy_name', 'shadertoy_author', 'shadertoy_id', 'dctlfuse_author', 'dctlfuse_name', 'dctlfuse_category', 'shadertoy_license'}
-
-  for i, name in ipairs(fields) do
-    local value=self.fuse_sourceCode:match('\n%s*local%s+'..name..'%s*=%s*"([^"]+)"') or self.fuse_sourceCode:match('\n%s*local%s+'..name.."%s*=%s*'([^']+)'") or ''
-
-    if value=='' and name=='dctlfuse_name' and self.fuse_sourceCode:match('\n%s*local%s+dctlfuse_name%s*=%s*shadertoy_name') then
-      value = self.shadertoy_name
-    end
-
-    if value=='' and name~='shadertoy_license' then return self:setError("'"..name.."' could not be determined",false) end
-
-    if name=='dctlfuse_name' and value~=self.Name then return self:setError("Fuse name does not correspond to filename´",false) end
-
-    self[name]=value
-  end
-
-
-
-  if not self.dctlfuse_name:match('^[A-Za-z][A-Za-z0-9_]*[A-Za-z0-9]$') then return self:setError("invalid fuse name '"..self.dctlfuse_name.."'",false) end
-  if self.dctlfuse_name ~= self.Name then return self:setError("fuse name '"..self.dctlfuse_name.."' does not match filename",false) end
-  if not self.dctlfuse_category:match('^[A-Z][A-Za-z]+$') then return self:setError("invalid category name '"..self.dctlfuse_category.."'",false) end
-  if self.dctlfuse_category ~= self.Category then return self:setError("fuse category '"..self.dctlfuse_category.."' does not match fuse's subdirectory",false) end
-
-  local markers={
-      '-- >>> SCHNIPP::FUREGISTERCLASS.version="MonumentsAndSites"',
-      '-- <<< SCHNAPP::FUREGISTERCLASS',
-      '-- >>> SCHNIPP::SHADERFUSECONTROLS.version="MonumentsAndSites"',
-      '-- <<< SCHNAPP::SHADERFUSECONTROLS',
-    }
-
-
-  if options ~= nil and options.CheckMarkers ~= nil and options.CheckMarkers==false then
-
-  else
-    for i, marker in ipairs(markers) do
-      if string.find(self.fuse_sourceCode, marker) == nil then
-        return self:setError('fuse must contain the standard and unmodified SCHNIPP/SCHNAPP text blocks',false)
-      end
-    end
-  end
-
-
-
-  return true
-
-end
-
-function Fuse:write(path,filename)
-
-  path = path and path or self.DirName..'/'
-
-  filename = filename and filename or self.Name .. '.fuse'
-
-  assert(self.fuse_sourceCode~=nil)
-  assert(self.fuse_sourceCode~='')
-
-  local f = io.open(path..filename,"w")
-
-  if f then
-    f:write(self.fuse_sourceCode)
-    f:close()
-  end
-
 end
 
 
