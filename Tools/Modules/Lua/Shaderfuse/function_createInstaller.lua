@@ -51,7 +51,7 @@ function patch_fuse_source(fuse,fuse_code)
 
   local furegister_attributes = '\n'
 
-  for key, value in pairs(fuse.FuRegister.Attributes) do
+  for key, value in util.pairsByKeys(fuse.FuRegister.Attributes) do
     if type(value) == 'boolean' then
       value = value and 'true' or 'false'
     else
