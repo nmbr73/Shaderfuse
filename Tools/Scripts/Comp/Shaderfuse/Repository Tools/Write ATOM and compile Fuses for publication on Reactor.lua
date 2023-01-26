@@ -2,7 +2,7 @@
 require("string")
 require("Shaderfuse/maintenance_functions")
 
-local simpleDialog  = require("Shadertoys/simpleDialog")
+local simpleDialog  = require("Shaderfuse/simpleDialog")
 local ui_manager    = fu.UIManager
 local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 
