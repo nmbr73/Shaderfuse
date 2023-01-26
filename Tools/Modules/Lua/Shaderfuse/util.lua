@@ -61,12 +61,34 @@ end
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
--- Get error message..
+-- Get error message.
 --
 -- @returns String of the first error.
 
 function P.get_error()
   return P._error
+end
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Copy file.
+--
+-- @returns True, if successful.
+
+function P.copy_file(from,to)
+  local from_file = io.open(from,"rb")
+  local to_file = io.open(to, "wb")
+
+  if not from_file or not to_file then return false end
+
+  local from_data = from_file:read("*all")
+  to_file:write(from_data)
+
+  from_file:close()
+  to_file:close()
+
+  return true
 end
 
 
