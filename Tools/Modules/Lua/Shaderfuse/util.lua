@@ -1,5 +1,8 @@
+--- Utilities
+-- @module util
 
 local P = {}
+
 if _REQUIREDNAME == nil then
   util = P
 else
@@ -8,10 +11,25 @@ end
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- The systems path separator.
+--
+-- Most probably either a slash ('/') on Unix'ish systems, or the infamous
+-- backslash on Windows.
+
 P.path_separator = package.config:sub(1,1)
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Internatl (!) variable to hold an error.
+
 P._error = nil
 
 
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Set error message.
 
 function P.set_error(err)
   assert(err)
@@ -21,10 +39,20 @@ function P.set_error(err)
 end
 
 
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Reset error message (no errors).
+
 function P.clr_error()
   P._error = nil
 end
 
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Check for an error.
+--
+-- @returns true, if set_error() had been called before.
 
 function P.has_error()
   return P._error ~= nil
@@ -32,13 +60,26 @@ end
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Get error message..
+--
+-- @returns String of the first error.
+
 function P.get_error()
   return P._error
 end
 
 
 
--- https://www.lua.org/pil/19.3.html
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Iterator for sorted table keys.
+--
+-- Using pairs() in a for-loop traverses the tables items in some random order.
+-- This is an issue if you want for example to print the content of a dictonary
+-- and expect this to result for the same data in the same output on multiple
+-- calls of the script.
+--
+-- @see https://www.lua.org/pil/19.3.html
 
 function P.pairsByKeys(t, f)
   local a = {}
@@ -54,6 +95,8 @@ function P.pairsByKeys(t, f)
   return iter
 end
 
+
+
 -------------------------------------------------------------------------------------------------------------------------------------------
 -- Get hash and date of last the last Git commit fo a file.
 --
@@ -62,7 +105,7 @@ end
 -- @param[type=string,opt=false] path The path to the file.
 -- @param[type=string,opt=false] fname The filename.
 --
--- @returns hash, date
+-- @return hash, date
 
 function P.last_commit(path,fname)
 
@@ -82,6 +125,9 @@ end
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 -- Base64 decode data.
+--
+-- @param data A base64 encoded srring.
+-- @returns The decoded data
 
 function P.base64_decode(data)
   if not data then return nil end
@@ -104,6 +150,9 @@ end
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 -- Base64 encode data.
+--
+-- @param data Some binary data.
+-- @returns The data encoded in base64.
 
 function P.base64_encode(data)
   if not data then return nil end

@@ -5,6 +5,15 @@ local fuses = require("Shaderfuse/fuses")
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Substitute placeholders in the installer template.
+--
+-- @param fuse The fuse the installer should be build for.
+-- @param installer_code The the installer template source.
+-- @param fuse_code The fuse source code that's meant to be installed by the installer code.
+--
+-- @return the installer source code.
+
 function patch_installer_source(fuse,installer_code,fuse_code)
 
   if not installer_code then util.set_error("no installer_code for patch_installer_source()"); return nil end
@@ -33,6 +42,17 @@ function patch_installer_source(fuse,installer_code,fuse_code)
 end
 
 
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Substitute elements in the fuse's code.
+--
+-- There are some 'devleopment only' constructs in the shader fuses that must replaced
+-- for the final / stand-alone fuse as used by the installer and/or atom package.
+--
+-- @param fuse The fuse the sourceode comes from..
+-- @param fuse_code The fuse's source code.
+--
+-- @return fuse source code without any ShaderFuse references.
 
 function patch_fuse_source(fuse,fuse_code)
 
@@ -95,6 +115,10 @@ end
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Read the fuse's thumbnail.
+--
+
 function fuse_thumbnail(fuse)
 
   local handle = io.open(fuse.DirName..'/'..fuse.Name..'.png', "rb")
@@ -105,6 +129,11 @@ function fuse_thumbnail(fuse)
   return { Width = 320, Height = 180, Data = util.base64_encode(thumbnail_data), }
 end
 
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Get the fuse author's mini logo.
+--
 
 function fuse_minilogo(fuse)
 
@@ -120,6 +149,10 @@ end
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Get the fuse's last commit hash and date.
+--
+
 function fuse_commit(fuse)
 
   local hash, date = util.last_commit(fuse.DirName, fuse.Name)
@@ -129,6 +162,10 @@ function fuse_commit(fuse)
 end
 
 
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Read the fuse's source code.
+--
 
 function fuse_source(fuse)
 
@@ -142,6 +179,10 @@ end
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Get the installer code template.
+--
+
 function installer_source()
 
   -- local handle = io.open("Installer-code.lua", "r")
@@ -153,6 +194,10 @@ function installer_source()
 end
 
 
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Get the code for an installer to install the fuse.
+--
 
 function installer_code(fuse)
 
@@ -174,29 +219,18 @@ end
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Generate and write the installer for a fuse.
+--
+-- @param fuse The fuse to create an installer for.
+-- @param repositorypath The path to the repository (optonal).
 
 function create_installer(fuse,repositorypath)
-
-
-  if type(fuse) == 'string' then
-    fuse = Fuse:new(fuse,'installer',true)
-  end
 
   if not fuse:isValid() then
     util.set_error("can't create installer for invalid fuse ("..fuse:getErrorText()..")")
     return false
   end
-
-  if not repositorypath then
-    if user_config then
-      repositorypath = user_config.pathToRepository
-    else
-      local user_config = require("Shaderfuse/~user_config")
-      repositorypath = user_config.pathToRepository
-    end
-  end
-
-  -- -----
 
   code = installer_code(fuse)
 
@@ -217,6 +251,11 @@ function create_installer(fuse,repositorypath)
 end
 
 
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Generate all installers for all fuses.
+--
+-- @param repositorypath The path to the repository (optonal).
 
 function create_installers(repositorypath)
 
