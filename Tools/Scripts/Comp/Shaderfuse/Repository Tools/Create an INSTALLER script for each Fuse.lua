@@ -1,6 +1,6 @@
 require("string")
 
-require("Shaderfuse/function_createInstaller")
+require("Shaderfuse/maintenance_functions")
 
 local simpleDialog = require("Shaderfuse/simpleDialog")
 local ui_manager    = fu.UIManager

@@ -4,5 +4,5 @@ package.path = package.path .. ';../Modules/Lua/?.lua'
 
 bmd = require("Shaderfuse/bmd")
 
-require("Shaderfuse/function_createInstaller")
+require("Shaderfuse/maintenance_functions")
 create_installers()
