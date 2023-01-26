@@ -9,18 +9,17 @@ simpleDialog.window(
     ui_manager,
     ui_dispatcher,
     {
-      windowTitle="Refresh the Fuses' MarkDown files",
+      windowTitle="Refresh the Fuse CSV table",
       -- onOkay=do_update,
 
       onOkay= function()
-        create_markdown_files()
-        print("Markdown updated")
+        create_csv()
+        print("CSV updated")
         ui_dispatcher:ExitLoop()
       end,
 
       text=
-      [[<p>By clicking 'okay' all README.md files in the 'docs/' folder and all its subdirectories will be rewritten.
-      Also the 'docs/OVERVIEW.md' files will be recreated.
+      [[<p>By clicking 'okay' the Shaders.csv fil will be rewritten.
       </p>
             ]]
     }):Show()

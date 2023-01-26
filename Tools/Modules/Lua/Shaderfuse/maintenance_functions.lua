@@ -531,3 +531,237 @@ function create_package_fuses(repositorypath)
   return true
 
 end
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Generate the markdown files.
+--
+-- @param repositorypath The path to the repository (optional).
+
+function create_markdown_files(repositorypath)
+
+  repositorypath = get_repositorypath(repositorypath)
+
+  fuses.fetch(repositorypath..'/Shaders/','development')
+
+
+
+
+  bmd.createdir(repositorypath..'docs')
+  bmd.createdir(repositorypath..'docs/Shaders')
+
+
+  local overview = io.open(repositorypath..'docs/Shaders/OVERVIEW.md',"w")
+  local readme   = io.open(repositorypath..'docs/Shaders/README.md',"w")
+
+  if not(overview) or not(readme) then
+    print("We have a Problem")
+    return false -- os.exit(10)
+  end
+
+  local header=[[
+
+  <!--                                                             -->
+  <!--           THIS IS AN AUTOMATICALLY GENERATED FILE           -->
+  <!--                                                             -->
+  <!--                  D O   N O T   E D I T ! ! !                -->
+  <!--                                                             -->
+  <!--  ALL CHANGES WILL BE OVERWRITTEN WITHOUT ANY FURTHER NOTICE -->
+  <!--                                                             -->
+
+
+]]
+
+  overview:write(header)
+  readme:write(header)
+
+  local links=''
+
+  for i,cat in ipairs(fuses.categories) do
+    links=links..' · ['..cat..']('..cat..'/README.md)'
+  end
+
+
+  overview:write("[README](README.md) · **OVERVIEW**"..links.."\n\n")
+  readme:write("**README** · [OVERVIEW](OVERVIEW.md)"..links.."\n\n")
+
+  overview:write('# Shaders\n\n')
+  readme:write('# Shaders\n\n')
+
+  local readme_cat=nil
+
+  local currentCategory=''
+
+  local boom=0
+  local okay=0
+
+  for i, fuse in ipairs(fuses.list) do
+
+    if fuse.Category ~= currentCategory then
+
+      if currentCategory~='' then
+        overview:write('\n\n')
+        if readme_cat~=nil then
+          readme_cat:close()
+          readme_cat=nil
+        end
+      end
+
+      currentCategory=fuse.Category
+
+
+
+      overview:write("## "..fuse.Category.." Shaders\n\n")
+
+      readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
+
+
+      bmd.createdir(repositorypath..'docs/Shaders/'..fuse.Category)
+
+      readme_cat   = io.open(repositorypath..'docs/Shaders/'..fuse.Category..'/README.md',"w")
+      readme_cat:write(header)
+
+      local links='[README](../README.md) · [OVERVIEW](../OVERVIEW.md)'
+
+      for i,cat in ipairs(fuses.categories) do
+          if cat==currentCategory then
+            links=links..' · **'..cat..'**'
+          else
+            links=links..' · ['..cat..'](../'..cat..'/README.md)'
+          end
+      end
+
+      readme_cat:write(links.."\n\n")
+      readme_cat:write("# "..fuse.Category.." Shaders\n\n")
+
+
+      local description_cat = io.open(repositorypath..'Shaders/'..fuse.Category..'/DESCRIPTION.md',"r")
+      local description = ''
+
+      if description_cat then
+        -- print("description found")
+        description = description_cat:read "*a"
+        description_cat:close()
+      end
+
+      if description ~= nil and description ~= '' then
+        readme_cat:write(description.."\n\n")
+      end
+
+    end
+
+    if fuse:hasErrors() then
+      boom=boom+1
+    else
+      okay=okay+1
+    end
+
+    if readme_cat==nil then
+      print("Okay '"..fuse.Name.."' causing some trouble!")
+      print("Category is '"..fuse.Category.."'")
+    end
+
+
+    overview:write(
+        '\n'
+      ..'!['..fuse.Category..'/'..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'_320x180.png)\\\n'
+      ..'Fuse: ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) '..(not(fuse:hasErrors()) and ':four_leaf_clover:' or ':boom:')..'\\\n'
+      ..'Category: ['..fuse.Category..']('..fuse.Category..'/README.md)\\\n'
+      )
+
+
+
+    if (not(fuse:hasErrors())) then
+      overview:write(
+          'Shadertoy: ['..fuse.Shadertoy.Name..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')\\\n'
+        ..'Author: ['..fuse.Shadertoy.Author..'](https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..')\\\n'
+        ..'Ported by: ['..fuse.Author..'](../Site/Profiles/'..fuse.Author..'.md)\n'
+        )
+
+      readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) (Shadertoy ID ['..fuse.Shadertoy.ID..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')) ported by ['..fuse.Author..'](../Site/Profiles/'..fuse.Author..'.md)\n')
+
+      readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)**\nbased on ['..fuse.Shadertoy.Name..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..') written by ['..fuse.Shadertoy.Author..'](https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..')<br />and ported to DaFusion by ['..fuse.Author..'](../../Site/Profiles/'..fuse.Author..'.md)\n\n')
+    --print("Okay '"..fuse.Name.."' ")
+
+--    Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issues
+--    "ltsXDB","metabog","BumpyReflectingBalls","Abstract","BumpyReflectingBalls","JiPi",""
+
+    else
+
+
+      overview:write('**'..fuse:getErrorText()..'**\n')
+
+      readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) :boom:\n')
+
+      readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)** :boom:\n- *'..fuse:getErrorText()..'*\n\n')
+
+    end
+
+    overview:write('\n')
+
+  end
+
+  if currentCategory~='' then
+    overview:write('\n')
+  end
+
+  if okay > 0 then
+    overview:write(":four_leaf_clover: "..okay.."\n\n")
+  end
+
+  if boom > 0 then
+    overview:write(":boom: "..boom.."\n\n")
+  end
+
+
+  if readme_cat~=nil then readme_cat:close() end
+
+  overview:close()
+  readme:close()
+
+
+end
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Generate the CSV file.
+--
+-- @param repositorypath The path to the repository (optional).
+
+function create_csv(repositorypath)
+
+  repositorypath = get_repositorypath(repositorypath)
+
+  fuses.fetch(repositorypath..'/Shaders/','development')
+
+  local csv      = io.open(repositorypath..'Shaders.csv',"w")
+
+  if not(csv) then
+    print("We have a Problem")
+    return false -- os.exit(10)
+  end
+
+  csv:write("Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issue\n")
+
+  for i, fuse in ipairs(fuses.list) do
+
+    csv:write(
+        '"'.. fuse.Shadertoy.ID ..'",' ..
+        '"'.. fuse.Shadertoy.Author ..'",' ..
+        '"'.. fuse.Shadertoy.Name ..'",' ..
+        '"'.. fuse.Category ..'",' ..
+        '"'.. fuse.Name ..'",' ..
+        '"'.. fuse.Author ..'",' ..
+        '"'.. (not(fuse:hasErrors()) and '' or fuse:getErrorText()) ..'"\n'
+        )
+
+  end
+
+  csv:close()
+
+  return true
+end
+
+
+
