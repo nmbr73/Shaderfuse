@@ -398,7 +398,7 @@ end
 
 function create_package_fuses(repositorypath)
 
-  repositorypath = get_repositorypath(get_repositorypath)
+  repositorypath = get_repositorypath(repositorypath)
 
   fuses.fetch(repositorypath..'/Shaders/','reactor')
 
@@ -454,7 +454,7 @@ function create_package_fuses(repositorypath)
 
         end
 
-        OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.file_fusename..'</strong></li>\n'
+        OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong></li>\n'
         OurDeployments=OurDeployments..'          "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse",\n'
     end
   end

@@ -1,6 +1,6 @@
 
 require("string")
-require("Shadertoys/function_writeAtom")
+require("Shaderfuse/maintenance_functions")
 
 local simpleDialog  = require("Shadertoys/simpleDialog")
 local ui_manager    = fu.UIManager
@@ -14,7 +14,7 @@ simpleDialog.window(
       -- onOkay=do_update,
 
       onOkay= function()
-        writeAtom()
+        create_package_fuses()
 
         print("Atom updated")
         ui_dispatcher:ExitLoop()
