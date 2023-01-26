@@ -220,12 +220,36 @@ end
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
+-- Get path to repository, if not already initialized.
+--
+-- @param repositorypath The path to the repository (optional).
+-- @return Path to the reposiory.
+
+function get_repositorypath(repositorypath)
+
+  if not repositorypath then
+    if user_config then
+      repositorypath = user_config.pathToRepository
+    else
+      local user_config = require("Shaderfuse/~user_config")
+      repositorypath = user_config.pathToRepository
+    end
+  end
+
+  return repositorypath
+
+end
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
 -- Generate and write the installer for a fuse.
 --
 -- @param fuse The fuse to create an installer for.
--- @param repositorypath The path to the repository (optonal).
+-- @param repositorypath The path to the repository (optional).
 
 function create_installer(fuse,repositorypath)
+
+  repositorypath = get_repositorypath(get_repositorypath)
 
   if not fuse:isValid() then
     util.set_error("can't create installer for invalid fuse ("..fuse:getErrorText()..")")
@@ -238,7 +262,7 @@ function create_installer(fuse,repositorypath)
 
   if (code or '') == '' then util.set_error("no code"); return false end
 
-  local fpath = repositorypath..'docs/Installers/'..fuse.Category
+  local fpath = repositorypath..'Installers/'..fuse.Category
   bmd.createdir(fpath)
 
   local fname = fuse.Name ..'-Installer.lua'
@@ -253,20 +277,13 @@ end
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
--- Generate all installers for all fuses.
+-- Generate all installers for all (valid) fuses.
 --
 -- @param repositorypath The path to the repository (optonal).
 
 function create_installers(repositorypath)
 
-  if not repositorypath then
-    if user_config then
-      repositorypath = user_config.pathToRepository
-    else
-      local user_config = require("Shaderfuse/~user_config")
-      repositorypath = user_config.pathToRepository
-    end
-  end
+  repositorypath = get_repositorypath(get_repositorypath)
 
   fuses.fetch(repositorypath..'/Shaders/','installer')
 
@@ -281,3 +298,256 @@ function create_installers(repositorypath)
   end
 
 end
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Get the fuse's code as packaged for the atom.
+--
+
+function atom_code(fuse)
+
+  if not fuse:isValid() then util.set_error("can't create installer for invalid Fuse"); return nil end
+
+  fuse.Thumbnail = fuse_thumbnail(fuse)   ; if not fuse.Thumbnail then return nil end
+  fuse.Commit    = fuse_commit(fuse)      ; if not fuse.Commit    then return nil end
+  fuse.MiniLogo  = fuse_minilogo(fuse)
+
+  local fuse_code      = patch_fuse_source(fuse,fuse_source(fuse))
+
+  fuse.Thumbnail = nil
+  fuse.Commit = nil
+  fuse.MiniLogo = nil
+
+  return fuse_code
+end
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Generate and write the atom for a fuse.
+--
+-- @param fuse The fuse to create an atom fuse for.
+-- @param targetpath Where to wrte the fuse.
+
+function create_atom(fuse,targetpath)
+
+  if not fuse:isValid() then
+    util.set_error("can't create atom for invalid fuse ("..fuse:getErrorText()..")")
+    return false
+  end
+
+  code = atom_code(fuse)
+
+  if util.has_error() then return false end
+
+  if (code or '') == '' then util.set_error("no code"); return false end
+
+  -- local fpath = repositorypath..'Installers/'..fuse.Category
+  -- bmd.createdir(fpath)
+
+  local fname = fuse.Shadertoy.ID ..'.fuse'
+  local f = io.open(targetpath ..'/'.. fname,"wb")
+  if not f then util.set_error("failed to write "..fname); return false end
+  f:write(code)
+  f:close()
+
+  return true
+end
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-- Generate the Atom package containing all (valid) fuses.
+--
+-- @param repositorypath The path to the repository (optional).
+
+function create_package(repositorypath)
+
+  repositorypath = get_repositorypath(get_repositorypath)
+
+  fuses.fetch(repositorypath..'/Shaders/','reactor')
+
+  local image       = require("Shaderfuse/image")
+
+
+  local YourCompanyName = 'JiPi'
+  local YourPackageName = 'Shadertoys'
+  local PackageIdentifier = 'com.JiPi.Shadertoys'
+  local TargetFilepath = repositorypath .. 'Atom/'
+  local YourPackageVersion = '1.1'
+  local YourPackageDate = "2022,12,19"      -- os.date("%Y,%m,%d")  -- !!!!!!
+  local YourPackageDateFuse = "Dec 2022"    -- os.date("%b %Y")     -- !!!!!!
+
+
+  bmd.createdir(TargetFilepath..PackageIdentifier)
+  bmd.createdir(TargetFilepath..PackageIdentifier..'/Fuses')
+  bmd.createdir(TargetFilepath..PackageIdentifier..'/Fuses/Shaderfuse_wsl')
+
+
+  local OurPackageDescription=''
+  local OurDeployments=''
+
+
+
+  local currentCategory=''
+  local descriptionIndent='        '
+
+  for i, fuse in ipairs(fuses.list) do
+
+    util.clr_error()
+
+    create_installer(fuse,repositorypath)
+
+
+    if fuse.isValid() then
+
+        if fuse.file_category ~= currentCategory then
+
+        if currentCategory~='' then
+            OurPackageDescription=OurPackageDescription
+            ..descriptionIndent..'  </ul>\n'
+            ..descriptionIndent..'</p>\n'
+        end
+
+        currentCategory=fuse.file_category
+
+        OurPackageDescription=OurPackageDescription..
+            descriptionIndent..'<p>\n'..
+            descriptionIndent..'    '..currentCategory..' Shaders:\n'..
+            descriptionIndent..'  <ul>\n'
+
+        end
+
+        OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.file_fusename..'</strong></li>\n'
+
+
+        local target_filename=
+            -- fuse.file_category..'-'..
+            -- fuse.file_fusename..'_'..
+            fuse.shadertoy_id..'.fuse'
+
+
+        fuse.fuse_sourceCode=string.gsub(fuse.fuse_sourceCode, "%sdctlfuse_authorlogo%s*=%s*'([^']*)'", " dctlfuse_authorlogo=nil" )
+
+
+        fuse.fuse_sourceCode=[[
+
+--
+--       _____        _   _       _   ______    _ _ _
+--      |  __ \      | \ | |     | | |  ____|  | (_) |
+--      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+--      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+--      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+--      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+--
+--   ... this File is managed by some scripts and can be
+--    overwritten at any time and without further notice!
+--         pls. see https://github.com/nmbr73/Shadertoys
+--                                           for details
+--
+
+]]
+
+        .."local SHADERFUSES_REACTOR_PACKAGE_VERSION = '"..YourPackageVersion.."'\n"
+        .."local SHADERFUSES_REACTOR_PACKAGE_DATE    = '"..YourPackageDateFuse.."'\n\n"
+        ..fuse.fuse_sourceCode
+
+
+        fuse:write(
+        TargetFilepath..PackageIdentifier..'/Fuses/Shadertoys_wsl/',
+        target_filename
+        )
+        fuse:purge()
+
+        OurDeployments=OurDeployments..'          "Fuses/Shadertoys_wsl/'..target_filename..'",\n'
+
+    end
+    end
+
+    if currentCategory~='' then
+    OurPackageDescription=OurPackageDescription
+    ..descriptionIndent..'  </ul>\n'
+    ..descriptionIndent..'</p>\n'
+    end
+
+
+
+
+    local handle = io.open(TargetFilepath..PackageIdentifier..'/'..PackageIdentifier..'.atom',"wb")
+
+    if handle then
+
+    handle:write([[
+        Atom {
+        Name = "]]..YourPackageName..[[",
+        Category = "Shaders",
+        Author = "]]..YourCompanyName..[[",
+        Version = ]]..YourPackageVersion..[[,
+        Date = {]]..YourPackageDate..[[},
+
+        Description = ]]
+        )
+
+
+    handle:write('[[\n        <center>\n')
+
+
+        if true then
+        handle:write('          <br />')
+        handle:write(image.logo_html())
+        handle:write('<br /><br />\n')
+        else
+        handle:write([[
+            <span style="color:#c0a050; font-size:x-large; font-weight:bold; ">Shaderfuse</span><br />
+            <span style="color:#a0c050; font-size:large; font-style:italic; ">... welcome to the shaderverse</span><br />
+            ]])
+        end
+
+    handle:write(
+            '          The package <font color="white">'..
+            YourPackageName..[[</font> adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
+            See our repository on <a href="https://github.com/nmbr73/Shadertoys">GitHub</a> for some insights and to maybe constribute to this project?!?<br />
+            Find tons of example videos on what you can do with it on JiPi's <a href="https://www.youtube.com/c/JiPi_YT/videos">YouTube Channel</a>.<br />
+            Please note that - unless stated otherwise - all these Fuses fall under Creative Commond 'CC BY-NC-SA 3.0 unported'.<br />
+            For most shaders this regrettably means that in particular <font color="#ff6060">any commercial use is strictliy prohibited!</font>
+            </center>
+            ]])
+
+    handle:write(OurPackageDescription)
+
+
+
+    handle:write([[
+            <p>
+            See the following videos for some examples:
+            <ul>
+                <li><a href="https://youtu.be/GJz8Vgi8Qws">The Shader Cut</a> by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/nmbr73.html" style="color:#a05050; ">nmbr73</a> and</li>
+                <li><a href="https://youtu.be/8sUu5GcDako">Other Worlds</a>,</li>
+                <li><a href="https://youtu.be/OYOar65omeM">Lego</a>,</li>
+                <li><a href="https://youtu.be/WGWCrhPNmdg">Mahnah Mahnah</a>,</li>
+                <li><a href="https://youtu.be/QE6--iYtikk">War of the Worlds</a>,</li>
+                <li><a href="https://youtu.be/ktloT0pUaZg">HappyEastern</a>,</li>
+                <li><a href="https://youtu.be/ntrp6BfVk0k">Shadertoy -Defilee</a>,</li>
+                <li><a href="https://youtu.be/4R7ZVMyKLnY">Fire Water</a>,</li>
+                <li><a href="https://youtu.be/oyndG0pLEQQ">Shadertoyparade</a> all by <a href="https://nmbr73.github.io/Shadertoys/Site/Profiles/JiPi.html" style="color:#a05050; ">JiPi</a></li>
+            </ul>
+            </p>]])
+
+    handle:write(']]')
+
+    handle:write([[,
+        Deploy = {]]..'\n'.. OurDeployments ..[[
+        },
+
+        Dependencies = {},
+    }]])
+
+    handle:close()
+    end
+
+
+end
+
