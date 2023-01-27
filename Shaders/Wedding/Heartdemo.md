@@ -14,7 +14,7 @@ A pumping heart. With the button "Tex" a texture can be applied to the heart. Th
 
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
+- [x] Tested on macOS/Metal
+- [x] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
 - [X] Tested on Windows/OpenCL
