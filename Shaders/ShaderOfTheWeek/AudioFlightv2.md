@@ -16,4 +16,4 @@ A beautiful tunnel flight with audio visualization. Extensive parameters allow y
 - [ ] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
-- [X] Tested on Windows/OpenCL, but it differs from Original
+- [ ] Tested on Windows/OpenCL differs from Original

@@ -31,5 +31,5 @@ Have fun playing
 - [ ] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
-- NOT running on Windows/OpenCL, because of missing functionality
+- [ ] Tested on Windows/OpenCL :bomb: missing functionality
 

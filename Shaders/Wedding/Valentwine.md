@@ -20,6 +20,4 @@ Have fun playing
 - [ ] Tested on macOS/Metal
 - [ ] Tested on macOS/OpenCL
 - [X] Tested on Windows/Cuda
-
-   :bomb: Tested on Windows/OpenCL
-Unfortunately not executable under OpenCL - picture dissolves
+- [ ] Tested on Windows/OpenCL :bomb: Unfortunately not executable under OpenCL - picture dissolves
