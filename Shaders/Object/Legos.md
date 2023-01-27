@@ -17,6 +17,6 @@ Have fun playing
 
 ## Compatibility
 - [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL :bomb::bomb::bomb:
+- [ ] Tested on macOS/OpenCL :bomb::bomb::bomb:
 - [x] Tested on Windows/Cuda
 - [x] Tested on Windows/OpenCL
