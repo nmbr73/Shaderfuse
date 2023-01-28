@@ -139,7 +139,7 @@ for fuse in basepath.rglob("*.fuse"):
     src_content = re.sub(pattern_dctlvariable,'',src_content)
     src_content = re.sub(pattern_shadervariable,'',src_content)
 
-    src_content = re.sub(r'\n(dctlfuse_versionNo\s*=[^\n]+\n)','\n',src_content)
+    src_content = re.sub(r'\n(\s*dctlfuse_versionNo\s*=[^\n]+\n)','\n',src_content)
 
 
     a = src_content.find('-- >>> SCHNIPP::FUREGISTERCLASS')
