@@ -108,8 +108,8 @@ for fuse in basepath.rglob("*.fuse"):
     md_content = re.sub(pattern_shaderinfo,'',md_content)
     md_content = md_content.strip()
 
-    md_content =    "<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ -->\n\n" + md_content \
-                    +"\n\n<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->\n"
+    md_content =     "<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->\n\n" + md_content \
+                +"\n\n<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->\n"
 
     if False:
         with sfi.open('w') as f:

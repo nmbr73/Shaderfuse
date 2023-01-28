@@ -248,9 +248,13 @@ function ShaderFuse.init( filepath, mode, noAssert )
 
     ShaderFuse.Fuse = {}
 
-    for _ , k in pairs({'FilePath', 'Category', 'Name', 'DirName', 'InfoURL', 'Author', 'AuthorURL', 'AuthorLogo', 'Description', 'InfoURL', 'Version', 'Date', 'hasThumbnail', }) do
+    for _ , k in pairs({'FilePath', 'Category', 'Name', 'DirName', 'InfoURL', 'Author', 'AuthorURL', 'AuthorLogo', 'Description', 'InfoURL', 'Version', 'Date', }) do
         ShaderFuse.Fuse[k] = fuse[k]
     end
+
+    ShaderFuse.Fuse.hasThumbnail = fuse:hasThumbnail()
+    ShaderFuse.Fuse.isCompatible = fuse:isCompatible()
+
 
     ShaderFuse.Shadertoy = fuse.Shadertoy
     ShaderFuse.Compatibility = fuse.Compatibility

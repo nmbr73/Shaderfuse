@@ -104,7 +104,7 @@ function selectFusesDialog.window(ui,dispatcher,params)
 
     if fuse==nil then return end
 
-    if fuse.hasThumbnail then
+    if fuse:hasThumbnail() then
       itm.Thumbnail.Text='<img src="' .. fuse.DirName .. '/' .. fuse.Name .. '.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
     else
       itm.Thumbnail.Text=''

@@ -533,6 +533,87 @@ function create_package_fuses(repositorypath)
 end
 
 
+
+local function update_fuse_markdown_file(fuse)
+
+  local prolog = '# '.. fuse.Name ..'\n'
+
+  if fuse:isValid() then
+    prolog = prolog .. '[![Download Installer](https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue)]('..fuse.Name..'-Installer.lua "Installer")'
+  end
+
+  prolog = prolog .. '\n'
+
+  if fuse:hasShaderInfo() then
+    prolog = prolog .. "This Fuse is based on the Shadertoy '_[".. fuse.Shadertoy.Name .."](https://www.shadertoy.com/view/"
+      .. fuse.Shadertoy.ID ..")_' by [".. fuse.Shadertoy.Author .."](https://www.shadertoy.com/user/"
+      .. fuse.Shadertoy.Author ..")."
+
+      if (fuse.Author or '') ~= '' then
+        prolog = prolog .. " Conversion to DCTL and encapsulation into a fuse done by [".. fuse.Author .."](../../Site/Profiles/".. fuse.Author ..".md)."
+      end
+
+  else
+    prolog = prolog .. fuse.Name .. ".sfi file does not contain sufficiend data yet."
+
+    if (fuse.Author or '') ~= '' then
+      prolog = prolog .. " This fuse is under construction by [".. fuse.Author .."](../../Site/Profiles/".. fuse.Author ..".md)."
+    end
+  end
+
+  prolog = prolog .. " See [".. fuse.Category .."](README.md) for more fuses in this category."
+
+  if fuse:hasThumbnail() then
+    if fuse:hasShaderInfo() then
+      prolog = prolog .. '[!['.. fuse.Name ..' Thumbnail]('..fuse.Name..'.png)](https://www.shadertoy.com/view/'.. fuse.Shadertoy.ID ..' "View on Shadertoy.com")\n\n'
+    else
+      prolog = prolog .. '!['.. fuse.Name ..'Thumbnail]('..fuse.Name..'.png)\n\n'
+    end
+  end
+
+  local epilog = ''
+
+  if not fuse:isCompatible() then
+    epilog = epilog .. "## Compatibility\n\n" .. fuse:getCompatibilityHTML() .. '\n\n'
+  end
+
+  if fuse:hasErrors() then
+    epilog = epilog .. "## Problems\n\n" .. fuse:getErrorsMarkdown() .. '\n\n'
+  end
+
+  local handle
+
+  handle = io.open(fuse.DirName..'/'..fuse.Name..'.md', "rb")
+  if not handle then util.set_error("failed to open '"..fuse.Name..".md' in '".. fuse.DirName "/'"); return false end
+  local md = handle:read("*all")
+  handle:close()
+
+
+  local a, b = md:find("<!%-%- %+%+%+ DO NOT REMOVE THIS COMMENT %+%+%+ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE %+%+%+ IT WOULD BE A REALLY BAD IDEA %+%+%+ %-%->")
+  local c, d = md:find("<!%-%- %+%+%+ DO NOT REMOVE THIS COMMENT %+%+%+ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE %+%+%+ TRUST ME: JUST DON'T DO IT %+%+%+ %-%->",b)
+
+  if a == nil or c == nil then util.set_error("markers in ".. fuse.DirName ..'/'..fuse.Name ..'.md not found'); return false end
+  -- if a == nil or c == nil then return false end
+
+  local upd = prolog .. "\n\n" .. md:sub(a,d) .. "\n\n" .. epilog
+
+  if md == upd then
+    return true
+  end
+
+  -- print("'".. md:sub(a,d) .."'")
+
+  handle = io.open(fuse.DirName..'/'..fuse.Name..'.md', "wb")
+  if not handle then util.set_error("failed to open '"..fuse.Name..".md' in '".. fuse.DirName "/' for writing"); return false end
+  handle:write(upd)
+  handle:close()
+
+
+  return true
+end
+
+
+
 -------------------------------------------------------------------------------------------------------------------------------------------
 -- Generate the markdown files.
 --
@@ -597,7 +678,9 @@ function create_markdown_files(repositorypath)
 
   for i, fuse in ipairs(fuses.list) do
 
-    if fuse.Category ~= currentCategory then
+    util.clr_error()
+
+    if fuse.Category ~= currentCategory then -- new category
 
       if currentCategory~='' then
         overview:write('\n\n')
@@ -609,13 +692,8 @@ function create_markdown_files(repositorypath)
 
       currentCategory=fuse.Category
 
-
-
       overview:write("## "..fuse.Category.." Shaders\n\n")
-
       readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
-
-
       bmd.createdir(repositorypath..'docs/Shaders/'..fuse.Category)
 
       readme_cat   = io.open(repositorypath..'docs/Shaders/'..fuse.Category..'/README.md',"w")
@@ -634,12 +712,10 @@ function create_markdown_files(repositorypath)
       readme_cat:write(links.."\n\n")
       readme_cat:write("# "..fuse.Category.." Shaders\n\n")
 
-
       local description_cat = io.open(repositorypath..'Shaders/'..fuse.Category..'/DESCRIPTION.md',"r")
       local description = ''
 
       if description_cat then
-        -- print("description found")
         description = description_cat:read "*a"
         description_cat:close()
       end
@@ -648,7 +724,9 @@ function create_markdown_files(repositorypath)
         readme_cat:write(description.."\n\n")
       end
 
-    end
+    end -- new category
+
+
 
     if fuse:hasErrors() then
       boom=boom+1
@@ -671,6 +749,13 @@ function create_markdown_files(repositorypath)
 
 
 
+    update_fuse_markdown_file(fuse)
+
+
+
+
+
+
     if (not(fuse:hasErrors())) then
       overview:write(
           'Shadertoy: ['..fuse.Shadertoy.Name..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')\\\n'
@@ -679,22 +764,19 @@ function create_markdown_files(repositorypath)
         )
 
       readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) (Shadertoy ID ['..fuse.Shadertoy.ID..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')) ported by ['..fuse.Author..'](../Site/Profiles/'..fuse.Author..'.md)\n')
-
       readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)**\nbased on ['..fuse.Shadertoy.Name..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..') written by ['..fuse.Shadertoy.Author..'](https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..')<br />and ported to DaFusion by ['..fuse.Author..'](../../Site/Profiles/'..fuse.Author..'.md)\n\n')
-    --print("Okay '"..fuse.Name.."' ")
 
---    Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issues
---    "ltsXDB","metabog","BumpyReflectingBalls","Abstract","BumpyReflectingBalls","JiPi",""
 
     else
 
-
       overview:write('**'..fuse:getErrorText()..'**\n')
-
       readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) :boom:\n')
-
       readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)** :boom:\n- *'..fuse:getErrorText()..'*\n\n')
 
+    end
+
+    if util.has_error() then
+      print("problem with fuse '".. fuse.Name .."': ".. util.get_error())
     end
 
     overview:write('\n')

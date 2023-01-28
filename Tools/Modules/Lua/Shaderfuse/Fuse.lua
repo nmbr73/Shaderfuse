@@ -18,6 +18,7 @@ local Fuse = {}
 ------------------------------------------------------------------------------
 -- Create an instance.
 --
+
 function Fuse:new(filepath,phase,read_info)
   local o = {}
   setmetatable(o, self)
@@ -51,8 +52,51 @@ function Fuse:clear()
   self.CompatibilityIssues = {}
   self.FuRegister = {}
 
+  self._hasThumbnail = false
 end
 
+
+
+------------------------------------------------------------------------------
+-- Check if valid thumbnail file existst.
+--
+
+function Fuse:hasThumbnail()
+
+  assert(self ~= nil, "call as INSTANCE:hasThumbnail()")
+
+  if not self._hasThumbnail then
+    return false
+  end
+
+  return true
+end
+
+
+
+------------------------------------------------------------------------------
+-- Check if minimum Shadertoy info is available.
+--
+
+function Fuse:hasShaderInfo()
+
+  assert(self ~= nil, "call as INSTANCE:hasShaderInfo()")
+
+  if not self.Shadertoy then
+    return false
+  end
+
+  if not (self.Shadertoy.ID and self.Shadertoy.Name and self.Shadertoy.Author) then
+    return false
+  end
+
+  if self.Shadertoy.ID == '' or self.Shadertoy.Name == '' or self.Shadertoy.Author == '' then
+    return false
+  end
+
+  return true
+
+end
 
 
 
@@ -65,12 +109,22 @@ function Fuse:compatibilityKeys()
 end
 
 
+function Fuse:isCompatible()
 
+  if self.Compatibility == nil then
+    return false
+  end
+
+  return self.Compatibility.Windows_CUDA and self.Compatibility.Windows_OpenCL
+    and self.Compatibility.macOS_Metal and self.Compatibility.macOS_OpenCL
+
+end
 
 
 ------------------------------------------------------------------------------
 -- Initialize the object.
 --
+
 function Fuse:init(filepath, phase, read_info)
 
   read_info = read_info or false
@@ -116,6 +170,9 @@ end
 
 
 
+
+
+
 function Fuse:readInfo()
 
   assert(self ~= nil, "call as INSTANCE:readInfo()")
@@ -132,6 +189,7 @@ function Fuse:readInfo()
     self:addError("failed to read shaderfuse sfi file");
     return false;
   end
+
 
   if info.Shadertoy == nil then
 
@@ -313,7 +371,7 @@ function Fuse:readInfo()
 
   -- if info.Fuse.hasThumbnail ~= nil then self:addError("Fuse.hasThumbnail must not be set in sfi file") end
 
-  self.hasThumbnail = false
+  self._hasThumbnail = false
 
   local thumb = io.open(self.DirName .. '/' .. self.Name .. '.png', "rb")
 
@@ -335,7 +393,7 @@ function Fuse:readInfo()
     if signature ~= "89504e470d0a1a0aXXXXXXXX4948445200000140000000b4" then
       self:addError("Thumbnail seems to be not a 320x180 pixel PNG")
     else
-      self.hasThumbnail = true
+      self._hasThumbnail = true
     end
   end
 
@@ -343,11 +401,9 @@ function Fuse:readInfo()
   -- ----------
   -- Optional (kind of): Compatibility
   -- Auto: Compatibility_issues
-  -- Auto: isCompatible
 
 
   if not info.Compatibility then
-    self.isCompatible = false
     self.CompatbilityIssues = { Windows_CUDA = 'not checked', Windows_OpenCL = 'not checked', macOS_Metal = 'not checked', macOS_OpenCL = 'not checked', }
     self.Compatibility = {}
     self:addError('Windows_CUDA compatibility not checked')
@@ -356,7 +412,6 @@ function Fuse:readInfo()
     self:addError('macOS_OpenCL compatibility not checked')
 
   elseif info.Compatibility == 15 then
-    self.isCompatible = true
     self.Compatibility = {  Windows_CUDA = true, Windows_OpenCL = true, macOS_Metal = true, macOS_OpenCL = true, }
     self.CompatbilityIssues = {  macOS_Metal = '', macOS_OpenCL = '', Windows_CUDA = '', Windows_OpenCL = '', }
   else
@@ -368,7 +423,6 @@ function Fuse:readInfo()
       end
     end
 
-    self.isCompatible = true
     self.Compatibility = {}
     self.CompatbilityIssues = {}
 
@@ -394,7 +448,6 @@ function Fuse:readInfo()
       self.Compatibility[k] = value
       self.CompatbilityIssues[k] = issue
 
-      self.isCompatible = self.isCompatible and value
     end
   end
 
@@ -504,6 +557,58 @@ function Fuse:getErrorsHTML()
   html = html .. "</ul>\n"
 
   return html
+end
+
+
+
+function Fuse:getErrorsMarkdown()
+  assert(self ~= nil)
+
+  if #self.errors == 0 then
+    return ''
+  end
+
+  local md = "Number of problems: ".. #self.errors .."\n\n"
+
+  for i, err in ipairs(self.errors) do
+    md = md .. "- ".. err .. "\n"
+  end
+
+  md = md .. "\n"
+
+  return md
+end
+
+
+function Fuse:getCompatibilityHTML()
+  assert(self ~= nil)
+
+  local function f(key,name)
+
+    if self.Compatibility == nil then
+      return '⬛ '..name..': <span style="color:red; ">NOT TESTED!</span><br />\n'
+    end
+
+    if self.Compatibility[key] == nil then
+      return '⬛ '..name..': <span style="color:red; ">NOT TESTED!</span><br />\n'
+    end
+
+    if self.Compatibility[key] == true then
+      return '🟩 '..name..': <span style="color:green; ">checked</span><br />\n'
+    end
+
+    if (self.CompatibilityIssues[key] or '') ~= '' then
+      return '🟥 '..name..': <span style="color:red; ">'.. self.CompatibilityIssues[key] ..'</span><br />\n'
+    end
+
+    return '🟥 '..name..'<br />\n'
+  end
+
+  return
+    f('macOS_Metal','macOS / Metal')..
+    f('macOS_OpenCL','macOS / OpenCL')..
+    f('Windows_CUDA','Windows / CUDA')..
+    f('Windows_OpenCL','Windows / OpenCL')
 end
 
 
