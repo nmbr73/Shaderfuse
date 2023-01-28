@@ -13,6 +13,10 @@ pattern_installer = re.compile(r'\[!\[Download Installer\]\(https://img.shields.
 pattern_headline1 = re.compile(r'^#[^\n]+\n+')
 pattern_headline2 = re.compile(r'^[^\n]+\n=+\n+')
 pattern_shaderinfo = re.compile(r'Based on \'[^\']+\' by ([A-Za-z ]*)\[[^\]]+\]\([^\)]+\) and ported by (|ported by)\s*\[[^\]]+\]\([^\)]+\)\.*')
+pattern_dctlvariable = re.compile(r'(\n\s*local\s+dctlfuse_[a-z][A-Za-z]+\s*=[^\n]+)')
+pattern_shadervariable = re.compile(r'(\n\s*local\s+shadertoy_[a-z][A-Za-z]+\s*=[^\n]+)')
+
+
 
 sfi_match ="""
     Compatibility = {
@@ -111,6 +115,29 @@ for fuse in basepath.rglob("*.fuse"):
     md_content =     "<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->\n\n" + md_content \
                 +"\n\n<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->\n"
 
+
+
+    src = fuse.parent.joinpath(f"{fuse.stem}.fuse")
+
+    with src.open() as f:
+        src_content = f.read()
+
+    if not src_content:
+        print(f"knartz '{src}'")
+        break
+
+    src_content = src_content.replace('\n-- MANDATORY -----------------------------------------------------------------\n','\n',1)
+    src_content = src_content.replace('\n-- OPTIONAL ------------------------------------------------------------------\n','\n',1)
+    src_content = re.sub(pattern_dctlvariable,'\n',src_content)
+    src_content = re.sub(pattern_shadervariable,'\n',src_content)
+
+
+    # with src.open('w') as f:
+    #     f.write(src_content)
+    # break
+
+
+
     if False:
         with sfi.open('w') as f:
             f.write(sfi_content)
@@ -118,6 +145,8 @@ for fuse in basepath.rglob("*.fuse"):
         with md.open('w') as f:
             f.write(md_content)
 
+        with src.open('w') as f:
+            f.write(src_content)
 
 
 print(f"numfuses = {numfuses}")
