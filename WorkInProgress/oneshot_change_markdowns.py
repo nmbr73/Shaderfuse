@@ -44,6 +44,8 @@ for fuse in basepath.rglob("*.fuse"):
         print(f"dang '{md}'")
         break
 
+    md_content_original = md_content
+
     match = re.search(pattern_compatibiliy,md_content)
 
     if not match:
@@ -74,6 +76,8 @@ for fuse in basepath.rglob("*.fuse"):
     if not sfi_content:
         print(f"boom '{sfi}'")
         break
+
+    sfi_content_original = sfi_content
 
     pos = sfi_content.find(sfi_match)
 
@@ -126,17 +130,50 @@ for fuse in basepath.rglob("*.fuse"):
         print(f"knartz '{src}'")
         break
 
-    src_content = src_content.replace('\n-- MANDATORY -----------------------------------------------------------------\n','\n',1)
-    src_content = src_content.replace('\n-- OPTIONAL ------------------------------------------------------------------\n','\n',1)
-    src_content = re.sub(pattern_dctlvariable,'\n',src_content)
-    src_content = re.sub(pattern_shadervariable,'\n',src_content)
+    src_content_original = src_content
 
+    src_content = src_content.replace('\n-- MANDATORY -----------------------------------------------------------------\n','\nlocal ShaderFuse = require("Shaderfuse/ShaderFuse")\nShaderFuse.init()\n',1)
+    src_content = src_content.replace('\n-- OPTIONAL ------------------------------------------------------------------\n','\n',1)
+    src_content = src_content.replace('\nFC_DEVEVELOP = true\n','\n',1)
+    src_content = src_content.replace('\nFC_DEVEVELOP = false\n','\n',1)
+    src_content = re.sub(pattern_dctlvariable,'',src_content)
+    src_content = re.sub(pattern_shadervariable,'',src_content)
+
+    a = src_content.find('-- >>> SCHNIPP::FUREGISTERCLASS')
+    if a != -1:
+        b = src_content.find('-- <<< SCHNAPP::FUREGISTERCLASS',a)
+        if b != -1:
+            src_content = src_content[0:a] + '  ShaderFuse.FuRegister.Name, CT_SourceTool, {\n  ShaderFuse.FuRegister.Attributes,\n' + src_content[b+31:]
+
+            src_content = re.sub(r'FuRegisterClass\(\s+ShaderFuse\.FuRegister\.Name,','FuRegisterClass(ShaderFuse.FuRegister.Name,',src_content)
+            src_content = re.sub(r'  ShaderFuse.FuRegister.Attributes,\s+','  ShaderFuse.FuRegister.Attributes,\n  ',src_content)
+        else:
+            a = -1
+
+
+    a = src_content.find('-- /* ====================== DO NOT TOUCH OR APPEND ANY CODE HERE ===========================================\n')
+
+    if a != -1:
+        src_content = src_content[0:a] + src_content[a+110:]
+
+    a = src_content.find('-- >>> SCHNIPP::SHADERFUSECONTROLS')
+
+    if a != -1:
+        src_content = src_content[0:a]
 
     # with src.open('w') as f:
     #     f.write(src_content)
     # break
 
 
+    if src_content_original == src_content:
+        print(f"unchanged '{src}'")
+
+    if md_content_original == md_content:
+        print(f"unchanged '{md}'")
+
+    if sfi_content_original == sfi_content:
+        print(f"unchanged '{sfi}'")
 
     if False:
         with sfi.open('w') as f:
@@ -145,8 +182,9 @@ for fuse in basepath.rglob("*.fuse"):
         with md.open('w') as f:
             f.write(md_content)
 
-        with src.open('w') as f:
-            f.write(src_content)
+        if src_content_original != src_content:
+            with src.open('w') as f:
+                f.write(src_content)
 
 
 print(f"numfuses = {numfuses}")
