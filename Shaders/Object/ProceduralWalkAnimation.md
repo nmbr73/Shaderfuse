@@ -1,7 +1,4 @@
-ProceduralWalkAnimation.fuse :runner:
-===========
-
-Based on '_[ProceduralWalkAnimation](https://www.shadertoy.com/view/WlsSWS)_' by [TLC123](https://www.shadertoy.com/user/TLC123) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A figure runs after his head on uneven terrain.
 The very good animation made this a very interesting shader.
@@ -32,10 +29,4 @@ Have fun playing
 
 [![ProceduralWalkAnimation](ProceduralWalkAnimation.png)](ProceduralWalkAnimation.fuse)
 
-
-
-## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

@@ -1,7 +1,4 @@
-# InerciaIntended
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=InerciaIntended-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/InerciaIntended-Installer.lua "Installer")
-
-Based on '_[InerciaIntended](https://www.shadertoy.com/view/cs2GWD)_' by [0b5vr](https://www.shadertoy.com/user/0b5vr) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A cluttered control panel with moving knobs, flashing LEDs and level meters.
 FinalColor and SpecColor affect the entire shader.
@@ -26,10 +23,4 @@ Have fun playing
 
 [![Thumbnail](InerciaIntended.png)](https://www.shadertoy.com/view/cs2GWD "View on Shadertoy.com")
 
-
-## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [X] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL :bomb: missing functionality
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

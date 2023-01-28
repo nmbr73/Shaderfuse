@@ -1,7 +1,4 @@
-Legos
-==================
-
-Based on '_[Legos](https://www.shadertoy.com/view/Xdl3Dj)_' by [morgan3d](https://www.shadertoy.com/user/morgan3d) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Intense childhood memories come up. A great toy. The fuse still has very few parameters.
 
@@ -13,10 +10,4 @@ Have fun playing
 
 ![Legos](https://user-images.githubusercontent.com/78935215/114916381-02082980-9e25-11eb-9b1d-2c23272ea6ac.gif)
 
-
-
-## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL :bomb::bomb::bomb:
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

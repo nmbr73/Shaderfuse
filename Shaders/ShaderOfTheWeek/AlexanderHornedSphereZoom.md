@@ -1,7 +1,4 @@
-AlexanderHornedSphereZoom.fuse
-===========
-
-Based on '_[AlexanderHornedSphereZoom](https://www.shadertoy.com/view/ttyGzW)_' by [tmst](https://www.shadertoy.com/user/tmst) and ported by [JiPi ](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 An interesting implementation of a mathematically pathological structure. A sphere embedded in space with an infinitely fine, recursively generated object structure.
 In the implementation, both mat3 and mat4 matrices are used extensively.
@@ -13,10 +10,4 @@ Have fun playing
 
 [![SpiraledLayers](AlexanderHornedSphereZoom.png)](AlexanderHornedSphereZoom.fuse)
 
-
-
-## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL ... nope, does not crash but still looks not as expected :-/
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

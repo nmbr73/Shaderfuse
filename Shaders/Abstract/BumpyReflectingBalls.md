@@ -1,7 +1,4 @@
-# BumpyReflectingBalls.fuse
-
-
-Based on '_[BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB)_' by [metabog](https://www.shadertoy.com/user/metabog) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Flight through a colorful ball grid
 
@@ -11,8 +8,4 @@ The surface of the balls can be influenced by a texture, so you can achieve very
 
 Have fun playing
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

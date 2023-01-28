@@ -1,13 +1,5 @@
-Velocibox.fuse
-==============
-
-Based on '_[Velocibox](https://www.shadertoy.com/view/lsdXD8)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil) and ported by [nmbr73](../../Site/Profiles/nmbr73.md).
-
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![thumb](Velocibox_320x180.png "Velocibox.fuse")](Velocibox.fuse)
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

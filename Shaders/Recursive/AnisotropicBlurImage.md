@@ -1,7 +1,4 @@
-# AnisotropicBlurImage
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AnisotropicBlurImage-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/AnisotropicBlurImage-Installer.lua "Installer")
-
-Based on '_[Anisotropic Blur Image Warp](https://www.shadertoy.com/view/ldcSDB)_' by [cornusammonis](https://www.shadertoy.com/user/cornusammonis) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 This conversion was created as part of a post in the WeSuckLessForum. A realistic oil shader was sought.
 The basis is a diffusion reaction that is controlled with a noise pattern. If no noise pattern is applied to the second image input, the gold noise function is used. However, amazing effects can be created with a self-created pattern.
@@ -14,9 +11,4 @@ Have fun playing
 
 [![Thumbnail](AnisotropicBlurImage.png)](https://www.shadertoy.com/view/ldcSDB "View on Shadertoy.com")
 
-
-## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [X] Tested on Windows/Cuda
-- [X] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

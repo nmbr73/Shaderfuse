@@ -1,6 +1,4 @@
-# FlightThroughANebula.fuse :new:
-
-Based on '_[Flight Through A Nebula V3](https://www.shadertoy.com/view/tsK3Rd)_' by [Delvar](https://www.shadertoy.com/user/Delvar) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 In the original, `Texelfetch()` and GreyNoise-Volumes are used. But even without this, this shader is successful.
 
@@ -10,8 +8,4 @@ In the original, `Texelfetch()` and GreyNoise-Volumes are used. But even without
 
 Have fun playing
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

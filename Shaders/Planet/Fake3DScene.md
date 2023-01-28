@@ -1,6 +1,6 @@
-# Fake3DScene.fuse
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-Based on '_[Fake3DScene](https://www.shadertoy.com/embed/MddSWB?gui=true&t=10&paused=true&muted=false)_' by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen) and ported by [JiPi](../../Site/Profiles/JiPi.md). A little Shader for occasionally.
+A little Shader for occasionally.
 
 [![screenshot](Fake3DScene_screenshot.png "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/Fake3DScene.fuse)
 
@@ -36,8 +36,4 @@ This is a nice shader to explore the use of a 2 dimensional matrix. With the hel
 
 Have fun
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

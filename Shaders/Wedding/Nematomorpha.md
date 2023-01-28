@@ -1,7 +1,4 @@
-# Nematomorpha
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=Nematomorpha-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/Nematomorpha-Installer.lua "Installer")
-
-Based on '_[Nematomorpha](https://www.shadertoy.com/view/ltdfR7)_' by [PianiGiani](https://www.shadertoy.com/user/PianiGiani) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A rope winds its way through the picture. Many parameters invite you to play.
 
@@ -12,10 +9,4 @@ Have lots of fun with it
 
 [![Thumbnail](Nematomorpha.png)](https://www.shadertoy.com/view/csjGDR "View on Shadertoy.com")
 
-
-
-## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [X] Tested on Windows/Cuda
-- [X] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

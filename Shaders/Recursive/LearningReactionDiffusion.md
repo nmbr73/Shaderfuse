@@ -1,7 +1,4 @@
-LearningReactionDiffusion.fuse :space_invader:
-===========
-
-Based on '_[LearningReactionDiffusion](https://www.shadertoy.com/view/WlSGzy)_' by [TekF](https://www.shadertoy.com/user/TekF) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 The reaction diffusion shaders cast a spell over me. This is a shader to work your way through the matter well. There is a short concise info page about the theory:
 https://www.karlsims.com/rd.html
@@ -19,10 +16,4 @@ Have fun playing
 
 [![LearningReactionDiffusion](LearningReactionDiffusion.png)](LearningReactionDiffusion.fuse)
 
-
-
-## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

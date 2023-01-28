@@ -1,7 +1,4 @@
-TruchetKaleidoscopeFTW.fuse
-===========
-
-Based on '_[TruchetKaleidoscopeFTW](https://www.shadertoy.com/view/tcGWB)_' by [mrange](https://www.shadertoy.com/user/mrange) and ported by [JiPi ](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A great combination of Truchet tiles and a kaleidoscope.
 
@@ -11,10 +8,4 @@ Have fun playing
 
 [![TruchetKaleidoscopeFTW](TruchetKaleidoscopeFTW.png)](TruchetKaleidoscopeFTW.fuse)
 
-
-
-## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

@@ -1,7 +1,4 @@
-Seascape
-============
-
-Based on '_[Seascape](https://www.shadertoy.com/view/Ms2SD1)_' by Alexander Alekseev aka [TDM](https://www.shadertoy.com/user/TDM) and ported by [nmbr73](../../Site/Profiles/nmbr73.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 ![thumbnail](Seascape_320x180.png "Seascape Thumb")
 
@@ -10,9 +7,4 @@ Still some work left to be done:
 - Add a checkbox to enable/disable AA
 - Parameter for the original Mouse X
 
-
-## Compability
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

@@ -1,7 +1,4 @@
-# Stargazinghippo
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=Stargazinghippo-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/StarGazingHippo-Installer.lua "Installer")
-
-Based on '_[StarGazingHippo](https://www.shadertoy.com/view/4tGfz3)_' by [kuvkar](https://www.shadertoy.com/user/kuvkar) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A cute little shader
 
@@ -9,9 +6,4 @@ A cute little shader
 
 [![Thumbnail](StarGazingHippo.png)](https://www.shadertoy.com/view/4tGfz3 "View on Shadertoy.com")
 
-
-## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

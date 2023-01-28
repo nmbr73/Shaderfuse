@@ -1,8 +1,4 @@
-# AudioFlightv2
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioFlightv2Jipi-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/AudioFlightv2-Installer.lua "Installer")
-
-Based on '_[Audio Flight v2 (strobes)](https://www.shadertoy.com/view/dd2XDd)_' by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic) and ported by [JiPi](../../Site/Profiles/JiPi.md)
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A beautiful tunnel flight with audio visualization. Extensive parameters allow you to customize the look and flow. Unfortunately, the shader behaves a bit differently when using OpenCL.
 
@@ -10,10 +6,4 @@ A beautiful tunnel flight with audio visualization. Extensive parameters allow y
 
 [![Thumbnail](AudioFlightv2.png)](https://www.shadertoy.com/view/dd2XDd "View on Shadertoy.com")
 
-
-
-## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [X] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL differs from Original
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

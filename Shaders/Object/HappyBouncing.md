@@ -1,7 +1,4 @@
-HappyBouncing.fuse
-===========
-
-Based on '_[happy bouncing](https://www.shadertoy.com/view/flyXRh)_' by [leon](https://www.shadertoy.com/user/leon) and ported by [JiPi ](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A new conversion method is used here. nmbr73 has developed a Python script and an incubator fuse, which enables shaders to be converted much more effectively and conveniently. It's still in the middle of development, but it's already very powerful.
 A total of 3 shader toys are combined in this shader fuse:
@@ -17,10 +14,4 @@ Have fun playing
 
 [![HappyBouncing](HappyBouncing.png)](HappyBouncing.fuse)
 
-
-
-## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

@@ -1,7 +1,4 @@
-ShareX.fuse
-====================
-
-Based on '_[ShareX](https://www.shadertoy.com/view/WsKSRK)_' by [fre3k](https://www.shadertoy.com/user/fre3k) and ported by [JiPi](../../Site/Profiles/JiPi.md)
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 So much shader in so little code - really amazing.
 
@@ -27,8 +24,4 @@ Have fun
 
 [![screenshot](ShareX.png "ShareX.fuse in DaVinci Resolve")](ShareX.fuse)
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [ ] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

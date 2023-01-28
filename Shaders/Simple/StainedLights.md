@@ -1,11 +1,5 @@
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-StainedLights.fuse
-==================
 
-Based on '_[Stained Lights](https://www.shadertoy.com/view/WlsSzM)_' by [104](https://www.shadertoy.com/user/104) and ported by [nmbr73](../../Site/Profiles/nmbr73.md).
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

@@ -1,7 +1,4 @@
-DisplacementShader
-==================
-
-Based on '_[DisplacementShader](https://www.shadertoy.com/view/4l2cD3)_' by [Coolok](https://www.shadertoy.com/user/Shane) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Nothing special, but still a very nice effect. Possibly also useful for transitions.
 
@@ -12,10 +9,4 @@ Have fun playing
 
 ![DisplacementShader](https://user-images.githubusercontent.com/78935215/114025552-854ddc00-9875-11eb-996b-6799996bdf7b.gif)
 
-
-
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

@@ -1,16 +1,8 @@
-ShatteredLight
-==============
-
-Based on '_[Shattered light](https://www.shadertoy.com/view/stjSRV)_' by [conceptblend](https://www.shadertoy.com/user/conceptblend) and ported by [nmbr73](../../Site/Profiles/nmbr73.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 ![thumbnail](ShatteredLight_320x180.png "Shattered light Thumb")
 
 Still some work left to be done:
 - Some parameters could be nice
 
-
-## Compability
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

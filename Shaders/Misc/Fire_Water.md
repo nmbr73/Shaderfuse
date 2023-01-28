@@ -1,7 +1,4 @@
-# Fire_Water.fuse
-
-
-Based on '_[Fire_Water](https://www.shadertoy.com/view/tdsBz4)_' by [izutionix](https://www.shadertoy.com/user/izutionix) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Two tailed comets "Fire" and "Water" circle around each other
 
@@ -18,8 +15,4 @@ Here is a little study of this fuse: https://www.youtube.com/watch?v=4R7ZVMyKLnY
 
 Have fun
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

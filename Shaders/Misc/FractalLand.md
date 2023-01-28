@@ -1,7 +1,6 @@
-Fractal Land
-============
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-Based on '_[Fractal Land](https://www.shadertoy.com/view/XsBXWt)_' by [Kali](https://www.shadertoy.com/user/Kali) and ported by [nmbr73](../../Site/Profiles/nmbr73.md). In the meantime this Fuse's output is pretty close to the original Shader and it also runs on Win/Mac, Metal/OpenCL/Cuda now.
+In the meantime this Fuse's output is pretty close to the original Shader and it also runs on Win/Mac, Metal/OpenCL/Cuda now.
 
 ![screenshot](FractalLand_screenshot.png "FractalLand.fuse in DaVinci Resolve")
 
@@ -10,9 +9,4 @@ Still some work left to be done:
 - add parameters for `WAVE`, other aspects already outlined in the original shader code, and maybe for some color adjustments
 - get this :cat: into the Fuse
 
-
-## Compability
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

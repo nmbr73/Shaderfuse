@@ -1,7 +1,4 @@
-# Pig Squad
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=PigSquad-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/PigSquad-Installer.lua "Installer")
-
-Based on '_[Pig Squad](https://www.shadertoy.com/view/WdBcRh)_' by [bpfarrell](https://www.shadertoy.com/user/bpfarrell) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A very cute shader that is now celebrating its nine year anniversary.
 I added parameters for all part colors. Color1's alpha controls the pig and block, and Color3's alpha controls background transparency.
@@ -11,9 +8,4 @@ I added parameters for all part colors. Color1's alpha controls the pig and bloc
 
 [![Thumbnail](PigSquad.png)](https://www.shadertoy.com/view/WdBcRh "View on Shadertoy.com")
 
-
-## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

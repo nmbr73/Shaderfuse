@@ -1,7 +1,6 @@
-FunWithMetaballs.fuse
-================
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-Based on '_[FunWithMetaballs](https://www.shadertoy.com/view/MlyXWV)_' by [fwilliams](https://www.shadertoy.com/user/fwilliams) and ported by [JiPi](../../Site/Profiles/JiPi.md). This Shader has four Blobs, three Lights, Ambientlight and Background. All colors can be changed, the size of the blobs and their fading, too. I hope enough opportunities to play.
+This Shader has four Blobs, three Lights, Ambientlight and Background. All colors can be changed, the size of the blobs and their fading, too. I hope enough opportunities to play.
 
 [![FunWithMetaballs](FunWithMetaballs.png)](FunWithMetaballs.fuse)
 
@@ -10,8 +9,4 @@ Have fun
 
 [![FunWithMetaballs](FunWithMetaballs.gif)](FunWithMetaballs.fuse)
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

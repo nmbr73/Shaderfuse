@@ -1,6 +1,6 @@
-# RayCastSphere.fuse
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-Based on '_[RayCastSphere](https://www.shadertoy.com/embed/XdjBDG?gui=true&t=10&paused=true&muted=false)_' by [diroru](https://www.shadertoy.com/user/diroru) and ported by [JiPi](../../Site/Profiles/JiPi.md). A good example of displacement.
+A good example of displacement.
 
 [![screenshot](RayCastSphere.png "RayCastSphere.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/RayCastSphere.fuse)
 
@@ -22,8 +22,4 @@ float displacement = texture(iChannel1, latlon).r*100.0;
 
 Have fun
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

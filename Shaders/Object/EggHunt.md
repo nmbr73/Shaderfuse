@@ -1,6 +1,4 @@
-# EggHunt.fuse :new:
-
-Based on '_[EggHunt](https://www.shadertoy.com/view/ttyfDV)_' by [sylvain69780](https://www.shadertoy.com/user/sylvain69780) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A little Easter greeting just in time for Easter
 
@@ -10,8 +8,4 @@ A little Easter greeting just in time for Easter
 
 Have fun playing
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->

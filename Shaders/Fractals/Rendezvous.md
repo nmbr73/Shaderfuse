@@ -1,8 +1,4 @@
-Rendezvous
-==================
-
-Based on '_[Rendezvous](https://www.shadertoy.com/view/ldjGDw)_' by [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins) and ported by ported by [JiPi](../../Site/Profiles/JiPi.md).
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A flight through a colorful fractal landscape that breathes and seems to be alive. An impressively compact code for the definition of the landscape and you don't necessarily need matrices to program a great camera flight, as you can see.
 
@@ -36,8 +32,4 @@ float Map( vec3 p )
 ```
 [![Rendezvous](Rendezvous.png)](Rendezvous.fuse)
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL :bomb::bomb::bomb:
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
