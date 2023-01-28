@@ -141,6 +141,13 @@ for fuse in basepath.rglob("*.fuse"):
 
     src_content = re.sub(r'\n(\s*dctlfuse_versionNo\s*=[^\n]+\n)','\n',src_content)
 
+    src_content = src_content.replace('StandardShaderFuseTopControls();','ShaderFuse.begin_create()',1)
+    src_content = src_content.replace('StandardShaderFuseTopControls()','ShaderFuse.begin_create()',1)
+    src_content = src_content.replace('StandardShaderFuseTopControls','ShaderFuse.begin_create()',1)
+    src_content = src_content.replace('StandardShaderFuseBottomControls();','ShaderFuse.end_create()',1)
+    src_content = src_content.replace('StandardShaderFuseBottomControls()','ShaderFuse.end_create()',1)
+    src_content = src_content.replace('StandardShaderFuseBottomControls','ShaderFuse.end_create()',1)
+
 
     a = src_content.find('-- >>> SCHNIPP::FUREGISTERCLASS')
     if a != -1:
