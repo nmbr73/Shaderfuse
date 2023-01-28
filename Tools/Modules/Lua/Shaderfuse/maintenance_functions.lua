@@ -625,15 +625,8 @@ function create_markdown_files(repositorypath)
 
   fuses.fetch(repositorypath..'/Shaders/','development')
 
-
-
-
-  bmd.createdir(repositorypath..'docs')
-  bmd.createdir(repositorypath..'docs/Shaders')
-
-
-  local overview = io.open(repositorypath..'docs/Shaders/OVERVIEW.md',"w")
-  local readme   = io.open(repositorypath..'docs/Shaders/README.md',"w")
+  local overview = io.open(repositorypath..'Shaders/OVERVIEW.md',"w")
+  local readme   = io.open(repositorypath..'Shaders/README.md',"w")
 
   if not(overview) or not(readme) then
     print("We have a Problem")
@@ -694,9 +687,8 @@ function create_markdown_files(repositorypath)
 
       overview:write("## "..fuse.Category.." Shaders\n\n")
       readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
-      bmd.createdir(repositorypath..'docs/Shaders/'..fuse.Category)
 
-      readme_cat   = io.open(repositorypath..'docs/Shaders/'..fuse.Category..'/README.md',"w")
+      readme_cat   = io.open(repositorypath..'Shaders/'..fuse.Category..'/README.md',"w")
       readme_cat:write(header)
 
       local links='[README](../README.md) · [OVERVIEW](../OVERVIEW.md)'
