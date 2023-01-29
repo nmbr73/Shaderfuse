@@ -1,6 +1,10 @@
-# TNTHTW.fuse
+# TNTHTW
 
-Based on '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' by [hisojarvi](https://www.shadertoy.com/user/hisojarvi) and ported by [JiPi](../../Site/Profiles/JiPi.md). A Classic.
+This Fuse is based on the Shadertoy '_[Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)_' by [hisojarvi](https://www.shadertoy.com/user/hisojarvi). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Tunnel](README.md) for more fuses in this category.
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
+
+A Classic.
 
 [![TNTHTW](https://user-images.githubusercontent.com/78935215/107889303-e4e0d880-6f11-11eb-80cc-e2e522a632e5.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/TunnelShader/TNTHTW.fuse)
 
@@ -10,8 +14,13 @@ The parameters of the fuse allow the tube radius, the rendering depth, the fog b
 
 Have fun playing
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail file does not exist
+
+
+

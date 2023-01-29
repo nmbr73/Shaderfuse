@@ -1,6 +1,8 @@
-# FractalRadioBase.fuse :new:
+# FractalRadioBase
 
-Based on '_[FractalRadioBase](https://www.shadertoy.com/view/WlcczS)_' by [gaz](https://www.shadertoy.com/user/Kali) and ported by [JiPi](../Site/Profiles/JiPi.md).
+This Fuse is based on the Shadertoy '_[FractalRadioBase](https://www.shadertoy.com/view/WlcczS)_' by [gaz](https://www.shadertoy.com/user/gaz). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Fractals](README.md) for more fuses in this category.
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 An alien antenna hovers through the universe. So far only a few parameters are available.
 In the original, very nice details were added via BufferA, but this has been omitted here in the conversion.
@@ -11,8 +13,13 @@ In the original, very nice details were added via BufferA, but this has been omi
 
 Have fun playing
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+
+
+

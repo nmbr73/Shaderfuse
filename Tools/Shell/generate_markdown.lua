@@ -2,9 +2,7 @@
 
 package.path = package.path .. ';../Modules/Lua/?.lua'
 
-bmd = require("Shadertoys/bmd")
+bmd = require("Shaderfuse/bmd")
 
-require("Shadertoys/function_updateMarkdown")
-updateMarkdown()
-
-
+require("Shaderfuse/maintenance_functions")
+create_markdown_files()

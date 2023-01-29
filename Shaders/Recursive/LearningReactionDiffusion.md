@@ -1,7 +1,8 @@
-LearningReactionDiffusion.fuse :space_invader:
-===========
+# LearningReactionDiffusion
 
-Based on '_[LearningReactionDiffusion](https://www.shadertoy.com/view/WlSGzy)_' by [TekF](https://www.shadertoy.com/user/TekF) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+This Fuse is based on the Shadertoy '_[LearningReactionDiffusion](https://www.shadertoy.com/view/WlSGzy)_' by [TekF](https://www.shadertoy.com/user/TekF). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Recursive](README.md) for more fuses in this category.
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 The reaction diffusion shaders cast a spell over me. This is a shader to work your way through the matter well. There is a short concise info page about the theory:
 https://www.karlsims.com/rd.html
@@ -19,10 +20,22 @@ Have fun playing
 
 [![LearningReactionDiffusion](LearningReactionDiffusion.png)](LearningReactionDiffusion.fuse)
 
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
 ## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+
+🟩 macOS / Metal: <span style="color:green; ">checked</span><br />
+⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
+🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
+🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
+
+
+## Problems
+
+Number of problems: 2
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+- macOS_OpenCL compatibility not checked
+
+
+

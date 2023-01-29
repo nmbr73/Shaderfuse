@@ -1,8 +1,8 @@
 # SimpleRefractionTest
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=SimpleRefractionTest-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/SimpleRefractionTest-Installer.lua "Installer")
 
-Based on '_[simple refraction test](https://www.shadertoy.com/view/flcSW2)_' by [drschizzo](https://www.shadertoy.com/user/drschizzo) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+This Fuse is based on the Shadertoy '_[simple refraction test](https://www.shadertoy.com/view/flcSW2)_' by [drschizzo](https://www.shadertoy.com/user/drschizzo). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A very nice shader with refraction, unfortunately the result can only be generated with Cuda. With OpenCL, compiling takes forever and only the cuboid appears as a result, the drops are only rendered rudimentarily.
 
@@ -10,10 +10,24 @@ A very nice shader with refraction, unfortunately the result can only be generat
 
 [![Thumbnail](SimpleRefractionTest.png)](https://www.shadertoy.com/view/flcSW2 "View on Shadertoy.com")
 
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [X] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL :bomb: time-consuming and incomplete !
+
+⬛ macOS / Metal: <span style="color:red; ">NOT TESTED!</span><br />
+⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
+🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
+🟥 Windows / OpenCL<br />
+
+
+## Problems
+
+Number of problems: 4
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+- macOS_Metal compatibility not checked
+- macOS_OpenCL compatibility not checked
+- Windows_OpenCL compatibility: 💣 time-consuming and incomplete !
+
+
+

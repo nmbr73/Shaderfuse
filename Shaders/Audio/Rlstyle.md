@@ -1,13 +1,28 @@
 # Rlstyle
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=Rlstyle-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/Rlstyle-Installer.lua "Installer")
 
-Based on '_[RLStyle](https://www.shadertoy.com/view/llXyzN)_' by [clintolibre](https://www.shadertoy.com/user/clintolibre) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+This Fuse is based on the Shadertoy '_[RLStyle Visualizer](https://www.shadertoy.com/view/llXyzN)_' by [clintolibre](https://www.shadertoy.com/user/clintolibre). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Audio](README.md) for more fuses in this category.
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![Thumbnail](Rlstyle.png)](https://www.shadertoy.com/view/llXyzN "View on Shadertoy.com")
 
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [X] Tested on Windows/Cuda
-- [X] Tested on Windows/OpenCL
+
+⬛ macOS / Metal: <span style="color:red; ">NOT TESTED!</span><br />
+⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
+🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
+🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
+
+
+## Problems
+
+Number of problems: 3
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+- macOS_Metal compatibility not checked
+- macOS_OpenCL compatibility not checked
+
+
+

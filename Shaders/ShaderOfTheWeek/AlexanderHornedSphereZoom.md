@@ -1,7 +1,8 @@
-AlexanderHornedSphereZoom.fuse
-===========
+# AlexanderHornedSphereZoom
 
-Based on '_[AlexanderHornedSphereZoom](https://www.shadertoy.com/view/ttyGzW)_' by [tmst](https://www.shadertoy.com/user/tmst) and ported by [JiPi ](../../Site/Profiles/JiPi.md).
+This Fuse is based on the Shadertoy '_[Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW)_' by [tmst](https://www.shadertoy.com/user/tmst). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 An interesting implementation of a mathematically pathological structure. A sphere embedded in space with an infinitely fine, recursively generated object structure.
 In the implementation, both mat3 and mat4 matrices are used extensively.
@@ -13,10 +14,22 @@ Have fun playing
 
 [![SpiraledLayers](AlexanderHornedSphereZoom.png)](AlexanderHornedSphereZoom.fuse)
 
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
 ## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL ... nope, does not crash but still looks not as expected :-/
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+
+🟩 macOS / Metal: <span style="color:green; ">checked</span><br />
+🟥 macOS / OpenCL<br />
+🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
+🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
+
+
+## Problems
+
+Number of problems: 2
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+- macOS_OpenCL compatibility: ... nope, does not crash but still looks not as expected :-/
+
+
+

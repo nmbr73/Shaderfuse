@@ -1,17 +1,31 @@
 # GenerativeArtDeco4
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=GenerativeArtDeco4-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/GenerativeArtDeco4-Installer.lua "Installer")
 
-Based on '_[generative art deco 4](https://www.shadertoy.com/view/mds3DX)_' by [morisil](https://www.shadertoy.com/user/morisil) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+This Fuse is based on the Shadertoy '_[generative art deco 4](https://www.shadertoy.com/view/mds3DX)_' by [morisil](https://www.shadertoy.com/user/morisil). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 ![GenerativeArtDeco4](https://user-images.githubusercontent.com/78935215/200687263-7aee7e94-a670-48ad-9e1e-7f29f44f8fa6.gif)
 
 
 [![Thumbnail](GenerativeArtDeco4.png)](https://www.shadertoy.com/view/mds3DX "View on Shadertoy.com")
 
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
 ## Compatibility
-- [ ] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [X] Tested on Windows/Cuda
-- [X] Tested on Windows/OpenCL
+
+⬛ macOS / Metal: <span style="color:red; ">NOT TESTED!</span><br />
+⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
+🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
+🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
+
+
+## Problems
+
+Number of problems: 3
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+- macOS_Metal compatibility not checked
+- macOS_OpenCL compatibility not checked
+
+
+

@@ -1,6 +1,10 @@
-# LonelyVoxel.fuse
+# LonelyVoxel
 
-Based on '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](https://www.shadertoy.com/user/SudoNhim) and ported by [JiPi](../../Site/Profiles/JiPi.md). A cube with rounded corners and a very nice bump map.
+This Fuse is based on the Shadertoy '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](https://www.shadertoy.com/user/SudoNhim). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
+
+A cube with rounded corners and a very nice bump map.
 
 [![LonelyVoxel](https://user-images.githubusercontent.com/78935215/108084988-2211ab80-7075-11eb-911d-b24996b84a65.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/ObjektShader/LonelyVoxel.md)
 
@@ -18,8 +22,13 @@ One way of including a gif anim ...
 
 ... we'll have to see what's the advantage of one variant over the other?!?
 
-## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail file does not exist
+
+
+

@@ -12,24 +12,24 @@
 
 # Audio Shaders
 
-## **[AudioHeightfield1](AudioHeightfield1.md)**
-based on [Audio heightfield 1](https://www.shadertoy.com/view/ldXGzN) written by [huttarl](https://www.shadertoy.com/user/huttarl)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[AudioHeightfield1](AudioHeightfield1.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[AudioWaveformVisualizer](AudioWaveformVisualizer.md)**
-based on [Audio Waveform Visualizer v3](https://www.shadertoy.com/view/wd3Bzl) written by [oneshade](https://www.shadertoy.com/user/oneshade)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[AudioWaveformVisualizer](AudioWaveformVisualizer.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[InerciaIntended](InerciaIntended.md)**
-based on [ 20221105_inercia intended one](https://www.shadertoy.com/view/cs2GWD) written by [0b5vr](https://www.shadertoy.com/user/0b5vr)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[InerciaIntended](InerciaIntended.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[JamSession](JamSession.md)**
-based on [Jam Session](https://www.shadertoy.com/view/XdsyW4) written by [Passion](https://www.shadertoy.com/user/Passion)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[JamSession](JamSession.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[ReactiveVoronoi](ReactiveVoronoi.md)**
-based on [Reactive Voronoi](https://www.shadertoy.com/view/Ml3GDX) written by [glk7](https://www.shadertoy.com/user/glk7)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[ReactiveVoronoi](ReactiveVoronoi.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Rlstyle](Rlstyle.md)**
-based on [RLStyle Visualizer](https://www.shadertoy.com/view/llXyzN) written by [clintolibre](https://www.shadertoy.com/user/clintolibre)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Rlstyle](Rlstyle.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[ShadertoyAudioDisplay](ShadertoyAudioDisplay.md)**
-based on [Shadertoy audio display](https://www.shadertoy.com/view/MtVfWh) written by [saidwho12](https://www.shadertoy.com/user/saidwho12)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[ShadertoyAudioDisplay](ShadertoyAudioDisplay.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 

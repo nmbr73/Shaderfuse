@@ -1,13 +1,27 @@
-Velocibox.fuse
-==============
+# Velocibox
 
-Based on '_[Velocibox](https://www.shadertoy.com/view/lsdXD8)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil) and ported by [nmbr73](../../Site/Profiles/nmbr73.md).
+This Fuse is based on the Shadertoy '_[Velocibox](https://www.shadertoy.com/view/lsdXD8)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil). Conversion to DCTL and encapsulation into a fuse done by [nmbr73](../../Site/Profiles/nmbr73.md). See [Tunnel](README.md) for more fuses in this category.
 
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![thumb](Velocibox_320x180.png "Velocibox.fuse")](Velocibox.fuse)
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
 ## Compatibility
-- [x] Tested on macOS/Metal
-- [x] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [ ] Tested on Windows/OpenCL
+
+🟩 macOS / Metal: <span style="color:green; ">checked</span><br />
+🟩 macOS / OpenCL: <span style="color:green; ">checked</span><br />
+🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
+⬛ Windows / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
+
+
+## Problems
+
+Number of problems: 2
+
+- Thumbnail file does not exist
+- Windows_OpenCL compatibility not checked
+
+
+

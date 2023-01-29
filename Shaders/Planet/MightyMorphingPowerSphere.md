@@ -1,7 +1,8 @@
-MightyMorphingPowerSphere.fuse :last_quarter_moon:
-===========
+# MightyMorphingPowerSphere
 
-Based on '_[MightyMorphingPowerSphere](https://www.shadertoy.com/view/MtGSzh)_' by [Lallis](https://www.shadertoy.com/user/Lallis) and ported by [JiPi](../../Site/Profiles/JiPi.md).
+This Fuse is based on the Shadertoy '_[MightyMorphingPowerSphere](https://www.shadertoy.com/view/MtGSzh)_' by [Lallis](https://www.shadertoy.com/user/Lallis). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Planet](README.md) for more fuses in this category.
+
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 The suggestion for this shader came from the WSL forum. After a first look, the conversion seemed to be done quickly and the first fragment shader version was done quickly. However, the appearance did not exactly match the original. The use of a noise color texture always results in changes, since the original image is not available and the dimensions and resolutions vary. But it was noticeable when the fuse was being built. This difference is so serious that it could no longer be explained with the noise color texture. So we went looking. Finally, there was an interesting line of code:
 
@@ -20,10 +21,22 @@ Have fun playing
 
 [![MightyMorphingPowerSphere](MightyMorphingPowerSphere.png)](MightyMorphingPowerSphere.fuse)
 
-
+<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
 ## Compatibility
-- [x] Tested on macOS/Metal
-- [ ] Tested on macOS/OpenCL
-- [x] Tested on Windows/Cuda
-- [x] Tested on Windows/OpenCL
+
+🟩 macOS / Metal: <span style="color:green; ">checked</span><br />
+⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
+🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
+🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
+
+
+## Problems
+
+Number of problems: 2
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+- macOS_OpenCL compatibility not checked
+
+
+

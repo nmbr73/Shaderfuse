@@ -12,12 +12,12 @@
 
 # Tunnel Shaders
 
-## **[TNTHTW](TNTHTW.md)**
-based on [Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG) written by [hisojarvi](https://www.shadertoy.com/user/hisojarvi)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[TNTHTW](TNTHTW.md)** :boom:
+- *Thumbnail file does not exist*
 
-## **[Velocibox](Velocibox.md)**
-based on [Velocibox](https://www.shadertoy.com/view/lsdXD8) written by [zackpudil](https://www.shadertoy.com/user/zackpudil)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+## **[Velocibox](Velocibox.md)** :boom:
+- *Thumbnail file does not exist*
 
-## **[WindingMengerTunnel](WindingMengerTunnel.md)**
-based on [WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn) written by [Shane](https://www.shadertoy.com/user/Shane)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[WindingMengerTunnel](WindingMengerTunnel.md)** :boom:
+- *unknown Fuse.AuthorLogo in sfi file*
 
