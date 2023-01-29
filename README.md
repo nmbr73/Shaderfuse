@@ -12,7 +12,7 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 # Fuses
 
-See the corresponding GitHub Pages on [nmbr73.github.io/Shaderfuse/](https://nmbr73.github.io/Shaderfuse/) for further information on the Shaderfuses themselves. There you will find with [Shaders/](https://nmbr73.github.io/Shaderfuse/Shaders/README.md) a list of all shaders implemented so far - resp. an [Overview](https://nmbr73.github.io/Shaderfuse/Shaders/OVERVIEW.md) with thumbnails a more 'visual experience'.
+See the corresponding GitHub Pages on [nmbr73.github.io/Shaderfuse/](https://nmbr73.github.io/Shadertoys/Shaders/) for further information on the Shaderfuses themselves.
 
 
 # Installation
