@@ -1,3 +1,7 @@
+# LonelyVoxel
+
+This Fuse is based on the Shadertoy '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](https://www.shadertoy.com/user/SudoNhim). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A cube with rounded corners and a very nice bump map.
@@ -19,3 +23,12 @@ One way of including a gif anim ...
 ... we'll have to see what's the advantage of one variant over the other?!?
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail file does not exist
+
+
+

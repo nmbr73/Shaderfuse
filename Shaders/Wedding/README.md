@@ -12,18 +12,18 @@
 
 # Wedding Shaders
 
-## **[HappyValentinesDay](HappyValentinesDay.md)**
-based on [HappyValentinesDay](https://www.shadertoy.com/view/XsVGzK) written by [RobotPenguin](https://www.shadertoy.com/user/RobotPenguin)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[HappyValentinesDay](HappyValentinesDay.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[HeartU2015](HeartU2015.md)**
-based on [heart u 2015](https://www.shadertoy.com/view/lts3RX) written by [mattz](https://www.shadertoy.com/user/mattz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[HeartU2015](HeartU2015.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
 ## **[Heartdemo](Heartdemo.md)**
-based on [HeartDemo](https://www.shadertoy.com/view/wttXD7) written by [17dpn01](https://www.shadertoy.com/user/17dpn01)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+based on [Heart Demo](https://www.shadertoy.com/view/wttXD7) written by [17dpn01](https://www.shadertoy.com/user/17dpn01)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[Nematomorpha](Nematomorpha.md)**
-based on [Nematomorpha](https://www.shadertoy.com/view/ltdfR7) written by [PianiGiani](https://www.shadertoy.com/user/PianiGiani)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Nematomorpha](Nematomorpha.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Valentwine](Valentwine.md)**
-based on [Valentwine](https://www.shadertoy.com/view/fsffW4) written by [Mipmap](https://www.shadertoy.com/user/Mipmap)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Valentwine](Valentwine.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 

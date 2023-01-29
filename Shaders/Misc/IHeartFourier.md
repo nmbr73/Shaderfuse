@@ -1,3 +1,7 @@
+# IHeartFourier
+
+This Fuse is based on the Shadertoy '_[IHeartFourier](https://www.shadertoy.com/view/tltSWr)_' by [harry7557558](https://www.shadertoy.com/user/harry7557558). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Misc](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 An interesting Fourier series of 18 points results in a curved line. Here a hurdle had to be overcome in the parameter transfer of arrays. I initially had a solution, but it only worked for one graphics system at a time. Nmbr73 had the solution here, simple but perfect.
@@ -28,3 +32,12 @@ Counterfeit:
 Have fun playing
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+
+
+

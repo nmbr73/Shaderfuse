@@ -1,3 +1,7 @@
+# Valentwine
+
+This Fuse is based on the Shadertoy '_[Valentwine](https://www.shadertoy.com/view/fsffW4)_' by [Mipmap](https://www.shadertoy.com/user/Mipmap). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Wedding](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A heart is formed from a loose rope. When activating the "mouse button pressed", you can use the "iMouse.xy" parameters to bring movement into the shader, the area and the strength of the force applied to the rope can be varied (MouseSize, MouseForce), the rope color and background color can be changed and can also be made transparent.
@@ -12,3 +16,23 @@ Have fun playing
 [![Thumbnail](Valentwine.png)](https://www.shadertoy.com/view/fsffW4 "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Compatibility
+
+⬛ macOS / Metal: <span style="color:red; ">NOT TESTED!</span><br />
+⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
+🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
+🟥 Windows / OpenCL<br />
+
+
+## Problems
+
+Number of problems: 4
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+- macOS_Metal compatibility not checked
+- macOS_OpenCL compatibility not checked
+- Windows_OpenCL compatibility: 💣 Unfortunately not executable under OpenCL - picture dissolves
+
+
+

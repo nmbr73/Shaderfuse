@@ -1,3 +1,7 @@
+# WindingMengerTunnel
+
+This Fuse is based on the Shadertoy '_[WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn)_' by [Shane](https://www.shadertoy.com/user/Shane). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Tunnel](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 I had already tried a Menger shader with no success. This time no error has crept in and no incompatibilities have occurred.
@@ -27,3 +31,13 @@ __DEVICE__ inline mat3 mat3_add_mat3 (mat3 A, mat3 B) {
 Have fun playing
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 2
+
+- unknown Fuse.AuthorLogo in sfi file
+- Thumbnail seems to be not a 320x180 pixel PNG
+
+
+

@@ -1,3 +1,7 @@
+# TruePinballPhysics
+
+This Fuse is based on the Shadertoy '_[True Pinball Physics](https://www.shadertoy.com/view/4tBGRm)_' by [archee](https://www.shadertoy.com/user/archee). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Misc](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Something completely different than the usual blob / tunnel / fractal / object shader.
@@ -12,3 +16,12 @@ Oh, in addition to the adjustable repetition time, there is also the restriction
 ![TruePinballPhysics2](https://user-images.githubusercontent.com/78935215/116098822-a7d05980-a6ab-11eb-9e85-4ebd128ba09a.gif)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+
+
+

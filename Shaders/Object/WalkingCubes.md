@@ -1,3 +1,7 @@
+# WalkingCubes
+
+This Fuse is based on the Shadertoy '_[WalkingCubes](https://www.shadertoy.com/view/Xl3XR4)_' by [xorxor](https://www.shadertoy.com/user/xorxor). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Four colored boxes run over an inclined surface. The floor can be replaced by a texture, otherwise the parameters are still missing. A very interesting application of the mat3. One for the rotations of the boxes and the other for calculating the visual axis. As a result, both initializations of mat3 were necessary and the block with the overloaded make_mat3 functions were used.
@@ -53,3 +57,12 @@ Have fun playing
 ![WalkingCubes](https://user-images.githubusercontent.com/78935215/114034649-a961eb00-987e-11eb-8be4-de55b8dd1e6c.gif)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+
+
+

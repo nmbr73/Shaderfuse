@@ -1,3 +1,7 @@
+# EggHunt
+
+This Fuse is based on the Shadertoy '_[EggHunt](https://www.shadertoy.com/view/ttyfDV)_' by [sylvain69780](https://www.shadertoy.com/user/sylvain69780). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A little Easter greeting just in time for Easter
@@ -9,3 +13,12 @@ A little Easter greeting just in time for Easter
 Have fun playing
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+
+
+

@@ -597,7 +597,7 @@ function Fuse:getCompatibilityHTML()
       return '🟩 '..name..': <span style="color:green; ">checked</span><br />\n'
     end
 
-    if (self.CompatibilityIssues[key] or '') ~= '' then
+    if self.CompatibilityIssues and (self.CompatibilityIssues[key] or '') ~= '' then
       return '🟥 '..name..': <span style="color:red; ">'.. self.CompatibilityIssues[key] ..'</span><br />\n'
     end
 

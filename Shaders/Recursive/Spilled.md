@@ -1,3 +1,7 @@
+# Spilled
+
+This Fuse is based on the Shadertoy '_[spilled](https://www.shadertoy.com/view/MsGSRd)_' by [flockaroo](https://www.shadertoy.com/user/flockaroo). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Recursive](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A nice example for "computational flockarooid dynamics"
@@ -15,3 +19,13 @@ Here is a little study with this fuse: https://www.youtube.com/watch?v=oyndG0pLE
 Have fun playing
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 2
+
+- unknown Fuse.AuthorLogo in sfi file
+- Thumbnail seems to be not a 320x180 pixel PNG
+
+
+

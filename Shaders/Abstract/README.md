@@ -12,36 +12,36 @@
 
 # Abstract Shaders
 
-## **[BumpyReflectingBalls](BumpyReflectingBalls.md)**
-based on [BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB) written by [metabog](https://www.shadertoy.com/user/metabog)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[BumpyReflectingBalls](BumpyReflectingBalls.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Dynamism](Dynamism.md)**
-based on [Dynamism](https://www.shadertoy.com/view/MtKSWW) written by [nimitz](https://www.shadertoy.com/user/nimitz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Dynamism](Dynamism.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Favela](Favela.md)**
-based on [Favela](https://www.shadertoy.com/view/ldGcDh) written by [duvengar](https://www.shadertoy.com/user/duvengar)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+## **[Favela](Favela.md)** :boom:
+- *Thumbnail file does not exist*
 
-## **[FlightThroughANebula](FlightThroughANebula.md)**
-based on [Flight Through A Nebula V3](https://www.shadertoy.com/view/tsK3Rd) written by [morgan3d](https://www.shadertoy.com/user/morgan3d)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[FlightThroughANebula](FlightThroughANebula.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Mosaic](Mosaic.md)**
-based on [voronoi solid with borders](https://www.shadertoy.com/view/XtySRc) written by [Darksecond](https://www.shadertoy.com/user/Darksecond)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Mosaic](Mosaic.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Noisecube](Noisecube.md)**
-based on [Noisecube](https://www.shadertoy.com/view/4sGBD1) written by [flimshaw](https://www.shadertoy.com/user/flimshaw)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Noisecube](Noisecube.md)** :boom:
+- *Thumbnail file does not exist*
 
-## **[OtherWorlds](OtherWorlds.md)**
-based on [Other Worlds\bump experiment](https://www.shadertoy.com/view/Ns2XzR) written by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[OtherWorlds](OtherWorlds.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[OverstimulatedNeurons](OverstimulatedNeurons.md)**
-based on [Overstimulated Neurons](https://www.shadertoy.com/view/NdlSD8) written by [Chaotnix](https://www.shadertoy.com/user/Chaotnix)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[OverstimulatedNeurons](OverstimulatedNeurons.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[RainbowSlices](RainbowSlices.md)**
-based on [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4) written by [fizzer](https://www.shadertoy.com/user/fizzer)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+## **[RainbowSlices](RainbowSlices.md)** :boom:
+- *Thumbnail file does not exist*
 
-## **[RainbowSpaghetti](RainbowSpaghetti.md)**
-based on [rainbow spaghetti](https://www.shadertoy.com/view/lsjGRV) written by [mattz](https://www.shadertoy.com/user/mattz)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+## **[RainbowSpaghetti](RainbowSpaghetti.md)** :boom:
+- *Thumbnail file does not exist*
 
-## **[Raysemigarbage](Raysemigarbage.md)**
-based on [raysemigarbage#3 but hilly](https://www.shadertoy.com/view/3tdSW8) written by [supastav](https://www.shadertoy.com/user/supastav)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Raysemigarbage](Raysemigarbage.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 

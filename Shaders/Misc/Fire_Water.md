@@ -1,3 +1,7 @@
+# Fire_Water
+
+This Fuse is based on the Shadertoy '_[ComplementaryElements](https://www.shadertoy.com/view/tdsBz4)_' by [izutionix](https://www.shadertoy.com/user/izutionix). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Misc](README.md) for more fuses in this category.
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Two tailed comets "Fire" and "Water" circle around each other
@@ -16,3 +20,12 @@ Here is a little study of this fuse: https://www.youtube.com/watch?v=4R7ZVMyKLnY
 Have fun
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
+
+## Problems
+
+Number of problems: 1
+
+- Thumbnail seems to be not a 320x180 pixel PNG
+
+
+

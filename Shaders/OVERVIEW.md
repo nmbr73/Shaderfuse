@@ -16,91 +16,69 @@
 
 
 ![Abstract/BumpyReflectingBalls](Abstract/BumpyReflectingBalls_320x180.png)\
-Fuse: [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) :four_leaf_clover:\
+Fuse: [BumpyReflectingBalls](Abstract/BumpyReflectingBalls.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [BumpyReflectingBalls](https://www.shadertoy.com/view/ltsXDB)\
-Author: [metabog](https://www.shadertoy.com/user/metabog)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Abstract/Dynamism](Abstract/Dynamism_320x180.png)\
-Fuse: [Dynamism](Abstract/Dynamism.md) :four_leaf_clover:\
+Fuse: [Dynamism](Abstract/Dynamism.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Dynamism](https://www.shadertoy.com/view/MtKSWW)\
-Author: [nimitz](https://www.shadertoy.com/user/nimitz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Abstract/Favela](Abstract/Favela_320x180.png)\
-Fuse: [Favela](Abstract/Favela.md) :four_leaf_clover:\
+Fuse: [Favela](Abstract/Favela.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Favela](https://www.shadertoy.com/view/ldGcDh)\
-Author: [duvengar](https://www.shadertoy.com/user/duvengar)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Abstract/FlightThroughANebula](Abstract/FlightThroughANebula_320x180.png)\
-Fuse: [FlightThroughANebula](Abstract/FlightThroughANebula.md) :four_leaf_clover:\
+Fuse: [FlightThroughANebula](Abstract/FlightThroughANebula.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Flight Through A Nebula V3](https://www.shadertoy.com/view/tsK3Rd)\
-Author: [morgan3d](https://www.shadertoy.com/user/morgan3d)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Abstract/Mosaic](Abstract/Mosaic_320x180.png)\
-Fuse: [Mosaic](Abstract/Mosaic.md) :four_leaf_clover:\
+Fuse: [Mosaic](Abstract/Mosaic.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [voronoi solid with borders](https://www.shadertoy.com/view/XtySRc)\
-Author: [Darksecond](https://www.shadertoy.com/user/Darksecond)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Abstract/Noisecube](Abstract/Noisecube_320x180.png)\
-Fuse: [Noisecube](Abstract/Noisecube.md) :four_leaf_clover:\
+Fuse: [Noisecube](Abstract/Noisecube.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Noisecube](https://www.shadertoy.com/view/4sGBD1)\
-Author: [flimshaw](https://www.shadertoy.com/user/flimshaw)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail file does not exist**
 
 
 ![Abstract/OtherWorlds](Abstract/OtherWorlds_320x180.png)\
-Fuse: [OtherWorlds](Abstract/OtherWorlds.md) :four_leaf_clover:\
+Fuse: [OtherWorlds](Abstract/OtherWorlds.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Other Worlds\bump experiment](https://www.shadertoy.com/view/Ns2XzR)\
-Author: [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Abstract/OverstimulatedNeurons](Abstract/OverstimulatedNeurons_320x180.png)\
-Fuse: [OverstimulatedNeurons](Abstract/OverstimulatedNeurons.md) :four_leaf_clover:\
+Fuse: [OverstimulatedNeurons](Abstract/OverstimulatedNeurons.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Overstimulated Neurons](https://www.shadertoy.com/view/NdlSD8)\
-Author: [Chaotnix](https://www.shadertoy.com/user/Chaotnix)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Abstract/RainbowSlices](Abstract/RainbowSlices_320x180.png)\
-Fuse: [RainbowSlices](Abstract/RainbowSlices.md) :four_leaf_clover:\
+Fuse: [RainbowSlices](Abstract/RainbowSlices.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [Rainbow Slices](https://www.shadertoy.com/view/XdsGD4)\
-Author: [fizzer](https://www.shadertoy.com/user/fizzer)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Abstract/RainbowSpaghetti](Abstract/RainbowSpaghetti_320x180.png)\
-Fuse: [RainbowSpaghetti](Abstract/RainbowSpaghetti.md) :four_leaf_clover:\
+Fuse: [RainbowSpaghetti](Abstract/RainbowSpaghetti.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [rainbow spaghetti](https://www.shadertoy.com/view/lsjGRV)\
-Author: [mattz](https://www.shadertoy.com/user/mattz)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Abstract/Raysemigarbage](Abstract/Raysemigarbage_320x180.png)\
-Fuse: [Raysemigarbage](Abstract/Raysemigarbage.md) :four_leaf_clover:\
+Fuse: [Raysemigarbage](Abstract/Raysemigarbage.md) :boom:\
 Category: [Abstract](Abstract/README.md)\
-Shadertoy: [raysemigarbage#3 but hilly](https://www.shadertoy.com/view/3tdSW8)\
-Author: [supastav](https://www.shadertoy.com/user/supastav)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -108,59 +86,45 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Audio/AudioHeightfield1](Audio/AudioHeightfield1_320x180.png)\
-Fuse: [AudioHeightfield1](Audio/AudioHeightfield1.md) :four_leaf_clover:\
+Fuse: [AudioHeightfield1](Audio/AudioHeightfield1.md) :boom:\
 Category: [Audio](Audio/README.md)\
-Shadertoy: [Audio heightfield 1](https://www.shadertoy.com/view/ldXGzN)\
-Author: [huttarl](https://www.shadertoy.com/user/huttarl)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Audio/AudioWaveformVisualizer](Audio/AudioWaveformVisualizer_320x180.png)\
-Fuse: [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) :four_leaf_clover:\
+Fuse: [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md) :boom:\
 Category: [Audio](Audio/README.md)\
-Shadertoy: [Audio Waveform Visualizer v3](https://www.shadertoy.com/view/wd3Bzl)\
-Author: [oneshade](https://www.shadertoy.com/user/oneshade)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Audio/InerciaIntended](Audio/InerciaIntended_320x180.png)\
-Fuse: [InerciaIntended](Audio/InerciaIntended.md) :four_leaf_clover:\
+Fuse: [InerciaIntended](Audio/InerciaIntended.md) :boom:\
 Category: [Audio](Audio/README.md)\
-Shadertoy: [ 20221105_inercia intended one](https://www.shadertoy.com/view/cs2GWD)\
-Author: [0b5vr](https://www.shadertoy.com/user/0b5vr)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Audio/JamSession](Audio/JamSession_320x180.png)\
-Fuse: [JamSession](Audio/JamSession.md) :four_leaf_clover:\
+Fuse: [JamSession](Audio/JamSession.md) :boom:\
 Category: [Audio](Audio/README.md)\
-Shadertoy: [Jam Session](https://www.shadertoy.com/view/XdsyW4)\
-Author: [Passion](https://www.shadertoy.com/user/Passion)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Audio/ReactiveVoronoi](Audio/ReactiveVoronoi_320x180.png)\
-Fuse: [ReactiveVoronoi](Audio/ReactiveVoronoi.md) :four_leaf_clover:\
+Fuse: [ReactiveVoronoi](Audio/ReactiveVoronoi.md) :boom:\
 Category: [Audio](Audio/README.md)\
-Shadertoy: [Reactive Voronoi](https://www.shadertoy.com/view/Ml3GDX)\
-Author: [glk7](https://www.shadertoy.com/user/glk7)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Audio/Rlstyle](Audio/Rlstyle_320x180.png)\
-Fuse: [Rlstyle](Audio/Rlstyle.md) :four_leaf_clover:\
+Fuse: [Rlstyle](Audio/Rlstyle.md) :boom:\
 Category: [Audio](Audio/README.md)\
-Shadertoy: [RLStyle Visualizer](https://www.shadertoy.com/view/llXyzN)\
-Author: [clintolibre](https://www.shadertoy.com/user/clintolibre)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Audio/ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay_320x180.png)\
-Fuse: [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md) :four_leaf_clover:\
+Fuse: [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md) :boom:\
 Category: [Audio](Audio/README.md)\
-Shadertoy: [Shadertoy audio display](https://www.shadertoy.com/view/MtVfWh)\
-Author: [saidwho12](https://www.shadertoy.com/user/saidwho12)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -168,27 +132,21 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Blob/FunWithMetaballs](Blob/FunWithMetaballs_320x180.png)\
-Fuse: [FunWithMetaballs](Blob/FunWithMetaballs.md) :four_leaf_clover:\
+Fuse: [FunWithMetaballs](Blob/FunWithMetaballs.md) :boom:\
 Category: [Blob](Blob/README.md)\
-Shadertoy: [FunWithMetaballs](https://www.shadertoy.com/view/MlyXWV)\
-Author: [fwilliams](https://www.shadertoy.com/user/fwilliams)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Blob/TorturedBlob](Blob/TorturedBlob_320x180.png)\
-Fuse: [TorturedBlob](Blob/TorturedBlob.md) :four_leaf_clover:\
+Fuse: [TorturedBlob](Blob/TorturedBlob.md) :boom:\
 Category: [Blob](Blob/README.md)\
-Shadertoy: [TorturedBlob](https://www.shadertoy.com/view/MlKGDK)\
-Author: [roywig](https://www.shadertoy.com/user/roywig)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Blob/XRaymarching](Blob/XRaymarching_320x180.png)\
-Fuse: [XRaymarching](Blob/XRaymarching.md) :four_leaf_clover:\
+Fuse: [XRaymarching](Blob/XRaymarching.md) :boom:\
 Category: [Blob](Blob/README.md)\
-Shadertoy: [XRaymarching](https://www.shadertoy.com/view/XtByWW)\
-Author: [Aeless](https://www.shadertoy.com/user/Aeless)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -196,43 +154,33 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Cubemap/BallsAreTouching](Cubemap/BallsAreTouching_320x180.png)\
-Fuse: [BallsAreTouching](Cubemap/BallsAreTouching.md) :four_leaf_clover:\
+Fuse: [BallsAreTouching](Cubemap/BallsAreTouching.md) :boom:\
 Category: [Cubemap](Cubemap/README.md)\
-Shadertoy: [balls are touching](https://www.shadertoy.com/view/MdlGWn)\
-Author: [w23](https://www.shadertoy.com/user/w23)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Cubemap/GlassAndBubble](Cubemap/GlassAndBubble_320x180.png)\
-Fuse: [GlassAndBubble](Cubemap/GlassAndBubble.md) :four_leaf_clover:\
+Fuse: [GlassAndBubble](Cubemap/GlassAndBubble.md) :boom:\
 Category: [Cubemap](Cubemap/README.md)\
-Shadertoy: [Glass and Bubble](https://www.shadertoy.com/view/XdVSRV)\
-Author: [TambakoJaguar](https://www.shadertoy.com/user/TambakoJaguar)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Cubemap/KissTracing](Cubemap/KissTracing_320x180.png)\
-Fuse: [KissTracing](Cubemap/KissTracing.md) :four_leaf_clover:\
+Fuse: [KissTracing](Cubemap/KissTracing.md) :boom:\
 Category: [Cubemap](Cubemap/README.md)\
-Shadertoy: [KISS Tracing 001: Spheres&Plane](https://www.shadertoy.com/view/sttXWX)\
-Author: [tsaari42](https://www.shadertoy.com/user/tsaari42)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Cubemap/NewtonPendulum](Cubemap/NewtonPendulum_320x180.png)\
-Fuse: [NewtonPendulum](Cubemap/NewtonPendulum.md) :four_leaf_clover:\
+Fuse: [NewtonPendulum](Cubemap/NewtonPendulum.md) :boom:\
 Category: [Cubemap](Cubemap/README.md)\
-Shadertoy: [Newton Pendulum](https://www.shadertoy.com/view/7sXyzX)\
-Author: [leesten](https://www.shadertoy.com/user/leesten)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Cubemap/OceanElemental](Cubemap/OceanElemental_320x180.png)\
-Fuse: [OceanElemental](Cubemap/OceanElemental.md) :four_leaf_clover:\
+Fuse: [OceanElemental](Cubemap/OceanElemental.md) :boom:\
 Category: [Cubemap](Cubemap/README.md)\
-Shadertoy: [OCEAN ELEMENTAL](https://www.shadertoy.com/view/NdS3zK)\
-Author: [alro](https://www.shadertoy.com/user/alro)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -240,19 +188,15 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Distortion/DisplacementShader](Distortion/DisplacementShader_320x180.png)\
-Fuse: [DisplacementShader](Distortion/DisplacementShader.md) :four_leaf_clover:\
+Fuse: [DisplacementShader](Distortion/DisplacementShader.md) :boom:\
 Category: [Distortion](Distortion/README.md)\
-Shadertoy: [DisplacementShader](https://www.shadertoy.com/view/MtBfR3)\
-Author: [Coolok](https://www.shadertoy.com/user/Coolok)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Distortion/FbmWarp](Distortion/FbmWarp_320x180.png)\
-Fuse: [FbmWarp](Distortion/FbmWarp.md) :four_leaf_clover:\
+Fuse: [FbmWarp](Distortion/FbmWarp.md) :boom:\
 Category: [Distortion](Distortion/README.md)\
-Shadertoy: [Fbm Warp](https://www.shadertoy.com/view/ttGyzG)\
-Author: [hanker](https://www.shadertoy.com/user/hanker)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -260,67 +204,51 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Fractals/ApollianWithATwist](Fractals/ApollianWithATwist_320x180.png)\
-Fuse: [ApollianWithATwist](Fractals/ApollianWithATwist.md) :four_leaf_clover:\
+Fuse: [ApollianWithATwist](Fractals/ApollianWithATwist.md) :boom:\
 Category: [Fractals](Fractals/README.md)\
-Shadertoy: [Apollian with a twist](https://www.shadertoy.com/view/Wl3fzM)\
-Author: [mrange](https://www.shadertoy.com/user/mrange)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Fractals/EnergyPlant](Fractals/EnergyPlant_320x180.png)\
-Fuse: [EnergyPlant](Fractals/EnergyPlant.md) :four_leaf_clover:\
+Fuse: [EnergyPlant](Fractals/EnergyPlant.md) :boom:\
 Category: [Fractals](Fractals/README.md)\
-Shadertoy: [EnergyPlant](https://www.shadertoy.com/view/WdjBWc)\
-Author: [gaz](https://www.shadertoy.com/user/gaz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Fractals/Fractal03](Fractals/Fractal03_320x180.png)\
-Fuse: [Fractal03](Fractals/Fractal03.md) :four_leaf_clover:\
+Fuse: [Fractal03](Fractals/Fractal03.md) :boom:\
 Category: [Fractals](Fractals/README.md)\
-Shadertoy: [Fractal03](https://www.shadertoy.com/view/3lKcDV)\
-Author: [gaz](https://www.shadertoy.com/user/gaz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Fractals/FractalEngine](Fractals/FractalEngine_320x180.png)\
-Fuse: [FractalEngine](Fractals/FractalEngine.md) :four_leaf_clover:\
+Fuse: [FractalEngine](Fractals/FractalEngine.md) :boom:\
 Category: [Fractals](Fractals/README.md)\
-Shadertoy: [FractalEngine](https://www.shadertoy.com/view/ttSBRm)\
-Author: [gaz](https://www.shadertoy.com/user/gaz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Fractals/FractalGutter](Fractals/FractalGutter_320x180.png)\
-Fuse: [FractalGutter](Fractals/FractalGutter.md) :four_leaf_clover:\
+Fuse: [FractalGutter](Fractals/FractalGutter.md) :boom:\
 Category: [Fractals](Fractals/README.md)\
-Shadertoy: [FractalGutter](https://www.shadertoy.com/view/ttjBD1)\
-Author: [gaz](https://www.shadertoy.com/user/gaz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Fractals/FractalRadioBase](Fractals/FractalRadioBase_320x180.png)\
-Fuse: [FractalRadioBase](Fractals/FractalRadioBase.md) :four_leaf_clover:\
+Fuse: [FractalRadioBase](Fractals/FractalRadioBase.md) :boom:\
 Category: [Fractals](Fractals/README.md)\
-Shadertoy: [FractalRadioBase](https://www.shadertoy.com/view/WlcczS)\
-Author: [gaz](https://www.shadertoy.com/user/gaz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Fractals/Kali3D](Fractals/Kali3D_320x180.png)\
-Fuse: [Kali3D](Fractals/Kali3D.md) :four_leaf_clover:\
+Fuse: [Kali3D](Fractals/Kali3D.md) :boom:\
 Category: [Fractals](Fractals/README.md)\
-Shadertoy: [Kali3D](https://www.shadertoy.com/view/MdB3DK)\
-Author: [guil](https://www.shadertoy.com/user/guil)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail file does not exist**
 
 
 ![Fractals/Rendezvous](Fractals/Rendezvous_320x180.png)\
-Fuse: [Rendezvous](Fractals/Rendezvous.md) :four_leaf_clover:\
+Fuse: [Rendezvous](Fractals/Rendezvous.md) :boom:\
 Category: [Fractals](Fractals/README.md)\
-Shadertoy: [Rendezvous](https://www.shadertoy.com/view/ldjGDw)\
-Author: [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -328,67 +256,51 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Misc/BuoyantBalls](Misc/BuoyantBalls_320x180.png)\
-Fuse: [BuoyantBalls](Misc/BuoyantBalls.md) :four_leaf_clover:\
+Fuse: [BuoyantBalls](Misc/BuoyantBalls.md) :boom:\
 Category: [Misc](Misc/README.md)\
-Shadertoy: [BuoyantBalls](https://www.shadertoy.com/view/MtsBW8)\
-Author: [dr2](https://www.shadertoy.com/user/dr2)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Misc/Fire_Water](Misc/Fire_Water_320x180.png)\
-Fuse: [Fire_Water](Misc/Fire_Water.md) :four_leaf_clover:\
+Fuse: [Fire_Water](Misc/Fire_Water.md) :boom:\
 Category: [Misc](Misc/README.md)\
-Shadertoy: [ComplementaryElements](https://www.shadertoy.com/view/tdsBz4)\
-Author: [izutionix](https://www.shadertoy.com/user/izutionix)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Misc/FractalLand](Misc/FractalLand_320x180.png)\
-Fuse: [FractalLand](Misc/FractalLand.md) :four_leaf_clover:\
+Fuse: [FractalLand](Misc/FractalLand.md) :boom:\
 Category: [Misc](Misc/README.md)\
-Shadertoy: [Fractal Land](https://www.shadertoy.com/view/XsBXWt)\
-Author: [Kali](https://www.shadertoy.com/user/Kali)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Misc/IHeartFourier](Misc/IHeartFourier_320x180.png)\
-Fuse: [IHeartFourier](Misc/IHeartFourier.md) :four_leaf_clover:\
+Fuse: [IHeartFourier](Misc/IHeartFourier.md) :boom:\
 Category: [Misc](Misc/README.md)\
-Shadertoy: [IHeartFourier](https://www.shadertoy.com/view/tltSWr)\
-Author: [harry7557558](https://www.shadertoy.com/user/harry7557558)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Misc/Legofied](Misc/Legofied_320x180.png)\
-Fuse: [Legofied](Misc/Legofied.md) :four_leaf_clover:\
+Fuse: [Legofied](Misc/Legofied.md) :boom:\
 Category: [Misc](Misc/README.md)\
-Shadertoy: [Legofied](https://www.shadertoy.com/view/XtBSzy)\
-Author: [Gijs](https://www.shadertoy.com/user/Gijs)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Misc/MountainsLakes](Misc/MountainsLakes_320x180.png)\
-Fuse: [MountainsLakes](Misc/MountainsLakes.md) :four_leaf_clover:\
+Fuse: [MountainsLakes](Misc/MountainsLakes.md) :boom:\
 Category: [Misc](Misc/README.md)\
-Shadertoy: [Mountains & Lakes](https://www.shadertoy.com/view/7tSSDD)\
-Author: [xjorma](https://www.shadertoy.com/user/xjorma)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Misc/Seascape](Misc/Seascape_320x180.png)\
-Fuse: [Seascape](Misc/Seascape.md) :four_leaf_clover:\
+Fuse: [Seascape](Misc/Seascape.md) :boom:\
 Category: [Misc](Misc/README.md)\
-Shadertoy: [Seascape](https://www.shadertoy.com/view/Ms2SD1)\
-Author: [TDM](https://www.shadertoy.com/user/TDM)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Misc/TruePinballPhysics](Misc/TruePinballPhysics_320x180.png)\
-Fuse: [TruePinballPhysics](Misc/TruePinballPhysics.md) :four_leaf_clover:\
+Fuse: [TruePinballPhysics](Misc/TruePinballPhysics.md) :boom:\
 Category: [Misc](Misc/README.md)\
-Shadertoy: [True Pinball Physics](https://www.shadertoy.com/view/4tBGRm)\
-Author: [archee](https://www.shadertoy.com/user/archee)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -396,99 +308,75 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Object/DancyTreeDoodle](Object/DancyTreeDoodle_320x180.png)\
-Fuse: [DancyTreeDoodle](Object/DancyTreeDoodle.md) :four_leaf_clover:\
+Fuse: [DancyTreeDoodle](Object/DancyTreeDoodle.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [DancyTreeDoodle](https://www.shadertoy.com/view/wslGz7)\
-Author: [wyatt](https://www.shadertoy.com/user/wyatt)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail file does not exist**
 
 
 ![Object/DancyTreeDoodle3D](Object/DancyTreeDoodle3D_320x180.png)\
-Fuse: [DancyTreeDoodle3D](Object/DancyTreeDoodle3D.md) :four_leaf_clover:\
+Fuse: [DancyTreeDoodle3D](Object/DancyTreeDoodle3D.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [DancyTreeDoodle3D](https://www.shadertoy.com/view/4lVyzh)\
-Author: [wyatt](https://www.shadertoy.com/user/wyatt)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail file does not exist**
 
 
 ![Object/EggHunt](Object/EggHunt_320x180.png)\
-Fuse: [EggHunt](Object/EggHunt.md) :four_leaf_clover:\
+Fuse: [EggHunt](Object/EggHunt.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [EggHunt](https://www.shadertoy.com/view/ttyfDV)\
-Author: [sylvain69780](https://www.shadertoy.com/user/sylvain69780)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Object/HW3Swing](Object/HW3Swing_320x180.png)\
-Fuse: [HW3Swing](Object/HW3Swing.md) :four_leaf_clover:\
+Fuse: [HW3Swing](Object/HW3Swing.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [HW3Swing](https://www.shadertoy.com/view/4dtyz8)\
-Author: [ChloeSnyder](https://www.shadertoy.com/user/ChloeSnyder)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Object/HappyBouncing](Object/HappyBouncing_320x180.png)\
-Fuse: [HappyBouncing](Object/HappyBouncing.md) :four_leaf_clover:\
+Fuse: [HappyBouncing](Object/HappyBouncing.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [happy bouncing](https://www.shadertoy.com/view/flyXRh)\
-Author: [leon](https://www.shadertoy.com/user/leon)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Object/HeavenAndHell](Object/HeavenAndHell_320x180.png)\
-Fuse: [HeavenAndHell](Object/HeavenAndHell.md) :four_leaf_clover:\
+Fuse: [HeavenAndHell](Object/HeavenAndHell.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [HeavenAndHell](https://www.shadertoy.com/view/wsKXDV)\
-Author: [adurdin](https://www.shadertoy.com/user/adurdin)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Object/Legos](Object/Legos_320x180.png)\
-Fuse: [Legos](Object/Legos.md) :four_leaf_clover:\
+Fuse: [Legos](Object/Legos.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [Legos](https://www.shadertoy.com/view/Xdl3Dj)\
-Author: [morgan3d](https://www.shadertoy.com/user/morgan3d)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Object/LonelyVoxel](Object/LonelyVoxel_320x180.png)\
-Fuse: [LonelyVoxel](Object/LonelyVoxel.md) :four_leaf_clover:\
+Fuse: [LonelyVoxel](Object/LonelyVoxel.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [LonelyVoxel](https://www.shadertoy.com/view/Mslczn)\
-Author: [SudoNhim](https://www.shadertoy.com/user/SudoNhim)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail file does not exist**
 
 
 ![Object/Oblivion](Object/Oblivion_320x180.png)\
-Fuse: [Oblivion](Object/Oblivion.md) :four_leaf_clover:\
+Fuse: [Oblivion](Object/Oblivion.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [Oblivion](https://www.shadertoy.com/view/XtfXDN)\
-Author: [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Object/ProceduralWalkAnimation](Object/ProceduralWalkAnimation_320x180.png)\
-Fuse: [ProceduralWalkAnimation](Object/ProceduralWalkAnimation.md) :four_leaf_clover:\
+Fuse: [ProceduralWalkAnimation](Object/ProceduralWalkAnimation.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [ProceduralWalkAnimation](https://www.shadertoy.com/view/WlsSWS)\
-Author: [TLC123](https://www.shadertoy.com/user/TLC123)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Object/ShareX](Object/ShareX_320x180.png)\
-Fuse: [ShareX](Object/ShareX.md) :four_leaf_clover:\
+Fuse: [ShareX](Object/ShareX.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [ShareX](https://www.shadertoy.com/view/WsKSRK)\
-Author: [fre3k](https://www.shadertoy.com/user/fre3k)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Object/WalkingCubes](Object/WalkingCubes_320x180.png)\
-Fuse: [WalkingCubes](Object/WalkingCubes.md) :four_leaf_clover:\
+Fuse: [WalkingCubes](Object/WalkingCubes.md) :boom:\
 Category: [Object](Object/README.md)\
-Shadertoy: [WalkingCubes](https://www.shadertoy.com/view/Xl3XR4)\
-Author: [xorxor](https://www.shadertoy.com/user/xorxor)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -496,51 +384,39 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Planet/CrackerCars](Planet/CrackerCars_320x180.png)\
-Fuse: [CrackerCars](Planet/CrackerCars.md) :four_leaf_clover:\
+Fuse: [CrackerCars](Planet/CrackerCars.md) :boom:\
 Category: [Planet](Planet/README.md)\
-Shadertoy: [CrackerCars](https://www.shadertoy.com/view/4sdXzr)\
-Author: [zackpudil](https://www.shadertoy.com/user/zackpudil)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail file does not exist**
 
 
 ![Planet/EARF](Planet/EARF_320x180.png)\
-Fuse: [EARF](Planet/EARF.md) :four_leaf_clover:\
+Fuse: [EARF](Planet/EARF.md) :boom:\
 Category: [Planet](Planet/README.md)\
-Shadertoy: [EARF](https://www.shadertoy.com/view/ls3SDj)\
-Author: [zackpudil](https://www.shadertoy.com/user/zackpudil)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Planet/Fake3DScene](Planet/Fake3DScene_320x180.png)\
-Fuse: [Fake3DScene](Planet/Fake3DScene.md) :four_leaf_clover:\
+Fuse: [Fake3DScene](Planet/Fake3DScene.md) :boom:\
 Category: [Planet](Planet/README.md)\
-Shadertoy: [Fake3DScene](https://www.shadertoy.com/view/MddSWB)\
-Author: [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail file does not exist**
 
 
 ![Planet/MightyMorphingPowerSphere](Planet/MightyMorphingPowerSphere_320x180.png)\
-Fuse: [MightyMorphingPowerSphere](Planet/MightyMorphingPowerSphere.md) :four_leaf_clover:\
+Fuse: [MightyMorphingPowerSphere](Planet/MightyMorphingPowerSphere.md) :boom:\
 Category: [Planet](Planet/README.md)\
-Shadertoy: [MightyMorphingPowerSphere](https://www.shadertoy.com/view/MtGSzh)\
-Author: [Lallis](https://www.shadertoy.com/user/Lallis)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Planet/RayCastSphere](Planet/RayCastSphere_320x180.png)\
-Fuse: [RayCastSphere](Planet/RayCastSphere.md) :four_leaf_clover:\
+Fuse: [RayCastSphere](Planet/RayCastSphere.md) :boom:\
 Category: [Planet](Planet/README.md)\
-Shadertoy: [RayCastSphere](https://www.shadertoy.com/view/XdjBDG)\
-Author: [diroru](https://www.shadertoy.com/user/diroru)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Planet/WildKifs4D](Planet/WildKifs4D_320x180.png)\
-Fuse: [WildKifs4D](Planet/WildKifs4D.md) :four_leaf_clover:\
+Fuse: [WildKifs4D](Planet/WildKifs4D.md) :boom:\
 Category: [Planet](Planet/README.md)\
-Shadertoy: [WildKifs4D](https://www.shadertoy.com/view/wttBzM)\
-Author: [iapafoto](https://www.shadertoy.com/user/iapafoto)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -548,59 +424,45 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Recursive/AnisotropicBlurImage](Recursive/AnisotropicBlurImage_320x180.png)\
-Fuse: [AnisotropicBlurImage](Recursive/AnisotropicBlurImage.md) :four_leaf_clover:\
+Fuse: [AnisotropicBlurImage](Recursive/AnisotropicBlurImage.md) :boom:\
 Category: [Recursive](Recursive/README.md)\
-Shadertoy: [Anisotropic Blur Image Warp](https://www.shadertoy.com/view/ldcSDB)\
-Author: [cornusammonis](https://www.shadertoy.com/user/cornusammonis)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Recursive/FallingCuteBombs](Recursive/FallingCuteBombs_320x180.png)\
-Fuse: [FallingCuteBombs](Recursive/FallingCuteBombs.md) :four_leaf_clover:\
+Fuse: [FallingCuteBombs](Recursive/FallingCuteBombs.md) :boom:\
 Category: [Recursive](Recursive/README.md)\
-Shadertoy: [FallingCuteBombs](https://www.shadertoy.com/view/ldy3Rw)\
-Author: [Emil](https://www.shadertoy.com/user/Emil)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Recursive/GrowingWeatheringRocks](Recursive/GrowingWeatheringRocks_320x180.png)\
-Fuse: [GrowingWeatheringRocks](Recursive/GrowingWeatheringRocks.md) :four_leaf_clover:\
+Fuse: [GrowingWeatheringRocks](Recursive/GrowingWeatheringRocks.md) :boom:\
 Category: [Recursive](Recursive/README.md)\
-Shadertoy: [GrowingWeatheringRocks](https://www.shadertoy.com/view/ftSSDy)\
-Author: [stb](https://www.shadertoy.com/user/stb)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Recursive/LearningReactionDiffusion](Recursive/LearningReactionDiffusion_320x180.png)\
-Fuse: [LearningReactionDiffusion](Recursive/LearningReactionDiffusion.md) :four_leaf_clover:\
+Fuse: [LearningReactionDiffusion](Recursive/LearningReactionDiffusion.md) :boom:\
 Category: [Recursive](Recursive/README.md)\
-Shadertoy: [LearningReactionDiffusion](https://www.shadertoy.com/view/WlSGzy)\
-Author: [TekF](https://www.shadertoy.com/user/TekF)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Recursive/Spilled](Recursive/Spilled_320x180.png)\
-Fuse: [Spilled](Recursive/Spilled.md) :four_leaf_clover:\
+Fuse: [Spilled](Recursive/Spilled.md) :boom:\
 Category: [Recursive](Recursive/README.md)\
-Shadertoy: [spilled](https://www.shadertoy.com/view/MsGSRd)\
-Author: [flockaroo](https://www.shadertoy.com/user/flockaroo)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**unknown Fuse.AuthorLogo in sfi file**
 
 
 ![Recursive/TDSOTM_Nebula](Recursive/TDSOTM_Nebula_320x180.png)\
-Fuse: [TDSOTM_Nebula](Recursive/TDSOTM_Nebula.md) :four_leaf_clover:\
+Fuse: [TDSOTM_Nebula](Recursive/TDSOTM_Nebula.md) :boom:\
 Category: [Recursive](Recursive/README.md)\
-Shadertoy: [The dark side of the moon](https://www.shadertoy.com/view/4dBSDV)\
-Author: [bytewave](https://www.shadertoy.com/user/bytewave)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Recursive/Vine](Recursive/Vine_320x180.png)\
-Fuse: [Vine](Recursive/Vine.md) :four_leaf_clover:\
+Fuse: [Vine](Recursive/Vine.md) :boom:\
 Category: [Recursive](Recursive/README.md)\
-Shadertoy: [Vine](https://www.shadertoy.com/view/XldSz7)\
-Author: [gaz](https://www.shadertoy.com/user/gaz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -608,315 +470,237 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![ShaderOfTheWeek/AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom_320x180.png)\
-Fuse: [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md) :four_leaf_clover:\
+Fuse: [AlexanderHornedSphereZoom](ShaderOfTheWeek/AlexanderHornedSphereZoom.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW)\
-Author: [tmst](https://www.shadertoy.com/user/tmst)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/AudioFlightv2](ShaderOfTheWeek/AudioFlightv2_320x180.png)\
-Fuse: [AudioFlightv2](ShaderOfTheWeek/AudioFlightv2.md) :four_leaf_clover:\
+Fuse: [AudioFlightv2](ShaderOfTheWeek/AudioFlightv2.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Audio Flight v2 (strobes)](https://www.shadertoy.com/view/7tfyRl)\
-Author: [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/ClubCave09](ShaderOfTheWeek/ClubCave09_320x180.png)\
-Fuse: [ClubCave09](ShaderOfTheWeek/ClubCave09.md) :four_leaf_clover:\
+Fuse: [ClubCave09](ShaderOfTheWeek/ClubCave09.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [20210930_CLUB-CAVE-09](https://www.shadertoy.com/view/ss3SD8)\
-Author: [0b5vr](https://www.shadertoy.com/user/0b5vr)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/CoastalLandscape](ShaderOfTheWeek/CoastalLandscape_320x180.png)\
-Fuse: [CoastalLandscape](ShaderOfTheWeek/CoastalLandscape.md) :four_leaf_clover:\
+Fuse: [CoastalLandscape](ShaderOfTheWeek/CoastalLandscape.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Coastal Landscape](https://www.shadertoy.com/view/fstyD4)\
-Author: [bitless](https://www.shadertoy.com/user/bitless)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/ColorProcessing](ShaderOfTheWeek/ColorProcessing_320x180.png)\
-Fuse: [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) :four_leaf_clover:\
+Fuse: [ColorProcessing](ShaderOfTheWeek/ColorProcessing.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Color processing](https://www.shadertoy.com/view/7tfBzs)\
-Author: [sinvec](https://www.shadertoy.com/user/sinvec)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/ControllableMachinery](ShaderOfTheWeek/ControllableMachinery_320x180.png)\
-Fuse: [ControllableMachinery](ShaderOfTheWeek/ControllableMachinery.md) :four_leaf_clover:\
+Fuse: [ControllableMachinery](ShaderOfTheWeek/ControllableMachinery.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Controllable Machinery](https://www.shadertoy.com/view/fsXyDj)\
-Author: [dr2](https://www.shadertoy.com/user/dr2)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/CubicDispersal](ShaderOfTheWeek/CubicDispersal_320x180.png)\
-Fuse: [CubicDispersal](ShaderOfTheWeek/CubicDispersal.md) :four_leaf_clover:\
+Fuse: [CubicDispersal](ShaderOfTheWeek/CubicDispersal.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Cubic Dispersal](https://www.shadertoy.com/view/fldXWS)\
-Author: [Tater](https://www.shadertoy.com/user/Tater)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/DangerNoodle](ShaderOfTheWeek/DangerNoodle_320x180.png)\
-Fuse: [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) :four_leaf_clover:\
+Fuse: [DangerNoodle](ShaderOfTheWeek/DangerNoodle.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [DangerNoodle](https://www.shadertoy.com/view/wlVSDK)\
-Author: [BigWIngs](https://www.shadertoy.com/user/BigWIngs)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/Day94](ShaderOfTheWeek/Day94_320x180.png)\
-Fuse: [Day94](ShaderOfTheWeek/Day94.md) :four_leaf_clover:\
+Fuse: [Day94](ShaderOfTheWeek/Day94.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Day94](https://www.shadertoy.com/view/tdXcWM)\
-Author: [jeyko](https://www.shadertoy.com/user/jeyko)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/Energeticflyby](ShaderOfTheWeek/Energeticflyby_320x180.png)\
-Fuse: [Energeticflyby](ShaderOfTheWeek/Energeticflyby.md) :four_leaf_clover:\
+Fuse: [Energeticflyby](ShaderOfTheWeek/Energeticflyby.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [[Inércia 2022] Energetic Flyby](https://www.shadertoy.com/view/csjGDD)\
-Author: [Kali](https://www.shadertoy.com/user/Kali)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix_320x180.png)\
-Fuse: [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) :four_leaf_clover:\
+Fuse: [ExitTheMatrix](ShaderOfTheWeek/ExitTheMatrix.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Exit the Matrix](https://www.shadertoy.com/view/NlsXDH)\
-Author: [Kali](https://www.shadertoy.com/user/Kali)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/FractalFlythrough](ShaderOfTheWeek/FractalFlythrough_320x180.png)\
-Fuse: [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) :four_leaf_clover:\
+Fuse: [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [FractalFlythrough](https://www.shadertoy.com/view/4s3SRN)\
-Author: [Shane](https://www.shadertoy.com/user/Shane)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/FractalGliding](ShaderOfTheWeek/FractalGliding_320x180.png)\
-Fuse: [FractalGliding](ShaderOfTheWeek/FractalGliding.md) :four_leaf_clover:\
+Fuse: [FractalGliding](ShaderOfTheWeek/FractalGliding.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Fractal Gliding](https://www.shadertoy.com/view/ftGGDR)\
-Author: [AntoineC](https://www.shadertoy.com/user/AntoineC)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/FrozenWasteland](ShaderOfTheWeek/FrozenWasteland_320x180.png)\
-Fuse: [FrozenWasteland](ShaderOfTheWeek/FrozenWasteland.md) :four_leaf_clover:\
+Fuse: [FrozenWasteland](ShaderOfTheWeek/FrozenWasteland.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Frozen wasteland](https://www.shadertoy.com/view/Xls3D2)\
-Author: [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel_320x180.png)\
-Fuse: [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) :four_leaf_clover:\
+Fuse: [FuturisticTunnel](ShaderOfTheWeek/FuturisticTunnel.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd)\
-Author: [julianlumia](https://www.shadertoy.com/user/julianlumia)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4_320x180.png)\
-Fuse: [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) :four_leaf_clover:\
+Fuse: [GenerativeArtDeco4](ShaderOfTheWeek/GenerativeArtDeco4.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [generative art deco 4](https://www.shadertoy.com/view/mds3DX)\
-Author: [morisil](https://www.shadertoy.com/user/morisil)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/HyperDough](ShaderOfTheWeek/HyperDough_320x180.png)\
-Fuse: [HyperDough](ShaderOfTheWeek/HyperDough.md) :four_leaf_clover:\
+Fuse: [HyperDough](ShaderOfTheWeek/HyperDough.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [HyperDough](https://www.shadertoy.com/view/7tcGWB)\
-Author: [Tater](https://www.shadertoy.com/user/Tater)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/JeweledVortex](ShaderOfTheWeek/JeweledVortex_320x180.png)\
-Fuse: [JeweledVortex](ShaderOfTheWeek/JeweledVortex.md) :four_leaf_clover:\
+Fuse: [JeweledVortex](ShaderOfTheWeek/JeweledVortex.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Jeweled Vortex](https://www.shadertoy.com/view/fdjfDc)\
-Author: [ChunderFPV](https://www.shadertoy.com/user/ChunderFPV)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/Lover](ShaderOfTheWeek/Lover_320x180.png)\
-Fuse: [Lover](ShaderOfTheWeek/Lover.md) :four_leaf_clover:\
+Fuse: [Lover](ShaderOfTheWeek/Lover.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Lover](https://www.shadertoy.com/view/fsjyR3)\
-Author: [wyatt](https://www.shadertoy.com/user/wyatt)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/NightCircuit](ShaderOfTheWeek/NightCircuit_320x180.png)\
-Fuse: [NightCircuit](ShaderOfTheWeek/NightCircuit.md) :four_leaf_clover:\
+Fuse: [NightCircuit](ShaderOfTheWeek/NightCircuit.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Night circuit](https://www.shadertoy.com/view/tdyBR1)\
-Author: [gaz](https://www.shadertoy.com/user/gaz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale_320x180.png)\
-Fuse: [OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale.md) :four_leaf_clover:\
+Fuse: [OMZGShaderRoyale](ShaderOfTheWeek/OMZGShaderRoyale.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [OMZG Shader Royale](https://www.shadertoy.com/view/stXyWN)\
-Author: [NuSan](https://www.shadertoy.com/user/NuSan)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/OnTheSal](ShaderOfTheWeek/OnTheSal_320x180.png)\
-Fuse: [OnTheSal](ShaderOfTheWeek/OnTheSal.md) :four_leaf_clover:\
+Fuse: [OnTheSal](ShaderOfTheWeek/OnTheSal.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [On the salt lake](https://www.shadertoy.com/view/fsXcR8)\
-Author: [iapafoto](https://www.shadertoy.com/user/iapafoto)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/PartyConcertVisuals2020](ShaderOfTheWeek/PartyConcertVisuals2020_320x180.png)\
-Fuse: [PartyConcertVisuals2020](ShaderOfTheWeek/PartyConcertVisuals2020.md) :four_leaf_clover:\
+Fuse: [PartyConcertVisuals2020](ShaderOfTheWeek/PartyConcertVisuals2020.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [@Party Concert Visuals 2020](https://www.shadertoy.com/view/WtscW4)\
-Author: [blackle](https://www.shadertoy.com/user/blackle)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/PigSquad](ShaderOfTheWeek/PigSquad_320x180.png)\
-Fuse: [PigSquad](ShaderOfTheWeek/PigSquad.md) :four_leaf_clover:\
+Fuse: [PigSquad](ShaderOfTheWeek/PigSquad.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Pig Squad 9 Year Anniversary](https://www.shadertoy.com/view/WdBcRh)\
-Author: [bpfarrell](https://www.shadertoy.com/user/bpfarrell)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/RME4Crater](ShaderOfTheWeek/RME4Crater_320x180.png)\
-Fuse: [RME4Crater](ShaderOfTheWeek/RME4Crater.md) :four_leaf_clover:\
+Fuse: [RME4Crater](ShaderOfTheWeek/RME4Crater.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [RME4 - Crater](https://www.shadertoy.com/view/MlSBDt)\
-Author: [patu](https://www.shadertoy.com/user/patu)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/RecursiveDonut](ShaderOfTheWeek/RecursiveDonut_320x180.png)\
-Fuse: [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) :four_leaf_clover:\
+Fuse: [RecursiveDonut](ShaderOfTheWeek/RecursiveDonut.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Recursive Donut](https://www.shadertoy.com/view/tls3WB)\
-Author: [ShnitzelKiller](https://www.shadertoy.com/user/ShnitzelKiller)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest_320x180.png)\
-Fuse: [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :four_leaf_clover:\
+Fuse: [SimpleRefractionTest](ShaderOfTheWeek/SimpleRefractionTest.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [simple refraction test](https://www.shadertoy.com/view/flcSW2)\
-Author: [drschizzo](https://www.shadertoy.com/user/drschizzo)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching_320x180.png)\
-Fuse: [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) :four_leaf_clover:\
+Fuse: [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc)\
-Author: [drschizzo](https://www.shadertoy.com/user/drschizzo)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/SpaceShip](ShaderOfTheWeek/SpaceShip_320x180.png)\
-Fuse: [SpaceShip](ShaderOfTheWeek/SpaceShip.md) :four_leaf_clover:\
+Fuse: [SpaceShip](ShaderOfTheWeek/SpaceShip.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Space ship](https://www.shadertoy.com/view/NlsBzn)\
-Author: [A_Toaster](https://www.shadertoy.com/user/A_Toaster)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/SpiraledLayers](ShaderOfTheWeek/SpiraledLayers_320x180.png)\
-Fuse: [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) :four_leaf_clover:\
+Fuse: [SpiraledLayers](ShaderOfTheWeek/SpiraledLayers.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Spiraled Layers](https://www.shadertoy.com/view/Ns3XWf)\
-Author: [Tater](https://www.shadertoy.com/user/Tater)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/StarGazingHippo](ShaderOfTheWeek/StarGazingHippo_320x180.png)\
-Fuse: [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) :four_leaf_clover:\
+Fuse: [StarGazingHippo](ShaderOfTheWeek/StarGazingHippo.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [StarGazingHippo](https://www.shadertoy.com/view/4tGfz3)\
-Author: [kuvkar](https://www.shadertoy.com/user/kuvkar)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/StarsAndGalaxy](ShaderOfTheWeek/StarsAndGalaxy_320x180.png)\
-Fuse: [StarsAndGalaxy](ShaderOfTheWeek/StarsAndGalaxy.md) :four_leaf_clover:\
+Fuse: [StarsAndGalaxy](ShaderOfTheWeek/StarsAndGalaxy.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Stars and galaxy](https://www.shadertoy.com/view/stBcW1)\
-Author: [mrange](https://www.shadertoy.com/user/mrange)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7_320x180.png)\
-Fuse: [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) :four_leaf_clover:\
+Fuse: [TasteOfNoise7](ShaderOfTheWeek/TasteOfNoise7.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs)\
-Author: [leon](https://www.shadertoy.com/user/leon)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/Terraform](ShaderOfTheWeek/Terraform_320x180.png)\
-Fuse: [Terraform](ShaderOfTheWeek/Terraform.md) :four_leaf_clover:\
+Fuse: [Terraform](ShaderOfTheWeek/Terraform.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Terraform](https://www.shadertoy.com/view/NsdXDs)\
-Author: [Xor](https://www.shadertoy.com/user/Xor)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/TrippyTriangle](ShaderOfTheWeek/TrippyTriangle_320x180.png)\
-Fuse: [TrippyTriangle](ShaderOfTheWeek/TrippyTriangle.md) :four_leaf_clover:\
+Fuse: [TrippyTriangle](ShaderOfTheWeek/TrippyTriangle.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Trippy Triangle](https://www.shadertoy.com/view/fslcDS)\
-Author: [Tater](https://www.shadertoy.com/user/Tater)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW_320x180.png)\
-Fuse: [TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) :four_leaf_clover:\
+Fuse: [TruchetKaleidoscopeFTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW)\
-Author: [mrange](https://www.shadertoy.com/user/mrange)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/TwizzlyCircleMess](ShaderOfTheWeek/TwizzlyCircleMess_320x180.png)\
-Fuse: [TwizzlyCircleMess](ShaderOfTheWeek/TwizzlyCircleMess.md) :four_leaf_clover:\
+Fuse: [TwizzlyCircleMess](ShaderOfTheWeek/TwizzlyCircleMess.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Twizzly Circle Mess](https://www.shadertoy.com/view/sltGRj)\
-Author: [SnoopethDuckDuck](https://www.shadertoy.com/user/SnoopethDuckDuck)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/UndulatingColumns](ShaderOfTheWeek/UndulatingColumns_320x180.png)\
-Fuse: [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) :four_leaf_clover:\
+Fuse: [UndulatingColumns](ShaderOfTheWeek/UndulatingColumns.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Undulating Columns](https://www.shadertoy.com/view/WlXXDH)\
-Author: [fizzer](https://www.shadertoy.com/user/fizzer)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![ShaderOfTheWeek/WednesdayMessingAround](ShaderOfTheWeek/WednesdayMessingAround_320x180.png)\
-Fuse: [WednesdayMessingAround](ShaderOfTheWeek/WednesdayMessingAround.md) :four_leaf_clover:\
+Fuse: [WednesdayMessingAround](ShaderOfTheWeek/WednesdayMessingAround.md) :boom:\
 Category: [ShaderOfTheWeek](ShaderOfTheWeek/README.md)\
-Shadertoy: [Wednesday messing around](https://www.shadertoy.com/view/NtcyDn)\
-Author: [mrange](https://www.shadertoy.com/user/mrange)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 
@@ -924,59 +708,45 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Simple/Crazyness](Simple/Crazyness_320x180.png)\
-Fuse: [Crazyness](Simple/Crazyness.md) :four_leaf_clover:\
+Fuse: [Crazyness](Simple/Crazyness.md) :boom:\
 Category: [Simple](Simple/README.md)\
-Shadertoy: [craziness](https://www.shadertoy.com/view/wdjSRc)\
-Author: [spsherk_](https://www.shadertoy.com/user/spsherk_)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Simple/CrossDistance](Simple/CrossDistance_320x180.png)\
-Fuse: [CrossDistance](Simple/CrossDistance.md) :four_leaf_clover:\
+Fuse: [CrossDistance](Simple/CrossDistance.md) :boom:\
 Category: [Simple](Simple/README.md)\
-Shadertoy: [Cross - distance](https://www.shadertoy.com/view/XtGfzw)\
-Author: [iq](https://www.shadertoy.com/user/iq)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Simple/Quadtree3](Simple/Quadtree3_320x180.png)\
-Fuse: [Quadtree3](Simple/Quadtree3.md) :four_leaf_clover:\
+Fuse: [Quadtree3](Simple/Quadtree3.md) :boom:\
 Category: [Simple](Simple/README.md)\
-Shadertoy: [quadtree 3](https://www.shadertoy.com/view/lljSDy)\
-Author: [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Simple/Rosace3C](Simple/Rosace3C_320x180.png)\
-Fuse: [Rosace3C](Simple/Rosace3C.md) :four_leaf_clover:\
+Fuse: [Rosace3C](Simple/Rosace3C.md) :boom:\
 Category: [Simple](Simple/README.md)\
-Shadertoy: [rosace 3c](https://www.shadertoy.com/view/Ms3SzB)\
-Author: [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Simple/ShatteredLight](Simple/ShatteredLight_320x180.png)\
-Fuse: [ShatteredLight](Simple/ShatteredLight.md) :four_leaf_clover:\
+Fuse: [ShatteredLight](Simple/ShatteredLight.md) :boom:\
 Category: [Simple](Simple/README.md)\
-Shadertoy: [Shattered light](https://www.shadertoy.com/view/stjSRV)\
-Author: [conceptblend](https://www.shadertoy.com/user/conceptblend)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Simple/StainedLights](Simple/StainedLights_320x180.png)\
-Fuse: [StainedLights](Simple/StainedLights.md) :four_leaf_clover:\
+Fuse: [StainedLights](Simple/StainedLights.md) :boom:\
 Category: [Simple](Simple/README.md)\
-Shadertoy: [Stained Lights](https://www.shadertoy.com/view/WlsSzM)\
-Author: [104](https://www.shadertoy.com/user/104)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Simple/VideoFilters](Simple/VideoFilters_320x180.png)\
-Fuse: [VideoFilters](Simple/VideoFilters.md) :four_leaf_clover:\
+Fuse: [VideoFilters](Simple/VideoFilters.md) :boom:\
 Category: [Simple](Simple/README.md)\
-Shadertoy: [Video filters](https://www.shadertoy.com/view/XsX3z8)\
-Author: [XT95](https://www.shadertoy.com/user/XT95)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 
@@ -984,27 +754,21 @@ Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
 
 
 ![Tunnel/TNTHTW](Tunnel/TNTHTW_320x180.png)\
-Fuse: [TNTHTW](Tunnel/TNTHTW.md) :four_leaf_clover:\
+Fuse: [TNTHTW](Tunnel/TNTHTW.md) :boom:\
 Category: [Tunnel](Tunnel/README.md)\
-Shadertoy: [Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG)\
-Author: [hisojarvi](https://www.shadertoy.com/user/hisojarvi)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail file does not exist**
 
 
 ![Tunnel/Velocibox](Tunnel/Velocibox_320x180.png)\
-Fuse: [Velocibox](Tunnel/Velocibox.md) :four_leaf_clover:\
+Fuse: [Velocibox](Tunnel/Velocibox.md) :boom:\
 Category: [Tunnel](Tunnel/README.md)\
-Shadertoy: [Velocibox](https://www.shadertoy.com/view/lsdXD8)\
-Author: [zackpudil](https://www.shadertoy.com/user/zackpudil)\
-Ported by: [nmbr73](../Site/Profiles/nmbr73.md)
+**Thumbnail file does not exist**
 
 
 ![Tunnel/WindingMengerTunnel](Tunnel/WindingMengerTunnel_320x180.png)\
-Fuse: [WindingMengerTunnel](Tunnel/WindingMengerTunnel.md) :four_leaf_clover:\
+Fuse: [WindingMengerTunnel](Tunnel/WindingMengerTunnel.md) :boom:\
 Category: [Tunnel](Tunnel/README.md)\
-Shadertoy: [WindingMengerTunnel](https://www.shadertoy.com/view/4scXzn)\
-Author: [Shane](https://www.shadertoy.com/user/Shane)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**unknown Fuse.AuthorLogo in sfi file**
 
 
 
@@ -1012,44 +776,38 @@ Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Wedding/HappyValentinesDay](Wedding/HappyValentinesDay_320x180.png)\
-Fuse: [HappyValentinesDay](Wedding/HappyValentinesDay.md) :four_leaf_clover:\
+Fuse: [HappyValentinesDay](Wedding/HappyValentinesDay.md) :boom:\
 Category: [Wedding](Wedding/README.md)\
-Shadertoy: [HappyValentinesDay](https://www.shadertoy.com/view/XsVGzK)\
-Author: [RobotPenguin](https://www.shadertoy.com/user/RobotPenguin)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Wedding/HeartU2015](Wedding/HeartU2015_320x180.png)\
-Fuse: [HeartU2015](Wedding/HeartU2015.md) :four_leaf_clover:\
+Fuse: [HeartU2015](Wedding/HeartU2015.md) :boom:\
 Category: [Wedding](Wedding/README.md)\
-Shadertoy: [heart u 2015](https://www.shadertoy.com/view/lts3RX)\
-Author: [mattz](https://www.shadertoy.com/user/mattz)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Wedding/Heartdemo](Wedding/Heartdemo_320x180.png)\
 Fuse: [Heartdemo](Wedding/Heartdemo.md) :four_leaf_clover:\
 Category: [Wedding](Wedding/README.md)\
-Shadertoy: [HeartDemo](https://www.shadertoy.com/view/wttXD7)\
+Shadertoy: [Heart Demo](https://www.shadertoy.com/view/wttXD7)\
 Author: [17dpn01](https://www.shadertoy.com/user/17dpn01)\
 Ported by: [JiPi](../Site/Profiles/JiPi.md)
 
 
 ![Wedding/Nematomorpha](Wedding/Nematomorpha_320x180.png)\
-Fuse: [Nematomorpha](Wedding/Nematomorpha.md) :four_leaf_clover:\
+Fuse: [Nematomorpha](Wedding/Nematomorpha.md) :boom:\
 Category: [Wedding](Wedding/README.md)\
-Shadertoy: [Nematomorpha](https://www.shadertoy.com/view/ltdfR7)\
-Author: [PianiGiani](https://www.shadertoy.com/user/PianiGiani)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
 ![Wedding/Valentwine](Wedding/Valentwine_320x180.png)\
-Fuse: [Valentwine](Wedding/Valentwine.md) :four_leaf_clover:\
+Fuse: [Valentwine](Wedding/Valentwine.md) :boom:\
 Category: [Wedding](Wedding/README.md)\
-Shadertoy: [Valentwine](https://www.shadertoy.com/view/fsffW4)\
-Author: [Mipmap](https://www.shadertoy.com/user/Mipmap)\
-Ported by: [JiPi](../Site/Profiles/JiPi.md)
+**Thumbnail seems to be not a 320x180 pixel PNG**
 
 
-:four_leaf_clover: 123
+:four_leaf_clover: 1
+
+:boom: 122
 

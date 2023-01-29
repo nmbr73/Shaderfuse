@@ -12,27 +12,27 @@
 
 # Misc Shaders
 
-## **[BuoyantBalls](BuoyantBalls.md)**
-based on [BuoyantBalls](https://www.shadertoy.com/view/MtsBW8) written by [dr2](https://www.shadertoy.com/user/dr2)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[BuoyantBalls](BuoyantBalls.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Fire_Water](Fire_Water.md)**
-based on [ComplementaryElements](https://www.shadertoy.com/view/tdsBz4) written by [izutionix](https://www.shadertoy.com/user/izutionix)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Fire_Water](Fire_Water.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[FractalLand](FractalLand.md)**
-based on [Fractal Land](https://www.shadertoy.com/view/XsBXWt) written by [Kali](https://www.shadertoy.com/user/Kali)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+## **[FractalLand](FractalLand.md)** :boom:
+- *Thumbnail file does not exist*
 
-## **[IHeartFourier](IHeartFourier.md)**
-based on [IHeartFourier](https://www.shadertoy.com/view/tltSWr) written by [harry7557558](https://www.shadertoy.com/user/harry7557558)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[IHeartFourier](IHeartFourier.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Legofied](Legofied.md)**
-based on [Legofied](https://www.shadertoy.com/view/XtBSzy) written by [Gijs](https://www.shadertoy.com/user/Gijs)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[Legofied](Legofied.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[MountainsLakes](MountainsLakes.md)**
-based on [Mountains & Lakes](https://www.shadertoy.com/view/7tSSDD) written by [xjorma](https://www.shadertoy.com/user/xjorma)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[MountainsLakes](MountainsLakes.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
-## **[Seascape](Seascape.md)**
-based on [Seascape](https://www.shadertoy.com/view/Ms2SD1) written by [TDM](https://www.shadertoy.com/user/TDM)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
+## **[Seascape](Seascape.md)** :boom:
+- *Thumbnail file does not exist*
 
-## **[TruePinballPhysics](TruePinballPhysics.md)**
-based on [True Pinball Physics](https://www.shadertoy.com/view/4tBGRm) written by [archee](https://www.shadertoy.com/user/archee)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
+## **[TruePinballPhysics](TruePinballPhysics.md)** :boom:
+- *Thumbnail seems to be not a 320x180 pixel PNG*
 
