@@ -539,7 +539,8 @@ local function update_fuse_markdown_file(fuse)
   local prolog = '# '.. fuse.Name ..'\n'
 
   if fuse:isValid() then
-    prolog = prolog .. '[![Download Installer](https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue)]('..fuse.Name..'-Installer.lua "Installer")'
+    -- prolog = prolog .. '[![Download Installer](https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue)]('..fuse.Name..'-Installer.lua "Installer")'
+    prolog = prolog .. '<a href="'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
   end
 
   prolog = prolog .. '\n'
@@ -561,7 +562,7 @@ local function update_fuse_markdown_file(fuse)
     end
   end
 
-  prolog = prolog .. " See [".. fuse.Category .."](README.md) for more fuses in this category."
+  prolog = prolog .. " See [".. fuse.Category .."](README.md) for more fuses in this category.\n\n"
 
   if fuse:hasThumbnail() then
     if fuse:hasShaderInfo() then
