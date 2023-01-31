@@ -14,7 +14,7 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 # Fuses
 
-See the corresponding GitHub Pages on [nmbr73.github.io/Shaderfuse/](https://nmbr73.github.io/Shadertoys/Shaders/) for further information on the Shaderfuses themselves.
+See the corresponding GitHub Pages on [nmbr73.github.io/Shaderfuse/](https://nmbr73.github.io/Shadertoys/) for further information on the Shaderfuses themselves.
 
 
 # Installation
