@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[generative art deco 4](https://www.shadertoy.com/view/mds3DX)_' by [morisil](https://www.shadertoy.com/user/morisil). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![GenerativeArtDeco4 Thumbnail](GenerativeArtDeco4.png)](https://www.shadertoy.com/view/mds3DX "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 ![GenerativeArtDeco4](https://user-images.githubusercontent.com/78935215/200687263-7aee7e94-a670-48ad-9e1e-7f29f44f8fa6.gif)
@@ -21,9 +25,8 @@ This Fuse is based on the Shadertoy '_[generative art deco 4](https://www.shader
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

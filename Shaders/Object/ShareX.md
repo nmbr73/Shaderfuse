@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[ShareX](https://www.shadertoy.com/view/WsKSRK)_' by [fre3k](https://www.shadertoy.com/user/fre3k). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
 
+[![ShareX Thumbnail](ShareX.png)](https://www.shadertoy.com/view/WsKSRK "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 So much shader in so little code - really amazing.
@@ -40,9 +44,8 @@ Have fun
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility not checked
 - Windows_CUDA compatibility not checked
 

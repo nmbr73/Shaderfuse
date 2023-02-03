@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[happy bouncing](https://www.shadertoy.com/view/flyXRh)_' by [leon](https://www.shadertoy.com/user/leon). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
 
+[![HappyBouncing Thumbnail](HappyBouncing.png)](https://www.shadertoy.com/view/flyXRh "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A new conversion method is used here. nmbr73 has developed a Python script and an incubator fuse, which enables shaders to be converted much more effectively and conveniently. It's still in the middle of development, but it's already very powerful.
@@ -30,9 +34,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility not checked
 
 

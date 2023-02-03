@@ -13,17 +13,17 @@
 # Cubemap Shaders
 
 ## **[BallsAreTouching](BallsAreTouching.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_OpenCL compatibility not checked*
 
 ## **[GlassAndBubble](GlassAndBubble.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_OpenCL compatibility not checked*
 
 ## **[KissTracing](KissTracing.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility: :frog: *seems to be broken**
 
 ## **[NewtonPendulum](NewtonPendulum.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_OpenCL compatibility not checked*
 
 ## **[OceanElemental](OceanElemental.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility: 💣 *`refract_f3`redefined**
 

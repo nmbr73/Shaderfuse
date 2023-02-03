@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Color processing](https://www.shadertoy.com/view/7tfBzs)_' by [sinvec](https://www.shadertoy.com/user/sinvec). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![ColorProcessing Thumbnail](ColorProcessing.png)](https://www.shadertoy.com/view/7tfBzs "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![ColorProcessing](https://user-images.githubusercontent.com/78935215/166887489-87295291-9e32-4db8-9c42-786b9cfc57b3.gif)](https://www.shadertoy.com/view/7tfBzs "View on Shadertoy.com")
@@ -19,9 +23,8 @@ This Fuse is based on the Shadertoy '_[Color processing](https://www.shadertoy.c
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility not checked
 
 

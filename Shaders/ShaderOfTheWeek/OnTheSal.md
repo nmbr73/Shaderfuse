@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[On the salt lake](https://www.shadertoy.com/view/fsXcR8)_' by [iapafoto](https://www.shadertoy.com/user/iapafoto). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![OnTheSal Thumbnail](OnTheSal.png)](https://www.shadertoy.com/view/fsXcR8 "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 <a href="https://github.com/nmbr73/Shadertoys/releases/download/V1.1/OnTheSal-Installer.lua"><img src="https://img.shields.io/static/v1?label=Download&message=OnTheSal-Installer.lua&color=blue"  > </a>
@@ -30,9 +34,8 @@ Anyway have fun
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

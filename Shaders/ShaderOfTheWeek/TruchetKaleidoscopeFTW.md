@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Truchet + Kaleidoscope FTW](https://www.shadertoy.com/view/7lKSWW)_' by [mrange](https://www.shadertoy.com/user/mrange). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![TruchetKaleidoscopeFTW Thumbnail](TruchetKaleidoscopeFTW.png)](https://www.shadertoy.com/view/7lKSWW "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A great combination of Truchet tiles and a kaleidoscope.
@@ -24,9 +28,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

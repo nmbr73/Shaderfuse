@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Nematomorpha](https://www.shadertoy.com/view/ltdfR7)_' by [PianiGiani](https://www.shadertoy.com/user/PianiGiani). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Wedding](README.md) for more fuses in this category.
 
+[![Nematomorpha Thumbnail](Nematomorpha.png)](https://www.shadertoy.com/view/ltdfR7 "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A rope winds its way through the picture. Many parameters invite you to play.
@@ -25,9 +29,8 @@ Have lots of fun with it
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

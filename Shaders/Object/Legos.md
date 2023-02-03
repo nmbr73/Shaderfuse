@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Legos](https://www.shadertoy.com/view/Xdl3Dj)_' by [morgan3d](https://www.shadertoy.com/user/morgan3d). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
 
+[![Legos Thumbnail](Legos.png)](https://www.shadertoy.com/view/Xdl3Dj "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Intense childhood memories come up. A great toy. The fuse still has very few parameters.
@@ -23,9 +27,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility: 💣💣💣
 
 

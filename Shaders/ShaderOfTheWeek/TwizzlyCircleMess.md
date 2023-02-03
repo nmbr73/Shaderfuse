@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Twizzly Circle Mess](https://www.shadertoy.com/view/sltGRj)_' by [SnoopethDuckDuck](https://www.shadertoy.com/user/SnoopethDuckDuck). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![TwizzlyCircleMess Thumbnail](TwizzlyCircleMess.png)](https://www.shadertoy.com/view/sltGRj "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 ![TwzzzlyCircleMess](https://user-images.githubusercontent.com/78935215/190479840-983ccaea-02d8-4d22-8166-202edc6c0053.gif)
@@ -20,9 +24,8 @@ This Fuse is based on the Shadertoy '_[Twizzly Circle Mess](https://www.shaderto
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

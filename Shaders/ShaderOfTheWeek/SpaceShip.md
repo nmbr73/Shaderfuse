@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Space ship](https://www.shadertoy.com/view/NlsBzn)_' by [A_Toaster](https://www.shadertoy.com/user/A_Toaster). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![SpaceShip Thumbnail](SpaceShip.png)](https://www.shadertoy.com/view/NlsBzn "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A small space capsule with a large jet cone flies through space.
@@ -22,9 +26,8 @@ A small space capsule with a large jet cone flies through space.
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

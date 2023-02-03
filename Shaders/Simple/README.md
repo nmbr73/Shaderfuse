@@ -12,24 +12,24 @@
 
 # Simple Shaders
 
-## **[Crazyness](Crazyness.md)** :boom:
-- *Thumbnail file does not exist*
+## **[Crazyness](Crazyness.md)**
+based on [craziness](https://www.shadertoy.com/view/wdjSRc) written by [spsherk_](https://www.shadertoy.com/user/spsherk_)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
-## **[CrossDistance](CrossDistance.md)** :boom:
-- *Thumbnail file does not exist*
+## **[CrossDistance](CrossDistance.md)**
+based on [Cross - distance](https://www.shadertoy.com/view/XtGfzw) written by [iq](https://www.shadertoy.com/user/iq)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
 ## **[Quadtree3](Quadtree3.md)** :boom:
-- *Thumbnail file does not exist*
+- *macOS_OpenCL compatibility not checked*
 
 ## **[Rosace3C](Rosace3C.md)** :boom:
-- *Thumbnail file does not exist*
+- *macOS_OpenCL compatibility not checked*
 
-## **[ShatteredLight](ShatteredLight.md)** :boom:
-- *Thumbnail file does not exist*
+## **[ShatteredLight](ShatteredLight.md)**
+based on [Shattered light](https://www.shadertoy.com/view/stjSRV) written by [conceptblend](https://www.shadertoy.com/user/conceptblend)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
-## **[StainedLights](StainedLights.md)** :boom:
-- *Thumbnail file does not exist*
+## **[StainedLights](StainedLights.md)**
+based on [Stained Lights](https://www.shadertoy.com/view/WlsSzM) written by [104](https://www.shadertoy.com/user/104)<br />and ported to DaFusion by [nmbr73](../../Site/Profiles/nmbr73.md)
 
 ## **[VideoFilters](VideoFilters.md)** :boom:
-- *Thumbnail file does not exist*
+- *macOS_OpenCL compatibility not checked*
 

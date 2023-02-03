@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[MightyMorphingPowerSphere](https://www.shadertoy.com/view/MtGSzh)_' by [Lallis](https://www.shadertoy.com/user/Lallis). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Planet](README.md) for more fuses in this category.
 
+[![MightyMorphingPowerSphere Thumbnail](MightyMorphingPowerSphere.png)](https://www.shadertoy.com/view/MtGSzh "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 The suggestion for this shader came from the WSL forum. After a first look, the conversion seemed to be done quickly and the first fragment shader version was done quickly. However, the appearance did not exactly match the original. The use of a noise color texture always results in changes, since the original image is not available and the dimensions and resolutions vary. But it was noticeable when the fuse was being built. This difference is so serious that it could no longer be explained with the noise color texture. So we went looking. Finally, there was an interesting line of code:
@@ -31,9 +35,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility not checked
 
 

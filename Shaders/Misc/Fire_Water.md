@@ -1,6 +1,11 @@
 # Fire_Water
+<a href="Fire_Water-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=Fire_Water-Installer.lua&color=blue" /></a>
 
 This Fuse is based on the Shadertoy '_[ComplementaryElements](https://www.shadertoy.com/view/tdsBz4)_' by [izutionix](https://www.shadertoy.com/user/izutionix). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Misc](README.md) for more fuses in this category.
+
+[![Fire_Water Thumbnail](Fire_Water.png)](https://www.shadertoy.com/view/tdsBz4 "View on Shadertoy.com")
+
+
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
@@ -20,12 +25,4 @@ Here is a little study of this fuse: https://www.youtube.com/watch?v=4R7ZVMyKLnY
 Have fun
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
-## Problems
-
-Number of problems: 1
-
-- Thumbnail seems to be not a 320x180 pixel PNG
-
-
 

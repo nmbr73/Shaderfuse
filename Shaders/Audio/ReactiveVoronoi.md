@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Reactive Voronoi](https://www.shadertoy.com/view/Ml3GDX)_' by [glk7](https://www.shadertoy.com/user/glk7). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Audio](README.md) for more fuses in this category.
 
+[![ReactiveVoronoi Thumbnail](ReactiveVoronoi.png)](https://www.shadertoy.com/view/Ml3GDX "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![Thumbnail](ReactiveVoronoi_screenshot.png)](https://www.shadertoy.com/view/Ml3GDX "View on Shadertoy.com")
@@ -18,9 +22,8 @@ This Fuse is based on the Shadertoy '_[Reactive Voronoi](https://www.shadertoy.c
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

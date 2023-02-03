@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[ProceduralWalkAnimation](https://www.shadertoy.com/view/WlsSWS)_' by [TLC123](https://www.shadertoy.com/user/TLC123). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
 
+[![ProceduralWalkAnimation Thumbnail](ProceduralWalkAnimation.png)](https://www.shadertoy.com/view/WlsSWS "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A figure runs after his head on uneven terrain.
@@ -45,9 +49,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

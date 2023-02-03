@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Rendezvous](https://www.shadertoy.com/view/ldjGDw)_' by [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Fractals](README.md) for more fuses in this category.
 
+[![Rendezvous Thumbnail](Rendezvous.png)](https://www.shadertoy.com/view/ldjGDw "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A flight through a colorful fractal landscape that breathes and seems to be alive. An impressively compact code for the definition of the landscape and you don't necessarily need matrices to program a great camera flight, as you can see.
@@ -48,9 +52,8 @@ float Map( vec3 p )
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility: 💣💣💣
 
 

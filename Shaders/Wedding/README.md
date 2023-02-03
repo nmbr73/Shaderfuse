@@ -13,17 +13,17 @@
 # Wedding Shaders
 
 ## **[HappyValentinesDay](HappyValentinesDay.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[HeartU2015](HeartU2015.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[Heartdemo](Heartdemo.md)**
 based on [Heart Demo](https://www.shadertoy.com/view/wttXD7) written by [17dpn01](https://www.shadertoy.com/user/17dpn01)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[Nematomorpha](Nematomorpha.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[Valentwine](Valentwine.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 

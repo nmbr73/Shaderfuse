@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Video filters](https://www.shadertoy.com/view/XsX3z8)_' by [XT95](https://www.shadertoy.com/user/XT95). Conversion to DCTL and encapsulation into a fuse done by [nmbr73](../../Site/Profiles/nmbr73.md). See [Simple](README.md) for more fuses in this category.
 
+[![VideoFilters Thumbnail](VideoFilters.png)](https://www.shadertoy.com/view/XsX3z8 "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![Thumbnail](VideoFilters.png)](https://www.shadertoy.com/view/XsX3z8 "View on Shadertoy.com")
@@ -18,9 +22,8 @@ This Fuse is based on the Shadertoy '_[Video filters](https://www.shadertoy.com/
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail file does not exist
 - macOS_OpenCL compatibility not checked
 
 

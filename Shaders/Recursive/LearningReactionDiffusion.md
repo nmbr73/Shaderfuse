@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[LearningReactionDiffusion](https://www.shadertoy.com/view/WlSGzy)_' by [TekF](https://www.shadertoy.com/user/TekF). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Recursive](README.md) for more fuses in this category.
 
+[![LearningReactionDiffusion Thumbnail](LearningReactionDiffusion.png)](https://www.shadertoy.com/view/WlSGzy "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 The reaction diffusion shaders cast a spell over me. This is a shader to work your way through the matter well. There is a short concise info page about the theory:
@@ -29,9 +33,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility not checked
 
 

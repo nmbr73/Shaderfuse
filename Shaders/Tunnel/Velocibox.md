@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Velocibox](https://www.shadertoy.com/view/lsdXD8)_' by [zackpudil](https://www.shadertoy.com/user/zackpudil). Conversion to DCTL and encapsulation into a fuse done by [nmbr73](../../Site/Profiles/nmbr73.md). See [Tunnel](README.md) for more fuses in this category.
 
+[![Velocibox Thumbnail](Velocibox.png)](https://www.shadertoy.com/view/lsdXD8 "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![thumb](Velocibox.png "Velocibox.fuse")](Velocibox.fuse)
@@ -18,9 +22,8 @@ This Fuse is based on the Shadertoy '_[Velocibox](https://www.shadertoy.com/view
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail file does not exist
 - Windows_OpenCL compatibility not checked
 
 

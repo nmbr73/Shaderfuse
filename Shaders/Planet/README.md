@@ -15,21 +15,21 @@
 Planet shaders are shaders that generally render planets. The following tasks should be mentioned: surface texture, moving atmosphere, the use of bump maps or displacement for the surface texture. Rotations and movements in relation to the background or additional planets or suns and their throwing of light or shadow represent further challenges. The boundary between some blobs and planets is fluid.
 
 
-## **[CrackerCars](CrackerCars.md)** :boom:
-- *Thumbnail file does not exist*
+## **[CrackerCars](CrackerCars.md)**
+based on [CrackerCars](https://www.shadertoy.com/view/4sdXzr) written by [zackpudil](https://www.shadertoy.com/user/zackpudil)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[EARF](EARF.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+## **[EARF](EARF.md)**
+based on [EARF](https://www.shadertoy.com/view/ls3SDj) written by [zackpudil](https://www.shadertoy.com/user/zackpudil)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[Fake3DScene](Fake3DScene.md)** :boom:
-- *Thumbnail file does not exist*
+## **[Fake3DScene](Fake3DScene.md)**
+based on [Fake3DScene](https://www.shadertoy.com/view/MddSWB) written by [LaBodilsen](https://www.shadertoy.com/user/LaBodilsen)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[MightyMorphingPowerSphere](MightyMorphingPowerSphere.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_OpenCL compatibility not checked*
 
-## **[RayCastSphere](RayCastSphere.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+## **[RayCastSphere](RayCastSphere.md)**
+based on [RayCastSphere](https://www.shadertoy.com/view/XdjBDG) written by [diroru](https://www.shadertoy.com/user/diroru)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[WildKifs4D](WildKifs4D.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *Thumbnail file does not exist*
 

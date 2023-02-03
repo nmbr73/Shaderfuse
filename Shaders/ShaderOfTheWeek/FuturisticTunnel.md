@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Futuristic Tunnel](https://www.shadertoy.com/view/wdScRd)_' by [julianlumia](https://www.shadertoy.com/user/julianlumia). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![FuturisticTunnel Thumbnail](FuturisticTunnel.png)](https://www.shadertoy.com/view/wdScRd "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 An abstract tunnel flight.
@@ -25,9 +29,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility not checked
 
 

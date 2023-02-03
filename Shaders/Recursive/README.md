@@ -13,23 +13,23 @@
 # Recursive Shaders
 
 ## **[AnisotropicBlurImage](AnisotropicBlurImage.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
-## **[FallingCuteBombs](FallingCuteBombs.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+## **[FallingCuteBombs](FallingCuteBombs.md)**
+based on [FallingCuteBombs](https://www.shadertoy.com/view/ldy3Rw) written by [Emil](https://www.shadertoy.com/user/Emil)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[GrowingWeatheringRocks](GrowingWeatheringRocks.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_OpenCL compatibility not checked*
 
 ## **[LearningReactionDiffusion](LearningReactionDiffusion.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_OpenCL compatibility not checked*
 
 ## **[Spilled](Spilled.md)** :boom:
 - *unknown Fuse.AuthorLogo in sfi file*
 
-## **[TDSOTM_Nebula](TDSOTM_Nebula.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+## **[TDSOTM_Nebula](TDSOTM_Nebula.md)**
+based on [The dark side of the moon](https://www.shadertoy.com/view/4dBSDV) written by [bytewave](https://www.shadertoy.com/user/bytewave)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
-## **[Vine](Vine.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+## **[Vine](Vine.md)**
+based on [Vine](https://www.shadertoy.com/view/XldSz7) written by [gaz](https://www.shadertoy.com/user/gaz)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 

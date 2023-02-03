@@ -13,23 +13,23 @@
 # Audio Shaders
 
 ## **[AudioHeightfield1](AudioHeightfield1.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[AudioWaveformVisualizer](AudioWaveformVisualizer.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[InerciaIntended](InerciaIntended.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[JamSession](JamSession.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[ReactiveVoronoi](ReactiveVoronoi.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[Rlstyle](Rlstyle.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 
 ## **[ShadertoyAudioDisplay](ShadertoyAudioDisplay.md)** :boom:
-- *Thumbnail seems to be not a 320x180 pixel PNG*
+- *macOS_Metal compatibility not checked*
 

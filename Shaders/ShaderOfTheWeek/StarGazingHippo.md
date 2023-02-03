@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[StarGazingHippo](https://www.shadertoy.com/view/4tGfz3)_' by [kuvkar](https://www.shadertoy.com/user/kuvkar). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![StarGazingHippo Thumbnail](StarGazingHippo.png)](https://www.shadertoy.com/view/4tGfz3 "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A cute little shader
@@ -22,9 +26,8 @@ A cute little shader
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

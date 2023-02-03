@@ -1,6 +1,11 @@
 # OtherWorlds
+<a href="OtherWorlds-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=OtherWorlds-Installer.lua&color=blue" /></a>
 
 This Fuse is based on the Shadertoy '_[Shader 012 4.29.21](https://www.shadertoy.com/view/Ns2XzR)_' by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Abstract](README.md) for more fuses in this category.
+
+[![OtherWorlds Thumbnail](OtherWorlds.png)](https://www.shadertoy.com/view/Ns2XzR "View on Shadertoy.com")
+
+
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
@@ -62,12 +67,4 @@ I hope you enjoy playing with this shader as much as I do.
 ![OtherWorlds](https://user-images.githubusercontent.com/78935215/116747985-fd379e00-a9fe-11eb-8e3a-554837e2516e.gif)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
-## Problems
-
-Number of problems: 1
-
-- Thumbnail seems to be not a 320x180 pixel PNG
-
-
 

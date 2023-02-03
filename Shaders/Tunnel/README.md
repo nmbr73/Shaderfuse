@@ -12,11 +12,11 @@
 
 # Tunnel Shaders
 
-## **[TNTHTW](TNTHTW.md)** :boom:
-- *Thumbnail file does not exist*
+## **[TNTHTW](TNTHTW.md)**
+based on [Try not to hit the walls](https://www.shadertoy.com/view/XsKcDG) written by [hisojarvi](https://www.shadertoy.com/user/hisojarvi)<br />and ported to DaFusion by [JiPi](../../Site/Profiles/JiPi.md)
 
 ## **[Velocibox](Velocibox.md)** :boom:
-- *Thumbnail file does not exist*
+- *Windows_OpenCL compatibility not checked*
 
 ## **[WindingMengerTunnel](WindingMengerTunnel.md)** :boom:
 - *unknown Fuse.AuthorLogo in sfi file*

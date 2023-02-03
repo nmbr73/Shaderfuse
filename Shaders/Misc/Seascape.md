@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Seascape](https://www.shadertoy.com/view/Ms2SD1)_' by [TDM](https://www.shadertoy.com/user/TDM). Conversion to DCTL and encapsulation into a fuse done by [nmbr73](../../Site/Profiles/nmbr73.md). See [Misc](README.md) for more fuses in this category.
 
+[![Seascape Thumbnail](Seascape.png)](https://www.shadertoy.com/view/Ms2SD1 "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 ![thumbnail](Seascape.png "Seascape Thumb")
@@ -23,9 +27,8 @@ Still some work left to be done:
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail file does not exist
 - macOS_OpenCL compatibility not checked
 
 

@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Audio heightfield 1](https://www.shadertoy.com/view/ldXGzN)_' by [huttarl](https://www.shadertoy.com/user/huttarl). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Audio](README.md) for more fuses in this category.
 
+[![AudioHeightfield1 Thumbnail](AudioHeightfield1.png)](https://www.shadertoy.com/view/ldXGzN "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![Thumbnail](AudioHeightfield1_screenshot.png)](https://www.shadertoy.com/view/ldXGzN "View on Shadertoy.com")
@@ -18,9 +22,8 @@ This Fuse is based on the Shadertoy '_[Audio heightfield 1](https://www.shaderto
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

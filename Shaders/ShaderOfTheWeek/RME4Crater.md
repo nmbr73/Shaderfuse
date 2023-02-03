@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[RME4 - Crater](https://www.shadertoy.com/view/MlSBDt)_' by [patu](https://www.shadertoy.com/user/patu). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![RME4Crater Thumbnail](RME4Crater.png)](https://www.shadertoy.com/view/MlSBDt "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 A nice shader of a volcanic crater. A nice play with the light.
@@ -25,9 +29,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility not checked
 
 

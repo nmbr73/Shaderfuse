@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Alexander horned sphere zoom](https://www.shadertoy.com/view/ttyGzW)_' by [tmst](https://www.shadertoy.com/user/tmst). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![AlexanderHornedSphereZoom Thumbnail](AlexanderHornedSphereZoom.png)](https://www.shadertoy.com/view/ttyGzW "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 An interesting implementation of a mathematically pathological structure. A sphere embedded in space with an infinitely fine, recursively generated object structure.
@@ -25,9 +29,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 2
+Number of problems: 1
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_OpenCL compatibility: ... nope, does not crash but still looks not as expected :-/
 
 

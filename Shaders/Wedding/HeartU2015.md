@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[heart u 2015](https://www.shadertoy.com/view/lts3RX)_' by [mattz](https://www.shadertoy.com/user/mattz). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Wedding](README.md) for more fuses in this category.
 
+[![HeartU2015 Thumbnail](HeartU2015.png)](https://www.shadertoy.com/view/lts3RX "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 Nested partially open hearts that rotate around each other like clockwork.
@@ -29,9 +33,8 @@ Have fun playing
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 

@@ -1,6 +1,11 @@
 # TasteOfNoise7
+<a href="TasteOfNoise7-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=TasteOfNoise7-Installer.lua&color=blue" /></a>
 
 This Fuse is based on the Shadertoy '_[Taste Of Noise 7](https://www.shadertoy.com/view/NddSWs)_' by [leon](https://www.shadertoy.com/user/leon). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
+
+[![TasteOfNoise7 Thumbnail](TasteOfNoise7.png)](https://www.shadertoy.com/view/NddSWs "View on Shadertoy.com")
+
+
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
@@ -14,12 +19,4 @@ Have fun playing
 [![TasteOfNoise7](TasteOfNoise7_screenshot.png)](TasteOfNoise7.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
-## Problems
-
-Number of problems: 1
-
-- Thumbnail seems to be not a 320x180 pixel PNG
-
-
 

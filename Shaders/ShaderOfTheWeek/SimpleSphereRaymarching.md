@@ -1,6 +1,11 @@
 # SimpleSphereRaymarching
+<a href="SimpleSphereRaymarching-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=SimpleSphereRaymarching-Installer.lua&color=blue" /></a>
 
 This Fuse is based on the Shadertoy '_[SimpleSphereRaymarching](https://www.shadertoy.com/view/wdjSRc)_' by [drschizzo](https://www.shadertoy.com/user/drschizzo). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
+
+[![SimpleSphereRaymarching Thumbnail](SimpleSphereRaymarching.png)](https://www.shadertoy.com/view/wdjSRc "View on Shadertoy.com")
+
+
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
@@ -14,12 +19,4 @@ Have fun playing
 [![SimpleSphereRaymarching](SimpleSphereRaymarching_screenshot.png)](SimpleSphereRaymarching.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
-## Problems
-
-Number of problems: 1
-
-- Thumbnail seems to be not a 320x180 pixel PNG
-
-
 

@@ -2,6 +2,10 @@
 
 This Fuse is based on the Shadertoy '_[Coastal Landscape](https://www.shadertoy.com/view/fstyD4)_' by [bitless](https://www.shadertoy.com/user/bitless). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [ShaderOfTheWeek](README.md) for more fuses in this category.
 
+[![CoastalLandscape Thumbnail](CoastalLandscape.png)](https://www.shadertoy.com/view/fstyD4 "View on Shadertoy.com")
+
+
+
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
 [![CoastalLandscape](https://user-images.githubusercontent.com/78935215/171990744-ed32ac74-2b33-4bb9-9f84-2012da2f967e.gif)](CoastalLandscape.fuse)
@@ -20,9 +24,8 @@ This Fuse is based on the Shadertoy '_[Coastal Landscape](https://www.shadertoy.
 
 ## Problems
 
-Number of problems: 3
+Number of problems: 2
 
-- Thumbnail seems to be not a 320x180 pixel PNG
 - macOS_Metal compatibility not checked
 - macOS_OpenCL compatibility not checked
 
