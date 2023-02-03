@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[Twizzly Circle Mess](https://www.shaderto
 
 ![TwzzzlyCircleMess](https://user-images.githubusercontent.com/78935215/190479840-983ccaea-02d8-4d22-8166-202edc6c0053.gif)
 
-[![Thumbnail](TwizzlyCircleMess.png)](https://www.shadertoy.com/view/sltGRj "View on Shadertoy.com")
+[![Thumbnail](TwizzlyCircleMess_screenshot.png)](https://www.shadertoy.com/view/sltGRj "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

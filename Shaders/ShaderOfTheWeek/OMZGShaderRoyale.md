@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[OMZG Shader Royale](https://www.shadertoy
 
 ![OMZGShaderRoyale](https://user-images.githubusercontent.com/78935215/159676611-7ac0d809-024f-4808-abee-eef1bf7b02f7.gif)
 
-[![Thumbnail](OMZGShaderRoyale.png)](https://www.shadertoy.com/view/stXyWN "View on Shadertoy.com")
+[![Thumbnail](OMZGShaderRoyale_screenshot.png)](https://www.shadertoy.com/view/stXyWN "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

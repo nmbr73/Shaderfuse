@@ -4,7 +4,7 @@ This Fuse is based on the Shadertoy '_[Shattered light](https://www.shadertoy.co
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-![thumbnail](ShatteredLight_320x180.png "Shattered light Thumb")
+![thumbnail](ShatteredLight.png "Shattered light Thumb")
 
 Still some work left to be done:
 - Some parameters could be nice

@@ -11,9 +11,7 @@ Have fun playing
 
 
 [![Valentwine](https://user-images.githubusercontent.com/78935215/198817168-863e9681-f4b7-490a-b08f-76890d5ffb5d.gif)](Valentwine.fuse)
-
-
-[![Thumbnail](Valentwine.png)](https://www.shadertoy.com/view/fsffW4 "View on Shadertoy.com")
+[![Thumbnail](Valentwine_screenshot.png)](https://www.shadertoy.com/view/fsffW4 "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

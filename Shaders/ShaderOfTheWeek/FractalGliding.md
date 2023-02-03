@@ -12,7 +12,7 @@ Have fun playing
 ![FractalGliding](https://user-images.githubusercontent.com/78935215/144676583-8f728705-53d6-4c52-8302-a9e9a88c780b.gif)
 
 
-[![FractalGliding](FractalGliding.png)](FractalGliding.fuse)
+[![FractalGliding](FractalGliding_screenshot.png)](FractalGliding.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

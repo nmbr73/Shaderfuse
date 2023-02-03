@@ -11,8 +11,7 @@ Have fun playing
 
 ![Alexander](https://user-images.githubusercontent.com/78935215/140505472-a94508a6-5299-4090-98d0-d28151fcde3b.gif)
 
-
-[![SpiraledLayers](AlexanderHornedSphereZoom.png)](AlexanderHornedSphereZoom.fuse)
+[![SpiraledLayers](AlexanderHornedSphereZoom_screenshot.png)](AlexanderHornedSphereZoom.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

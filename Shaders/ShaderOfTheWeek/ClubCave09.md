@@ -11,7 +11,7 @@ Have fun playing
 ![20210930_CLUB-CAVE-09](https://user-images.githubusercontent.com/78935215/136195940-27b6d480-b0bf-479c-95be-dfa31060eba9.gif)
 
 
-[![20210930_CLUB-CAVE-09](ClubCave09.png)](20210930_CLUB-CAVE-09.fuse)
+[![20210930_CLUB-CAVE-09](ClubCave09_screenshot.png)](20210930_CLUB-CAVE-09.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

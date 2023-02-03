@@ -11,7 +11,7 @@ Have fun playing
 ![SimpleSphereRaymarching](https://user-images.githubusercontent.com/78935215/135231477-3c4d5792-8541-43b3-9771-aad9b2c21aa7.gif)
 
 
-[![SimpleSphereRaymarching](SimpleSphereRaymarching.png)](SimpleSphereRaymarching.fuse)
+[![SimpleSphereRaymarching](SimpleSphereRaymarching_screenshot.png)](SimpleSphereRaymarching.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

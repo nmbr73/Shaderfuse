@@ -8,7 +8,7 @@ A very nice shader with refraction, unfortunately the result can only be generat
 
 ![SimpleRefractionTest](https://user-images.githubusercontent.com/78935215/187634245-973d63f6-7805-41bd-9586-996403a7b6f7.gif)
 
-[![Thumbnail](SimpleRefractionTest.png)](https://www.shadertoy.com/view/flcSW2 "View on Shadertoy.com")
+[![Thumbnail](SimpleRefractionTest_screenshot.png)](https://www.shadertoy.com/view/flcSW2 "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

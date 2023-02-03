@@ -12,7 +12,7 @@ The shader "Fork @Party Con qb777 479" (https://www.shadertoy.com/view/flfcD2) i
 
 ![PartyConcertVisuals2020](https://user-images.githubusercontent.com/78935215/160671987-d4ac1490-4fb8-4ba7-8182-2956bc8d8cdc.gif)
 
-[![Thumbnail](PartyConcertVisuals2020.png)](https://www.shadertoy.com/view/WtscW4 "View on Shadertoy.com")
+[![Thumbnail](PartyConcertVisuals2020_screenshot.png)](https://www.shadertoy.com/view/WtscW4 "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[craziness](https://www.shadertoy.com/view
 
 This was a quick one - the Fuse deserves some parameters - I'll add them later.
 
-![thumb](Crazyness_320x180.png "Crazyness.fuse")
+![thumb](Crazyness.png "Crazyness.fuse")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

@@ -7,7 +7,7 @@ This Fuse is based on the Shadertoy '_[Cubic Dispersal](https://www.shadertoy.co
 [![CubicDispersal](https://user-images.githubusercontent.com/78935215/168441827-e06b134f-7c7b-4321-86ec-589a4ffb8ba4.gif)](CubicDispersal.fuse)
 
 
-[![Thumbnail](CubicDispersal.png)](https://www.shadertoy.com/view/fldXWS "View on Shadertoy.com")
+[![Thumbnail](CubicDispersal_screenshot.png)](https://www.shadertoy.com/view/fldXWS "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

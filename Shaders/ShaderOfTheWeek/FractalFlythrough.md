@@ -11,7 +11,7 @@ Have fun
 ![FractalFlythrough](https://user-images.githubusercontent.com/78935215/132952674-a03a41f7-5c7d-4baa-bb44-99208289dc43.gif)
 
 
-[![Fractal Flythrough](FractalFlythrough.png)](FractalFlythrough.fuse)
+[![Fractal Flythrough](FractalFlythrough_screenshot.png)](FractalFlythrough.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
