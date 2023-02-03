@@ -16,7 +16,7 @@ Have fun playing
 ![HappyBouncing](https://user-images.githubusercontent.com/78935215/147247710-5e0126ac-7252-4d47-8b03-96c461cf4564.gif)
 
 
-[![HappyBouncing](HappyBouncing.png)](HappyBouncing.fuse)
+[![HappyBouncing](HappyBouncing_screenshot.png)](HappyBouncing.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

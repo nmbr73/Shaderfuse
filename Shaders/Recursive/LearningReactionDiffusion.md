@@ -15,10 +15,7 @@ Have fun playing
 
 ![LearningReactionDiffusion](https://user-images.githubusercontent.com/78935215/126063449-f4ef9253-d228-4448-99cf-2c89cc3d6c87.gif)
 
-
-
-
-[![LearningReactionDiffusion](LearningReactionDiffusion.png)](LearningReactionDiffusion.fuse)
+[![LearningReactionDiffusion](LearningReactionDiffusion_screenshot.png)](LearningReactionDiffusion.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

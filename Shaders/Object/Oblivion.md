@@ -10,10 +10,7 @@ Have fun playing
 
 ![Oblivion](https://user-images.githubusercontent.com/78935215/123615732-e0082b80-d805-11eb-9511-eefaadecb8be.gif)
 
-
-
-
-[![Oblivion](Oblivion.png)](Oblivion.fuse)
+[![Oblivion](Oblivion_screenshot.png)](Oblivion.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

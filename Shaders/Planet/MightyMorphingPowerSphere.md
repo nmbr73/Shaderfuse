@@ -17,9 +17,7 @@ Have fun playing
 
 ![MightyMorphingPowerSphere2](https://user-images.githubusercontent.com/78935215/120659993-2e384200-c487-11eb-8918-f0f8957dc9d6.gif)
 
-
-
-[![MightyMorphingPowerSphere](MightyMorphingPowerSphere.png)](MightyMorphingPowerSphere.fuse)
+[![MightyMorphingPowerSphere](MightyMorphingPowerSphere_screenshot.png)](MightyMorphingPowerSphere.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

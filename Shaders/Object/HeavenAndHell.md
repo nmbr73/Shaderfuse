@@ -13,7 +13,7 @@ In the fuse, the camera pan in the X direction, which has already been prepared 
 ![HeavenAndHell](https://user-images.githubusercontent.com/78935215/119268704-72f4eb00-bbf4-11eb-91e0-4af4d2ca9ec0.gif)
 
 
-[![HeavenAndHell](HeavenAndHell.png)](HeavenAndHell.fuse)
+[![HeavenAndHell](HeavenAndHell_screenshot.png)](HeavenAndHell.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

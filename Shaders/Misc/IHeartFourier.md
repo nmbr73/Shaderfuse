@@ -18,7 +18,7 @@ An interesting Fourier series of 18 points results in a curved line. Here a hurd
   init(a,b,params);
 ```
 
-[![IHeartFourier](IHeartFourier.png)](IHeartFourier.fuse)
+[![IHeartFourier](IHeartFourier_screenshot.png)](IHeartFourier.fuse)
 
 Original:
 

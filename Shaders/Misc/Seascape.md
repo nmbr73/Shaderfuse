@@ -4,7 +4,7 @@ This Fuse is based on the Shadertoy '_[Seascape](https://www.shadertoy.com/view/
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-![thumbnail](Seascape_320x180.png "Seascape Thumb")
+![thumbnail](Seascape.png "Seascape Thumb")
 
 Still some work left to be done:
 - OpenCL crashes without any information - maybe the Windows error messages will be more helpful

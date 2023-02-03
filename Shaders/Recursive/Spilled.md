@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[spilled](https://www.shadertoy.com/view/M
 
 A nice example for "computational flockarooid dynamics"
 
-[![Spilled](Spilled.png)](Spilled.fuse)
+[![Spilled](Spilled_screenshot.png)](Spilled.fuse)
 
 It took a while until the penny for the implementation of a BufferA in DCTL fell. I struggled with an offset and strong artifacts. When tida wrote a post with exactly this shader in WSL, I first created the recursive call using Pieter's "loop" (WeSuckLessForum). The construction of the multi-core fuse was successful and tida added great features and parameters.
 Now I found the time for a clean-up.

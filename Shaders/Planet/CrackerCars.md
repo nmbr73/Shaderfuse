@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[CrackerCars](https://www.shadertoy.com/vi
 
 Cute little racing cars roar around on small planets. All colors are changeable
 
-[![screenshot](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/CrackerCars.fuse)
+[![screenshot](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](CrackerCars.fuse)
 
 
 A solution has been found for the tiresome multi-dimensional variable conversion. nmbr73 has defined cute defines ;-)

@@ -36,7 +36,7 @@ __DEVICE__ inline float4 mat4_multi_f4 (mat4 B, float4 A) {
   }
 ```
 
-[![HW3Swing](HW3Swing.png "HW3Swing.fuse in DaVinci Resolve")](HW3Swing.fuse)
+[![HW3Swing](HW3Swing_screenshot.png "HW3Swing.fuse in DaVinci Resolve")](HW3Swing.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

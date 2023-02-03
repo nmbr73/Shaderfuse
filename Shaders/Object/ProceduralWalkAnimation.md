@@ -31,7 +31,7 @@ Have fun playing
 
 
 
-[![ProceduralWalkAnimation](ProceduralWalkAnimation.png)](ProceduralWalkAnimation.fuse)
+[![ProceduralWalkAnimation](ProceduralWalkAnimation_screenshot.png)](ProceduralWalkAnimation.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

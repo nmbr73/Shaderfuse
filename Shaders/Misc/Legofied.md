@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[Legofied](https://www.shadertoy.com/view/
 
 Here is a very simple and still very nice shader.
 
-[![Legofied](Legofied.png)](Legofied.fuse)
+[![Legofied](Legofied_screenshot.png)](Legofied.fuse)
 
 
 Have fun playing

@@ -6,9 +6,7 @@ This Fuse is based on the Shadertoy '_[EARF](https://www.shadertoy.com/view/ls3S
 
 .A small cartoony planet with land, water, clouds and a moon. The sun is shining and you can paint everything in a different color.
 
-[![screenshot](EARF.png "EARF.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/EARF.fuse)
-
-
+[![screenshot](EARF_screenshot.png "EARF.fuse in DaVinci Resolve")](EARF.fuse)
 
 Have fun
 

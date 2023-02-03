@@ -14,8 +14,7 @@ Have fun playing
 
 ![GrowingWeatheringRocks](https://user-images.githubusercontent.com/78935215/128998614-85759f48-e57a-4021-aebd-10a3bf5c138c.gif)
 
-
-[![GrowingWeatheringRocks](GrowingWeatheringRocks.png)](GrowingWeatheringRocks.fuse)
+[![GrowingWeatheringRocks](GrowingWeatheringRocks_screenshot.png)](GrowingWeatheringRocks.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
