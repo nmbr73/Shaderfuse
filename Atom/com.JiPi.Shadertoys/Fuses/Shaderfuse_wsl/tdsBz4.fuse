@@ -1,0 +1,1027 @@
+
+  --
+  --       _____        _   _       _   ______    _ _ _
+  --      |  __ \      | \ | |     | | |  ____|  | (_) |
+  --      | |  | | ___ |  \| | ___ | |_| |__   __| |_| |_
+  --      | |  | |/ _ \| . ` |/ _ \| __|  __| / _` | | __|
+  --      | |__| | (_) | |\  | (_) | |_| |___| (_| | | |_
+  --      |_____/ \___/|_| \_|\___/ \__|______\__,_|_|\__|
+  --
+  --   ... this File is managed by some scripts and can be
+  --    overwritten at any time and without further notice!
+  --         pls. see https://github.com/nmbr73/Shadertoys
+  --                                           for details
+  --
+
+  
+
+
+--[[--
+ComplementaryElements
+
+    Based on https://www.shadertoy.com/view/tdsBz4 a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by JiPi (https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg)
+    for use in DaFusion.
+
+    Shader created by izutionix
+
+
+--]] --
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+FuRegisterClass("Shaderfuse_tdsBz4_reactor", CT_SourceTool, {
+  
+  REGS_Category = "Shaderfuse\\Misc",
+  REGS_Company = "JiPi",
+  REGS_Name = "Fire_Water",
+  REGS_OpDescription = "Shadertoy 'ComplementaryElements' (ID: tdsBz4) created by izutionix and ported by JiPi. © izutionix (CC BY-NC-SA 3.0). This port is by no means meant to take advantage of anyone or to do anyone wrong: Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) if you see your rights abused or your intellectual property violated by this work.",
+  REGS_OpIconString = "sf.tdsBz4",
+  REGS_URL = "https://www.youtube.com/c/JiPi_YT",
+  REG_Fuse_NoEdit = true,
+  REG_Fuse_NoReload = true,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  REGS_Company           = dctlfuse_author,
+  REGS_URL               = dctlfuse_authorurl,
+  REG_Version            = dctlfuse_versionNo,
+  })
+
+-----------------------------------
+-- Description of kernel parameters
+
+----------------BufferA---------------
+BufferAParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  bool reset;
+  bool manualon;
+  float manual[2];
+  float distance;
+  float fade;
+  float afterglow;
+  bool variante;
+  int gaps;
+  float intense[3];
+  float brightness;
+  bool multipoint;
+  int points;
+  float bcolor[3];
+  float fcolor[3];
+  float wcolor[3];
+  float alpha;
+  int width;
+  int height;
+  int frame;
+  float itime;
+  int compOrder;
+]]
+
+
+-- source of kernel
+BufferAKernel =
+    [[
+
+//-------- mat2 ---------
+ typedef struct
+  {
+  float2 r0, r1;
+  } mat2;
+
+ __DEVICE__ inline mat2 make_mat2_2( float A, float B, float C, float D)
+  {
+  mat2 E;
+  E.r0 = to_float2(A,B);
+  E.r1 = to_float2(C,D);
+  return E;
+  }
+
+__DEVICE__ inline float2 mat2_multi_f2( mat2 B, float2 A)
+  {
+  float2 C;
+  C.x = A.x * B.r0.x + A.y * B.r0.y;
+  C.y = A.x * B.r1.x + A.y * B.r1.y;
+  return C;
+  }
+
+
+__DEVICE__ float4 max_f4_f4(float4 value, float4 maxValue) {return to_float4(_fmaxf(value.x, maxValue.x),_fmaxf(value.y, maxValue.y), _fmaxf(value.z, maxValue.z), _fmaxf(value.w, maxValue.w));}
+#define lpowf _powf
+__DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
+__DEVICE__ float3 mix_f3(float3 v, float3 i, float3 m) {return to_float3(_mix(v.x,i.x,m.x),_mix(v.y,i.y,m.y),_mix(v.z,i.z,m.z));}
+
+
+#define TAU 6.28318530718
+
+__DEVICE__ float2 orbit(float t) {
+    return to_float2(_sinf(t),_cosf(t));
+}
+
+//rotation function snatched from BigWIngs
+__DEVICE__ mat2 Rot(float a) {
+    float s = _sinf(a);
+    float c = _cosf(a);
+    return make_mat2_2(c, -s, s, c);
+}
+
+__DEVICE__ float3 ScatterColors(float g, float3 c)
+{
+    float3 g3 = to_float3_s(g);
+    float3 G1 = pow_f3(c, g3);
+    float3 G2 = to_float3_s(1.0f)-pow_f3(to_float3_s(1.0f)-c, to_float3_s(1.0f)-g3);
+
+    float3 A = G1*(to_float3_s(1.0f)-G1);
+    float3 B = G2*(to_float3_s(1.0f)-G2);
+
+    return 4.5f*mix_f3(A, B, g3);
+}
+
+
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+  float C = _cosf(angle);
+  float S = _sinf(angle);
+
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+
+return uv;
+}
+
+
+//############################################################################################################################
+__KERNEL__ void BufferAKernel(__CONSTANTREF__ BufferAParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height)
+  {
+
+    //-----------------------
+     float2 fragCoord = to_float2(x+0.50f, y+0.50f);
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime*params->freq;
+     float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+    float4  _new;
+
+	float iFrame = params->frame;
+
+    float2 uv = (2.0f*fragCoord-iResolution)/iResolution.y;
+
+    // Standardparameter
+    uv -=  to_float2( (params->center[0]-0.5f)*2.0f*ratio, (params->center[1]-0.5f)*2.0f); //*ratio*2.0f
+    uv *= params->scale;
+    float2 pivot = to_float2(((params->pivot[0]-0.5f)*2.0f*ratio),(params->pivot[1]-0.5f)*2.0f); //*ratio
+    uv = spin(uv, pivot, params->angle, 1.0f); //params->debug
+
+
+	float t = (float)(iFrame)/params->gaps; //produces less gaps than itime
+
+
+	if (params->multipoint)
+	{
+        float n = params->points;
+        float3 element = to_float3_s(0.0f);
+
+		for(int i = 0; i<n; i++)
+		{
+
+			//float i = float(I);
+			float2 p = params->distance*uv + orbit(t+i*TAU/(float)(n));
+
+			if (params->manualon > 0.0f)
+			{
+				p = uv - mat2_multi_f2(Rot(i*TAU/n) , to_float2(params->manual[0]*ratio,params->manual[1])*2.0f );
+			}
+
+			float3 col = ScatterColors((i+0.5f)/n, to_float3_v(params->bcolor)); //vec3(.009, .288, .828)
+			col = normalize(col);
+			element += col/to_float3_s(length(p));
+		}
+
+		//accumulate image
+		_new = to_float4_aw(element*(params->intense[2]+0.1f)/n, 1.0f);
+
+	}
+	else
+	{
+		float2 orbit = to_float2(_sinf(t),_cosf(t));
+
+		float2 fuv = params->distance*uv + orbit;
+		float2 wuv = params->distance*uv - orbit;
+
+		if (params->manualon > 0.0f)
+		{
+			fuv = uv - to_float2(params->manual[0]*ratio,params->manual[1])*2.0f;
+			wuv = uv + to_float2(params->manual[0]*ratio,params->manual[1])*2.0f;
+		}
+
+		float3 fire = to_float3_v(params->fcolor)/to_float3_s(length(fuv*params->intense[0]));
+		float3 water = to_float3_v(params->wcolor)/to_float3_s(length(wuv*params->intense[1]));
+		float3 col = fire + water;
+
+	    _new = to_float4_aw(col*params->intense[2],params->alpha);
+    }
+
+
+    float4 old = _tex2DVecN(iChannel0, fragCoord.x / iResolution.x, fragCoord.y / iResolution.y, 15)*params->fade;
+    old.w = params->alpha;
+
+    if (params->variante == 0)   fragColor = _mix(old, _new,params->afterglow);      //to_float4(_fmaxf(old,new));
+	else                         fragColor = (max_f4_f4(old,_new));
+
+
+	if (params->reset == 1) fragColor = to_float4(0.0f,0.0f,0.0f,params->alpha);
+
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+
+function Create()
+--------------------------------------------
+        self:AddInput('<p align="center"><a href="https://github.com/nmbr73/Shadertoys"><img height="20" width="210" src="data:image/png;base64,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" /></a></p>',
+          "ShaderfuseBranding", { IC_ControlPage = -1 , LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true, })
+--------------------------------------------
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  --------------- BufferA ---------------
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType      = "Point",
+    INPID_InputControl   = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged  = true,
+	--IC_Visible         = false,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "Center",
+    INP_Default        = 1.0,
+    INP_MinAllowed     = 0.1,
+    INP_MaxAllowed     = 5.0,
+	--IC_Visible       = false,
+    })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",
+    IC_Visible          = false,
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType       = "Number",
+    INPID_InputControl    = "ScrewControl",
+    INPID_PreviewControl  = "AngleControl",
+    --INP_MinAllowed      =   0.0,
+    INP_MinScale          = 0.0,
+	  INP_MaxScale          = 360.0,
+    INP_Default           = 0.0,
+    ACID_Center           = "Center",
+	  --IC_Visible          = false,
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType       = "Point",
+    INPID_InputControl    = "OffsetControl",
+    INPID_PreviewControl  = "CrosshairControl",
+    CHC_Style             = "DiagonalCross",
+    PC_GrabPriority       = -1,
+	  --IC_Visible          = false,
+    })
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 0,
+    INP_Integer         = true,
+    INP_External        = false,
+	  INP_Passive         = true,
+    INP_DoNotifyChanged = true,
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+	--IC_Visible          = false,
+  })
+
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+	  --IC_Visible          = false,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	  IC_Visible       = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	  INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+
+
+  InActframe = self:AddInput("Actframe", "Actframe", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+	  INP_Integer = true,
+    INP_Default = 0,
+	  IC_Visible       = true,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InFrameoffset = self:AddInput("Frameoffset", "Frameoffset", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "SliderControl",
+	  INP_Integer      = true,
+    INP_Default      = 0,
+	  IC_Visible       = true,
+	  INP_MinScale     = -10.0,
+	  INP_MaxScale     = 10.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+
+self:BeginControlNest("Parameter", "_Parameter", true, {})
+
+  InReset = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+  	INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+  })
+
+
+  InManualOn = self:AddInput("Manual", "ManualOn", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+  })
+
+
+  InManual = self:AddInput("Manual XY","Manual", {
+    LINKID_DataType     = "Point",
+    INPID_InputControl  = "OffsetControl",
+	  INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX        = 0.0,
+    INP_DefaultY        = 0.0,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black",
+	  PC_Visible  = true,
+	  PCD_OffsetX = 0.5,
+    PCD_OffsetY = 0.5,
+    })
+
+
+  InDistance = self:AddInput("Distance", "Distance", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default      = 0.8,
+	  IC_Visible       = true,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+
+
+  InFade = self:AddInput("Fade", "Fade", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	  INP_MinAllowed = 0.0,
+    INP_MaxAllowed = 1.2,
+    })
+
+  InAfterglow = self:AddInput("Afterglow", "Afterglow", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default      = 10.0,
+	  INP_MinAllowed   = 0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InVariante = self:AddInput("Variante", "Variante", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+  })
+
+
+  InGaps = self:AddInput("Gaps", "Gaps", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 60,
+	  INP_Integer = true,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InIntenseFire = self:AddInput("IntenseFire", "IntenseFire", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	  INP_MinScale     = 0.0,
+	  INP_MaxScale     = 2.0,
+	  --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InIntenseWater = self:AddInput("IntenseWater", "IntenseWater", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	  INP_MinScale     = 0.0,
+	  INP_MaxScale     = 2.0,
+	  --INP_MinAllowed = 2.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InIntense = self:AddInput("Intense", "Intense", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.1,
+	  --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+
+  InBrightness = self:AddInput("Brightness", "Brightness", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.6,
+	  IC_Visible       = false,
+	  --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InColor = self:AddInput("Color", "Color", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.5,
+	  IC_Visible       = false,
+	  --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InMultiPoint = self:AddInput("Multipoint", "MultiPoint", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+  })
+  InPoints = self:AddInput("Points", "Points", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+	  INP_Integer = true,
+    INP_Default = 3,
+	  IC_Visible       = false,
+	  --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InRed3CH = self:AddInput("Red", "Red3CH", {
+    ICS_Name            = "Basis Color",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.007,
+	  IC_Visible          = false,
+    INP_MaxScale        = 0.5,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 3,
+    IC_ControlID        = 0,
+  })
+  InGreen3CH = self:AddInput("Green", "Green3CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.828,
+	  IC_Visible          = false,
+    IC_ControlGroup     = 3,
+    IC_ControlID        = 1,
+  })
+  InBlue3CH = self:AddInput("Blue", "Blue3CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.321,
+	  IC_Visible          = false,
+    IC_ControlGroup     = 3,
+    IC_ControlID        = 2,
+  })
+
+
+  InRedCH = self:AddInput("Red", "RedCH", {
+    ICS_Name            = "Fire",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.7,
+	  IC_Visible          = true,
+    INP_MaxScale        = 0.1,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 0,
+  })
+  InGreenCH = self:AddInput("Green", "GreenCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.2,
+	IC_Visible          = true,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 1,
+  })
+  InBlueCH = self:AddInput("Blue", "BlueCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.1,
+	IC_Visible          = true,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 2,
+  })
+  InRed2CH = self:AddInput("Red", "Red2CH", {
+    ICS_Name            = "Water",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.1,
+	IC_Visible          = true,
+    INP_MaxScale        = 0.5,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 0,
+  })
+  InGreen2CH = self:AddInput("Green", "Green2CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.2,
+	IC_Visible          = true,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 1,
+  })
+  InBlue2CH = self:AddInput("Blue", "Blue2CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.7,
+	IC_Visible          = true,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 2,
+  })
+
+
+  InAlpha = self:AddInput("Alpha", "Alpha", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	--INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+self:EndControlNest()
+
+
+  --  InLogoSw = self:AddInput("Logo", "LogoSw", {
+  --   LINKID_DataType = "Number",
+  --   INPID_InputControl = "CheckboxControl",
+	--   INP_Integer = true,
+  --   INP_DoNotifyChanged = true,
+  --   INP_Default         = 1,
+  --   IC_Visible          = true,
+  --   INP_External        = false,
+	-- INP_Passive         = true,
+  -- })
+
+--------------------------------------------
+
+  ----- Info Tab
+  self:AddInput('<br /><p align="center">Shadertoy<br /><a href="https://www.shadertoy.com/view/tdsBz4" style="color:white; text-decoration:none; font-size:x-large; ">ComplementaryElements</a><br />by <a href="https://www.shadertoy.com/user/izutionix" style="color:#a0a060; text-decoration:none; ">izutionix</a><br /><span style="color:#a06060; ">© izutionix (CC BY-NC-SA 3.0)</span></p><p align="center">DCTLified and DaFused by <a href="https://www.youtube.com/c/JiPi_YT" style="color:#f0f060; text-decoration:none; ">JiPi</a><br />Version: <a href="https://github.com/nmbr73/Shadertoys/commit/af4c00bee3ae9178a86658b1a96e3d39497c3435" style color="color:#4060a0; ">af4c00b</a>&nbsp;/&nbsp;<span style="color:#ffffff; ">2023-02-03</span></p><br />&nbsp;',"ShaderfuseInfo", { ICS_ControlPage = "Info", IC_ControlPage = 1, LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true } )
+  self:AddInput( "Fuse Info...", "ShaderfuseFuseInfoButton", { ICS_ControlPage = "Info", IC_ControlPage = 1, INPID_InputControl = "ButtonControl", INP_DoNotifyChanged = false, INP_External = false, BTNCS_Execute = 'bmd.openurl("https://nmbr73.github.io/Shadertoys/Shaders/Misc/Fire_Water.html")' })
+  self:AddInput( "Shadertoy...", "ShaderfuseToyInfoButton", { ICS_ControlPage = "Info", IC_ControlPage = 1, INPID_InputControl = "ButtonControl", INP_DoNotifyChanged = false, INP_External = false, BTNCS_Execute = 'bmd.openurl("https://www.shadertoy.com/view/tdsBz4")' })
+  self:AddInput('<br /><p align="center"><img width="320" height="180" src="data:image/png;base64,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" /></p>', "ShaderfuseThumbnail", { ICS_ControlPage = "Info", IC_ControlPage = 1, LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true } )
+  self:AddInput('&nbsp;<br /><p>It seems that this version of the Fuse had been installed using a installer script. Please note that this means it has to be considered being an instable beta version!</p>', "ShaderfuseInstallInfo", { ICS_ControlPage = "Info", IC_ControlPage = 1, LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true } )
+
+--------------------------------------------
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+	  LINK_Visible = false,
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  InImage2 = self:AddInput("Image2", "Image2", {
+    LINKID_DataType = "Image",
+    LINK_Visible = false,
+	  LINK_Main = 2,
+    INP_Required = false
+  })
+  InImage3 = self:AddInput("Image3", "Image3", {
+    LINKID_DataType = "Image",
+    LINK_Visible = false,
+	  LINK_Main = 3,
+    INP_Required = false
+  })
+
+  InImage4 = self:AddInput("Image4", "Image4", {
+    LINKID_DataType = "Image",
+	  LINK_Visible = false,
+    LINK_Main = 4,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end
+
+
+-------------------------------------------------------------------
+--       NotifyChanged
+-------------------------------------------------------------------
+function NotifyChanged(inp, param, time)
+
+  if inp ~= nil and param ~= nil then
+
+    if inp == InCenter then
+        -- the center moved, reposition the axis according to the current offset
+        nCenterX = param.X
+        nCenterY = param.Y
+
+        InPivot:SetAttrs({
+            PCD_OffsetX = nCenterX - 0.5,
+            PCD_OffsetY = nCenterY - 0.5,
+            })
+
+        InAngle:SetAttrs({
+            PCD_OffsetX = (nCenterX - 0.5)/100,
+            PCD_OffsetY = (nCenterY - 0.5)/100,
+            })
+    end
+    if inp == InWidgets then
+      if param.Value == 1.0 then
+         InCenter:SetAttrs({ PC_Visible = false })
+         InAngle:SetAttrs({ PC_Visible = false })
+         InPivot:SetAttrs({ PC_Visible = false })
+         InScale:SetAttrs({ PC_Visible = false })
+      else
+         InCenter:SetAttrs({ PC_Visible = true })
+         InAngle:SetAttrs({ PC_Visible = true })
+         InPivot:SetAttrs({ PC_Visible = true })
+         InScale:SetAttrs({ PC_Visible = true })
+      end
+    end
+
+
+	if inp == InManualOn then
+      if param.Value == 1.0 then
+	     InManual:SetAttrs({IC_Visible = true})
+		 InDistance:SetAttrs({IC_Visible = false})
+	     InManual:SetAttrs({ PC_Visible = true })
+		 InWidgets:SetSource(Number(1),0)
+	  else
+	     InManual:SetAttrs({IC_Visible = false})
+		 InDistance:SetAttrs({IC_Visible = true})
+		 InManual:SetAttrs({ PC_Visible = false })
+		 InWidgets:SetSource(Number(0),0)
+	  end
+	end
+
+
+	if inp == InMultiPoint then
+     if param.Value == 1.0 then
+	   InPoints:SetAttrs({IC_Visible = true})
+		 InRed3CH:SetAttrs({IC_Visible = true})
+		 InGreen3CH:SetAttrs({IC_Visible = true})
+		 InBlue3CH:SetAttrs({IC_Visible = true})
+
+		 InRedCH:SetAttrs({IC_Visible = false})
+		 InGreenCH:SetAttrs({IC_Visible = false})
+		 InBlueCH:SetAttrs({IC_Visible = false})
+		 InRed2CH:SetAttrs({IC_Visible = false})
+		 InGreen2CH:SetAttrs({IC_Visible = false})
+		 InBlue2CH:SetAttrs({IC_Visible = false})
+
+
+	  else
+	   InPoints:SetAttrs({IC_Visible = false})
+		 InRed3CH:SetAttrs({IC_Visible = false})
+		 InGreen3CH:SetAttrs({IC_Visible = false})
+		 InBlue3CH:SetAttrs({IC_Visible = false})
+
+		 InRedCH:SetAttrs({IC_Visible = true})
+		 InGreenCH:SetAttrs({IC_Visible = true})
+		 InBlueCH:SetAttrs({IC_Visible = true})
+		 InRed2CH:SetAttrs({IC_Visible = true})
+		 InGreen2CH:SetAttrs({IC_Visible = true})
+		 InBlue2CH:SetAttrs({IC_Visible = true})
+
+	  end
+	end
+
+
+
+    if inp == InStop then
+      if param.Value == 1 then
+	     InActframe:SetAttrs({IC_Visible = true})
+	  else
+	     InActframe:SetAttrs({IC_Visible = false})
+	  end
+	end
+
+
+    -- if inp == InLogoSw then
+    --   if param.Value == 1 then
+    --     authorlogo:SetAttrs({IC_Visible = true})
+    --   else
+    --     authorlogo:SetAttrs({IC_Visible = false})
+	  --   end
+	  -- end
+  end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+imgattrs = {
+        --IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+		IMG_DeferAlloc = false,
+    }
+R_img = Image(imgattrs)
+
+
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle = -InAngle:GetValue(req).Value/360*3.1415*2
+    local debug = InDebug:GetValue(req).Value
+    local scale = InScale:GetValue(req).Value
+    local freq = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+    local p = Pixel({R=0,G=0,B=0,A=0})
+
+      if (InImage1:GetValue(req) ~= nil) then
+         src1 = InImage1:GetValue(req)
+      else
+         src1 = Image(imgattrs)
+         src1:Fill(p)
+      end
+	  if (InImage2:GetValue(req) ~= nil) then
+         src2 = InImage2:GetValue(req)
+      else
+         src2 = Image(imgattrs)
+         src2:Fill(p)
+      end
+      if (InImage3:GetValue(req) ~= nil) then
+         src3 = InImage3:GetValue(req)
+      else
+         src3 = Image(imgattrs)
+         src3:Fill(p)
+      end
+      if (InImage4:GetValue(req) ~= nil) then
+         src4 = InImage4:GetValue(req)
+      else
+         src4 = Image(imgattrs)
+         src4:Fill(p)
+      end
+
+
+    local dstA = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+	local dstI = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+    if req:IsPreCalc() then
+	   --print("\n######################### Precalc ##############################\n")
+	   local out = Image({IMG_Like = dstI, IMG_NoData = true})
+       OutImage:Set(req, out)
+	   return
+	end
+
+
+    --StartStop
+    if InStop:GetValue(req).Value == 0 then
+	   --_acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   _actframe = req.Time + InFrameoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActframe:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      --_acttime = req.Time + InTimeoffset:GetValue(req).Value
+		  _actframe = req.Time + InFrameoffset:GetValue(req).Value
+	   else
+	      --_acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+		  _actframe = InActframe:GetValue(req).Value + InFrameoffset:GetValue(req).Value
+	   end
+	end
+
+    --acttime  = _acttime / framerate
+    actframe = _actframe
+
+    -------------------------- BufferA-Kernel----------------------------------------
+    nodeA = DVIPComputeNode(req, "BufferAKernel", BufferAKernel, "BufferAParams", BufferAParams)
+
+	local params = {}
+    if not pcall(function ()
+        params.center = {center.X,center.Y}
+        params.scale = 1/scale
+        params.angle = angle
+        params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+        params.debug = debug
+	    params.freq = freq
+
+		params.reset      = InReset:GetValue(req).Value
+		params.manualon   = InManualOn:GetValue(req).Value
+		params.manual     = {InManual:GetValue(req).X,InManual:GetValue(req).Y}
+		params.distance   = 1/InDistance:GetValue(req).Value
+		params.fade       = InFade:GetValue(req).Value
+		params.afterglow  = 1/InAfterglow:GetValue(req).Value
+		params.variante   = InVariante:GetValue(req).Value
+		params.gaps       = InGaps:GetValue(req).Value
+		params.intense    = {1/InIntenseFire:GetValue(req).Value, 1/InIntenseWater:GetValue(req).Value, InIntense:GetValue(req).Value}
+		params.brightness = InBrightness:GetValue(req).Value
+		params.multipoint = InMultiPoint:GetValue(req).Value
+		params.points     = InPoints:GetValue(req).Value
+		params.bcolor     = {InRed3CH:GetValue(req).Value, InGreen3CH:GetValue(req).Value, InBlue3CH:GetValue(req).Value}
+		params.color      = InColor:GetValue(req).Value
+        params.fcolor     = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+		params.wcolor     = {InRed2CH:GetValue(req).Value, InGreen2CH:GetValue(req).Value, InBlue2CH:GetValue(req).Value}
+		params.alpha      = InAlpha:GetValue(req).Value
+
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+        --params.itime = acttime --req.Time / framerate
+		params.frame  = actframe --req.Time
+
+        nodeA:SetParamBlock(params)
+    end) then
+        params = nodeA:GetParamBlock(BufferAParams)
+
+        params.center = {center.X,center.Y}
+        params.scale = 1/scale
+        params.angle = angle
+        params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+        params.debug = debug
+	    params.freq = freq
+
+		params.reset      = InReset:GetValue(req).Value
+		params.manualon   = InManualOn:GetValue(req).Value
+		params.manual     = {InManual:GetValue(req).X,InManual:GetValue(req).Y}
+		params.distance   = 1/InDistance:GetValue(req).Value
+		params.fade       = InFade:GetValue(req).Value
+		params.afterglow  = 1/InAfterglow:GetValue(req).Value
+		params.variante   = InVariante:GetValue(req).Value
+		params.gaps       = InGaps:GetValue(req).Value
+		params.intense    = {1/InIntenseFire:GetValue(req).Value, 1/InIntenseWater:GetValue(req).Value, InIntense:GetValue(req).Value}
+		params.brightness = InBrightness:GetValue(req).Value
+		params.multipoint = InMultiPoint:GetValue(req).Value
+		params.points     = InPoints:GetValue(req).Value
+		params.bcolor     = {InRed3CH:GetValue(req).Value, InGreen3CH:GetValue(req).Value, InBlue3CH:GetValue(req).Value}
+        params.fcolor     = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+		params.wcolor     = {InRed2CH:GetValue(req).Value, InGreen2CH:GetValue(req).Value, InBlue2CH:GetValue(req).Value}
+		params.alpha      = InAlpha:GetValue(req).Value
+
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+        --params.itime = acttime --req.Time / framerate
+        params.frame  = actframe --req.Time
+
+        nodeA:SetParamBlock(params)
+
+    end
+
+    nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+    nodeA:AddInput("iChannel0", R_img)
+	nodeA:AddInput("iChannel1", src2)
+	nodeA:AddInput("iChannel2", src3)
+	nodeA:AddInput("iChannel3", src4)
+    nodeA:AddOutput("dst", dstA)
+
+    local success = nodeA:RunSession(req)
+    if not success then
+        dstA = nil
+        dump(nodeA:GetErrorLog()) -- Fehlerausgabe des DCTL
+    end
+
+    R_img = dstA --Recursiv Image
+
+
+    OutImage:Set(req, dstA)
+	collectgarbage();
+end
+
+
+
