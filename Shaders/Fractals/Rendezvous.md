@@ -34,7 +34,7 @@ float Map( vec3 p )
 
 }
 ```
-[![Rendezvous](Rendezvous.png)](Rendezvous.fuse)
+[![Rendezvous](Rendezvous_screenshot.png)](Rendezvous.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

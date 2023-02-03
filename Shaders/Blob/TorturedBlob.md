@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[TorturedBlob](https://www.shadertoy.com/v
 
 A classic blob with a lot of deformations.
 
-[![screenshot](TorturedBlob.png)](https://github.com/nmbr73/Shadertoys/blob/main/BlobShader/TorturedBlob.fuse)
+[![screenshot](TorturedBlob_screenshot.png)](TorturedBlob.fuse)
 
 
 A nice example of the use of the mat3

@@ -4,7 +4,7 @@ This Fuse is based on the Shadertoy '_[Audio heightfield 1](https://www.shaderto
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-[![Thumbnail](AudioHeightfield1.png)](https://www.shadertoy.com/view/ldXGzN "View on Shadertoy.com")
+[![Thumbnail](AudioHeightfield1_screenshot.png)](https://www.shadertoy.com/view/ldXGzN "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

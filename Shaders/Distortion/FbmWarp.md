@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[Fbm Warp](https://www.shadertoy.com/view/
 
 This shader obviously takes advantage of a trick in WebGL that doesn't quite work that way in DCTL. A small adjustment made at least the principle function possible. If the result looks a little different, it is not worse.
 
-[![FbmWarp](FbmWarp.png)](FbmWarp.fuse)
+[![FbmWarp](FbmWarp_screenshot.png)](FbmWarp.fuse)
 
 
 

@@ -6,12 +6,11 @@ This Fuse is based on the Shadertoy '_[FractalEngine](https://www.shadertoy.com/
 
 One of four very beautiful fractal shaders
 
-[![FractalEngine](FractalEngine.png)](FractalEngine.fuse)
+![FractalEngine](https://user-images.githubusercontent.com/78935215/111883188-11c55700-89ba-11eb-89fe-163f55daf831.gif)
+[![FractalEngine](FractalEngine_screenshot.png)](FractalEngine.fuse)
 
 
 Have fun playing
-
-![FractalEngine](https://user-images.githubusercontent.com/78935215/111883188-11c55700-89ba-11eb-89fe-163f55daf831.gif)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

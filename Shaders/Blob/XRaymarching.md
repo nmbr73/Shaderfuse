@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[XRaymarching](https://www.shadertoy.com/v
 
 Two funny dancing blobs. Extensive parameters invite you to play.
 
-[![XRaymarching](XRaymarching.png)](XRaymarching.fuse)
+[![XRaymarching](XRaymarching_screenshot.png)](XRaymarching.fuse)
 
 ![XRaymarching](https://user-images.githubusercontent.com/78935215/115620418-6fb8c780-a2f5-11eb-9185-b008ff52f54f.gif)
 

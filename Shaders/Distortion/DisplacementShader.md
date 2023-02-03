@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[DisplacementShader](https://www.shadertoy
 
 Nothing special, but still a very nice effect. Possibly also useful for transitions.
 
-[![DisplacementShader](DisplacementShader.png)](DisplacementShader.fuse)
+[![DisplacementShader](DisplacementShader_screenshot.png)](DisplacementShader.fuse)
 
 
 Have fun playing

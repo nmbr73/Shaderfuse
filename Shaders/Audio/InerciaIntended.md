@@ -25,7 +25,7 @@ Have fun playing
 
 [![InerciaIntended](https://user-images.githubusercontent.com/78935215/200139202-3c5b2c15-bd43-4998-84d6-a06820255d5d.gif)](InerciaIntended.fuse)
 
-[![Thumbnail](InerciaIntended.png)](https://www.shadertoy.com/view/cs2GWD "View on Shadertoy.com")
+[![Thumbnail](InerciaIntended_screenshot.png)](https://www.shadertoy.com/view/cs2GWD "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

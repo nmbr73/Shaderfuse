@@ -4,7 +4,7 @@ This Fuse is based on the Shadertoy '_[Apollian with a twist](https://www.shader
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
 
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=ApollianWithATwist-Installer.lua&color=blue)](ApollianWithATwist-Installer.lua "Installer")
+[![ApollianWithATwist](ApollianWithATwist.png)](ApollianWithATwist.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
