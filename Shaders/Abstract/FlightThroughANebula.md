@@ -6,7 +6,7 @@ This Fuse is based on the Shadertoy '_[Flight Through A Nebula V3](https://www.s
 
 In the original, `Texelfetch()` and GreyNoise-Volumes are used. But even without this, this shader is successful.
 
-[![FlightThroughANebula](FlightThroughANebula.png)](FlightThroughANebula.fuse)
+[![FlightThroughANebula](FlightThroughANebula_screenshot.png)](FlightThroughANebula.fuse)
 
 
 

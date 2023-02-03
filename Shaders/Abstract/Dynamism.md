@@ -14,7 +14,7 @@ Have fun playing
 
 
 
-[![Dynamism](Dynamism.png)](LearningReationDiffusion.fuse)
+[![Dynamism](Dynamism_screenshot.png)](LearningReationDiffusion.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
