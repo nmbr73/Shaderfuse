@@ -1,10 +1,3 @@
-# Heartdemo
-<a href="Heartdemo-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=Heartdemo-Installer.lua&color=blue" /></a>
-
-This Fuse is based on the Shadertoy '_[Heart Demo](https://www.shadertoy.com/view/wttXD7)_' by [17dpn01](https://www.shadertoy.com/user/17dpn01). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Wedding](README.md) for more fuses in this category.
-
-[![Heartdemo Thumbnail](Heartdemo.png)](https://www.shadertoy.com/view/wttXD7 "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->

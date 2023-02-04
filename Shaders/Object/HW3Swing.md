@@ -1,10 +1,3 @@
-# HW3Swing
-<a href="HW3Swing-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=HW3Swing-Installer.lua&color=blue" /></a>
-
-This Fuse is based on the Shadertoy '_[HW3Swing](https://www.shadertoy.com/view/4dtyz8)_' by [ChloeSnyder](https://www.shadertoy.com/user/ChloeSnyder). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
-
-[![HW3Swing Thumbnail](HW3Swing.png)](https://www.shadertoy.com/view/4dtyz8 "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->

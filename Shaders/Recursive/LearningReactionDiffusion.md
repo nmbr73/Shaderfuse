@@ -1,9 +1,3 @@
-# LearningReactionDiffusion
-
-This Fuse is based on the Shadertoy '_[LearningReactionDiffusion](https://www.shadertoy.com/view/WlSGzy)_' by [TekF](https://www.shadertoy.com/user/TekF). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Recursive](README.md) for more fuses in this category.
-
-[![LearningReactionDiffusion Thumbnail](LearningReactionDiffusion.png)](https://www.shadertoy.com/view/WlSGzy "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
@@ -22,20 +16,4 @@ Have fun playing
 [![LearningReactionDiffusion](LearningReactionDiffusion_screenshot.png)](LearningReactionDiffusion.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
-## Compatibility
-
-🟩 macOS / Metal: <span style="color:green; ">checked</span><br />
-⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
-🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
-🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
-
-
-## Problems
-
-Number of problems: 1
-
-- macOS_OpenCL compatibility not checked
-
-
 
