@@ -86,7 +86,7 @@ function cmd_ln(target_folder,link_name)
   end
 end
 
--- CONSOLE: os.execute('mklink /J "C:\\Users\\nmbr73\\AppData\\Roaming\\Blackmagic Design\\DaVinci Resolve\\Support\\Fusion\\Fuses\\Shadertoys_dev" "C:\\Users\\nmbr73\\OneDrive\\Desktop\\Shadertoys\\Shaders\\"')
+-- CONSOLE: os.execute('mklink /J "C:\\Users\\nmbr73\\AppData\\Roaming\\Blackmagic Design\\DaVinci Resolve\\Support\\Fusion\\Fuses\\Shaderfuse_dev" "C:\\Users\\nmbr73\\OneDrive\\Desktop\\Shaderfuse\\Shaders\\"')
 
 function cmd_rm(link_name)
 

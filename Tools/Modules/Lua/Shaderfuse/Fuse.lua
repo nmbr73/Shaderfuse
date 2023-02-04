@@ -2,7 +2,7 @@
 --
 -- Class to help to work with a fuse file.
 --
--- Dependencies: `bmd.fileexists`, `Shadertoys/ShaderFuse`
+-- Dependencies: `bmd.fileexists`, `Shaderfuse/ShaderFuse`
 -- @classmod Fuse
 
 
@@ -39,7 +39,7 @@ function Fuse:clear()
   self.DirName      = '' -- Fuse path (incl. Category, without trailing slash)
   self.FilePath     = '' -- Fuse filepath (full path, incl. category and suffix)
   self.Category     = ''
-  self.InfoURL      = 'https://nmbr73.github.io/Shadertoys/'
+  self.InfoURL      = 'https://nmbr73.github.io/Shaderfuse/'
   self.Description  = ''
   self.Author       = ''
   self.AuthorLogo   = nil -- { Width, Height, Data }
@@ -252,9 +252,9 @@ function Fuse:readInfo()
     -- if info.Fuse.InfoURL ~= nil then self:addError("Fuse.InfoURL must not be set in sfi file") end
 
     if self.Category ~= '' and self.Name ~= '' then
-      self.InfoURL = 'https://nmbr73.github.io/Shadertoys/Shaders/'.. self.Category ..'/'.. self.Name ..'.html'
+      self.InfoURL = 'https://nmbr73.github.io/Shaderfuse/Shaders/'.. self.Category ..'/'.. self.Name ..'.html'
     else
-      self.InfoURL = 'https://nmbr73.github.io/Shadertoys/'
+      self.InfoURL = 'https://nmbr73.github.io/Shaderfuse/'
     end
 
     -- ----------
@@ -492,13 +492,13 @@ function Fuse:readInfo()
       REGS_Category = regs_category .. "\\" .. self.Category,
       REGS_OpIconString = regs_opiconstring .. self.Shadertoy.ID,
       REGS_Company = self.Author,
-      REGS_URL = (self.AuthorURL == nil or self.AuthorURL == '') and "https://nmbr73.github.io/Shadertoys/" or self.AuthorURL,
+      REGS_URL = (self.AuthorURL == nil or self.AuthorURL == '') and "https://nmbr73.github.io/Shaderfuse/" or self.AuthorURL,
       REGS_OpDescription =
           "Shadertoy '".. self.Shadertoy.Name .."' (ID: ".. self.Shadertoy.ID ..") created by "
           .. self.Shadertoy.Author .." and ported by ".. self.Author .. ". ".. self.Shadertoy.License .. "."
           .. (self.Description ~= '' and " ".. self.Description .." " or " ")
           .. "This port is by no means meant to take advantage of anyone or to do anyone wrong: "
-          .. "Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shadertoys) "
+          .. "Contact us on Discord (https://discord.gg/75FUn4N4pv) and/or GitHub (https://github.com/nmbr73/Shaderfuse) "
           .. "if you see your rights abused or your intellectual property violated by this work.",
       REG_Fuse_NoEdit     = ( self.Phase ~= 'development'),
       REG_Fuse_NoReload   = ( self.Phase ~= 'development'),

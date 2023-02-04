@@ -4,7 +4,7 @@ local g_ui                = fu.UIManager
 local g_disp              = bmd.UIDispatcher(g_ui)
 local g_wingeometry       = { 100, 100, 800, 400 }
 
-local TARGET_FUSES_SUBDIRECTORY = "Shadertoys"
+local TARGET_FUSES_SUBDIRECTORY = "Shaderfuse"
 -- local TARGET_FUSES_SUBDIRECTORY="DarthShader"
 
 
@@ -91,7 +91,7 @@ function initInstallModeOptions(params)
             </p>
             <p style="color:#ffffff; ">
               It seems that you are managing our Shadertoy Fuses using Git already. That's awesome! Forking and/or cloning us
-              on GitHub obviously is the right and more pro way of doing things. Just use a 'git pull' in your 'Shadertoys'
+              on GitHub obviously is the right and more pro way of doing things. Just use a 'git pull' in your 'Shaderfuse'
               directory and you are up to date and good to go. Looking forward to your pull requests maybe contributing some
               beatutiful shaderstoys?!!
             </p>
@@ -111,7 +111,7 @@ function initInstallModeOptions(params)
       Label       = "Local Copy",
       Enabled     = localCopyEnabled,
       Procedure   = doLocalCopy,
-      Text        = "<p>If you have downloaded and extracted(!) the whole repository as a ZIP file, then this mode should help you to create a local copy of the fuses in the correct target directory. In this case the script creates the <em>Shadertoys<em> subdirectories in your DaVinci Resolve's / Fusion's <em>Fuses</em> directory and copies all the .fuse files and only these to that directory.</p>"
+      Text        = "<p>If you have downloaded and extracted(!) the whole repository as a ZIP file, then this mode should help you to create a local copy of the fuses in the correct target directory. In this case the script creates the <em>Shaderfuse<em> subdirectories in your DaVinci Resolve's / Fusion's <em>Fuses</em> directory and copies all the .fuse files and only these to that directory.</p>"
                       ..localCopyTextAdd,
     },
 
@@ -158,7 +158,7 @@ function showMessageBoxWindow(str)
 
     g_messageBoxWindow = g_disp:AddWindow({
       ID = "ShaderMessageBox",
-      WindowTitle = "Shadertoys Installer - Message",
+      WindowTitle = "Shaderfuse Installer - Message",
       Geometry = { 150,150,400,200 },
       -- Composition = comp,
       g_ui:VGroup {
@@ -218,7 +218,7 @@ function initInstallSelectWindow(params)
   local win = g_disp:AddWindow({
 
     ID = "ShaderInstallSelect",
-    WindowTitle = "Shadertoys Installer - Select Installation mode ...",
+    WindowTitle = "Shaderfuse Installer - Select Installation mode ...",
     Geometry = g_wingeometry,
     -- Composition = comp,
 
@@ -318,7 +318,7 @@ function initMainWindow(params)
   local win = g_disp:AddWindow({
 
     ID = "ShaderInstallMain",
-    WindowTitle = "Shadertoys Installer",
+    WindowTitle = "Shaderfuse Installer",
     Geometry = g_wingeometry,
     -- Composition = comp,
 
@@ -621,7 +621,7 @@ function doLocalCopy(fuses)
       .. 'local FC_INFOBTN   = 1\n'
       .. 'local FC_PREFIX    = "BETA"\n'
       .. 'local FC_SCPREFIX  = '..  (g_useShortcutPrefix.Checked and 'FC_PREFIX' or '"ST"') .. '\n'
-      .. 'local FC_SUBMENU   = "Shadertoys (beta)"\n'
+      .. 'local FC_SUBMENU   = "Shaderfuse (beta)"\n'
 
 
   local listItem = fuses.head
@@ -667,7 +667,7 @@ function doSingleInstallers(fuses)
       .. 'local FC_INFOBTN   = 1\n'
       .. 'local FC_PREFIX    = "BETA"\n'
       .. 'local FC_SCPREFIX  = '..  (g_useShortcutPrefix.Checked and 'FC_PREFIX' or '"ST"') .. '\n'
-      .. 'local FC_SUBMENU   = "Shadertoys (beta)"\n'
+      .. 'local FC_SUBMENU   = "Shaderfuse (beta)"\n'
 
   local listItem = fuses.head
   local targetSubDirectory  = TARGET_FUSES_SUBDIRECTORY .. '_beta'
@@ -696,7 +696,7 @@ function doSingleInstallers(fuses)
         local FUSE_FILENAME   = listItem.File
         local FUSE_COPYRIGHT  = fuseSourceCode:match('local%s+shadertoy_license%s*=%s*"([^"]+)"') or ''
         local FUSE_AUTHOR     = fuseSourceCode:match('local%s+dctlfuse_author%s*=%s*"([^"]+)"') or nil
-        local FUSE_AUTHORURL  = fuseSourceCode:match('local%s+dctlfuse_authorurl%s*=%s*"([^"]+)"') or 'https://nmbr73.github.io/Shadertoys/'
+        local FUSE_AUTHORURL  = fuseSourceCode:match('local%s+dctlfuse_authorurl%s*=%s*"([^"]+)"') or 'https://nmbr73.github.io/Shaderfuse/'
         local FUSE_VERSION    = fuseSourceCode:match('local%s+dctlfuse_versionNo%s*=%s*(%d+)') or nil
         local FUSE_THUMB      = readThumbnail(path..baseFilename .. '_320x180.png')
 

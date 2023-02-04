@@ -5,7 +5,7 @@
 </center>
 
 
-[![GitHub release](https://img.shields.io/github/v/release/nmbr73/Shadertoys?include_prereleases)](https://github.com/nmbr73/Shadertoys/releases/latest) [![License](https://img.shields.io/badge/license-various-critical)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/nmbr73/Shaderfuse?include_prereleases)](https://github.com/nmbr73/Shaderfuse/releases/latest) [![License](https://img.shields.io/badge/license-various-critical)](LICENSE)
 
 DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion"). These are based on WebGL shaders released on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each Fuse's source code for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are obviously and definitely huge fans of this amazing website!
 
@@ -16,18 +16,12 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 # Fuses
 
-See the corresponding GitHub Pages on [nmbr73.github.io/Shaderfuse/](https://nmbr73.github.io/Shadertoys/) for further information on the Shaderfuses themselves.
+See the corresponding GitHub Pages on [nmbr73.github.io/Shaderfuse/](https://nmbr73.github.io/Shaderfuse/) for further information on the Shaderfuses themselves.
 
 
 # Installation
 
-<!--
-[![Download](https://img.shields.io/badge/download-installer-blue)](https://github.com/nmbr73/Shadertoys/releases/download/v0.1-alpha.1/Shadertoys_Installer.lua "Installer")
--->
-
-<!--
-[![Download ZIP](https://img.shields.io/badge/download-zip-blue)](https://github.com/nmbr73/Shadertoys/zipball/main "ZIP")
--->
+[![Download ZIP](https://img.shields.io/badge/download-zip-blue)](https://nmbr73.github.io/Shaderfuse/Shaderfuse-Installers.zip "ZIP")
 
 ## Reactor
 
@@ -44,7 +38,7 @@ This is the installation method recommended if you want to have with a single `g
 <!--
 ## ZIP-File
 
-Find on [GitHub Pages](https://nmbr73.github.io/Shadertoys/) the Links to download the full `.tar.gz` or `.zip` archive. After unpacking you can copy the whole `Shaders/` folder into your `Fuses` directory or pick and choose only single `.fuse` files you want to keep.
+Find on [GitHub Pages](https://nmbr73.github.io/Shaderfuse/) the Links to download the full `.tar.gz` or `.zip` archive. After unpacking you can copy the whole `Shaders/` folder into your `Fuses` directory or pick and choose only single `.fuse` files you want to keep.
 -->
 
 <!--
@@ -58,15 +52,15 @@ These installers are more meant to quickly try a single fuse or to share it via 
 <!--
 ### Installer
 
-Alternatively you can also use the installer of the v0.1-alpha.1 release: drag'n'drop the `Shadertoys_Installer.lua` onto you Fusion working area, perform the installation and restart DaVinci Resolve.
+Alternatively you can also use the installer of the v0.1-alpha.1 release: drag'n'drop the `Shaderfuse_Installer.lua` onto you Fusion working area, perform the installation and restart DaVinci Resolve.
 -->
 
 <!--
-[![Download](img_download.png)](https://github.com/nmbr73/Shadertoys/releases/download/v0.1-alpha.1/Shadertoys_Installer.lua)
+[![Download](img_download.png)](https://github.com/nmbr73/Shaderfuse/releases/download/v0.1-alpha.1/Shaderfuse_Installer.lua)
 -->
 
 <!--
-[![Download](https://img.shields.io/badge/-download-60a0ff?style=for-the-badge&logo=github)](https://github.com/nmbr73/Shadertoys/releases/download/v0.1-alpha.1/Shadertoys_Installer.lua "Installer")
+[![Download](https://img.shields.io/badge/-download-60a0ff?style=for-the-badge&logo=github)](https://github.com/nmbr73/Shaderfuse/releases/download/v0.1-alpha.1/Shaderfuse_Installer.lua "Installer")
 -->
 
 
@@ -75,11 +69,11 @@ Alternatively you can also use the installer of the v0.1-alpha.1 release: drag'n
 
 # Contribute
 
-[![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/Zb48E4z3Pg) [![GitHub Watchers](https://img.shields.io/github/watchers/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Stars](https://img.shields.io/github/stars/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys) [![GitHub Forks](https://img.shields.io/github/forks/nmbr73/Shadertoys?style=social)](https://github.com/nmbr73/Shadertoys)
+[![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/Zb48E4z3Pg) [![GitHub Watchers](https://img.shields.io/github/watchers/nmbr73/Shaderfuse?style=social)](https://github.com/nmbr73/Shaderfuse) [![GitHub Stars](https://img.shields.io/github/stars/nmbr73/Shaderfuse?style=social)](https://github.com/nmbr73/Shaderfuse) [![GitHub Forks](https://img.shields.io/github/forks/nmbr73/Shaderfuse?style=social)](https://github.com/nmbr73/Shaderfuse)
 
 <!--
 [![Discord](https://img.shields.io/badge/-discord-e0e0e0?style=for-the-badge&logo=discord)](https://discord.gg/Zb48E4z3Pg "PlugIn Discord")
 -->
 <!-- regrettably the iframe works on github pages bit not on github :-/ ...  iframe src="https://discord.com/widget?id=793508729785155594&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe -->
 
-Just fork this repository, have fun and send your pull requests. See also the [Wiki](https://github.com/nmbr73/Shadertoys/wiki) (under construction) for some more details on how to port GLSL to DCTL. For further information meet us on the DaVinci Resolve Plug-in Developers Discord server.
+Just fork this repository, have fun and send your pull requests. See also the [Wiki](https://github.com/nmbr73/Shaderfuse/wiki) (under construction) for some more details on how to port GLSL to DCTL. For further information meet us on the DaVinci Resolve Plug-in Developers Discord server.

@@ -1,5 +1,5 @@
 
-> :warning: This file was an early and obviously not so good idea on doing the documentation. The [Shadertoys Wiki](https://github.com/nmbr73/Shadertoys/wiki) is pretty much the same approach, but by far the better choice to manage such markdown files. This file will is discontinued and will be deleted as soon as it's content has been transferred to the wiki.
+> :warning: This file was an early and obviously not so good idea on doing the documentation. The [Shaderfuse Wiki](https://github.com/nmbr73/Shaderfuse/wiki) is pretty much the same approach, but by far the better choice to manage such markdown files. This file will is discontinued and will be deleted as soon as it's content has been transferred to the wiki.
 
 <hr />
 

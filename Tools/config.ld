@@ -1,11 +1,11 @@
 project='Shaderfuses'
 title='Shaderfuses Documentation'
-description='Tools to help manage the Shadertoys repository.'
+description='Tools to help manage the Shaderfuse repository.'
 backtick_references=false
 dir='Documentation'
 format='markdown'
-file='./Modules/Lua/Shadertoys/'
-readme='./Modules/Lua/Shadertoys/README.md'
+file='./Modules/Lua/Shaderfuse/'
+readme='./Modules/Lua/Shaderfuse/README.md'
 all=true
 -- style='!new'
 -- ext=md

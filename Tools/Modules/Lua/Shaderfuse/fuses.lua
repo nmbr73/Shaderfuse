@@ -3,7 +3,7 @@
 -- This module scanns all the files in the repository and manages all
 -- the fuses found in a list of Fuse objects.
 --
---    local fuses = require("Shadertoys/fuses")
+--    local fuses = require("Shaderfuse/fuses")
 --    fuses.fetch(user_config.pathToRepository..'Shaders/',false)
 --    for i, fuse in ipairs(fuses.list) do
 --      fuse:read()

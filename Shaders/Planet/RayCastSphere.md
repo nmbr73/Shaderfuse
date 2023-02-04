@@ -4,7 +4,7 @@
 
 A good example of displacement.
 
-[![screenshot](RayCastSphere_screenshot.png "RayCastSphere.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/RayCastSphere.fuse)
+[![screenshot](RayCastSphere_screenshot.png "RayCastSphere.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shaderfuse/blob/main/PlanetShader/RayCastSphere.fuse)
 
 To use this Fuse you need two images as an input, one for Surface texture (Image) and one for the displacement (depth).
 

@@ -14,7 +14,7 @@
 --
 --   Fuse:    {{> Fuse.Name <}} by {{> Fuse.Author <}}
 --   Version: {{> version <}} (beta)
---            https://github.com/nmbr73/Shadertoys/commit/{{> hash15 <}} ...
+--            https://github.com/nmbr73/Shaderfuse/commit/{{> hash15 <}} ...
 --   Date:    {{> modified <}}
 --   Shader:  {{> Shadertoy.Name <}} (https://www.shadertoy.com/view/{{> Shadertoy.ID <}})
 --            by {{> Shadertoy.Author <}} (https://www.shadertoy.com/user/{{> Shadertoy.Author <}})
@@ -112,7 +112,7 @@ function InstallWindow()
                             Click 'Cancel' to exit the setup.
                         </p>
                         <p style="color:#ffffff; ">
-                            Visit us on <a href="https://github.com/nmbr73/Shadertoys" style="color: rgb(139,155,216); text-decoration:none; ">GitHub</a> for more cute little ShaderFuses!
+                            Visit us on <a href="https://github.com/nmbr73/Shaderfuse" style="color: rgb(139,155,216); text-decoration:none; ">GitHub</a> for more cute little ShaderFuses!
                         </p>
                         ]]
                         ..(fuseFileExists and [[<p align="center"><span style="color:#ffffff; "><span style="background-color:#ff0000; ">&nbsp;ATTENTION!&nbsp;</span><span style="background-color:#000000; ">&nbsp;Fuse already exists and will be deleted resp. overwritten!&nbsp;</span></span></p>]] or ''),

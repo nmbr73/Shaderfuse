@@ -1,4 +1,4 @@
-# Shadertoys
+# Shaderfuse
 
 DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion"). These are based on WebGL shaders released on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each Fuse's source code for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are obviously and definitely huge fans of this amazing website!
 
@@ -95,11 +95,11 @@ Only thing to take into account is that this way you don't get the latest develo
 
 # Usage
 
-In the Fusion page of DaVinci Resolve right click into the working area. In the context menu under 'Add tool' you'll find a 'Shadertoys/' submenu. That submenu corresponds to the repository's directory structure and provides access to all fuses installed.
+In the Fusion page of DaVinci Resolve right click into the working area. In the context menu under 'Add tool' you'll find a 'Shaderfuse/' submenu. That submenu corresponds to the repository's directory structure and provides access to all fuses installed.
 
 Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and start typing "ST-" to filter for all our shadertoy fuses.
 
-And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinci Resolve) pane under 'Tools' you should now find an entry 'Shadertoys' that lists all the categories and the different fuses.
+And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinci Resolve) pane under 'Tools' you should now find an entry 'Shaderfuse' that lists all the categories and the different fuses.
 
 
 
@@ -108,7 +108,7 @@ And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinc
 Shaders that use audio data (wave and frequency) over an image for display. Shadertoy provides an interface consisting of an image (512*2 pixels). One line contains 512 sampled waveform values ​​belonging to the current frame and the second line contains the FFT (Spectrum) values.
 This interface can also be implemented in Resolve/Fusion. The [AudioWaveform.fuse](Fuses/AudioWaveform.md) generates the corresponding image from a loaded WAV file. The AudioWaveform has a second output for this. This Output is connected to an AudioShaderfuse-Input.
 
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioWaveform-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/AudioWaveform-Installer.lua "Installer")
+[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioWaveform-Installer.lua&color=blue)](https://github.com/nmbr73/Shaderfuse/releases/download/V1.1/AudioWaveform-Installer.lua "Installer")
 
 Here are the AudioShaderfuses:
 - [AudioWaveformVisualizer](Shaders/Audio/AudioWaveformVisualizer.md)
@@ -126,7 +126,7 @@ Here are the AudioShaderfuses:
 
 These are shaders that require a cubemap as input. nmbr73 created a tool to provide a cubemap for the shader fuses.
 
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=CubeMapLoader-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/CubeMapLoader-Installer.lua "Installer")
+[![Download Installer](https://img.shields.io/static/v1?label=Download&message=CubeMapLoader-Installer.lua&color=blue)](https://github.com/nmbr73/Shaderfuse/releases/download/V1.1/CubeMapLoader-Installer.lua "Installer")
 
 Here are the cubemap shader fuses:
 - [BallsAreTouching](Shaders/Cubemap/BallsAreTouching.md)

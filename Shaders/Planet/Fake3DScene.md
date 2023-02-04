@@ -4,7 +4,7 @@
 
 A little Shader for occasionally.
 
-[![screenshot](Fake3DScene_screenshot.png "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shadertoys/blob/main/PlanetShader/Fake3DScene.fuse)
+[![screenshot](Fake3DScene_screenshot.png "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shaderfuse/blob/main/PlanetShader/Fake3DScene.fuse)
 
 To use this Fuse you need two images as an input, one for the Ball (Image) and one for the Ground (Ground).
 

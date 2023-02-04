@@ -7,8 +7,8 @@ basepath = Path('Shaders')
 
 pattern_compatibiliy = re.compile(r'##\s+(Compatibility|Compability)\s*\n- \[([x ])\] Tested on macOS/Metal(| [^\n]+)\n- \[([x ])\] Tested on macOS/OpenCL(| [^\n]+)\n- \[([xX ])\] Tested on Windows/Cuda\n- \[([xX ])\] Tested on Windows/OpenCL(| [^\n]+)\s*$')
 
-# [![Download Installer](https://img.shields.io/static/v1?label=Download&message=Heartdemo-Installer.lua&color=blue)](https://github.com/nmbr73/Shadertoys/releases/download/V1.1/Heartdemo-Installer.lua "Installer")
-pattern_installer = re.compile(r'\[!\[Download Installer\]\(https://img.shields.io/static/v1\?label=Download&message=[^\)]+\)\]\(https://github.com/nmbr73/Shadertoys/releases/download/V1.1/[^"]+"Installer"\)')
+# [![Download Installer](https://img.shields.io/static/v1?label=Download&message=Heartdemo-Installer.lua&color=blue)](https://github.com/nmbr73/Shaderfuse/releases/download/V1.1/Heartdemo-Installer.lua "Installer")
+pattern_installer = re.compile(r'\[!\[Download Installer\]\(https://img.shields.io/static/v1\?label=Download&message=[^\)]+\)\]\(https://github.com/nmbr73/Shaderfuse/releases/download/V1.1/[^"]+"Installer"\)')
 
 pattern_headline1 = re.compile(r'^#[^\n]+\n+')
 pattern_headline2 = re.compile(r'^[^\n]+\n=+\n+')

@@ -17,7 +17,7 @@ local ST_ID               = '777777'
 local ST_NAME             = 'AudioWaveform'
 local ST_AUTHOR           = 'JiPi'
 local FUSE_NAME           = 'AudioWaveform'
-local FUSE_PATH           = 'Shadertoys_beta/Temp/'
+local FUSE_PATH           = 'Shaderfuse_beta/Temp/'
 local FUSE_FILENAME       = 'AudioWaveform.fuse'
 local FUSE_COPYRIGHT      = ''
 local FUSE_AUTHOR         = 'JiPi'
@@ -102,7 +102,7 @@ function createInstallWindow()
             ..'  Click \'Install\' to continue or \'Cancel\' to exit the setup.'
             ..'</p>'
             ..'<p style="color:#ffffff; ">'
-            ..'  Visit us on <a href="https://github.com/nmbr73/Shadertoys" style="color: rgb(139,155,216); text-decoration:none; ">GitHub</a> for more cute little ShaderFuses!'
+            ..'  Visit us on <a href="https://github.com/nmbr73/Shaderfuse" style="color: rgb(139,155,216); text-decoration:none; ">GitHub</a> for more cute little ShaderFuses!'
             ..'</p>'
             ..(g_fileExists and '<p align="center"><span style="color:#ffffff; background-color:#ff0000; ">&nbsp;ATTENTION! '..FUSE_FILENAME..' does already exist and will be overwritten!&nbsp;</span></p>' or ''),
           Alignment = { AlignHCenter = false, AlignVCenter = false, },
