@@ -3,7 +3,7 @@
 rm -rf build
 rm -rf docs
 cp -rp Shaders docs
-cp -rp Profiles docs
+cp -rp Tools/Assets/Profiles docs
 
 cd 'Tools/Shell/'
 # lua generate_atom.lua
