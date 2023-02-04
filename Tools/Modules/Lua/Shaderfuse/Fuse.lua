@@ -147,6 +147,11 @@ function Fuse:init(filepath, phase, read_info)
 
   if ((self.DirName or '') == '') and (phase == 'development') then
     self.DirName, self.Category, self.Name =
+      filepath:match('^(.+[/\\]docs/)([^/]+)/([^%.]+)%.fuse$')
+  end
+
+  if ((self.DirName or '') == '') and (phase == 'development') then
+    self.DirName, self.Category, self.Name =
       filepath:match('^(.+[/\\]Shaderfuse_dev/)([^/]+)/([^%.]+)%.fuse$')
   end
 
