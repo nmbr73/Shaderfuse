@@ -262,8 +262,9 @@ function create_installer(fuse,repositorypath)
 
   if (code or '') == '' then util.set_error("no code"); return false end
 
-  local fpath = repositorypath..'Installers/'..fuse.Category
+  local fpath = repositorypath..'build/Shaderfuse-Installers/'..fuse.Category
   bmd.createdir(fpath)
+  -- local fpath=fuse.DirName
 
   local fname = fuse.Name ..'-Installer.lua'
   local f = io.open(fpath..'/'..fname,"wb")
@@ -286,6 +287,7 @@ function create_installers(repositorypath)
   repositorypath = get_repositorypath(repositorypath)
 
   fuses.fetch(repositorypath..'/Shaders/','installer')
+  -- fuses.fetch(repositorypath..'/docs/','installer')
 
   for i, fuse in ipairs(fuses.list) do
     util.clr_error()
@@ -551,14 +553,14 @@ local function update_fuse_markdown_file(fuse)
       .. fuse.Shadertoy.Author ..")."
 
       if (fuse.Author or '') ~= '' then
-        prolog = prolog .. " Conversion to DCTL and encapsulation into a fuse done by [".. fuse.Author .."](../../Site/Profiles/".. fuse.Author ..".md)."
+        prolog = prolog .. " Conversion to DCTL and encapsulation into a fuse done by [".. fuse.Author .."](../Profiles/".. fuse.Author ..".md)."
       end
 
   else
     prolog = prolog .. fuse.Name .. ".sfi file does not contain sufficiend data yet."
 
     if (fuse.Author or '') ~= '' then
-      prolog = prolog .. " This fuse is under construction by [".. fuse.Author .."](../../Site/Profiles/".. fuse.Author ..".md)."
+      prolog = prolog .. " This fuse is under construction by [".. fuse.Author .."](../Profiles/".. fuse.Author ..".md)."
     end
   end
 
@@ -624,7 +626,8 @@ function create_markdown_files(repositorypath)
 
   repositorypath = get_repositorypath(repositorypath)
 
-  fuses.fetch(repositorypath..'/Shaders/','development')
+  -- fuses.fetch(repositorypath..'/Shaders/','development')
+  fuses.fetch(repositorypath..'/docs/','development')
 
   local overview = io.open(repositorypath..'Shaders/OVERVIEW.md',"w")
   local readme   = io.open(repositorypath..'Shaders/README.md',"w")

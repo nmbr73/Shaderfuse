@@ -1,10 +1,3 @@
-# HeavenAndHell
-<a href="HeavenAndHell-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=HeavenAndHell-Installer.lua&color=blue" /></a>
-
-This Fuse is based on the Shadertoy '_[HeavenAndHell](https://www.shadertoy.com/view/wsKXDV)_' by [adurdin](https://www.shadertoy.com/user/adurdin). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
-
-[![HeavenAndHell Thumbnail](HeavenAndHell.png)](https://www.shadertoy.com/view/wsKXDV "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->

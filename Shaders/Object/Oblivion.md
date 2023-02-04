@@ -1,9 +1,3 @@
-# Oblivion
-
-This Fuse is based on the Shadertoy '_[Oblivion](https://www.shadertoy.com/view/XtfXDN)_' by [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
-
-[![Oblivion Thumbnail](Oblivion.png)](https://www.shadertoy.com/view/XtfXDN "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
@@ -17,20 +11,4 @@ Have fun playing
 [![Oblivion](Oblivion_screenshot.png)](Oblivion.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
-## Compatibility
-
-🟩 macOS / Metal: <span style="color:green; ">checked</span><br />
-⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
-🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
-🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
-
-
-## Problems
-
-Number of problems: 1
-
-- macOS_OpenCL compatibility not checked
-
-
 

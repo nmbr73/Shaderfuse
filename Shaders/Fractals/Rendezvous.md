@@ -1,9 +1,3 @@
-# Rendezvous
-
-This Fuse is based on the Shadertoy '_[Rendezvous](https://www.shadertoy.com/view/ldjGDw)_' by [Dave_Hoskins](https://www.shadertoy.com/user/Dave_Hoskins). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Fractals](README.md) for more fuses in this category.
-
-[![Rendezvous Thumbnail](Rendezvous.png)](https://www.shadertoy.com/view/ldjGDw "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
@@ -41,20 +35,4 @@ float Map( vec3 p )
 [![Rendezvous](Rendezvous_screenshot.png)](Rendezvous.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
-## Compatibility
-
-🟩 macOS / Metal: <span style="color:green; ">checked</span><br />
-🟥 macOS / OpenCL<br />
-🟩 Windows / CUDA: <span style="color:green; ">checked</span><br />
-🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
-
-
-## Problems
-
-Number of problems: 1
-
-- macOS_OpenCL compatibility: 💣💣💣
-
-
 

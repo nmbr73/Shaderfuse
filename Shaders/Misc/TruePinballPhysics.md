@@ -1,10 +1,3 @@
-# TruePinballPhysics
-<a href="TruePinballPhysics-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=TruePinballPhysics-Installer.lua&color=blue" /></a>
-
-This Fuse is based on the Shadertoy '_[True Pinball Physics](https://www.shadertoy.com/view/4tBGRm)_' by [archee](https://www.shadertoy.com/user/archee). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Misc](README.md) for more fuses in this category.
-
-[![TruePinballPhysics Thumbnail](TruePinballPhysics.png)](https://www.shadertoy.com/view/4tBGRm "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->

@@ -1,10 +1,3 @@
-# IHeartFourier
-<a href="IHeartFourier-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=IHeartFourier-Installer.lua&color=blue" /></a>
-
-This Fuse is based on the Shadertoy '_[IHeartFourier](https://www.shadertoy.com/view/tltSWr)_' by [harry7557558](https://www.shadertoy.com/user/harry7557558). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Misc](README.md) for more fuses in this category.
-
-[![IHeartFourier Thumbnail](IHeartFourier.png)](https://www.shadertoy.com/view/tltSWr "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->

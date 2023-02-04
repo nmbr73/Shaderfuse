@@ -1,10 +1,3 @@
-# RayCastSphere
-<a href="RayCastSphere-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=RayCastSphere-Installer.lua&color=blue" /></a>
-
-This Fuse is based on the Shadertoy '_[RayCastSphere](https://www.shadertoy.com/view/XdjBDG)_' by [diroru](https://www.shadertoy.com/user/diroru). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Planet](README.md) for more fuses in this category.
-
-[![RayCastSphere Thumbnail](RayCastSphere.png)](https://www.shadertoy.com/view/XdjBDG "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->

@@ -1,9 +1,3 @@
-# ShareX
-
-This Fuse is based on the Shadertoy '_[ShareX](https://www.shadertoy.com/view/WsKSRK)_' by [fre3k](https://www.shadertoy.com/user/fre3k). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
-
-[![ShareX Thumbnail](ShareX.png)](https://www.shadertoy.com/view/WsKSRK "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
@@ -33,21 +27,4 @@ Have fun
 [![screenshot](ShareX_screenshot.png "ShareX.fuse in DaVinci Resolve")](ShareX.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
-## Compatibility
-
-🟩 macOS / Metal: <span style="color:green; ">checked</span><br />
-⬛ macOS / OpenCL: <span style="color:red; ">NOT TESTED!</span><br />
-⬛ Windows / CUDA: <span style="color:red; ">NOT TESTED!</span><br />
-🟩 Windows / OpenCL: <span style="color:green; ">checked</span><br />
-
-
-## Problems
-
-Number of problems: 2
-
-- macOS_OpenCL compatibility not checked
-- Windows_CUDA compatibility not checked
-
-
 

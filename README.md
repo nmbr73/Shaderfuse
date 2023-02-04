@@ -1,7 +1,9 @@
 
+
 <center>
-    <img src="Site/GitHubLogo.png" alt="Shaderfuse" style="width:70%; " />
+    <img src="Tools/Assets//GitHubLogo.png" alt="Shaderfuse" style="width:70%; " align="center" />
 </center>
+
 
 [![GitHub release](https://img.shields.io/github/v/release/nmbr73/Shadertoys?include_prereleases)](https://github.com/nmbr73/Shadertoys/releases/latest) [![License](https://img.shields.io/badge/license-various-critical)](LICENSE)
 

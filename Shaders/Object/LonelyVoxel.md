@@ -1,10 +1,3 @@
-# LonelyVoxel
-<a href="LonelyVoxel-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message=LonelyVoxel-Installer.lua&color=blue" /></a>
-
-This Fuse is based on the Shadertoy '_[LonelyVoxel](https://www.shadertoy.com/view/Mslczn)_' by [SudoNhim](https://www.shadertoy.com/user/SudoNhim). Conversion to DCTL and encapsulation into a fuse done by [JiPi](../../Site/Profiles/JiPi.md). See [Object](README.md) for more fuses in this category.
-
-[![LonelyVoxel Thumbnail](LonelyVoxel.png)](https://www.shadertoy.com/view/Mslczn "View on Shadertoy.com")
-
 
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
