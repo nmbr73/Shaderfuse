@@ -738,7 +738,7 @@ function create_markdown_files(repositorypath)
 
     overview:write(
         '\n'
-      ..'!['..fuse.Category..'/'..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'_320x180.png)\\\n'
+      ..'!['..fuse.Category..'/'..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.png)\\\n'
       ..'Fuse: ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) '..(not(fuse:hasErrors()) and '🍀' or '💥')..'\\\n'
       ..'Category: ['..fuse.Category..']('..fuse.Category..'/README.md)\\\n'
       )
