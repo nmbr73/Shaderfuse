@@ -65,6 +65,18 @@ Alternatively you can also use the installer of the v0.1-alpha.1 release: drag'n
 
 
 
+# MkDocs local build
+
+```bash
+cd Shaderfuse
+chmod +x ./build.sh
+python3 -m venv venv
+source venv/bin/activate
+pip install mkdocs-material
+pip install mkdocs-callouts
+pip install mkdocs-awesome-pages-plugin
+```
+
 
 
 # Contribute
