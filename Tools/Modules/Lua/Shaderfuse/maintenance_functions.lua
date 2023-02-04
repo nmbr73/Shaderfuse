@@ -592,13 +592,14 @@ local function update_fuse_markdown_file(fuse)
   handle:close()
 
 
-  local a, b = md:find("<!%-%- %+%+%+ DO NOT REMOVE THIS COMMENT %+%+%+ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE %+%+%+ IT WOULD BE A REALLY BAD IDEA %+%+%+ %-%->")
-  local c, d = md:find("<!%-%- %+%+%+ DO NOT REMOVE THIS COMMENT %+%+%+ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE %+%+%+ TRUST ME: JUST DON'T DO IT %+%+%+ %-%->",b)
+  -- local a, b = md:find("<!%-%- %+%+%+ DO NOT REMOVE THIS COMMENT %+%+%+ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE %+%+%+ IT WOULD BE A REALLY BAD IDEA %+%+%+ %-%->")
+  -- local c, d = md:find("<!%-%- %+%+%+ DO NOT REMOVE THIS COMMENT %+%+%+ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE %+%+%+ TRUST ME: JUST DON'T DO IT %+%+%+ %-%->",b)
 
-  if a == nil or c == nil then util.set_error("markers in ".. fuse.DirName ..'/'..fuse.Name ..'.md not found'); return false end
-  -- if a == nil or c == nil then return false end
+  -- if a == nil or c == nil then util.set_error("markers in ".. fuse.DirName ..'/'..fuse.Name ..'.md not found'); return false end
+  -- -- if a == nil or c == nil then return false end
 
-  local upd = prolog .. "\n\n" .. md:sub(a,d) .. "\n\n" .. epilog
+  -- local upd = prolog .. "\n\n" .. md:sub(a,d) .. "\n\n" .. epilog
+  local upd = prolog .. "\n\n" .. md .. "\n\n" .. epilog
 
   if md == upd then
     return true
