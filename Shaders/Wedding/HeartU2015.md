@@ -13,7 +13,7 @@ Have fun playing
 
 [![HeartU2015](https://user-images.githubusercontent.com/78935215/199003640-74bd4e63-31d1-47ce-91ae-b156845575c6.gif)](HeartU2015.fuse)
 
-[![Thumbnail](HeartU2015_screenshot.png)](https://www.shadertoy.com/view/lts3RX "View on Shadertoy.com")
+[![Screenshot](HeartU2015_screenshot.png)](https://www.shadertoy.com/view/lts3RX "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

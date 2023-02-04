@@ -6,7 +6,7 @@ A beautiful tunnel flight with audio visualization. Extensive parameters allow y
 
 ![AudioFlightV2](https://user-images.githubusercontent.com/78935215/208448587-a6e76de5-87cc-4f92-9472-51f5ca98a11f.gif)
 
-[![Thumbnail](AudioFlightv2_screenshot.png)](https://www.shadertoy.com/view/dd2XDd "View on Shadertoy.com")
+[![Screenshot](AudioFlightv2_screenshot.png)](https://www.shadertoy.com/view/dd2XDd "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

@@ -15,7 +15,7 @@ Have fun playing
 [![Lover](https://user-images.githubusercontent.com/78935215/155531303-950f901d-2797-4c5e-8def-9a7a22328bd0.gif)](https://www.shadertoy.com/view/fsjyR3 "View on Shadertoy.com")
 
 
-[![Thumbnail](Lover_screenshot.png)](Lover.fuse)
+[![Screenshot](Lover_screenshot.png)](Lover.fuse)
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

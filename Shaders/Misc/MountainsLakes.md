@@ -11,7 +11,7 @@ I hope you enjoy it.
 ![MountainsLakes](https://user-images.githubusercontent.com/78935215/187472791-ae84973b-10e9-4945-8b45-2ea661b12b0a.gif)
 
 
-[![Thumbnail](MountainsLakes_screenshot.png)](https://www.shadertoy.com/view/7tSSDD "View on Shadertoy.com")
+[![Screenshot](MountainsLakes_screenshot.png)](https://www.shadertoy.com/view/7tSSDD "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

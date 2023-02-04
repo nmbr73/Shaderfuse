@@ -8,7 +8,7 @@ Have fun playing
 
 [![WednesdayMessingAround](https://user-images.githubusercontent.com/78935215/199586416-e9cbca39-9d1c-41d2-be33-695a25e075f3.gif)](WednesdayMessingAround.fuse)
 
-[![Thumbnail](WednesdayMessingAround_screenshot.png)](https://www.shadertoy.com/view/NtcyDn "View on Shadertoy.com")
+[![Screenshot](WednesdayMessingAround_screenshot.png)](https://www.shadertoy.com/view/NtcyDn "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

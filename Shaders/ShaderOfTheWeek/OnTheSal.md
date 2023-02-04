@@ -9,7 +9,7 @@ Anyway have fun
 
 ![OnTheSaltLake](https://user-images.githubusercontent.com/78935215/149341819-5d02474b-6553-42f1-8128-4c3db7c10238.gif)
 
-[![Thumbnail](OnTheSal_screenshot.png)](https://www.shadertoy.com/view/fsXcR8 "View on Shadertoy.com")
+[![Screenshot](OnTheSal_screenshot.png)](https://www.shadertoy.com/view/fsXcR8 "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

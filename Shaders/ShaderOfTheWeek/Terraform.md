@@ -4,7 +4,7 @@
 
 ![Terraform](https://user-images.githubusercontent.com/78935215/154648977-658c0780-f09c-4ef8-8b3e-77ba879eed11.gif)
 
-[![Thumbnail](Terraform_screenshot.png)](https://www.shadertoy.com/view/NsdXDs "View on Shadertoy.com")
+[![Screenshot](Terraform_screenshot.png)](https://www.shadertoy.com/view/NsdXDs "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 

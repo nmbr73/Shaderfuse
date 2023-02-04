@@ -8,7 +8,7 @@ A pumping heart. With the button "Tex" a texture can be applied to the heart. Th
 
 [![HeartDemo](https://user-images.githubusercontent.com/78935215/205638735-8835a435-f255-4dfc-b222-114267be998f.gif)](Heartdemo.fuse)
 
-[![Thumbnail](Heartdemo_screenshot.png)](https://www.shadertoy.com/view/wttXD7 "View on Shadertoy.com")
+[![Screenshot](Heartdemo_screenshot.png)](https://www.shadertoy.com/view/wttXD7 "View on Shadertoy.com")
 
 <!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
 
