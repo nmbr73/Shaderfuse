@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 A nice variation of the "Abstract Glassy Field". The textures still have to be adapted, as they access the audio modules in the original.
 
 [![OverstimulatedNeurons](OverstimulatedNeurons_screenshot.png)](OverstimulatedNeurons.fuse)
@@ -11,6 +7,3 @@ A nice variation of the "Abstract Glassy Field". The textures still have to be a
 
 
 Have fun playing
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

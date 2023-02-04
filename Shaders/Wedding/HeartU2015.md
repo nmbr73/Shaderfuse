@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 Nested partially open hearts that rotate around each other like clockwork.
 The viewing angle can be changed using the mouse parameters.
 The focus and a zoom can be adjusted with yscl and f.
@@ -14,6 +10,3 @@ Have fun playing
 [![HeartU2015](https://user-images.githubusercontent.com/78935215/199003640-74bd4e63-31d1-47ce-91ae-b156845575c6.gif)](HeartU2015.fuse)
 
 [![Screenshot](HeartU2015_screenshot.png)](https://www.shadertoy.com/view/lts3RX "View on Shadertoy.com")
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

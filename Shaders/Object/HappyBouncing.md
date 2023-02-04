@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 A new conversion method is used here. nmbr73 has developed a Python script and an incubator fuse, which enables shaders to be converted much more effectively and conveniently. It's still in the middle of development, but it's already very powerful.
 A total of 3 shader toys are combined in this shader fuse:
 
@@ -15,6 +11,3 @@ Have fun playing
 
 
 [![HappyBouncing](HappyBouncing_screenshot.png)](HappyBouncing.fuse)
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

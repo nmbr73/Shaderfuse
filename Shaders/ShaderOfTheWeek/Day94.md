@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 A successful shader, which uses a buffer A, but the picture does not use again as input.
 
 Have fun
@@ -10,6 +6,3 @@ Have fun
 
 
 [![Day94](Day94_screenshot.png)](Day94.fuse)
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

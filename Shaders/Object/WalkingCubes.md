@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 Four colored boxes run over an inclined surface. The floor can be replaced by a texture, otherwise the parameters are still missing. A very interesting application of the mat3. One for the rotations of the boxes and the other for calculating the visual axis. As a result, both initializations of mat3 were necessary and the block with the overloaded make_mat3 functions were used.
 
 
@@ -50,6 +46,3 @@ inline __host__ __device__ mat3 make_mat3( float A1, float B1, float C1, float A
 
 
 Have fun playing
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

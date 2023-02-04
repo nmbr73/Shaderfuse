@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 An alien antenna hovers through the universe. So far only a few parameters are available.
 In the original, very nice details were added via BufferA, but this has been omitted here in the conversion.
 
@@ -9,6 +5,3 @@ In the original, very nice details were added via BufferA, but this has been omi
 [![FractalRadioBase](FractalRadioBase_screenshot.png)](FractalRadioBase.fuse)
 
 Have fun playing
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

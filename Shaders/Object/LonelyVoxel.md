@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 A cube with rounded corners and a very nice bump map.
 
 [![LonelyVoxel](https://user-images.githubusercontent.com/78935215/108084988-2211ab80-7075-11eb-911d-b24996b84a65.PNG)](https://github.com/nmbr73/Shaderfuse/blob/main/ObjektShader/LonelyVoxel.md)
@@ -19,6 +15,3 @@ One way of including a gif anim ...
 ![LonelyVoxel](LonelyVoxel.gif "LonelyVoxel.fuse")
 
 ... we'll have to see what's the advantage of one variant over the other?!?
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 A little Shader for occasionally.
 
 [![screenshot](Fake3DScene_screenshot.png "Fake3DScene.fuse in DaVinci Resolve")](https://github.com/nmbr73/Shaderfuse/blob/main/PlanetShader/Fake3DScene.fuse)
@@ -37,6 +33,3 @@ This is a nice shader to explore the use of a 2 dimensional matrix. With the hel
 ```
 
 Have fun
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

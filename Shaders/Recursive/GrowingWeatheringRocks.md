@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 An attempt to make a bump/height map for natural stone surfaces. Not physically-based.
 
 There are extensive parameters available. In particular, three textures can be faded in or overlaid. Two variables are calculated in the calculation of the BufferA. These are taken over in the textures in the red and yellow dimension. These can be selected with the checkboxes PX / PY. The corresponding variable can also be selected for the draw function.
@@ -13,6 +9,3 @@ Have fun playing
 ![GrowingWeatheringRocks](https://user-images.githubusercontent.com/78935215/128998614-85759f48-e57a-4021-aebd-10a3bf5c138c.gif)
 
 [![GrowingWeatheringRocks](GrowingWeatheringRocks_screenshot.png)](GrowingWeatheringRocks.fuse)
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

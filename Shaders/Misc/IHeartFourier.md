@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 An interesting Fourier series of 18 points results in a curved line. Here a hurdle had to be overcome in the parameter transfer of arrays. I initially had a solution, but it only worked for one graphics system at a time. Nmbr73 had the solution here, simple but perfect.
 
 ```
@@ -28,6 +24,3 @@ Counterfeit:
 
 
 Have fun playing
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 A fun shader that draws a very nice picture with just a few lines of code
 
 Have fun playing
@@ -10,6 +6,3 @@ Have fun playing
 
 
 [![SpiraledLayers](SpiraledLayers_screenshot.png)](SpiraledLayers.fuse)
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

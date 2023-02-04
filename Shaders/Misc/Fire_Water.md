@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 Two tailed comets "Fire" and "Water" circle around each other
 
 [![Fire_Water](Fire_Water_screenshot.png)](Fire_Water.fuse)
@@ -16,6 +12,3 @@ Here is a little study of this fuse: https://www.youtube.com/watch?v=4R7ZVMyKLnY
 
 
 Have fun
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 Cute little racing cars roar around on small planets. All colors are changeable
 
 [![screenshot](https://user-images.githubusercontent.com/78935215/108132260-d41b9880-70b2-11eb-8426-f612cfd63cd8.PNG)](CrackerCars.fuse)
@@ -19,6 +15,3 @@ And OpenCL can have overloaded functions
 Have fun
 
 [![CrackerCars](https://user-images.githubusercontent.com/78935215/108132745-b00c8700-70b3-11eb-97f1-8b6e9dcec3ca.gif)](https://www.shadertoy.com/embed/4sdXzr?gui=true&t=10&paused=true&muted=false)
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-

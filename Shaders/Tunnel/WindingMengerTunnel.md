@@ -1,7 +1,3 @@
-
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE +++ IT WOULD BE A REALLY BAD IDEA +++ -->
-
 I had already tried a Menger shader with no success. This time no error has crept in and no incompatibilities have occurred.
 The individual objects are controlled by a global variable (objID). In order for the shader to work under OpenCL, this variable must go through all functions. This has now been implemented in version 2 of the fuse. Extensive parameters have also been added. Different tunnel modes can now be set. In addition to the original version, the two sections now have three variants and the metal grid of the sections can be switched on and off. A texture for the bump map has also been added. This allows indentations to be created in the open spaces of the tunnel.
 In the original, the tunnel is "bent" in both X and Y directions. This can now be set using the pertubing parameter.
@@ -23,6 +19,3 @@ __DEVICE__ inline mat3 mat3_add_mat3 (mat3 A, mat3 B) {
 [![WindingMengerTunnel](WindingMengerTunnel_screenshot.png)](WindingMengerTunnel.fuse)
 
 Have fun playing
-
-<!-- +++ DO NOT REMOVE THIS COMMENT +++ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE +++ TRUST ME: JUST DON'T DO IT +++ -->
-
