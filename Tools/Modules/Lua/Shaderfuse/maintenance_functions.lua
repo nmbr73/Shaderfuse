@@ -629,8 +629,8 @@ function create_markdown_files(repositorypath)
   -- fuses.fetch(repositorypath..'/Shaders/','development')
   fuses.fetch(repositorypath..'/docs/','development')
 
-  local overview = io.open(repositorypath..'Shaders/OVERVIEW.md',"w")
-  local readme   = io.open(repositorypath..'Shaders/README.md',"w")
+  local overview = io.open(repositorypath..'docs/OVERVIEW.md',"w")
+  local readme   = io.open(repositorypath..'docs/README.md',"w")
 
   if not(overview) or not(readme) then
     print("We have a Problem")
@@ -653,15 +653,15 @@ function create_markdown_files(repositorypath)
   overview:write(header)
   readme:write(header)
 
-  local links=''
+  -- local links=''
 
-  for i,cat in ipairs(fuses.categories) do
-    links=links..' · ['..cat..']('..cat..'/README.md)'
-  end
+  -- for i,cat in ipairs(fuses.categories) do
+  --   links=links..' · ['..cat..']('..cat..'/README.md)'
+  -- end
 
 
-  overview:write("[README](README.md) · **OVERVIEW**"..links.."\n\n")
-  readme:write("**README** · [OVERVIEW](OVERVIEW.md)"..links.."\n\n")
+  -- overview:write("[README](README.md) · **OVERVIEW**"..links.."\n\n")
+  -- readme:write("**README** · [OVERVIEW](OVERVIEW.md)"..links.."\n\n")
 
   overview:write('# Shaders\n\n')
   readme:write('# Shaders\n\n')
@@ -692,20 +692,20 @@ function create_markdown_files(repositorypath)
       overview:write("## "..fuse.Category.." Shaders\n\n")
       readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
 
-      readme_cat   = io.open(repositorypath..'Shaders/'..fuse.Category..'/README.md',"w")
+      readme_cat   = io.open(repositorypath..'docs/'..fuse.Category..'/README.md',"w")
       readme_cat:write(header)
 
-      local links='[README](../README.md) · [OVERVIEW](../OVERVIEW.md)'
+      -- local links='[README](../README.md) · [OVERVIEW](../OVERVIEW.md)'
 
-      for i,cat in ipairs(fuses.categories) do
-          if cat==currentCategory then
-            links=links..' · **'..cat..'**'
-          else
-            links=links..' · ['..cat..'](../'..cat..'/README.md)'
-          end
-      end
+      -- for i,cat in ipairs(fuses.categories) do
+      --     if cat==currentCategory then
+      --       links=links..' · **'..cat..'**'
+      --     else
+      --       links=links..' · ['..cat..'](../'..cat..'/README.md)'
+      --     end
+      -- end
 
-      readme_cat:write(links.."\n\n")
+      -- readme_cat:write(links.."\n\n")
       readme_cat:write("# "..fuse.Category.." Shaders\n\n")
 
       local description_cat = io.open(repositorypath..'Shaders/'..fuse.Category..'/DESCRIPTION.md',"r")
