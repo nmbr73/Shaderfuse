@@ -689,7 +689,7 @@ function create_markdown_files(repositorypath)
 
       currentCategory=fuse.Category
 
-      overview:write("## "..fuse.Category.." Shaders\n\n")
+      overview:write("\n\n## "..fuse.Category.." Shaders\n\n")
       readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
 
       readme_cat   = io.open(repositorypath..'docs/'..fuse.Category..'/README.md',"w")
@@ -737,10 +737,10 @@ function create_markdown_files(repositorypath)
 
 
     overview:write(
-        '\n'
-      ..'!['..fuse.Category..'/'..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.png)\\\n'
-      ..'Fuse: ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) '..(not(fuse:hasErrors()) and '🍀' or '💥')..'\\\n'
-      ..'Category: ['..fuse.Category..']('..fuse.Category..'/README.md)\\\n'
+        ''
+      ..'<img src="../'..fuse.Category..'/'..fuse.Name..'.png" align="left" width="320 height="180" />'
+      ..'<strong><a href="../'..fuse.Category..'/'..fuse.Name..'/" style="font-size:larger; ">'..fuse.Name..'</a></strong> '..(not(fuse:hasErrors()) and '🍀' or '💥')..'<br />'
+      ..'Category: <a href="../'..fuse.Category..'/">'..fuse.Category..' Shader</a><br />'
       )
 
 
@@ -748,15 +748,13 @@ function create_markdown_files(repositorypath)
     update_fuse_markdown_file(fuse)
 
 
-
-
-
-
     if (not(fuse:hasErrors())) then
       overview:write(
-          'Shadertoy: ['..fuse.Shadertoy.Name..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')\\\n'
-        ..'Author: ['..fuse.Shadertoy.Author..'](https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..')\\\n'
-        ..'Ported by: ['..fuse.Author..'](../Site/Profiles/'..fuse.Author..'.md)\n'
+          'Shadertoy: <a href="https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..'">'..fuse.Shadertoy.Name..'</a><br />'
+        ..'Author: <a href="https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..'">'..fuse.Shadertoy.Author..'</a><br />'
+        ..'Ported by: <a href="../Profiles/'..fuse.Author..'">'..fuse.Author..'</a><br />&nbsp;<br />'
+        ..'<a href="../'..fuse.Category..'/'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
+        ..'<br clear="all" />\n'
         )
 
       readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) (Shadertoy ID ['..fuse.Shadertoy.ID..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')) ported by ['..fuse.Author..'](../Site/Profiles/'..fuse.Author..'.md)\n')
@@ -765,7 +763,8 @@ function create_markdown_files(repositorypath)
 
     else
 
-      overview:write('**'..fuse:getErrorText()..'**\n')
+      -- overview:write(''..fuse:getErrorsHTML()..'</p><br clear="all" />\n')
+      overview:write('<br clear="all" />\n')
       readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) 💥\n')
       readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)** 💥\n- *'..fuse:getErrorText()..'*\n\n')
 
