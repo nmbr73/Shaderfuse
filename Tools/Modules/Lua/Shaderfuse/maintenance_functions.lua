@@ -739,7 +739,7 @@ function create_markdown_files(repositorypath)
     overview:write(
         '\n'
       ..'!['..fuse.Category..'/'..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'_320x180.png)\\\n'
-      ..'Fuse: ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) '..(not(fuse:hasErrors()) and ':four_leaf_clover:' or ':boom:')..'\\\n'
+      ..'Fuse: ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) '..(not(fuse:hasErrors()) and '🍀' or '💥')..'\\\n'
       ..'Category: ['..fuse.Category..']('..fuse.Category..'/README.md)\\\n'
       )
 
@@ -766,8 +766,8 @@ function create_markdown_files(repositorypath)
     else
 
       overview:write('**'..fuse:getErrorText()..'**\n')
-      readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) :boom:\n')
-      readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)** :boom:\n- *'..fuse:getErrorText()..'*\n\n')
+      readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) 💥\n')
+      readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)** 💥\n- *'..fuse:getErrorText()..'*\n\n')
 
     end
 
@@ -784,11 +784,11 @@ function create_markdown_files(repositorypath)
   end
 
   if okay > 0 then
-    overview:write(":four_leaf_clover: "..okay.."\n\n")
+    overview:write("🍀 "..okay.."\n\n")
   end
 
   if boom > 0 then
-    overview:write(":boom: "..boom.."\n\n")
+    overview:write("💥 "..boom.."\n\n")
   end
 
 
