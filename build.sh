@@ -13,6 +13,8 @@ lua generate_installer.lua
 cd ..
 cd ..
 
+lua Tools/Shell/print_videos.lua > docs/Videos.md
+
 cp Shaders.csv docs
 
 # sudo apt-get install zip
