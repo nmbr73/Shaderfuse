@@ -630,8 +630,8 @@ function create_markdown_files(repositorypath)
   -- fuses.fetch(repositorypath..'/Shaders/','development')
   fuses.fetch(repositorypath..'/docs/','development')
 
-  local overview = io.open(repositorypath..'docs/OVERVIEW.md',"w")
-  local readme   = io.open(repositorypath..'docs/README.md',"w")
+  local overview = io.open(repositorypath..'docs/Overview.md',"w")
+  local readme   = io.open(repositorypath..'docs/Shaders.md',"w")
 
   if not(overview) or not(readme) then
     print("We have a Problem")
