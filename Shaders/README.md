@@ -19,10 +19,10 @@ See  [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
 [Shader of the Week](Shaders/ShaderOfTheWeek/ShaderOfTheWeek.md)
 
-[**Current Shader of the Week (19th of December 2022):**](Shaders/ShaderOfTheWeek/AudioFlightv2.md)
+[**Current Shader of the Week (8th of February 2023):**](Shaders/ShaderOfTheWeek/NintendoSwitch.md)
 
-[![AudioFlightV2](https://user-images.githubusercontent.com/78935215/208448587-a6e76de5-87cc-4f92-9472-51f5ca98a11f.gif)
-](Shaders/ShaderOfTheWeek/AudioFlightv2.md)
+[![NintendoSwitch](https://user-images.githubusercontent.com/78935215/217755415-62e43bf7-801c-4811-9d9b-c307cee53820.gif)
+](Shaders/ShaderOfTheWeek/NintendoSwitch.md)
 
 
 #### Latest Conversions
