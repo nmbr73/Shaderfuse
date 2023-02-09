@@ -182,6 +182,7 @@ function Fuse:readInfo()
 
   assert(self ~= nil, "call as INSTANCE:readInfo()")
   assert(self.DirName ~= '' and self.Name ~= '', "call only if init ran without errors")
+  assert(self.DirName ~= nil and self.Name ~= nil, "uh, something went terribly wrong (filepath: '".. (self.FilePath or '') .."')")
 
   if not bmd.fileexists(self.DirName..'/'..self.Name..'.sfi') then
     self:addError("shaderfuse info (.sfi) file does not exist")
