@@ -4,7 +4,7 @@ DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (ak
 
 Furthermore must be mentioned that this repository is only an incubator to develop such fuses and to exchange on experiences, approaches and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right and de facto go to place for you. As soon as an implementation in this repo achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in Reactor under the same name but without any of the annoying '`_DEV`', '`_BETA`', or whatsoever suffixes.
 
-See the [videos](https://nmbr73.github.io/Shaderfuse/Videos/) to get an idea what these Fuses look like.
+See the [videos](Videos.md) to get an idea what these Fuses look like.
 
 
 
@@ -12,7 +12,7 @@ See the [videos](https://nmbr73.github.io/Shaderfuse/Videos/) to get an idea wha
 
 ## Fuses
 
-See  [Shaders](/Shaders.csv) for a list of all shaders implemented so far - resp. the [Overview](https://nmbr73.github.io/Shaderfuse/Overview/) to have with thumbnails a more 'visual experience'.
+See  [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'.
 
 ### Shader of the week
 
@@ -32,7 +32,7 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 [![AnisotropicBlurImage](https://user-images.githubusercontent.com/78935215/173939861-554cd73b-f945-4af9-a775-42517b3e419d.gif)](Shaders/Recursive/AnisotropicBlurImage.md)
 [![HappyBouncing](https://user-images.githubusercontent.com/78935215/147247710-5e0126ac-7252-4d47-8b03-96c461cf4564.gif
 )](Shaders/Object/HappyBouncing.md)
-[![ShareX](Object/ShareX.png)](Shaders/Object/ShareX.md)
+[![ShareX](Shaders/Object/ShareX_320x180.png)](Shaders/Object/ShareX.md)
 [![GrowingWeatheringRocks](https://user-images.githubusercontent.com/78935215/128998614-85759f48-e57a-4021-aebd-10a3bf5c138c.gif)](Shaders/Recursive/GrowingWeatheringRocks.md)
 [![Dynamism](https://user-images.githubusercontent.com/78935215/126867926-b7bf3330-67ff-4604-8b83-6c8c54c20664.gif)](Shaders/Abstract/Dynamism.md)
 [![LearningReationDiffusion](https://user-images.githubusercontent.com/78935215/126063449-f4ef9253-d228-4448-99cf-2c89cc3d6c87.gif)](Shaders/Recursive/LearningReactionDiffusion.md)
@@ -65,18 +65,18 @@ And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinc
 ### Audio Shader
 
 Shaders that use audio data (wave and frequency) over an image for display. Shadertoy provides an interface consisting of an image (512*2 pixels). One line contains 512 sampled waveform values ​​belonging to the current frame and the second line contains the FFT (Spectrum) values.
-This interface can also be implemented in Resolve/Fusion. The [AudioWaveform.fuse](/Fuses/AudioWaveform.md) generates the corresponding image from a loaded WAV file. The AudioWaveform has a second output for this. This Output is connected to an AudioShaderfuse-Input.
+This interface can also be implemented in Resolve/Fusion. The [AudioWaveform.fuse](Fuses/AudioWaveform.md) generates the corresponding image from a loaded WAV file. The AudioWaveform has a second output for this. This Output is connected to an AudioShaderfuse-Input.
 
 [![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioWaveform-Installer.lua&color=blue)](https://github.com/nmbr73/Shaderfuse/releases/download/V1.1/AudioWaveform-Installer.lua "Installer")
 
 Here are the AudioShaderfuses:
-- [AudioWaveformVisualizer](/Shaders/Audio/AudioWaveformVisualizer.md)
-- [AudioHeightfield1](/Shaders/Audio/AudioHeightfield1.md)
-- [JamSession](/Shaders/Audio/JamSession.md)
-- [ReactiveVoronoi](/Shaders/Audio/ReactiveVoronoi.md)
-- [Rlstyle](/Shaders/Audio/Rlstyle.md)
-- [ShadertoyAudioDisplay](/Shaders/Audio/ShadertoyAudioDisplay.md)
-- [InerciaIntended](/Shaders/Audio/Inerciaintended.md) :new:
+- [AudioWaveformVisualizer](Shaders/Audio/AudioWaveformVisualizer.md)
+- [AudioHeightfield1](Shaders/Audio/AudioHeightfield1.md)
+- [JamSession](Shaders/Audio/JamSession.md)
+- [ReactiveVoronoi](Shaders/Audio/ReactiveVoronoi.md)
+- [Rlstyle](Shaders/Audio/Rlstyle.md)
+- [ShadertoyAudioDisplay](Shaders/Audio/ShadertoyAudioDisplay.md)
+- [InerciaIntended](Shaders/Audio/Inerciaintended.md) :new:
 
 [![InerciaIntended](https://user-images.githubusercontent.com/78935215/200139202-3c5b2c15-bd43-4998-84d6-a06820255d5d.gif)](Shaders/Audio/Inerciaintended.md)
 
