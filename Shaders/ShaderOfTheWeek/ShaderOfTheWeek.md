@@ -2,7 +2,35 @@
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+## 06th of Frbruary 2023
+#### Nintendo Switch (Shadertoy ID [wtlXRH](https://www.shadertoy.com/view/wtlXRH))
+[![NintendoSwitch](https://user-images.githubusercontent.com/78935215/217755415-62e43bf7-801c-4811-9d9b-c307cee53820.gif)
+](NintendoSwitch.md)
 ---
+
+## 26th of December 2022 to 31th of January 2023
+Not a worthwhile shader for fusion
+#### 4D Sun (Shadertoy ID [wtVGDR](https://www.shadertoy.com/view/wtVGDR))
+#### tHe gRiD (Shadertoy ID [7tGfWy](https://www.shadertoy.com/view/7tGfWy))
+#### Desire Crystal (Shadertoy ID [flfyRS](https://www.shadertoy.com/view/flfyRS))
+#### 4Traveling by the mountains (Shadertoy ID [Nlcczf](https://www.shadertoy.com/view/Nlcczf))
+---
+## 19th of December 2022
+#### [AudioFlightV2] Energetic Flyby (Shadertoy ID [7tfyRl](https://www.shadertoy.com/view/7tfyRl))
+[![AudioFlightV2](https://user-images.githubusercontent.com/78935215/208448587-a6e76de5-87cc-4f92-9472-51f5ca98a11f.gif)
+](AudioFlightV2.md)
+---
+
+## 05th of December 2022
+#### [20221105_inercia intended one] Energetic Flyby (Shadertoy ID [cs2GWD](https://www.shadertoy.com/view/cs2GWD))
+[![InerciaIntended](https://user-images.githubusercontent.com/78935215/200139202-3c5b2c15-bd43-4998-84d6-a06820255d5d.gif)
+](InerciaIntended.md)
+---
+
+## 21th of November 2022
+#### [Energeticflyby] Energetic Flyby (Shadertoy ID [csjGDD](https://www.shadertoy.com/view/csjGDD))
+[![Energeticflyby](https://user-images.githubusercontent.com/78935215/204669901-f1eda61f-dcf6-4506-85a0-9c41f3ff9944.gif)
+](Energeticflyby.md)
 ## 08th of November 2022
 #### GenerativeArtDeco4 (Shadertoy ID [mds3DX](https://www.shadertoy.com/view/mds3DX))
 [![GenerativeArtDeco4](https://user-images.githubusercontent.com/78935215/200687263-7aee7e94-a670-48ad-9e1e-7f29f44f8fa6.gif)
