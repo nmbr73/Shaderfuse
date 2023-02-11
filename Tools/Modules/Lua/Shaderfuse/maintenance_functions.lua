@@ -542,7 +542,7 @@ local function update_fuse_markdown_file(fuse)
 
   if fuse:isValid() then
     -- prolog = prolog .. '[![Download Installer](https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue)]('..fuse.Name..'-Installer.lua "Installer")'
-    prolog = prolog .. '<a href="'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
+    prolog = prolog .. '<a href="../'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
   end
 
   prolog = prolog .. '\n'
@@ -755,7 +755,7 @@ function create_markdown_files(repositorypath)
           'Shadertoy: <a href="https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..'">'..fuse.Shadertoy.Name..'</a><br />'
         ..'Author: <a href="https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..'">'..fuse.Shadertoy.Author..'</a><br />'
         ..'Ported by: <a href="../Profiles/'..fuse.Author..'">'..fuse.Author..'</a><br />&nbsp;<br />'
-        ..'<a href="../'..fuse.Category..'/'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
+        ..'<a href="'..fuse.Category..'/'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
         ..'<br clear="all" />\n'
         )
 
