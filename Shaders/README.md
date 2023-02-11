@@ -17,9 +17,9 @@ Current Shader of the Week (8th of February 2023):
 </center>
 
 
-### Installation
+## Installation
 
-#### Reactor
+### Reactor
 
 Best way to install the Fuses is to just use [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814). Find the 'Shadertoys' package in the - guess what - 'Shaders' category. This is the most convenient and recommended way to if you just what to use them or have a quick look if they might be useful for you.
 
@@ -27,14 +27,14 @@ Best way to install the Fuses is to just use [Reactor](https://www.steakunderwat
 
 Only thing to take into account is that this way you don't get the latest development versions. Stable toys are bundled from time to time and integrated in Reactor when reviewed. You will find the Shaderfuses installed this way in Effects under 'Shaderfuse'.
 
-#### Installer
+### Installer
 
 Alternately to the Reactor package install, you can download a Fuse's '`*-Installer.lua`' installation script in case you want to quickly try out the latest version of a single Fuse. Drag and drop that script onto your Fusion workspace and follow installer's instructions. You will find Fuses installed this way in Effects under 'Shaderfuse (beta)' and node instances of such Fuses will have a '_BETA' suffix in your composition.
 
-If you want to try out multiple Shaderfuses this way, you can download all the latest installers as [Shaderfuse-Installers.zip](Shaderfuse-Installers.zip). Unpack the that archive and then drag and drop the installers of you choice onto Fusion.
+If you want to try out multiple Shaderfuses this way, you can download all the latest installers as [Shaderfuse-Installers.zip](Shaderfuse-Installers.zip). Unpack the that archive and then drag and drop the installers of your choice onto Fusion.
 
 
-### Usage
+## Usage
 
 In the Fusion page of DaVinci Resolve right click into the working area. In the context menu under 'Add tool' you'll find a 'Shaderfuse' submenu (resp. 'Shaderfuse (beta)' for their variants installed using an installer). That submenu corresponds to the Fuse categories you see on this page and provides access to all fuses installed.
 
@@ -42,37 +42,4 @@ Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and star
 
 And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinci Resolve) pane under 'Tools' you should now find an entry 'Shaderfuse' (resp. 'Shaderfuse (beta)') that lists all the categories and the different fuses.
 
-
-## Specific Shaders
-
-### Audio Shader
-
-Shaders that use audio data (wave and frequency) over an image for display. Shadertoy provides an interface consisting of an image (512*2 pixels). One line contains 512 sampled waveform values ​​belonging to the current frame and the second line contains the FFT (Spectrum) values.
-This interface can also be implemented in Resolve/Fusion. The [AudioWaveform.fuse](Fuses/AudioWaveform.md) generates the corresponding image from a loaded WAV file. The AudioWaveform has a second output for this. This Output is connected to an AudioShaderfuse-Input.
-
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=AudioWaveform-Installer.lua&color=blue)](https://github.com/nmbr73/Shaderfuse/releases/download/V1.1/AudioWaveform-Installer.lua "Installer")
-
-Here are the AudioShaderfuses:
-- [AudioWaveformVisualizer](Audio/AudioWaveformVisualizer.md)
-- [AudioHeightfield1](Audio/AudioHeightfield1.md)
-- [JamSession](Audio/JamSession.md)
-- [ReactiveVoronoi](Audio/ReactiveVoronoi.md)
-- [Rlstyle](Audio/Rlstyle.md)
-- [ShadertoyAudioDisplay](Audio/ShadertoyAudioDisplay.md)
-- [InerciaIntended](Audio/Inerciaintended.md) :new:
-
-[![InerciaIntended](https://user-images.githubusercontent.com/78935215/200139202-3c5b2c15-bd43-4998-84d6-a06820255d5d.gif)](Audio/Inerciaintended.md)
-
-
-### Cubemap Shader
-
-These are shaders that require a cubemap as input. nmbr73 created a tool to provide a cubemap for the shader fuses.
-
-[![Download Installer](https://img.shields.io/static/v1?label=Download&message=CubeMapLoader-Installer.lua&color=blue)](https://github.com/nmbr73/Shaderfuse/releases/download/V1.1/CubeMapLoader-Installer.lua "Installer")
-
-Here are the cubemap shader fuses:
-- [BallsAreTouching](Cubemap/BallsAreTouching.md)
-- [GlassAndBubble](Cubemap/GlassAndBubble.md)
-- [KissTracing](Cubemap/KissTracing.md)
-- [NewtonPendulum](Cubemap/NewtonPendulum.md)
-- [OceanElemental](Cubemap/OceanElemental.md)
+Please note, that there a some specific shaders that might need additional Fuses at their input to be used. These are in particular all the [Cubemap](Cubemap/README.md) and [Audio](Audio/README.md) shaders.
