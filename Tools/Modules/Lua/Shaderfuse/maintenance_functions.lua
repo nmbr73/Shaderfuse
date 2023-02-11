@@ -691,7 +691,8 @@ function create_markdown_files(repositorypath)
       currentCategory=fuse.Category
 
       overview:write("\n\n## "..fuse.Category.." Shaders\n\n")
-      readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
+      -- readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
+      readme:write('\n\n### ['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)\n\n')
 
       readme_cat   = io.open(repositorypath..'docs/'..fuse.Category..'/README.md',"w")
       readme_cat:write(header)
