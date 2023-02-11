@@ -1,46 +1,20 @@
 # Shaderfuse
 
-DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion"). These are based on WebGL shaders released on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each Fuse's source code for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are obviously and definitely huge fans of this amazing website!
+DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion"). See the [videos](Videos.md) to get an idea of what this does look like. The Fuses are based on WebGL shaders released on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each Fuse's source code and/or info pane for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are obviously and definitely huge fans of this amazing website!
 
-Furthermore must be mentioned that this repository is only an incubator to develop such fuses and to exchange on experiences, approaches and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right and de facto go to place for you. As soon as an implementation in this repo achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in Reactor under the same name but without any of the annoying '`_DEV`', '`_BETA`', or whatsoever suffixes.
-
-See the [videos](Videos.md) to get an idea what these Fuses look like.
-
-
-
+Furthermore must be mentioned that this repository is only an incubator to develop such fuses and to exchange on experiences, approaches and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right and de facto go to place for you. As soon as an implementation in this repository achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in Reactor under the same name but without any of the annoying '`_DEV`', '`_BETA`', or whatsoever suffixes.
 
 
 ## Fuses
 
-See  [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'.
+See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-### Shader of the week
-
-On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, the fuse is published here.
-[Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md)
-
-[**Current Shader of the Week (8th of February 2023):**](ShaderOfTheWeek/NintendoSwitch.md)
-
+Current Shader of the Week (8th of February 2023):
+<center>
 [![NintendoSwitch](https://user-images.githubusercontent.com/78935215/217755415-62e43bf7-801c-4811-9d9b-c307cee53820.gif)
 ](ShaderOfTheWeek/NintendoSwitch.md)
-
-
-#### Latest Conversions
-
-[![MountainsLakes](https://user-images.githubusercontent.com/78935215/187472791-ae84973b-10e9-4945-8b45-2ea661b12b0a.gif)
-](Misc/MountainsLakes.md)
-[![AnisotropicBlurImage](https://user-images.githubusercontent.com/78935215/173939861-554cd73b-f945-4af9-a775-42517b3e419d.gif)](Recursive/AnisotropicBlurImage.md)
-[![HappyBouncing](https://user-images.githubusercontent.com/78935215/147247710-5e0126ac-7252-4d47-8b03-96c461cf4564.gif
-)](Object/HappyBouncing.md)
-[![ShareX](Object/ShareX_320x180.png)](Object/ShareX.md)
-[![GrowingWeatheringRocks](https://user-images.githubusercontent.com/78935215/128998614-85759f48-e57a-4021-aebd-10a3bf5c138c.gif)](Recursive/GrowingWeatheringRocks.md)
-[![Dynamism](https://user-images.githubusercontent.com/78935215/126867926-b7bf3330-67ff-4604-8b83-6c8c54c20664.gif)](Abstract/Dynamism.md)
-[![LearningReationDiffusion](https://user-images.githubusercontent.com/78935215/126063449-f4ef9253-d228-4448-99cf-2c89cc3d6c87.gif)](Recursive/LearningReactionDiffusion.md)
-[![Oblivion](https://user-images.githubusercontent.com/78935215/123615732-e0082b80-d805-11eb-9511-eefaadecb8be.gif)](Object/Oblivion.md)
-[![ProceduralWalkAnimation](https://user-images.githubusercontent.com/78935215/121263523-05181700-c8b6-11eb-98f5-aa44d178ce23.gif)](Object/ProceduralWalkAnimation.md)
-[![MightyMorphingPowerSphere](https://user-images.githubusercontent.com/78935215/120659993-2e384200-c487-11eb-8918-f0f8957dc9d6.gif)](Planet/MightyMorphingPowerSphere.md)
-[![HeavenAndHell](https://user-images.githubusercontent.com/78935215/119268704-72f4eb00-bbf4-11eb-91e0-4af4d2ca9ec0.gif)](Object/HeavenAndHell.md)
-[![Rendezvous](https://user-images.githubusercontent.com/78935215/119050128-b74c7500-b9c1-11eb-84cc-9fe267e2432a.gif)](Fractals/Rendezvous.md)
+[Nintendo Switch](ShaderOfTheWeek/NintendoSwitch.md) by [jackdavenport](https://www.shadertoy.com/user/jackdavenport)
+</center>
 
 
 ## Setup
