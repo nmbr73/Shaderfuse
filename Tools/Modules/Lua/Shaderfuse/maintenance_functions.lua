@@ -295,7 +295,7 @@ function create_installers(repositorypath)
     if util.has_error() then
       print("installer for '".. fuse.Name .."' failed: ".. util.get_error())
     else
-      print("installer for '".. fuse.Name .."' created")
+      -- print("installer for '".. fuse.Name .."' created")
     end
   end
 
