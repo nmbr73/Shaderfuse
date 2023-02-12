@@ -91,7 +91,7 @@ See [Scripts/Comp/Shaderfuse/Repository Tools/](Scripts/Comp/Shaderfuse/Reposito
 
 ## Documentation
 
-Folder: [Documentation/](Documentation/)
+Folder: [Documentation/](Documentation/) ... see [github.io/Shaderfuse/Documentation/](https://nmbr73.github.io/Shaderfuse/Documentation/)
 
 ...
 
