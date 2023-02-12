@@ -4,6 +4,7 @@ rm -rf build
 rm -rf docs
 cp -rp Shaders docs
 cp -rp Tools/Assets/Profiles docs
+cp -rp Tools/Documentation docs/
 
 cd 'Tools/Shell/'
 # lua generate_atom.lua
