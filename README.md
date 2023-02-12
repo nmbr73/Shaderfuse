@@ -1,3 +1,5 @@
+**README**  | [Setup](Tools/README.md) | [Repository Tools](Tools/Scripts/Comp/Shaderfuse/Repository%20Tools/README.md)
+
 [![GitHub release](https://img.shields.io/github/v/release/nmbr73/Shaderfuse?include_prereleases)](https://github.com/nmbr73/Shaderfuse/releases/latest) [![License](https://img.shields.io/badge/license-various-critical)](LICENSE) [![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/Zb48E4z3Pg)
 
 
@@ -21,7 +23,7 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 Just clone the whole repository into a folder where it can reside. Drag'n'drop the `Tools/Setup.lua` onto your DaFusions working area. Select *'Use Fuses under Shaders straight out of the repository'*. Save this setting and restart the application. See the [Tools/README.md](Tools/README.md) for further information.
 
-This is the installation method recommended if you want to have with a single `git pull` all the latest development versions at hand. And in particular it is the way to go if you want to work on the code and contribute to the repository yourself. If you just want to use the Fuses for your own Fusion compositions, then you should consider one of the installation methods described on [nmbr73.github.io/Shaderfuse/](https://nmbr73.github.io/Shaderfuse/).
+This is the installation method recommended if you want to have with a single `git pull` all the latest development versions at hand. And in particular is it the way to go if you want to work on the code and contribute to the repository yourself. If you just want to use the Fuses for your own Fusion compositions, then you should consider one of the installation methods described on [nmbr73.github.io/Shaderfuse/](https://nmbr73.github.io/Shaderfuse/).
 
 # MkDocs local build
 

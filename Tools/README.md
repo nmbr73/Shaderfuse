@@ -1,4 +1,4 @@
-**Setup**  | [Repository Tools](Scripts/Comp/Shaderfuse/Repository%20Tools/README.md) | [Snipptes](Snippets/README.md)
+[README](../README.md)  | **Setup** | [Repository Tools](Scripts/Comp/Shaderfuse/Repository%20Tools/README.md)
 
 # Tools
 
