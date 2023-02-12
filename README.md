@@ -17,8 +17,7 @@ This code is mainly based on the work of **Chris Ridings** and his *[Guide to Wr
 
 # Installation
 
-> [!warn] Does currently not work
-> The Setup.lua seems to have some problems currently. Have to fix this.
+> Does not work! The Setup.lua seems to have some problems currently. Have to fix this.
 
 Just clone the whole repository into a folder where it can reside. Drag'n'drop the `Tools/Setup.lua` onto your DaFusions working area. Select *'Use Fuses under Shaders straight out of the repository'*. Save this setting and restart the application. See the [Tools/README.md](Tools/README.md) for further information.
 
