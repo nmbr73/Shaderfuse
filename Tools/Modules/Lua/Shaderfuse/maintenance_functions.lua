@@ -550,7 +550,7 @@ local function update_fuse_markdown_file(fuse)
   if fuse:hasShaderInfo() then
     prolog = prolog .. "This Fuse is based on the Shadertoy '_[".. fuse.Shadertoy.Name .."](https://www.shadertoy.com/view/"
       .. fuse.Shadertoy.ID ..")_' by [".. fuse.Shadertoy.Author .."](https://www.shadertoy.com/user/"
-      .. fuse.Shadertoy.Author ..")."
+      .. fuse.Shadertoy.Author .."). " .. fuse.Shadertoy.License .. "."
 
       if (fuse.Author or '') ~= '' then
         prolog = prolog .. " Conversion to DCTL and encapsulation into a fuse done by [".. fuse.Author .."](../Profiles/".. fuse.Author ..".md)."
@@ -742,7 +742,6 @@ function create_markdown_files(repositorypath)
         ''
       ..'<img src="../'..fuse.Category..'/'..fuse.Name..'.png" align="left" width="320 height="180" />'
       ..'<strong><a href="../'..fuse.Category..'/'..fuse.Name..'/" style="font-size:larger; ">'..fuse.Name..'</a></strong> '..(not(fuse:hasErrors()) and '🍀' or '💥')..'<br />'
-      ..'Category: <a href="../'..fuse.Category..'/">'..fuse.Category..' Shader</a><br />'
       )
 
 
@@ -752,7 +751,9 @@ function create_markdown_files(repositorypath)
 
     if (not(fuse:hasErrors())) then
       overview:write(
-          'Shadertoy: <a href="https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..'">'..fuse.Shadertoy.Name..'</a><br />'
+          '<span style="font-size:smaller; font-weight:bold; ">'.. fuse.Shadertoy.License ..'</span><br />'
+          ..'Category: <a href="../'..fuse.Category..'/">'..fuse.Category..' Shader</a><br />'
+          ..'Shadertoy: <a href="https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..'">'..fuse.Shadertoy.Name..'</a><br />'
         ..'Author: <a href="https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..'">'..fuse.Shadertoy.Author..'</a><br />'
         ..'Ported by: <a href="../Profiles/'..fuse.Author..'">'..fuse.Author..'</a><br />&nbsp;<br />'
         ..'<a href="../'..fuse.Category..'/'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
@@ -766,7 +767,9 @@ function create_markdown_files(repositorypath)
     else
 
       -- overview:write(''..fuse:getErrorsHTML()..'</p><br clear="all" />\n')
-      overview:write('<br clear="all" />\n')
+      overview:write(
+        'Category: <a href="../'..fuse.Category..'/">'..fuse.Category..' Shader</a><br />'
+        ..'<br clear="all" />\n')
       readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) 💥\n')
       readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)** 💥\n- *'..fuse:getErrorText()..'*\n\n')
 
