@@ -15,7 +15,7 @@ Drag'n'drop `Setup.lua`on your Fuison working area - and you are done or nuked. 
 * Drag and drop `Tools/Setup.lua` from your working copy on your DaFusions working area
 * Check the 'Integrate the repository Tools into Script menu'  to - guess what - integrate the repository Tools into the Script menu
 
-![Setup](../Site/Setup.png)
+![Setup](Setup.png)
 
 **IMPORTANT!** In particular if you are on Windows: don't forget to uncheck all options and to then save the configuration before moving or deleting your Shaderfuse working copy!
 
