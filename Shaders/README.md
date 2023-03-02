@@ -13,11 +13,14 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (8th of February 2023):
+Current Shader of the Week (3th of March 2023):
 <center>
-[![NintendoSwitch](https://user-images.githubusercontent.com/78935215/217755415-62e43bf7-801c-4811-9d9b-c307cee53820.gif)
-](ShaderOfTheWeek/NintendoSwitch.md)
-[Nintendo Switch](ShaderOfTheWeek/NintendoSwitch.md) by [jackdavenport](https://www.shadertoy.com/user/jackdavenport)
+
+[![GreenFieldDiorama](https://user-images.githubusercontent.com/78935215/222445186-49b2f206-41b4-4de6-ac40-ac83098d8dd8.gif)
+](ShaderOfTheWeek/GreenFieldDiorama.md)
+
+
+[Green Field Diorama](ShaderOfTheWeek/GreenFieldDiorama.md) by [Gallo](https://www.shadertoy.com/user/Gallo)
 </center>
 
 
