@@ -13,6 +13,26 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Green Field Diorama](https://www.shadertoy.com/view/7dSGW1)| fuse | AB ShaderOfTheWeek 09/23 |
+|[LCARS Display](https://www.shadertoy.com/view/std3RH)| incub | Textprint verhält sich anders - workaround gefunden |
+|[Random Asymmetric Quad Grid](https://www.shadertoy.com/view/ms3GzH)| fuse | A !! |
+|[handmade textures test](https://www.shadertoy.com/view/DtjSWK)| defect | Fehlerhaft |
+|[CombFuse: 301's Fire Shader - Remix 2](https://www.shadertoy.com/view/MtcGD7)| incub |  |
+|[CombFuse: bloody Britney](https://www.shadertoy.com/view/MtKXWD)| incub |  |
+|[CombFuse: fresnel distortion](https://www.shadertoy.com/view/XtKSDm)| incub |  |
+|[CombFuse: droste_effect](https://www.shadertoy.com/view/MtGSzV)| incub |  |
+|[Melted Wax](https://www.shadertoy.com/view/dscGz4)| fuse | ABC !! Blending |
+|[Sediment](https://www.shadertoy.com/view/mdc3Rn)| fuse | ABC !! Blending |
+|[Watershed](https://www.shadertoy.com/view/md3GRn)| fuse | ABC !! Blending |
+|[Reaction Diffusion](https://www.shadertoy.com/view/DtBXWG)| fuse | ABCD !! Blending |
+|[Liquid Disco](https://www.shadertoy.com/view/Dt2XWK)| fuse | AB !!! Blending |
+|[Reaction speed up](https://www.shadertoy.com/view/cl2SzW)| incub | ABCD ! Blending |
+|[Wet neural network](https://www.shadertoy.com/view/mlBXRK)| incub |  |
+|[Sprinkler](https://www.shadertoy.com/view/mlBSRd)| incub | AB |
+|[Particle Fluid 1](https://www.shadertoy.com/view/dljXWW)| incub | AB |
+|[Paint Crack](https://www.shadertoy.com/view/fdlGDB)| incub | ABCD !! Blending |
+|[Techno-plankton in alien ocean](https://www.shadertoy.com/view/dtfSzs)| incub |  |
+|[noise_experiment_2](https://www.shadertoy.com/view/3s3SRH)| incub |  |
 |[fluid with more comments](https://www.shadertoy.com/view/wllXWs)| incub | A ! |
 |[CombFuse: pulsating intestines ](https://www.shadertoy.com/view/mlsXDj)| incub | ! |
 |[CombFuse: Pulsing Guts](https://www.shadertoy.com/view/clXXDl)| incub |  |

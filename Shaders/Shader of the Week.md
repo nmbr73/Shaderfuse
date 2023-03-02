@@ -5,7 +5,13 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
-## 06th of Frbruary 2023
+## 03th of March 2023
+#### [GreenFieldDiorama](ShaderOfTheWeek/GreenFieldDiorama.md) (Shadertoy ID [wtlXRH](https://www.shadertoy.com/view/7dSGW1))
+[![GreenFieldDiorama](https://user-images.githubusercontent.com/78935215/222445186-49b2f206-41b4-4de6-ac40-ac83098d8dd8.gif)
+](ShaderOfTheWeek/GreenFieldDiorama.md)
+
+----
+## 06th of February 2023
 #### [Nintendo Switch](ShaderOfTheWeek/NintendoSwitch.md) (Shadertoy ID [wtlXRH](https://www.shadertoy.com/view/wtlXRH))
 [![NintendoSwitch](https://user-images.githubusercontent.com/78935215/217755415-62e43bf7-801c-4811-9d9b-c307cee53820.gif)
 ](ShaderOfTheWeek/NintendoSwitch.md)
