@@ -13,14 +13,14 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (3th of March 2023):
+Current Shader of the Week (8th of March 2023):
 <center>
 
-[![GreenFieldDiorama](https://user-images.githubusercontent.com/78935215/222445186-49b2f206-41b4-4de6-ac40-ac83098d8dd8.gif)
-](ShaderOfTheWeek/GreenFieldDiorama.md)
+[![HyperbolicGroupLimitSet](https://user-images.githubusercontent.com/78935215/223966861-8299f27d-27bc-49f8-8bae-a0f63c64a9d2.gif)
+](ShaderOfTheWeek/HyperbolicGroupLimitSet.md)
 
 
-[Green Field Diorama](ShaderOfTheWeek/GreenFieldDiorama.md) by [Gallo](https://www.shadertoy.com/user/Gallo)
+[HyperbolicGroupLimitSet](ShaderOfTheWeek/HyperbolicGroupLimitSet.md) by [neozhaoliang](https://www.shadertoy.com/user/neozhaoliang)
 </center>
 
 

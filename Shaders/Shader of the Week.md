@@ -5,6 +5,11 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 08th of March 2023
+#### [HyperbolicGroupLimitSet](ShaderOfTheWeek/HyperbolicGroupLimitSet.md) (Shadertoy ID [NstSDs](https://www.shadertoy.com/view/NstSDs))
+[![HyperbolicGroupLimitSet](https://user-images.githubusercontent.com/78935215/223966861-8299f27d-27bc-49f8-8bae-a0f63c64a9d2.gif)
+](ShaderOfTheWeek/HyperbolicGroupLimitSet.md)
+----
 ## 03th of March 2023
 #### [GreenFieldDiorama](ShaderOfTheWeek/GreenFieldDiorama.md) (Shadertoy ID [wtlXRH](https://www.shadertoy.com/view/7dSGW1))
 [![GreenFieldDiorama](https://user-images.githubusercontent.com/78935215/222445186-49b2f206-41b4-4de6-ac40-ac83098d8dd8.gif)
