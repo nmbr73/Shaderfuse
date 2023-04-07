@@ -13,6 +13,42 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Polyhedral Gears](https://www.shadertoy.com/view/lt3cz7)| Fuse | !!! |
+|[rain drop - correct on video](https://www.shadertoy.com/view/dsySRW)| incub |  |
+|[2D fog](https://www.shadertoy.com/view/NdKGzz)| incub | ! |
+|[Landau Ginzburg Mod](https://www.shadertoy.com/view/tdcXzH)| incub | ABCD !! Blending |
+|[Particle plasma](https://www.shadertoy.com/view/3s3XRS)| incub | AB !!! Blending |
+|[2.5D Column Shadows Thingy](https://www.shadertoy.com/view/dsGSzh)| incub | AB !! Blending |
+|[shockwave](https://www.shadertoy.com/view/mscXDX)| incub | ! |
+|[A WEDDING OF WISPS](https://www.shadertoy.com/view/cdcSDX)| incub | ABC ! |
+|[Balloonfest '86](https://www.shadertoy.com/view/ds3XWS)| incub | A !!! Texturen auf Ballon |
+|[2D Rayleigh Taylor instability](https://www.shadertoy.com/view/DsGGzG)| incub | ABCD  |
+|[Malmousque](https://www.shadertoy.com/view/fldSRB)| Defect | Buffer B fehlerhaft |
+|[Electric Eel Universe](https://www.shadertoy.com/view/cdV3DW)| Fuse | ShaderOfTheWeek 11/23 |
+|[Kaleidoscope 3000](https://www.shadertoy.com/view/DslSWH)| incub |  |
+|[Height Blend](https://www.shadertoy.com/view/wsKXRc)| incub | AB !! |
+|[Peakmeter LEDs](https://www.shadertoy.com/view/wdVXRV)| incub | ! |
+|[Grow your own broccoli](https://www.shadertoy.com/view/fsj3zm)| incub | AB Blending |
+|[squared anti-fluid](https://www.shadertoy.com/view/sdsXzN)| incub | A ! Blending |
+|[wisps](https://www.shadertoy.com/view/sdtGzj)| incub | A !! Blending |
+|[We need an expert.. Dave Hoskins](https://www.shadertoy.com/view/dsc3RS)| defect | kein Bild |
+|[Neighbor graph SPH](https://www.shadertoy.com/view/3d2czG)| defect | nur 2 Particles  |
+|[Chimera's Breath](https://www.shadertoy.com/view/4tGfDW)| incub | ABCD !! Blending |
+|[Dirac Equation](https://www.shadertoy.com/view/WdBBR3)| incub | ABCD !!! Blending |
+|[Heat mapped John Conway's Game ](https://www.shadertoy.com/view/mdVGDh)| incub | A ! Blending |
+|[Share](https://www.shadertoy.com/view/3ddXzH)| incub | A ! |
+|[Growth and Death](https://www.shadertoy.com/view/4styRN)| incub | AB ! Blending |
+|[Hyperbolic Group Limit Set](https://www.shadertoy.com/view/NstSDs)| fuse | ShaderOFTheWeek 10/23 |
+|[Gasoline](https://www.shadertoy.com/view/mdyGzD)| incub | ABC !! Blending |
+|[CombFuse: GooeyVignette V2 ](https://www.shadertoy.com/view/MtXfDj)| incub |  |
+|[CombFuse: SlimeBorders ](https://www.shadertoy.com/view/csy3zD)| incub |  |
+|[CombFuse: SlimeBorders2 ](https://www.shadertoy.com/view/Mllfz2)| incub |  |
+|[CombFuse: SlimeHoles](https://www.shadertoy.com/view/4lXfzX)| incub |  |
+|[Lakeside](https://www.shadertoy.com/view/MtsBRH)| incub | ABCD ! Feuerwerk |
+|[The wall of speakers by yasuo](https://www.shadertoy.com/view/cd33Rj)| incub | ! Integriert in WallOfColors |
+|[Waving particle surface](https://www.shadertoy.com/view/dsdGW2)| incub | ABCD |
+|[Planetary nebula](https://www.shadertoy.com/view/fl2Bzd)| incub |  |
+
 |[Green Field Diorama](https://www.shadertoy.com/view/7dSGW1)| fuse | AB ShaderOfTheWeek 09/23 |
 |[LCARS Display](https://www.shadertoy.com/view/std3RH)| incub | Textprint verhält sich anders - workaround gefunden |
 |[Random Asymmetric Quad Grid](https://www.shadertoy.com/view/ms3GzH)| fuse | A !! |
