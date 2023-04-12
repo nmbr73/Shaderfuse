@@ -4,6 +4,18 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
+
+
+----
+## 12th of April 2023
+#### [RetroVision](ShaderOfTheWeek/RetroVisionRevision2023.md) (Shadertoy ID [DdVSzR](https://www.shadertoy.com/view/DdVSzR))
+[![RetroVision](https://user-images.githubusercontent.com/78935215/231594956-5705b534-7ee7-44b9-b55d-0049244e1bb5.gif)
+](ShaderOfTheWeek/RetroVisionRevision2023.md)
+----
+## 30th of March 2023
+#### [ElectricEelUniverse](ShaderOfTheWeek/HyperbolicGroupLimitSet.md) (Shadertoy ID [cddSRM](https://www.shadertoy.com/view/cddSRM))
+[![ElectricEelUniverse](ShaderOfTheWeek/ElectricEelUniverse.png)
+](ShaderOfTheWeek/ElectricEelUniverse.md)
 ----
 ## 08th of March 2023
 #### [HyperbolicGroupLimitSet](ShaderOfTheWeek/HyperbolicGroupLimitSet.md) (Shadertoy ID [NstSDs](https://www.shadertoy.com/view/NstSDs))
