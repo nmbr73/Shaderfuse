@@ -13,14 +13,14 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (13th of April 2023):
+Current Shader of the Week (2th of May 2023):
 <center>
 
-[![RetroVision](https://user-images.githubusercontent.com/78935215/231594956-5705b534-7ee7-44b9-b55d-0049244e1bb5.gif)
-](ShaderOfTheWeek/RetrovisionRevision2023.md)
+[![ACircleADay](https://user-images.githubusercontent.com/78935215/235857533-576f92ab-a4fd-48b6-af1a-f756ad00aa37.gif)
+](ShaderOfTheWeek/ACircleADay.md)
 
 
-[RetroVision (Revision 2023)](ShaderOfTheWeek/RetrovisionRevision2023.md) by [dean_the_coder](https://www.shadertoy.com/user/dean_the_coder)
+[ACircleADay](ShaderOfTheWeek/ACircleADay.md) by [Plento](https://www.shadertoy.com/user/Plento)
 </center>
 
 
