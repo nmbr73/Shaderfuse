@@ -13,6 +13,39 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[AI not included](https://www.shadertoy.com/view/ctd3Rl)| fuse | ShaderOfTheWeek 19/23 |
+|[Terrain and Erosion Test](https://www.shadertoy.com/view/mssXRB)| incub | ABC ! Blending NaN/Inf |
+|[aquarellic](https://www.shadertoy.com/view/4sKfRR)| fuse | ! |
+|[Cellular automaton waves](https://www.shadertoy.com/view/DttGDX)| incub | ABC powf-Problem !! Blending |
+|[CombFuse: Image transition-noise](https://www.shadertoy.com/view/sdySDd)| incub |  |
+|[CombFuse: texture transition by texture](https://www.shadertoy.com/view/tdlXzs)| incub |  |
+|[CombFuse: Disintegration Transition](https://www.shadertoy.com/view/lslSz7)| incub |  |
+|[CombFuse: Alpha erosion](https://www.shadertoy.com/view/tlfSRS)| incub |  |
+|[CombFuse: Noise curl clone](https://www.shadertoy.com/view/Wtj3Wm)| incub |  |
+|[CombFuse: Ripple Texture Transition](https://www.shadertoy.com/view/3ljfzV)| incub |  |
+|[Bouncing Ball With Trail](https://www.shadertoy.com/view/MlXcDB)| incub | AB ! |
+|[AI not included](https://www.shadertoy.com/view/ctd3Rl)| incub | ! |
+|[Gray-Scott diffusion selection](https://www.shadertoy.com/view/mt3GDj)| incub | A !! |
+|[A circle a day](https://www.shadertoy.com/view/DdySzW)| incub | ShaderOfTheWeek 18/23 |
+|[Bicycle Day 2023](https://www.shadertoy.com/view/mlt3z8)| incub |  |
+|[Water on the planet](https://www.shadertoy.com/view/DlcGRn)| incub | ABC |
+|[WaterRipplesCamera](https://www.shadertoy.com/view/cdyXWd)| incub |  |
+|[Photo Album](https://www.shadertoy.com/view/cdGXDt)| incub |  |
+|[The evolution of motion ](https://www.shadertoy.com/view/cl3GDr)| incub |  |
+|[CombFuse: Aurora?](https://www.shadertoy.com/view/ddVSDm)| incub |  |
+|[CombFuse: Image Fade-In Effect](https://www.shadertoy.com/view/MlcSz2)| incub |  |
+|[CombFuse: HighlightTexture](https://www.shadertoy.com/view/dl3GR8)| incub |  |
+|[Combfuse: Tunnel Effect Shader ](https://www.shadertoy.com/view/4djBRm)| incub |  |
+|[Combfuse: Turbulance](https://www.shadertoy.com/view/mlcGR8)| incub | ! |
+|[Sinapsis](https://www.shadertoy.com/view/csKSD3)| incub |  |
+|[Music Boxes](https://www.shadertoy.com/view/cdGXDK)| incub | Audioshader |
+|[chalk mouse](https://www.shadertoy.com/view/ctsGRf)| incub | A Blending ! |
+|[simpleHeartBeatingDemo](https://www.shadertoy.com/view/csc3W2)| incub | ! |
+|[Immersed](https://www.shadertoy.com/view/DsKXDW)| incub | ABCD ! |
+|[RetroVision (Revision 2023)](https://www.shadertoy.com/view/DdVSzR)| Fuse | ShaderOfTheWeek 15/23 |
+|[Malmousque](https://www.shadertoy.com/view/fldSRB)| defect | kein Bildaufbau |
+|[firefly swarm](https://www.shadertoy.com/view/DdGSW1)| incub | ABC ! |
+|[Neon worm](https://www.shadertoy.com/view/clB3RK)| incub | ABC ! |
 |[Polyhedral Gears](https://www.shadertoy.com/view/lt3cz7)| Fuse | !!! |
 |[rain drop - correct on video](https://www.shadertoy.com/view/dsySRW)| incub |  |
 |[2D fog](https://www.shadertoy.com/view/NdKGzz)| incub | ! |
