@@ -5,6 +5,26 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 11th of May 2023
+#### [AiNotIncluded](AiNotIncluded.md) (Shadertoy ID [ctd3Rl](https://www.shadertoy.com/view/ctd3Rl))
+[![AiNotIncluded](https://github.com/nmbr73/Shaderfuse/assets/78935215/199aa93d-eed7-4a8a-88db-a108a5701b0a)
+](ShaderOfTheWeek/AiNotIncluded.md)
+----
+## 2th of May 2023
+#### [ACircleADay](ACircleADay.md) (Shadertoy ID [DdySzW](https://www.shadertoy.com/view/DdySzW)
+[![ACircleADay](https://user-images.githubusercontent.com/78935215/235857533-576f92ab-a4fd-48b6-af1a-f756ad00aa37.gif)
+](ShaderOfTheWeek/ACircleADay.md)
+----
+## 12th of April 2023
+#### [RetroVision](ShaderOfTheWeek/RetroVisionRevision2023.md) (Shadertoy ID [DdVSzR](https://www.shadertoy.com/view/DdVSzR))
+[![RetroVision](https://user-images.githubusercontent.com/78935215/231594956-5705b534-7ee7-44b9-b55d-0049244e1bb5.gif)
+](ShaderOfTheWeek/RetroVisionRevision2023.md)
+----
+## 30th of March 2023
+#### [ElectricEelUniverse](ShaderOfTheWeek/HyperbolicGroupLimitSet.md) (Shadertoy ID [cddSRM](https://www.shadertoy.com/view/cddSRM))
+[![ElectricEelUniverse](ShaderOfTheWeek/ElectricEelUniverse.png)
+](ShaderOfTheWeek/ElectricEelUniverse.md)
+----
 ## 08th of March 2023
 #### [HyperbolicGroupLimitSet](ShaderOfTheWeek/HyperbolicGroupLimitSet.md) (Shadertoy ID [NstSDs](https://www.shadertoy.com/view/NstSDs))
 [![HyperbolicGroupLimitSet](https://user-images.githubusercontent.com/78935215/223966861-8299f27d-27bc-49f8-8bae-a0f63c64a9d2.gif)
