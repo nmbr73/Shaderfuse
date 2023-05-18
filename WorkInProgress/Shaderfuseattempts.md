@@ -13,6 +13,15 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Coffee and Tablet](https://www.shadertoy.com/view/lssGzn)| fuse | !!!  |
+|[2d_clickable_smoke_simulation](https://www.shadertoy.com/view/dtGGRK)| incub | AB !!! Blending |
+|[Twisted corridor](https://www.shadertoy.com/view/mtV3Ry)| incub |  |
+|[liquid nightmare swirl](https://www.shadertoy.com/view/dtKGRy)| incub | A !!! Blending |
+|[Liquid Paint + Lighting](https://www.shadertoy.com/view/WstcRN)| incub | AB |
+|[Audio ball curl to lava](https://www.shadertoy.com/view/DtK3Dw)| incub | !! |
+|[Fork glitch fee suwqymncwe 828](https://www.shadertoy.com/view/ctVGWw)| incub | A ! |
+|[Coupled FitzHugh-Nagumo](https://www.shadertoy.com/view/MtscWn)| incub | AB !! Blending |
+|[Doom Fire AlanToy](https://www.shadertoy.com/view/wlGBWt)| incub | AB !! Blending |
 |[AI not included](https://www.shadertoy.com/view/ctd3Rl)| fuse | ShaderOfTheWeek 19/23 |
 |[Terrain and Erosion Test](https://www.shadertoy.com/view/mssXRB)| incub | ABC ! Blending NaN/Inf |
 |[aquarellic](https://www.shadertoy.com/view/4sKfRR)| fuse | ! |
