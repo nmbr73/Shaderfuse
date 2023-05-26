@@ -26,6 +26,7 @@ local videos = {
   { Video = "VwIa6QokOFk", Channel = "JiPi",   Title = "In Memoriam", },
   { Video = "ArkJzr2Aej0", Channel = "JiPi",   Title = "WebGL to DCTL: Favorite Shaders", },
   { Video = "JtOvp7-Cmzg", Channel = "JiPi",   Title = "WebGL to DCTL: Wedding", },
+  { Video = "TPcO3rTYPrU", Channel = "JiPi",   Title = "Shaderfuse Displays", },
 }
 
 local creators = {
