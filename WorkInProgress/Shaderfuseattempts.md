@@ -13,6 +13,20 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[iPhone 13 pro wallpaper](https://www.shadertoy.com/view/fdVGWK )| incub | A !! |
+|[Screen Welding](https://www.shadertoy.com/view/dtdSRn)| incub | A |
+|[Fork molten bis Yunchen 050](https://www.shadertoy.com/view/ct3XRr)| incub | AB !!!  |
+|[melting wax britney](https://www.shadertoy.com/view/XtlfRl)| incub | AB ! |
+|[One Phone](https://www.shadertoy.com/view/4stGzj)| incub | !! |
+|[vt220 coding at night edition](https://www.shadertoy.com/view/Dl3SRn)| incub | A !! |
+|[Infinite spheres in spheres](https://www.shadertoy.com/view/dtyGWd)| Fuse | !!!! 7 Channels|
+|[Terrain With Altitude Map](https://www.shadertoy.com/view/WlsfDj)| incub | AB |
+|[Telephone](https://www.shadertoy.com/view/ldVyDG)| incub | A !!!  |
+|[Cellphone](https://www.shadertoy.com/view/MdfSRs)| incub | !!! |
+|[Smooth Triplanar Mapping](https://www.shadertoy.com/view/ctV3W3)| incub |  |
+|[Tissue](https://www.shadertoy.com/view/XdBSzd)| fuse | ShaderOfTheWeek 20/23 |
+|[Crazy Printer](https://www.shadertoy.com/view/DtKGWy)| defect | Fotos werden falsch gerendert |
+|[Shadering Chameleon V2.0](https://www.shadertoy.com/view/Msc3z8)| incub | !!! |
 |[Coffee and Tablet](https://www.shadertoy.com/view/lssGzn)| fuse | !!!  |
 |[2d_clickable_smoke_simulation](https://www.shadertoy.com/view/dtGGRK)| incub | AB !!! Blending |
 |[Twisted corridor](https://www.shadertoy.com/view/mtV3Ry)| incub |  |
