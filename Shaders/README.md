@@ -16,11 +16,11 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 Current Shader of the Week (04th of June 2023):
 <center>
 
-[![PlayingAroundShade](https://github.com/nmbr73/Shaderfuse/assets/78935215/0cdd0d2b-c6e8-4570-ae63-4ba391bfb535)
-](ShaderOfTheWeek/PlayingAroundShade.md)
+[![PlayingAroundShader](https://github.com/nmbr73/Shaderfuse/assets/78935215/0cdd0d2b-c6e8-4570-ae63-4ba391bfb535)
+](ShaderOfTheWeek/PlayingAroundShader.md)
 
 
-[Playing Around Shader](ShaderOfTheWeek/AiNotIncluded.md) by [MinimilisticBits](https://www.shadertoy.com/user/MinimilisticBits)
+[Playing Around Shader](ShaderOfTheWeek/PlayingAroundShader.md) by [MinimilisticBits](https://www.shadertoy.com/user/MinimilisticBits)
 </center>
 
 
