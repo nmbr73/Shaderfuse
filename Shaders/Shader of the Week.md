@@ -5,6 +5,11 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 04th of June 2023
+#### [PlayingAroundShader](PlayingAroundShader.md) (Shadertoy ID [NdscDf](https://www.shadertoy.com/view/ctd3Rl))
+[![PlayingAroundShader](https://github.com/nmbr73/Shaderfuse/assets/78935215/0cdd0d2b-c6e8-4570-ae63-4ba391bfb535)
+](ShaderOfTheWeek/PlayingAroundShader.md)
+----
 ## 11th of May 2023
 #### [AiNotIncluded](AiNotIncluded.md) (Shadertoy ID [ctd3Rl](https://www.shadertoy.com/view/ctd3Rl))
 [![AiNotIncluded](https://github.com/nmbr73/Shaderfuse/assets/78935215/199aa93d-eed7-4a8a-88db-a108a5701b0a)

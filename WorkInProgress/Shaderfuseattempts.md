@@ -13,6 +13,24 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Playing around shader](https://www.shadertoy.com/view/NdscDf)| fuse | ShaderOfTheWeek 22/23 |
+|[Candy Stacks](https://www.shadertoy.com/view/fdV3Rm)| incub | ! |
+|[Twisted Time](https://www.shadertoy.com/view/XlsyWH)| incub | ! |
+|[Corona Time](https://www.shadertoy.com/view/wsfcRX)| incub | ! |
+|[Elastic Goop](https://www.shadertoy.com/view/3tSSW3)| incub | AB !! Blending |
+|[2&3](https://www.shadertoy.com/view/3lsXzr)| incub | ABCD !!! Blending |
+|[Infinite Hermite Rectangles](https://www.shadertoy.com/view/MtsXzl)| incub | ! |
+|[Multitabletverse](https://www.shadertoy.com/view/XlG3Dd)| defect | dfdx textureGrad |
+|[Corona Time](https://www.shadertoy.com/view/wsfcRX)| incub | Reflect ! |
+|[3D Function Grapher](https://www.shadertoy.com/view/mlGGWw)| incub |  |
+|[warhol-izer ;-)](https://www.shadertoy.com/view/tlsfRS)| incub |  |
+|[12-03-2022 MM Experiment](https://www.shadertoy.com/view/NdjBDV)| incub |  |
+|[Volumetric gobo/projector](https://www.shadertoy.com/view/dlcSDH)| incub | ! |
+|[poor hydraulic erosion](https://www.shadertoy.com/view/XsKGWG)| incub | A !! Blending |
+|[CombFuse: Naive RGB Edge Detection ](https://www.shadertoy.com/view/slXSz8)| incub | ! |
+|[CombFuse: Some sort of DareDevil Effect](https://www.shadertoy.com/view/NlfSRH)| incub | ! |
+|[CombFuse: scanning line, scanner](https://www.shadertoy.com/view/dlcSz8)| incub | ! |
+|[DNA Glass Refraction 03-sep-2021](https://www.shadertoy.com/view/7dcGWX)| incub | ShaderOfTheWeek 21/23 naja -- |
 |[iPhone 13 pro wallpaper](https://www.shadertoy.com/view/fdVGWK )| incub | A !! |
 |[Screen Welding](https://www.shadertoy.com/view/dtdSRn)| incub | A |
 |[Fork molten bis Yunchen 050](https://www.shadertoy.com/view/ct3XRr)| incub | AB !!!  |
