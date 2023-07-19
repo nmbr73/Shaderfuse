@@ -5,6 +5,11 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 18th of July 2023
+#### [Whack-A-Mole Pistons](WhackAMolePistons.md) (Shadertoy ID [WtXcWB](https://www.shadertoy.com/view/WtXcWB))
+[![WhackAMolePistons](https://github.com/nmbr73/Shaderfuse/assets/78935215/7549fad2-d1e4-4083-8027-bed3e8a8fa53)
+](ShaderOfTheWeek/WhackAMolePistons.md)
+----
 ## 04th of June 2023
 #### [PlayingAroundShader](PlayingAroundShader.md) (Shadertoy ID [NdscDf](https://www.shadertoy.com/view/ctd3Rl))
 [![PlayingAroundShader](https://github.com/nmbr73/Shaderfuse/assets/78935215/0cdd0d2b-c6e8-4570-ae63-4ba391bfb535)

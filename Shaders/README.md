@@ -13,14 +13,14 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (04th of June 2023):
+Current Shader of the Week (18th of July 2023):
 <center>
 
-[![PlayingAroundShader](https://github.com/nmbr73/Shaderfuse/assets/78935215/0cdd0d2b-c6e8-4570-ae63-4ba391bfb535)
-](ShaderOfTheWeek/PlayingAroundShader.md)
+[![WhackAMolePistons](https://github.com/nmbr73/Shaderfuse/assets/78935215/7549fad2-d1e4-4083-8027-bed3e8a8fa53)
+](ShaderOfTheWeek/WhackAMolePistons.md)
 
 
-[Playing Around Shader](ShaderOfTheWeek/PlayingAroundShader.md) by [MinimilisticBits](https://www.shadertoy.com/user/MinimilisticBits)
+[Whack-A-Mole Pistons](ShaderOfTheWeek/WhackAMolePistons.md) by [blackle](https://www.shadertoy.com/user/ blackle)
 </center>
 
 

@@ -13,6 +13,43 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Whack-A-Mole Pistons](https://www.shadertoy.com/view/WtXcWB)| incub | Shader of the Week 29/23 |
+|[Things you wouldn't believe](https://www.shadertoy.com/view/MttfDr)| incub | A !! |
+|[Fork: It is alive...with music!](https://www.shadertoy.com/view/dd2BR1)| incub | A Integriert in "It is alive"  |
+|[Courant Noise](https://www.shadertoy.com/view/cslBWX)| incub | ABCD !! |
+|[Fluid Fireworks](https://www.shadertoy.com/view/llXfRn)| incub | ABCD !! |
+|[Bubbles with depth of field blur](https://www.shadertoy.com/view/DdfBDs)| defect | A  |
+|[greenstem](https://www.shadertoy.com/view/XsXczH)| incub | A !!! Blending |
+|[#002](https://www.shadertoy.com/view/msfBRj)| incub |  |
+|[Liquid warping](https://www.shadertoy.com/view/3lsSWN)| incub | AB !! |
+|[Sound Electro](https://www.shadertoy.com/view/XdGGD3)| incub | ! |
+|[Weird fluid experment](https://www.shadertoy.com/view/ts2fRV)| incub | ABCD !!! Blending |
+|[playing with paint reintracking](https://www.shadertoy.com/view/DscSDM)| incub | ABC !!!! Blending |
+|[Genuary 2022 - Day16](https://www.shadertoy.com/view/7dsyRl)| incub | A !! |
+|[Particle Repulsions](https://www.shadertoy.com/view/dlBSzV)| incub | AB !! |
+|[Burn effect](https://www.shadertoy.com/view/tsByWd)| incub | !! |
+|[Burn for eternity](https://www.shadertoy.com/view/ddlfRn)| incub |  |
+|[It is alive...](https://www.shadertoy.com/view/ctcGR8)| incub | A !! |
+|[Music Abstract Grassy Space](https://www.shadertoy.com/view/Ds2yDy)| incub | !! |
+|[Diamonds and Diagonals](https://www.shadertoy.com/view/DtyXDR)| incub | ShaderOfTheWeek 23/23  - Reflektionen fehlerhaft|
+|[MLAA (provided by AMD)](https://www.shadertoy.com/view/cllXRB)| incub | AB  |
+|[Ginzburg-Landau Equation](https://www.shadertoy.com/view/XlsyWn)| incub | A !!! Blending |
+|[Reaction Diffusion RGB](https://www.shadertoy.com/view/4dKfWR)| incub | ABC !! Blending |
+|[Fork Between th electrogly 868](https://www.shadertoy.com/view/mdjcW1)| incub | A |
+|[Simple Text Example](https://www.shadertoy.com/view/XlfSzj)| incub |  |
+|[fluid_thingy_2](https://www.shadertoy.com/view/WdfBRM)| incub | A !!! Blending |
+|[invisible ink](https://www.shadertoy.com/view/tdBczy)| incub | A !! Blending |
+|[Unlimited Particle Simulation](https://www.shadertoy.com/view/sdB3zt)| incub | A ! |
+|[Fluid Fork](https://www.shadertoy.com/view/wtsBzf)| incub | ABCD !! Blending |
+|[Interactive Fluid Simulation](https://www.shadertoy.com/view/XtGcDK)| incub | ABCD !! Blending |
+|[Neural CA-2](https://www.shadertoy.com/view/mtyXRd)| incub | A Blending |
+|[stained glass](https://www.shadertoy.com/view/WsS3Dc)| defect | ABCD BufferB liefert anderes Ergebnis  |
+|[Simple game of life](https://www.shadertoy.com/view/mtKXDw)| incub | A !! Blending |
+|[blood on water](https://www.shadertoy.com/view/DtVXWw)| incub | AB Blending !! |
+|[selective depth of field](https://www.shadertoy.com/view/clySWw)| incub | !! |
+|[scan the area](https://www.shadertoy.com/view/tsKBR3)| incub | ! |
+|[Frozen Window](https://www.shadertoy.com/view/7syXWz)| incub | AB ! |
+|[Ghost Silent Disco](https://www.shadertoy.com/view/ld3XWr)| incub | ! |
 |[Playing around shader](https://www.shadertoy.com/view/NdscDf)| fuse | ShaderOfTheWeek 22/23 |
 |[Candy Stacks](https://www.shadertoy.com/view/fdV3Rm)| incub | ! |
 |[Twisted Time](https://www.shadertoy.com/view/XlsyWH)| incub | ! |
