@@ -13,6 +13,57 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[bomlka](https://www.shadertoy.com/view/mtXyD7)| fuse | Shader of the Week 33/23 |
+|[Inside the Matrix](https://www.shadertoy.com/view/4t3BWl)| incub | !! |
+|[[SH17A] Ripple](https://www.shadertoy.com/view/MdSBWh)| incub |  |
+|[Falling magic sand](https://www.shadertoy.com/view/XtjyRt)| incub | A ! Blending |
+|[Another eye](https://www.shadertoy.com/view/4dSXDR)| incub | !! |
+|[Fountain water](https://www.shadertoy.com/view/7tBcDc)| incub |  |
+|[swirly background](https://www.shadertoy.com/view/stcyW8)| incub |  |
+|[Portal - iOS AR](https://www.shadertoy.com/view/lldcR8)| incub | A |
+|[Shader of a Fazine of shaders](https://www.shadertoy.com/view/WsBXzy)| incub | ABCD !!! |
+|[Colourful smoke](https://www.shadertoy.com/view/DtsyWl)| incub |  |
+|[SDF Alpha texture](https://www.shadertoy.com/view/4dSczy)| incub |  |
+|[Mr 0110](https://www.shadertoy.com/view/XtyGWm)| incub | !! |
+|[chemistry!](https://www.shadertoy.com/view/fsjXWd)| incub | A !!! Blending |
+|[triangulation effect - delaunay](https://www.shadertoy.com/view/MlsyzS)| incub | ABCD !! Blending |
+|[volumetric cloud](https://www.shadertoy.com/view/tt23zR)| incub | Wolke !! |
+|[webcam on ufo](https://www.shadertoy.com/view/WsyfzR)| incub |  |
+|[AMERICA](https://www.shadertoy.com/view/MdlXRj)| incub | Flagge ! |
+|[Airplane - Modelling Exercise](https://www.shadertoy.com/view/3lcyWX)| incub | !! |
+|[kifs walls](https://www.shadertoy.com/view/mlS3DV)| incub | Shader of the Week 29/23 - Nur Cuda |
+|[Nebula Contraction](https://www.shadertoy.com/view/tlV3zw)| incub | ABC !! |
+|[PlazmaGlob](https://www.shadertoy.com/view/wddyzH)| incub |  |
+|[For Winnie](https://www.shadertoy.com/view/st2SRt)| incub | Doppelherz |
+|[Wave Cave](https://www.shadertoy.com/view/7ljXzG)| incub |  |
+|[Shivershade slime](https://www.shadertoy.com/view/clXcW8)| incub | ABCD !!! Blending |
+|[ROCK PLANET](https://www.shadertoy.com/view/sdX3Dr)| incub |  |
+|[Fire in the Wind - 2](https://www.shadertoy.com/view/WtjGR3)| incub |  |
+|[Heart_Fireworks_remake](https://www.shadertoy.com/view/wssfzr)| incub | !! |
+|[Failed Spline Idea](https://www.shadertoy.com/view/7tVXDc)| incub | !! |
+|[Fractal orbits](https://www.shadertoy.com/view/wlKGzR)| incub |  |
+|[perpetual fluidy fluid](https://www.shadertoy.com/view/DdsfRB)| incub | ABCD !! Blending |
+|[Watching videos](https://www.shadertoy.com/view/cdSGWy)| incub | !! |
+|[Wavepool](https://www.shadertoy.com/view/3stGRM)| incub | A ! |
+|[Automata Lab X (alien scribble)](https://www.shadertoy.com/view/ddSBDV)| defect | AB kein Bild |
+|[fbm lightning](https://www.shadertoy.com/view/dsXfDn)| incub | !! |
+|[Bubble Machine](https://www.shadertoy.com/view/WsSBRD)| incub | !!! |
+|[shallow water](https://www.shadertoy.com/view/ldcSzS)| incub | A |
+|[Nebula Contraction](https://www.shadertoy.com/view/tlV3zw)| incub | ABC !! |
+|[Packed Single Rotation Rule](https://www.shadertoy.com/view/tlKBWm)| incub | ABCD !! Blending|
+|[Water_001](https://www.shadertoy.com/view/ltsBzs)| incub | A !! |
+|[polarising crystal candy](https://www.shadertoy.com/view/WlccDj)| defect | ABCD etwas anderes Verahlten ( TexelFetch ?) |
+|[Australian Summer](https://www.shadertoy.com/view/ssdGRX)| Fuse | Korrigiert |
+|[Magic Bits](https://www.shadertoy.com/view/lsfyDn)| incub |  |
+|[Screen Transition](https://www.shadertoy.com/view/MlcXDj)| incub | ! |
+|[pyro](https://www.shadertoy.com/view/4ty3zG)| incub | AB !! |
+|[MT](https://www.shadertoy.com/view/ls2fWW)| incub | !! |
+|[Swirly Swirl Girl](https://www.shadertoy.com/view/wldyDH)| incub | A ! |
+|[Rain Frog](https://www.shadertoy.com/view/cdSBD1)| incub | ! |
+|[Branching Flow Slime Mold](https://www.shadertoy.com/view/mdSfWh)| incub | ABCD !! Blending |
+|[Slime Battles](https://www.shadertoy.com/view/DssGRf)| defect | ABC Snorm2x16 Emulation funktioniert nicht  |
+|[Liquid Crystal Labyrinth](https://www.shadertoy.com/view/7tScDW)| incub | A !! |
+|[longexposure](https://www.shadertoy.com/view/stByzh)| incub | !! |
 |[Whack-A-Mole Pistons](https://www.shadertoy.com/view/WtXcWB)| incub | Shader of the Week 29/23 |
 |[Things you wouldn't believe](https://www.shadertoy.com/view/MttfDr)| incub | A !! |
 |[Fork: It is alive...with music!](https://www.shadertoy.com/view/dd2BR1)| incub | A Integriert in "It is alive"  |
