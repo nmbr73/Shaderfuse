@@ -17,10 +17,10 @@ Current Shader of the Week (15th of August 2023):
 <center>
 
 [![bomlka](https://github.com/nmbr73/Shaderfuse/assets/78935215/97e1ea2a-743a-4834-9df0-3c6f1178b8d4)
-](ShaderOfTheWeek/bomlka.md)
+](ShaderOfTheWeek/Bomlka.md)
 
 
-[bomlka](ShaderOfTheWeek/WhackAMolePistons.md) by [lamogui](https://www.shadertoy.com/user/lamogui)
+[bomlka](ShaderOfTheWeek/Bomlka.md) by [lamogui](https://www.shadertoy.com/user/lamogui)
 </center>
 
 
