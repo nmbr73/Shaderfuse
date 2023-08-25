@@ -13,6 +13,11 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Inside the mandelbulb II](https://www.shadertoy.com/view/mtScRc)| fuse | Shader of the Week 34/23 |
+|[simple soap bubbles](https://www.shadertoy.com/view/dlXfzn)| incub | !! |
+|[Bicycle Chain on Sprockets](https://www.shadertoy.com/view/DtXBRN)| incub |  |
+|[Russia Flag Burning](https://www.shadertoy.com/view/dtjyWG)| incub |  |
+|[Classical Waves Accident](https://www.shadertoy.com/view/wdyyDR)| incub | A ! Blending |
 |[bomlka](https://www.shadertoy.com/view/mtXyD7)| fuse | Shader of the Week 33/23 |
 |[Inside the Matrix](https://www.shadertoy.com/view/4t3BWl)| incub | !! |
 |[[SH17A] Ripple](https://www.shadertoy.com/view/MdSBWh)| incub |  |

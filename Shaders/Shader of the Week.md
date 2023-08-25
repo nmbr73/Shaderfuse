@@ -5,6 +5,11 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 22th of August 2023
+#### [Inside the mandelbulb II](InsideTheMandelbulbIi.md) (Shadertoy ID [mtScRc](https://www.shadertoy.com/view/mtScRc))
+[![InsideTheMandelbulb](https://github.com/nmbr73/Shaderfuse/assets/78935215/afa1cbc3-8163-45e7-9040-dae42b98ca0c)
+](ShaderOfTheWeek/InsideTheMandelbulbIi.md)
+----
 ## 15th of August 2023
 #### [bomlka](bomlka.md) (Shadertoy ID [mtXyD7](https://www.shadertoy.com/view/mtXyD7))
 [![bomlka](https://github.com/nmbr73/Shaderfuse/assets/78935215/97e1ea2a-743a-4834-9df0-3c6f1178b8d4)

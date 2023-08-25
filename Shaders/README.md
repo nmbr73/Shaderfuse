@@ -16,11 +16,11 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 Current Shader of the Week (15th of August 2023):
 <center>
 
-[![bomlka](https://github.com/nmbr73/Shaderfuse/assets/78935215/97e1ea2a-743a-4834-9df0-3c6f1178b8d4)
-](ShaderOfTheWeek/Bomlka.md)
+[![InsideTheMandelbulb](https://github.com/nmbr73/Shaderfuse/assets/78935215/afa1cbc3-8163-45e7-9040-dae42b98ca0c)
+](ShaderOfTheWeek/InsideTheMandelbulbIi.md)
 
 
-[bomlka](ShaderOfTheWeek/Bomlka.md) by [lamogui](https://www.shadertoy.com/user/lamogui)
+[Inside the mandelbulb II](ShaderOfTheWeek/InsideTheMandelbulbIi.md) by [mrange](https://www.shadertoy.com/user/mrange)
 </center>
 
 
