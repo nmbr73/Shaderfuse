@@ -3,7 +3,11 @@ title: Shader of the Week
 ---
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
-
+----
+## 29th of August 2023
+#### [Discoteq 2](Discoteq2.md) (Shadertoy ID [DtXfDr](https://www.shadertoy.com/view/DtXfDr))
+[![Discoteq2](https://github.com/nmbr73/Shaderfuse/assets/78935215/bdf1bd81-fe81-4365-b1c9-c4124d11bd9f)
+](ShaderOfTheWeek/Discoteq2.md)
 ----
 ## 22th of August 2023
 #### [Inside the mandelbulb II](InsideTheMandelbulbIi.md) (Shadertoy ID [mtScRc](https://www.shadertoy.com/view/mtScRc))

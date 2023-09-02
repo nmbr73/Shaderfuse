@@ -13,14 +13,14 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (15th of August 2023):
+Current Shader of the Week (29th of August 2023):
 <center>
 
-[![InsideTheMandelbulb](https://github.com/nmbr73/Shaderfuse/assets/78935215/afa1cbc3-8163-45e7-9040-dae42b98ca0c)
-](ShaderOfTheWeek/InsideTheMandelbulbIi.md)
+[![Discoteq2](https://github.com/nmbr73/Shaderfuse/assets/78935215/bdf1bd81-fe81-4365-b1c9-c4124d11bd9f)
+](ShaderOfTheWeek/Discoteq2.md)
 
 
-[Inside the mandelbulb II](ShaderOfTheWeek/InsideTheMandelbulbIi.md) by [mrange](https://www.shadertoy.com/user/mrange)
+[Discoteq2](ShaderOfTheWeek/Discoteq2.md) by [supah](https://www.shadertoy.com/user/supah)
 </center>
 
 
