@@ -13,6 +13,22 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[STELLAR CLOUDS](https://www.shadertoy.com/view/DtdSz7)| fuse | Shader of the Week 36/23 |
+|[Fast Torus](https://www.shadertoy.com/view/DtXfzB)| incub |  |
+|[CombFuse: noise fog](https://www.shadertoy.com/view/clBBRD)| incub |  |
+|[CombFuse: Photoshop Glowing Edges](https://www.shadertoy.com/view/7tlXDN)| incub |  |
+|[CombFuse: I edited a shader.](https://www.shadertoy.com/view/3tKfWR)| incub |  |
+|[CombFuse: Intro sinus](https://www.shadertoy.com/view/ltcGzB)| incub |  |
+|[CombFuse: pointilism](https://www.shadertoy.com/view/XsKyRV)| incub | ! |
+|[Blurry Waves](https://www.shadertoy.com/view/ctsBDl)| incub | SotW 34/23 integriert |
+|[cartoon kid](https://www.shadertoy.com/view/DlfBRr)| fuse | !!! |
+|[rays through the cracks](https://www.shadertoy.com/view/mllBWf)| incub |  |
+|[Karl the alien](https://www.shadertoy.com/view/msVSWt)| incub | !! |
+|[3D random generator](https://www.shadertoy.com/view/DlfBRj)| incub |  |
+|[Rainbow Liquid Filter](https://www.shadertoy.com/view/dlsfDH)| incub | AB ! |
+|[Flame spew incident](https://www.shadertoy.com/view/wdGSWd)| incub | AB !! |
+|[Broken CRT](https://www.shadertoy.com/view/ddSSWD)| incub | A !! |
+|[Noise Fire](https://www.shadertoy.com/view/XlKyzW)| incub | ! |
 |[Inside the mandelbulb II](https://www.shadertoy.com/view/mtScRc)| fuse | Shader of the Week 34/23 |
 |[simple soap bubbles](https://www.shadertoy.com/view/dlXfzn)| incub | !! |
 |[Bicycle Chain on Sprockets](https://www.shadertoy.com/view/DtXBRN)| incub |  |

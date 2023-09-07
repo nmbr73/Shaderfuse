@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 05th of September 2023
+#### [STELLAR CLOUDS](StellarClouds.md) (Shadertoy ID [DtdSz7](https://www.shadertoy.com/view/DtdSz7))
+[![StellarClouds](https://github.com/nmbr73/Shaderfuse/assets/78935215/c8b0bc22-be28-4584-860e-d7e12ec08c32)
+](ShaderOfTheWeek/StellarClouds.md)
+----
 ## 29th of August 2023
 #### [Discoteq 2](Discoteq2.md) (Shadertoy ID [DtXfDr](https://www.shadertoy.com/view/DtXfDr))
 [![Discoteq2](https://github.com/nmbr73/Shaderfuse/assets/78935215/bdf1bd81-fe81-4365-b1c9-c4124d11bd9f)
