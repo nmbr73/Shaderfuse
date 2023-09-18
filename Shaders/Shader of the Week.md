@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 17th of September 2023
+#### [Extruded Bauhaus Truchet Pattern](ExtrudedBauhausTruchetPattern.md) (Shadertoy ID [dl2fzz](https://www.shadertoy.com/view/dl2fzz))
+[![ExtruddedBauhaus](https://github.com/nmbr73/Shaderfuse/assets/78935215/8d46e998-645c-4a0d-ac28-e5d5947ad928)
+](ShaderOfTheWeek/ExtrudedBauhausTruchetPattern.md)
+----
 ## 05th of September 2023
 #### [STELLAR CLOUDS](StellarClouds.md) (Shadertoy ID [DtdSz7](https://www.shadertoy.com/view/DtdSz7))
 [![StellarClouds](https://github.com/nmbr73/Shaderfuse/assets/78935215/c8b0bc22-be28-4584-860e-d7e12ec08c32)

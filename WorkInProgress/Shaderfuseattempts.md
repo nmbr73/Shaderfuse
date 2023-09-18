@@ -13,6 +13,30 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Extruded Bauhaus Truchet Pattern](https://www.shadertoy.com/view/dl2fzz)| fuse | ShaderOFTheWeek 38/23 |
+|[Graph Paper Fluid](https://www.shadertoy.com/view/DdtyRN)| defect | fwidth funktioniert nicht |
+|[Burn down the gym](https://www.shadertoy.com/view/fdtczl)| incub | ! Brennende Textur |
+|[Lumpy Elongated Gutted Object](https://www.shadertoy.com/view/3sKGRz)| incub | !! Legostein |
+|[cravo-elfhead](https://www.shadertoy.com/view/3lt3RB)| incub | ! Weihnachtsmann |
+|[PS2 menu](https://www.shadertoy.com/view/ldc3z4)| incub |  |
+|[water water warter]( )| incub | ! Blending |
+|[Hookland brutalist logo](https://www.shadertoy.com/view/4dlyz8)| (incub) | Hat noch Fehler |
+|[CombFuse:Q qbit fx ](https://www.shadertoy.com/view/Xdd3Dl)| incub |  |
+|[CombFuse: Smoke blue waves](https://www.shadertoy.com/view/mlSBD1)| incub | ! |
+|[CombFuse: Golden Chocolate Waves](https://www.shadertoy.com/view/dlBBD1)| incub |  |
+|[Get The Ball!](https://www.shadertoy.com/view/dtSBDd)| incub | ! |
+|[in Void*](https://www.shadertoy.com/view/ttsczj)| incub | !! Blending |
+|[meia duzia](https://www.shadertoy.com/view/Dl2fW3)| incub | ! Ostereier |
+|[Ionic Plasma](https://www.shadertoy.com/view/ctSfRd)| incub | !! Blending |
+|[Larva](https://www.shadertoy.com/view/3dc3W4)| incub | ! |
+|[scanning shader prototype](https://www.shadertoy.com/view/Xs3SWH)| incub |  |
+|[Kaleidoscope 4.00](https://www.shadertoy.com/view/4ldfzs)| incub |  |
+|[Robotic Head](https://www.shadertoy.com/view/NlK3WR)| incub | ! |
+|[Flame but wide and bright](https://www.shadertoy.com/view/DssyDj)| incub | !! |
+|[On fire](https://www.shadertoy.com/view/MdKSRc)| incub | ! |
+|[CombFuse: Transition : Cube](https://www.shadertoy.com/view/Mll3Rf)| incub |  |
+|[Inside the Matrix](https://www.shadertoy.com/view/4t3BWl)| fuse | ! |
+|[It's raining even harder](https://www.shadertoy.com/view/Mls3W4)| incub |  |
 |[STELLAR CLOUDS](https://www.shadertoy.com/view/DtdSz7)| fuse | Shader of the Week 36/23 |
 |[Fast Torus](https://www.shadertoy.com/view/DtXfzB)| incub |  |
 |[CombFuse: noise fog](https://www.shadertoy.com/view/clBBRD)| incub |  |
