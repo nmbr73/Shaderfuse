@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 17th of October 2023
+#### [Straight Flagstone Tiles](ExtrudedBauhausTruchetPattern.md) (Shadertoy ID [7tKGRc](https://www.shadertoy.com/view/7tKGRc))
+[![Straight Flagstone Tiles](https://github.com/nmbr73/Shaderfuse/assets/78935215/e422045a-d354-45c3-b905-eabec6f1c6c9)
+](ShaderOfTheWeek/StraightFlagstoneTiles.md)
+----
 ## 17th of September 2023
 #### [Extruded Bauhaus Truchet Pattern](ExtrudedBauhausTruchetPattern.md) (Shadertoy ID [dl2fzz](https://www.shadertoy.com/view/dl2fzz))
 [![ExtruddedBauhaus](https://github.com/nmbr73/Shaderfuse/assets/78935215/8d46e998-645c-4a0d-ac28-e5d5947ad928)

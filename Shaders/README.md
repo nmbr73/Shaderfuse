@@ -13,15 +13,15 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (17th of September 2023):
+Current Shader of the Week (17th of October 2023):
 <center>
 
-[![ExtruddedBauhaus](https://github.com/nmbr73/Shaderfuse/assets/78935215/8d46e998-645c-4a0d-ac28-e5d5947ad928)
-](ShaderOfTheWeek/ExtrudedBauhausTruchetPattern.md)
+[![StraightFlagstoneTiles](https://github.com/nmbr73/Shaderfuse/assets/78935215/e422045a-d354-45c3-b905-eabec6f1c6c9)
+](ShaderOfTheWeek/StraightFlagstoneTiles.md)
 
 
-[ Extruded Bauhaus Truchet Pattern
-](ShaderOfTheWeek/ExtrudedBauhausTruchetPattern.md) by [Shane](https://www.shadertoy.com/user/Shane)
+[ Straight Flagstone Tiles
+](ShaderOfTheWeek/StraightFlagstoneTiles.md) by [gelami](https://www.shadertoy.com/user/gelami)
 </center>
 
 

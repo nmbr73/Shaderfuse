@@ -13,6 +13,55 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Straight Flagstone Tiles](https://www.shadertoy.com/view/7tKGRc)| fuse | ShaderOfTheWeek42/23 |
+|[Saturday hacking](https://www.shadertoy.com/view/cscyDf)| defect | blinde Bereiche |
+|[random walkers](https://www.shadertoy.com/view/dsVyz1)| defect | bricht ab |
+|[Deterministic Nyan Particles](https://www.shadertoy.com/view/Ds3yWj)| defect | kein Bild |
+|[Solid and Liquid](https://www.shadertoy.com/view/dstfR2)| incub | ABCD !!! |
+|[BFD](https://www.shadertoy.com/view/DddBRj)| incub | A ! |
+|[Fluid Mimicry](https://www.shadertoy.com/view/dd3fR2)| incub | ABCD Blending !!! |
+|[Relic](https://www.shadertoy.com/view/mscBW4)| incub | AB |
+|[Plexus Particles](https://www.shadertoy.com/view/lldyDs)| incub | !! |
+|[Sparkle Particle](https://www.shadertoy.com/view/lsKSWG)| incub |  |
+|[Light beams](https://www.shadertoy.com/view/ldGyWV)| incub |  |
+|[Shining Supernova](https://www.shadertoy.com/view/XljXz3)| incub |  |
+|[Dramatic shine](https://www.shadertoy.com/view/3d3XWr)| incub |  |
+|[Interactive automata](https://www.shadertoy.com/view/ssBXDy)| incub | A !! |
+|[Farol](https://www.shadertoy.com/view/mstBDn)| incub |  |
+|[Interactive-Curtis](https://www.shadertoy.com/view/cdcfz7)| incub | ABCD !! |
+|[singularity space](https://www.shadertoy.com/view/3dlyRN)| incub | ShaderOfTheWeek41/23, Kugel nicht vollständig |
+|[Bubbling slime](https://www.shadertoy.com/view/NdBXRm)| incub | AB ! |
+|[Light Lanes](https://www.shadertoy.com/view/cdGyRh)| incub | ! |
+|[glooper](https://www.shadertoy.com/view/3sKBRz)| incub |  |
+|[Cartoon Filter](https://www.shadertoy.com/view/wt2SDm)| incub | A  |
+|[break box](https://www.shadertoy.com/view/fdt3z8)| incub | ! |
+|[Lattice Boltzmann Fireball](https://www.shadertoy.com/view/7tcyDX)| incub | AB ! |
+|[Glass Logo](https://www.shadertoy.com/view/dsXyD8)| incub |  |
+|[59751-0-](https://www.shadertoy.com/view/3ld3zs)| incub | ! |
+|[Colorsound](https://www.shadertoy.com/view/wlc3R2)| incub | AB !! |
+|[Latte Art](https://www.shadertoy.com/view/csdcW2)| incub | ABCD ! |
+|[noise playground](https://www.shadertoy.com/view/NstSzX)| incub |  |
+|[The Heat Equation](https://www.shadertoy.com/view/msX3DM)| incub | ABCD !!! |
+|[UI noise halo](https://www.shadertoy.com/view/3tBGRm)| incub |  |
+|[Slime Simulation](https://www.shadertoy.com/view/7s2GzR)| incub | ABC !!! |
+|[lenstest](https://www.shadertoy.com/view/Xt2XWV)| incub |  |
+|[My fish eye effect!](https://www.shadertoy.com/view/ltfXWf)| incub |  |
+|[Noise Flow Lines](https://www.shadertoy.com/view/lsyfDV)| incub | A ! |
+|[Jigsaw](https://www.shadertoy.com/view/XdGBDW)| incub | A !! |
+|[Simple CFD - Mass + Momentum](https://www.shadertoy.com/view/MdccWN)| incub | A !! |
+|[Vibrant Fitzhugh-Nagumo](https://www.shadertoy.com/view/wdcfWM)| incub | A !! |
+|[Oversaturated web](https://www.shadertoy.com/view/cdccRl)| incub | ! |
+|[fork-game of throne-Sound](https://www.shadertoy.com/view/wsKyzd)| incub | ! |
+|[Transverse Antenna](https://www.shadertoy.com/view/dt2fRK)| defect |  |
+|[Burning Buffer](https://www.shadertoy.com/view/3dc3R8)| defect |  |
+|[Demo - Voronoi Noise](https://www.shadertoy.com/view/MlycRy)| incub | ! |
+|[Raytraced Rolling Ball](https://www.shadertoy.com/view/DstcWn)| incub | A |
+|[Shader Fluid](https://www.shadertoy.com/view/mddyWn)| incub | ABCD !!! Blending |
+|[Shape growth](https://www.shadertoy.com/view/ms3cWN)| incub |  |
+|[Agate growth](https://www.shadertoy.com/view/ddccDH)| incub | ! |
+|[Neon Drops](https://www.shadertoy.com/view/7d2czc)| incub | ! |
+|[Cartoon Effect](https://www.shadertoy.com/view/MlVGzm)| incub | ABC ! |
+|[Cartoon FX (Fast Bilateral Blur)](https://www.shadertoy.com/view/MlK3Dc)| incub | AB ! |
 |[Extruded Bauhaus Truchet Pattern](https://www.shadertoy.com/view/dl2fzz)| fuse | ShaderOFTheWeek 38/23 |
 |[Graph Paper Fluid](https://www.shadertoy.com/view/DdtyRN)| defect | fwidth funktioniert nicht |
 |[Burn down the gym](https://www.shadertoy.com/view/fdtczl)| incub | ! Brennende Textur |
