@@ -13,6 +13,27 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Neural Stanford Bunny (5 kb)](https://www.shadertoy.com/view/wtVyWK)| fuse | ShaderOfTheWeek44/23 |
+|[expanding veins](https://www.shadertoy.com/view/3dj3Rd)| incub | AB ! |
+|[single pass CFD](https://www.shadertoy.com/view/MdKXRy)| incub | A !! Blending |
+|[Sparkler - Particle](https://www.shadertoy.com/view/XsGyzc)| incub | A |
+|[Decodering](https://www.shadertoy.com/view/cdKBWG)| incub | ! |
+|[Raymarch Optimization](https://www.shadertoy.com/view/WtSfWD)| incub | AB ! |
+|[Cube Animation](https://www.shadertoy.com/view/cdtfWS)| incub | !!!!  |
+|[Offworld Storage Facility](https://www.shadertoy.com/view/DsVfRV)| incub | !! |
+|[something random](https://www.shadertoy.com/view/XstXW8)| incub | !! |
+|[Vortex of Silver](https://www.shadertoy.com/view/mdGfRK)| incub | !! Blending |
+|[UI Test 7](https://www.shadertoy.com/view/cdcyWX)| incub | !! |
+|[UI Test 6](https://www.shadertoy.com/view/clsSz4)| incub | !! |
+|[UI Test 5](https://www.shadertoy.com/view/Dsf3WH)| incub | !! |
+|[Fork UI Test 4 + Hologram](https://www.shadertoy.com/view/ddtGDM)| incub | !! |
+|[UI Test 4](https://www.shadertoy.com/view/7t3fzs)| incub | ! |
+|[featuristic UI test2](https://www.shadertoy.com/view/WtGSD3)| incub | ! |
+|[UI test](https://www.shadertoy.com/view/3sfGzB)| defect | fwidth |
+|[foam00000000000](https://www.shadertoy.com/view/tsK3W3)| incub | !!! |
+|[cosmic - chenhang](https://www.shadertoy.com/view/ttdcWn)| incub | ! |
+|[Dewdrops](https://www.shadertoy.com/view/csdBWs)| incub | ABCD !!! Blending |
+|[Triplanar with Normals](https://www.shadertoy.com/view/mdcBz8)| incub | ! |
 |[Straight Flagstone Tiles](https://www.shadertoy.com/view/7tKGRc)| fuse | ShaderOfTheWeek42/23 |
 |[Saturday hacking](https://www.shadertoy.com/view/cscyDf)| defect | blinde Bereiche |
 |[random walkers](https://www.shadertoy.com/view/dsVyz1)| defect | bricht ab |
