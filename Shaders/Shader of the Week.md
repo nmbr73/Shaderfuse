@@ -5,6 +5,11 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 16th of November 2023
+#### [Decorated Christmas Spiral](DecoratedChristmasSpiral.md) (Shadertoy ID [3dVfDc](https://www.shadertoy.com/view/3dVfDc))
+[![DecoratedChristmasSpiral](https://github.com/nmbr73/Shaderfuse/assets/78935215/548058ce-f942-4037-97f8-9fad8b5ea752)
+](ShaderOfTheWeek/DecoratedChristmasSpiral.md)
+----
 ## 1th of November 2023
 #### [Neural Stanford Bunny (5 kb)](NeuralStanfordBunny5Kb.md) (Shadertoy ID [wtVyWK](https://www.shadertoy.com/view/wtVyWK))
 [![NeuralStanfordBunny](https://github.com/nmbr73/Shaderfuse/assets/78935215/850c3313-ded2-450c-9c2d-5dfacfeb8b04)

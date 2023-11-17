@@ -13,15 +13,15 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (1th of November 2023):
+Current Shader of the Week (16th of November 2023):
 <center>
 
-[![NeuralStanfordBunny](https://github.com/nmbr73/Shaderfuse/assets/78935215/850c3313-ded2-450c-9c2d-5dfacfeb8b04)
-](ShaderOfTheWeek/NeuralStanfordBunny5Kb.md)
+[![DecoratedChristmasSpiral](https://github.com/nmbr73/Shaderfuse/assets/78935215/548058ce-f942-4037-97f8-9fad8b5ea752)
+](ShaderOfTheWeek/DecoratedChristmasSpiral.md)
 
 
-[Neural Stanford Bunny (5 kb)
-](ShaderOfTheWeek/NeuralStanfordBunny5Kb.md) by [blackle](https://www.shadertoy.com/user/blackle)
+[Decorated Christmas Spiral)
+](ShaderOfTheWeek/DecoratedChristmasSpiral.md) by [sylvain69780](https://www.shadertoy.com/user/sylvain69780)
 </center>
 
 

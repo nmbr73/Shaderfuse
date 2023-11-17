@@ -13,6 +13,38 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Decorated Christmas Spiral](https://www.shadertoy.com/view/3dVfDc)| fuse | ShaderOfTheWeek46/23 |
+|[Particle clustering (MD)](https://www.shadertoy.com/view/mscfW7)| defect | ABCD kein Bildaufbau |
+|[Lenia Pt.2](https://www.shadertoy.com/view/cdGcWR)| defect | A fehler in der Darstellung |
+|[Heartbreaker](https://www.shadertoy.com/view/Dt3XWl)| defect | ABC fehler in der Darstellung  |
+|[above the clouds](https://www.shadertoy.com/view/XltyzM)| defect | noise ergibt andere Darstellung |
+|[voroboid swarm](https://www.shadertoy.com/view/mdB3Dm)| incub | ABC Blending ! |
+|[Simple drifting](https://www.shadertoy.com/view/fdV3RK)| incub | ABC !! |
+|[Attempt at improving specular](https://www.shadertoy.com/view/fllXD4)| incub | ! |
+|[Rolling feedback](https://www.shadertoy.com/view/ml3cDs)| incub | A |
+|[Trying 2 AI](https://www.shadertoy.com/view/tdBczw)| incub | ABCD Blending ! |
+|[GrayScott Carpet](https://www.shadertoy.com/view/tlX3Rn)| incub | ABCD Blending !! |
+|[Fungus looking for jelly V3](https://www.shadertoy.com/view/cdXXDn)| incub | A |
+|[2D Jelly](https://www.shadertoy.com/view/7t3cRf)| (incub) | A nicht ganz korrekt |
+|[Hamster Mega Scroll](https://www.shadertoy.com/view/mlcyDj)| incub | ! |
+|[Luminescence](https://www.shadertoy.com/view/4sXBRn)| incub | ! |
+|[Making B&W into Predator Vision](https://www.shadertoy.com/view/MlyyDD)| incub |  |
+|[flame_wall](https://www.shadertoy.com/view/ttlfWM)| incub | ! |
+|[Lattice-Boltzmann Torch Fire](https://www.shadertoy.com/view/WdlSWN)| incub | A Blending !! |
+|[reaction diffusion with video ](https://www.shadertoy.com/view/DljBD3)| incub | A Blending !! |
+|[Subdivided Voxel Raymarching](https://www.shadertoy.com/view/csKyzd)| incub | !!! |
+|[boids with cellular tracers](https://www.shadertoy.com/view/mtcyzj)| incub | ABC !! |
+|[Particle clustering (LIQUID)](https://www.shadertoy.com/view/mscBRB)| incub | ABCD Blending !! |
+|[Upscaling: dark star ](https://www.shadertoy.com/view/Dl3yD8)| incub | AB ! |
+|[Green music bars 2](https://www.shadertoy.com/view/WsXSRn)| incub | ! |
+|[Abominations](https://www.shadertoy.com/view/mlcyWr)| incub | !! |
+|[Formas](https://www.shadertoy.com/view/mlccWn)| incub | !! |
+|[Cuisse](https://www.shadertoy.com/view/mdVBDt)| incub | A Blending ! |
+|[Julie Dunes study](https://www.shadertoy.com/view/dllSWj)| incub | A Blending ! |
+|[shader-web-background JS lib](https://www.shadertoy.com/view/wlKyR1)| incub | A Blending  lib2 & lib3 & lib4 & lib5 |
+|[Rotoscope - 267 chars](https://www.shadertoy.com/view/XlBfzy)| incub | A !! |
+|[__sphere2__](https://www.shadertoy.com/view/XldfDM)| incub | ! |
+|[Wave Equation](https://www.shadertoy.com/view/llcBRj)| incub | AB Blending !! |
 |[Neural Stanford Bunny (5 kb)](https://www.shadertoy.com/view/wtVyWK)| fuse | ShaderOfTheWeek44/23 |
 |[expanding veins](https://www.shadertoy.com/view/3dj3Rd)| incub | AB ! |
 |[single pass CFD](https://www.shadertoy.com/view/MdKXRy)| incub | A !! Blending |
