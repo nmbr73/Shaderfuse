@@ -5,6 +5,11 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 6th of December 2023
+#### [GroundCameraLightingHelix](GroundCameraLightingHelix.md) (Shadertoy ID [Mt33W2](https://www.shadertoy.com/view/Mt33W2))
+[![GroundCameraLightingHelix](https://github.com/nmbr73/Shaderfuse/assets/78935215/3095e912-77b8-4586-ac66-d99ddb531171)
+](ShaderOfTheWeek/GroundCameraLightingHelix.md)
+----
 ## 16th of November 2023
 #### [Decorated Christmas Spiral](DecoratedChristmasSpiral.md) (Shadertoy ID [3dVfDc](https://www.shadertoy.com/view/3dVfDc))
 [![DecoratedChristmasSpiral](https://github.com/nmbr73/Shaderfuse/assets/78935215/548058ce-f942-4037-97f8-9fad8b5ea752)

@@ -13,15 +13,15 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (16th of November 2023):
+Current Shader of the Week (6th of December 2023):
 <center>
 
-[![DecoratedChristmasSpiral](https://github.com/nmbr73/Shaderfuse/assets/78935215/548058ce-f942-4037-97f8-9fad8b5ea752)
-](ShaderOfTheWeek/DecoratedChristmasSpiral.md)
+[![GroundCameraLightingHelix](https://github.com/nmbr73/Shaderfuse/assets/78935215/3095e912-77b8-4586-ac66-d99ddb531171)
+](ShaderOfTheWeek/GroundCameraLightingHelix.md)
 
 
-[Decorated Christmas Spiral)
-](ShaderOfTheWeek/DecoratedChristmasSpiral.md) by [sylvain69780](https://www.shadertoy.com/user/sylvain69780)
+[GroundCameraLightingHelix
+](ShaderOfTheWeek/GroundCameraLightingHelix.md) by [Yusef28](https://www.shadertoy.com/user/Yusef28)
 </center>
 
 
