@@ -13,15 +13,14 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (6th of December 2023):
+Current Shader of the Week (18th of December 2023):
 <center>
 
-[![GroundCameraLightingHelix](https://github.com/nmbr73/Shaderfuse/assets/78935215/3095e912-77b8-4586-ac66-d99ddb531171)
-](ShaderOfTheWeek/GroundCameraLightingHelix.md)
+[![AndroidRuntime](https://github.com/nmbr73/Shaderfuse/assets/78935215/d5a8dce3-9b87-4e1b-a95f-0d497faa03b1)
+](ShaderOfTheWeek/AndroidRuntime.md)
 
-
-[GroundCameraLightingHelix
-](ShaderOfTheWeek/GroundCameraLightingHelix.md) by [Yusef28](https://www.shadertoy.com/user/Yusef28)
+[AndroidRuntime
+](ShaderOfTheWeek/AndroidRuntime.md) by [shau](https://www.shadertoy.com/user/shau)
 </center>
 
 

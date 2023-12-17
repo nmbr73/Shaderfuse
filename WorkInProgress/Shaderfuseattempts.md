@@ -13,6 +13,69 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Android Runtime](https://www.shadertoy.com/view/DltBRM)| fuse | ShaderofTheWeek 50/23 |
+|[Volumetric Solar Flare](https://www.shadertoy.com/view/NstyDX)| defect | absturz - nicht lauffähig |
+|[midnight jam](https://www.shadertoy.com/view/clsXRH)| defect | Bild zerstört |
+|[Streamline charges](https://www.shadertoy.com/view/wtKfDy)| defect | kein Bildaufbau |
+|[Amorphous Being](https://www.shadertoy.com/view/wtGczy)| defect | mehrere Austritte, kein Schatten, anderes Verhalten |
+|[Infinite 3D Zoom](https://www.shadertoy.com/view/sljfDD)| incub | !! |
+|[Glowy orb](https://www.shadertoy.com/view/mdcSDB)| incub |  |
+|[CloudTunnel](https://www.shadertoy.com/view/dl2yRK)| incub | ! |
+|[particles23](https://www.shadertoy.com/view/dtlSDM)| incub | A ! |
+|[Procedural Brick Texture](https://www.shadertoy.com/view/4tyGzz)| incub |  |
+|[Extruded Video Image](https://www.shadertoy.com/view/tsdXDB)| incub | !! |
+|[Burning Effect](https://www.shadertoy.com/view/clKBzh)| incub | ! |
+|[Tiny Hideout](https://www.shadertoy.com/view/DlKBDh)| incub | AB !!! |
+|[Weird Distortion 2](https://www.shadertoy.com/view/3dVcRc)| incub | A |
+|[Random Block Passage](https://www.shadertoy.com/view/Xt3cWl)| incub | !!! |
+|[Aquarela de lons](https://www.shadertoy.com/view/dtKBzm)| incub | ! |
+|[Ground, Camera, Lighting, Helix](https://www.shadertoy.com/view/Mt33W2)| fuse | ShaderOfTheWeek 49/23 |
+|[Nimitz's Vorticity Confinement](https://www.shadertoy.com/view/tssGDN)| incub | ABCD Blending !! |
+|[starlight in space](https://www.shadertoy.com/view/mltBDl)| incub | ! |
+|[fff - test ](https://www.shadertoy.com/view/mdKfWw)| incub | ! Zylinderprägung ! |
+|[//Volumetric Fire - HLSL fork](https://www.shadertoy.com/view/dl3BRS)| incub | !! |
+|[five sloppily stacked boxes grid](https://www.shadertoy.com/view/mldBRS)| incub |  |
+|[fluidfucnasdfasdf](https://www.shadertoy.com/view/wtfyWs)| incub | A Blending !! |
+|[GPU Heating for Winter](https://www.shadertoy.com/view/7tVBW1)| incub |  |
+|[Banger Sponge](https://www.shadertoy.com/view/dt2Xzt)| incub | ABCD  |
+|[//Fireplace HLSL Fork](https://www.shadertoy.com/view/mt3BRS)| incub | !! |
+|[Interlocking Gears](https://www.shadertoy.com/view/slSyRd)| incub | ! |
+|[LquidInkPad](https://www.shadertoy.com/view/tdK3WW)| incub | A |
+|[Fire FG(tabyltop)](https://www.shadertoy.com/view/dtcfWn)| incub | ! |
+|[Random sunday Fractal](https://www.shadertoy.com/view/sl23DV)| incub |  |
+|[SphereGears Step8](https://www.shadertoy.com/view/wdlyRr)| incub | ! |
+|[ReactionDiffusion 3](https://www.shadertoy.com/view/MlByzR)| incub | ABCD ! Blending |
+|[Mini Hill Climb Racing](https://www.shadertoy.com/view/3ldcWs)| fuse | !!! |
+|[Multi Video / ChromaKey 3D](https://www.shadertoy.com/view/tsy3Rt)| incub |  |
+|[Electrodiagramm_Loewe](https://www.shadertoy.com/view/XsyGzD)| incub | ! |
+|[Sunrise at Pulau Sibu](https://www.shadertoy.com/view/4d2BRz)| incub | ! |
+|[Space Rock](https://www.shadertoy.com/view/ldKGzK)| incub | !! |
+|[LD42 Space growth](https://www.shadertoy.com/view/ltdyDj)| incub | A ! |
+|[Instability](https://www.shadertoy.com/view/Mdt3Dj)| incub | A ! |
+|[oil spill / chocolate syrup](https://www.shadertoy.com/view/4dlcRH)| incub | ABC !! Blending |
+|[scolling space](https://www.shadertoy.com/view/mtVyDG)| incub | ! |
+|[2D Fluid movement](https://www.shadertoy.com/view/3tscDS)| incub | ABCD !! Blending |
+|[vampire squid moth](https://www.shadertoy.com/view/td3yDS)| incub | ABCD ! Blending |
+|[little fluffy clouds](https://www.shadertoy.com/view/Xsl3zr)| incub |  |
+|[Horizon Clouds](https://www.shadertoy.com/view/XtBXDw)| incub |  |
+|[Travellers](https://www.shadertoy.com/view/fds3Ws)| incub | AB ! Blending |
+|[Spaceballs / greebles](https://www.shadertoy.com/view/XltGDl)| incub | ! |
+|[Stateless smoke](https://www.shadertoy.com/view/WtdfR8)| incub | !! |
+|[Smoke remake](https://www.shadertoy.com/view/4lScRG)| incub | ABCD !! Blending |
+|[Fluid Dynamics - Candle](https://www.shadertoy.com/view/4sSBRw)| incub | ABCD !! Blending |
+|[Land of Water](https://www.shadertoy.com/view/Wlj3Rc)| incub | ABCD Blending |
+|[TUT stars!](https://www.shadertoy.com/view/fl2cDy)| incub | ! |
+|[Evil Brtiney](https://www.shadertoy.com/view/llS3WG)| incub | !! |
+|[lead area light matrix](https://www.shadertoy.com/view/tdVGW1)| incub | AB !!! |
+|[Postcard](https://www.shadertoy.com/view/XdBSWd)| incub |  |
+|[Pyroclastic fireball - HLSL](https://www.shadertoy.com/view/mtKcDm)| incub | ! |
+|[metaballs v0.1](https://www.shadertoy.com/view/clycRG)| incub | ! |
+|[snowmobile](https://www.shadertoy.com/view/3ttXD2)| incub | A !!! |
+|[Rocket Mach Diamonds](https://www.shadertoy.com/view/3llcRj)| incub | ABCD Blending !!!  |
+|[Fork Fork Snowy zhitaowang 296](https://www.shadertoy.com/view/DlyyRR)| incub | ! |
+|[3D Diffusion Automata](https://www.shadertoy.com/view/cl3yDN)| incub | !! |
+|[Protoplanetary disk](https://www.shadertoy.com/view/MdtGRl)| incub | ! |
+|[Steiner Chain Carousel.](https://www.shadertoy.com/view/WtdSDX)| incub | Bubblepräsentation !! |
 |[Decorated Christmas Spiral](https://www.shadertoy.com/view/3dVfDc)| fuse | ShaderOfTheWeek46/23 |
 |[Particle clustering (MD)](https://www.shadertoy.com/view/mscfW7)| defect | ABCD kein Bildaufbau |
 |[Lenia Pt.2](https://www.shadertoy.com/view/cdGcWR)| defect | A fehler in der Darstellung |
