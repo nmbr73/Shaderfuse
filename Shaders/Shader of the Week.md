@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 5th of January 2024
+#### [InsideTheTorus](InsideTheTorus.md) (Shadertoy ID [XcS3zK](https://www.shadertoy.com/view/XcS3zK))
+[![InsideTheTorus](https://github.com/nmbr73/Shaderfuse/assets/78935215/686fa6ee-83c6-47be-b944-20f6060e0b2b)
+](ShaderOfTheWeek/InsideTheTorus.md)
+----
 ## 18th of December 2023
 #### [AndroidRuntime](AndroidRuntime.md) (Shadertoy ID [DltBRM](https://www.shadertoy.com/view/DltBRM))
 [![AndroidRuntime](https://github.com/nmbr73/Shaderfuse/assets/78935215/d5a8dce3-9b87-4e1b-a95f-0d497faa03b1)
