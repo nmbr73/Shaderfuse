@@ -13,14 +13,14 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (5th of January 2024):
+Current Shader of the Week (16th of January 2024):
 <center>
 
-[![InsideTheTorus](https://github.com/nmbr73/Shaderfuse/assets/78935215/686fa6ee-83c6-47be-b944-20f6060e0b2b)
-](ShaderOfTheWeek/InsideTheToruse.md)
+[![FullSpectrumCyber](https://github.com/nmbr73/Shaderfuse/assets/78935215/6bd3c549-ceb8-4670-b829-52e0513715ad)
+](ShaderOfTheWeek/FullSpectrumCyber.md)
 
 [InsideTheTorus
-](ShaderOfTheWeek/InsideTheTorus.md) by [liamegan](https://www.shadertoy.com/user/liamegan)
+](ShaderOfTheWeek/FullSpectrumCyber.md) by [Kali](https://www.shadertoy.com/user/Kali)
 </center>
 
 

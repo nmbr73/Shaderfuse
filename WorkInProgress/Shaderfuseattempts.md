@@ -13,6 +13,27 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Full Spectrum Cyber](https://www.shadertoy.com/view/XcXXzS)| fuse | ShaderOfTheWeek 2/24 |
+|[Lennard Jones carpet](https://www.shadertoy.com/view/Wl3cWs)| incub | A !! |
+|[Supernova remnant](https://www.shadertoy.com/view/MdKXzc)| incub | ! |
+|[displaced line](https://www.shadertoy.com/view/4flXzN)| incub |  |
+|[[Fork] fbm lightning](https://www.shadertoy.com/view/XcsXRM)| incub |  |
+|[[Fork] ElectroSine](https://www.shadertoy.com/view/4csSR7)| incub |  |
+|[2D clouds ground view](https://www.shadertoy.com/view/4clSzn)| incub |  |
+|[Little Letters](https://www.shadertoy.com/view/WsjcRV)| incub | ABCD ! |
+|[fire font](https://www.shadertoy.com/view/4tKSD3)| fuse | A !! Texteingabe 19 Zeichen |
+|[Curly Text](https://www.shadertoy.com/view/4cBGWt)| incub | AB |
+|[Juggling Pong](https://www.shadertoy.com/view/ttX3RS)| incub | A ! |
+|[Inside the torus](https://www.shadertoy.com/view/XcS3zK)| fuse | ShaderOfTheWeek 1/24 |
+|[Curl Noise Frequency Mixer](https://www.shadertoy.com/view/XfS3R3)| incub | A ! Blending |
+|[李明杰V14](https://www.shadertoy.com/view/XdKBWt)| incub | !! |
+|[Quantum Fluid](https://www.shadertoy.com/view/MlGGDW)| incub | AB ! Blending |
+|[Fork conway representation](https://www.shadertoy.com/view/McBGRh)| incub | AB ! Blending |
+|[Dynamic Delaunay 4](https://www.shadertoy.com/view/WtcXz4)| defect | ABCD ? |
+|[Liquid Crystal II](https://www.shadertoy.com/view/XldfDH)| defect | ABCD |
+|[Magma](https://www.shadertoy.com/view/WslXDM)| defect | ABCD ? |
+|[Sand With Inertia](https://www.shadertoy.com/view/4cjGDR)| defect | ABC partikel fallen nicht  |
+|[Happy New Year | 3D Marquee](https://www.shadertoy.com/view/4fsGWX)| incub |  |
 |[Android Runtime](https://www.shadertoy.com/view/DltBRM)| fuse | ShaderofTheWeek 50/23 |
 |[Volumetric Solar Flare](https://www.shadertoy.com/view/NstyDX)| defect | absturz - nicht lauffähig |
 |[midnight jam](https://www.shadertoy.com/view/clsXRH)| defect | Bild zerstört |

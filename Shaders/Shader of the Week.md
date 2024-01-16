@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 16th of January 2024
+#### [FullSpectrumCyber](FullSpectrumCyber.md) (Shadertoy ID [XcXXzS](https://www.shadertoy.com/view/XcXXzS))
+[![FullSpectrumCyber](https://github.com/nmbr73/Shaderfuse/assets/78935215/6bd3c549-ceb8-4670-b829-52e0513715ad)
+](ShaderOfTheWeek/FullSpectrumCyber.md)
+----
 ## 5th of January 2024
 #### [InsideTheTorus](InsideTheTorus.md) (Shadertoy ID [XcS3zK](https://www.shadertoy.com/view/XcS3zK))
 [![InsideTheTorus](https://github.com/nmbr73/Shaderfuse/assets/78935215/686fa6ee-83c6-47be-b944-20f6060e0b2b)
