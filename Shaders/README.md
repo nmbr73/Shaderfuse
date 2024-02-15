@@ -17,9 +17,9 @@ Current Shader of the Week (14th of February 2024):
 <center>
 
 [![Something227](https://github.com/nmbr73/Shaderfuse/assets/78935215/15013161-51b5-4dee-af44-eb92133f77d9)
-](ShaderOfTheWeek/FullSpectrumCyber.md)
+](ShaderOfTheWeek/Something227.md)
 
-[Something227](ShaderOfTheWeek/FullSpectrumCyber.md) by [gaz](https://www.shadertoy.com/user/gaz)
+[Something227](ShaderOfTheWeek/Something227.md) by [gaz](https://www.shadertoy.com/user/gaz)
 </center>
 
 
