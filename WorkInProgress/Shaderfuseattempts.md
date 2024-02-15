@@ -13,6 +13,35 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Something 227](https://www.shadertoy.com/view/3lyBDw)| incub | ShaderOfTheWeek 07/24 |
+|[Voronoi terrain](https://www.shadertoy.com/view/XXf3z2)| incub | ! |
+|[LBM fluid simulation](https://www.shadertoy.com/view/Xf23zt)| incub | ABCD !! |
+|[demon filter](https://www.shadertoy.com/view/Wldyzs)| incub | ! |
+|[metaballs v0.2](https://www.shadertoy.com/view/cldBzN)| incub | ABC !! |
+|[Rubber 3](https://www.shadertoy.com/view/NdlcWf)| incub | Fliegender Teppich |
+|[ReactionDiffusion 9alt](https://www.shadertoy.com/view/ws33WN)| incub | ABCD ! |
+|[WaveText](https://www.shadertoy.com/view/4tSfDV)| incub | Text verschwimmt |
+|[Smooth Life Naive Convolution]( )| incub | AB Blending + Color |
+|[Boreal Spring](https://www.shadertoy.com/view/ldXBRH)| incub | Fiktive Landschaft mit fliegenden Lichtern !|
+|[Unstable Torus](https://www.shadertoy.com/view/llSXD1 )| incub | Tunnel |
+|[Extruded picture](https://www.shadertoy.com/view/NdXczs)| incub | !!! |
+|[Threaded Connection](https://www.shadertoy.com/view/3ldBWH)| incub | ABC !!! |
+|[Gradinhas](https://www.shadertoy.com/view/Mf2XR3)| incub | !! Blending |
+|[AudioVisualizer bars 3 (sidhu)](https://www.shadertoy.com/view/lcBSWR)| incub | Audio !! |
+|[connections in universe](https://www.shadertoy.com/view/mtVBD1)| incub | ! |
+|[Magma](https://www.shadertoy.com/view/WslXDM)| defect | Bild wird nicht aufgebaut |
+|[fake Ambient Occlusion](https://www.shadertoy.com/view/DtGXz3)| defect | fwidth |
+|[FFT fluid 2 for 1](https://www.shadertoy.com/view/3lBSWK)| defect | Flackern |
+|[Colors Shaded Blob](https://www.shadertoy.com/view/ttVGDD)| incub |  |
+|[Circular Audio Visualizer](https://www.shadertoy.com/view/WlVXz3)| incub | Audio ! |
+|[Smokey Ring](https://www.shadertoy.com/view/NtX3zn)| incub | AB ! |
+|[Wave-o-scope](https://www.shadertoy.com/view/lfsXD2)| incub | A ! |
+|[Some ideas for a WebGL intro](https://www.shadertoy.com/view/4dKGDt)| incub | Audio |
+|[gay farts](https://www.shadertoy.com/view/Ds2SzG)| incub | A  |
+|[Parallax Starfield](https://www.shadertoy.com/view/Dd2GW1)| incub | A ! |
+|[Fluid Sim Advancement](https://www.shadertoy.com/view/WltXWN)| incub | ABCD !! Blending |
+|[Organic Fabrics I](https://www.shadertoy.com/view/flX3Wr)| incub | ABC ! |
+|[2019](https://www.shadertoy.com/view/WdXGDN)| incub | ! |
 |[Full Spectrum Cyber](https://www.shadertoy.com/view/XcXXzS)| fuse | ShaderOfTheWeek 2/24 |
 |[Lennard Jones carpet](https://www.shadertoy.com/view/Wl3cWs)| incub | A !! |
 |[Supernova remnant](https://www.shadertoy.com/view/MdKXzc)| incub | ! |
