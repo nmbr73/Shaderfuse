@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 1th of March 2024
+#### [Something227](Something227.md) (Shadertoy ID [MXS3zy](https://www.shadertoy.com/view/MXS3zy))
+[![SpaceAtHome](https://github.com/nmbr73/Shaderfuse/assets/78935215/be61cfce-b844-406b-af44-30c9a5a78532)
+](ShaderOfTheWeek/SpaceAtHome.md)
+----
 ## 14th of February 2024
 #### [Something227](Something227.md) (Shadertoy ID [3lyBDw](https://www.shadertoy.com/view/3lyBDw))
 [![Something227](https://github.com/nmbr73/Shaderfuse/assets/78935215/15013161-51b5-4dee-af44-eb92133f77d9)

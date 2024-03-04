@@ -13,6 +13,18 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Space At Home](https://www.shadertoy.com/view/MXS3zy)| incub | ABCD ShaderOfTheWeek 10/24 |
+|[Exploding Particles](https://www.shadertoy.com/view/XXS3RV)| incub | ABCD !!! Blending |
+|[Smoke 3D](https://www.shadertoy.com/view/lXSGz3)| incub | ABCD |
+|[Falling Adhesive Particles](https://www.shadertoy.com/view/l3BGzd)| incub | ABCD !! Blending |
+|[Falling Non-Adhesive Particles](https://www.shadertoy.com/view/lXSGRd)| incub | ABCD !! Blending |
+|[Bubble ScreenSaver](https://www.shadertoy.com/view/l3jGz1)| incub | ! |
+|[Insoluble](https://www.shadertoy.com/view/XXB3Wh)| incub | ABCD ! Blending|
+|[Color blobs](https://www.shadertoy.com/view/lsBGDw)| incub | ! |
+|[ReactionDiffusionSim](https://www.shadertoy.com/view/M32Gzz)| incub | ABCD !! Blending |
+|[Simple Fluid Cellular Automata](https://www.shadertoy.com/view/M3sGDf)| incub | A |
+|[[SH17A] Rainbow Camouflage](https://www.shadertoy.com/view/XsSBWz)| incub | A |
+|[GCLH Dark Palace Studio](https://www.shadertoy.com/view/4cBSR3)| incub | AB ! |
 |[Something 227](https://www.shadertoy.com/view/3lyBDw)| incub | ShaderOfTheWeek 07/24 |
 |[Voronoi terrain](https://www.shadertoy.com/view/XXf3z2)| incub | ! |
 |[LBM fluid simulation](https://www.shadertoy.com/view/Xf23zt)| incub | ABCD !! |
