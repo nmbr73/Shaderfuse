@@ -13,6 +13,34 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[MountainBytes: PPPP 4KiB Windows](https://www.shadertoy.com/view/lX2GzD)| incub | ShaderOfTheWeek 12/24 |
+|[Lumirefraction](https://www.shadertoy.com/view/4Xl3Rj)| incub | ! |
+|[Dragon Smoke](https://www.shadertoy.com/view/MXBSDm)| incub | ABC !! Blending |
+|[colored wave effect](https://www.shadertoy.com/view/X3SXzV)| incub | ! |
+|[Fork Strobe lig rehmankk36 449](https://www.shadertoy.com/view/MXBXRK)| incub | A !! |
+|[20201130_cloud (Windy Fairy)](https://www.shadertoy.com/view/tsKfzW)| incub |  |
+|[Discrete Heat Equation](https://www.shadertoy.com/view/X3lSRj)| incub | A !! Blending |
+|[3D Star Field 2](https://www.shadertoy.com/view/mlSXzW)| incub | ABCD !! |
+|[2D Fluid Solver](https://www.shadertoy.com/view/lXlXD4)| incub | A ! Blending |
+|[cartoon water icon](https://www.shadertoy.com/view/ltyXDV)| incub |  |
+|[Magical Forest](https://www.shadertoy.com/view/lXjGWc)| incub | ! |
+|[Water Shader 2D](https://www.shadertoy.com/view/M3fXR2)| incub | A !! |
+|[Protein Folding](https://www.shadertoy.com/view/l3XXRB)| incub | ABCD ! |
+|[Metal](https://www.shadertoy.com/view/l3XSDN)| incub | ÂB !! Blending |
+|[MacBook Pro M2](https://www.shadertoy.com/view/cscyD8)| incub | AB !! |
+|[Sand Art](https://www.shadertoy.com/view/43sXDB)| incub | ABCD !!! Blending |
+|[Shock Prop](https://www.shadertoy.com/view/MXXXzS)| incub | ABCD !! Blending |
+|[jj1](https://www.shadertoy.com/view/M3XSR2)| incub | Audioshader ! |
+|[tm gyroids](https://www.shadertoy.com/view/l3fSDr)| incub | ! |
+|[Particular Fractals](https://www.shadertoy.com/view/XXlXD7)| incub | AB ! |
+|[Worm Party](https://www.shadertoy.com/view/43fXzS)| incub | AB ! |
+|[Iron Star](https://www.shadertoy.com/view/M3S3WW)| incub | ! |
+|[Sciency Fluid](https://www.shadertoy.com/view/43S3Dw)| incub | ABCD !! Blending |
+|[Thin Film Instability](https://www.shadertoy.com/view/l3j3Dm)| incub | ABCD !!! Blending |
+|[Feedback Trails](https://www.shadertoy.com/view/dsjBWK)| incub | A !! |
+|[test1: split](https://www.shadertoy.com/view/X3XXRM)| incub | AB ! |
+|[Bulge Texture](https://www.shadertoy.com/view/4XsXW4)| incub |  |
+|[Water](https://www.shadertoy.com/view/l3sXWN)| incub | ABCD !! Blending |
 |[Space At Home](https://www.shadertoy.com/view/MXS3zy)| incub | ABCD ShaderOfTheWeek 10/24 |
 |[Exploding Particles](https://www.shadertoy.com/view/XXS3RV)| incub | ABCD !!! Blending |
 |[Smoke 3D](https://www.shadertoy.com/view/lXSGz3)| incub | ABCD |

@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 20th of March 2024
+#### [SomethinMountainbytesPppp4KibWindows](MountainbytesPppp4KibWindows.md) (Shadertoy ID [lX2GzD](https://www.shadertoy.com/view/lX2GzD))
+[![MountainbytesPppp4KibWindows](https://github.com/nmbr73/Shaderfuse/assets/78935215/bd35d012-2810-463d-8f8e-ca783a02438a)
+](ShaderOfTheWeek/MountainbytesPppp4KibWindows.md)
+----
 ## 1th of March 2024
 #### [Something227](Something227.md) (Shadertoy ID [MXS3zy](https://www.shadertoy.com/view/MXS3zy))
 [![SpaceAtHome](https://github.com/nmbr73/Shaderfuse/assets/78935215/be61cfce-b844-406b-af44-30c9a5a78532)

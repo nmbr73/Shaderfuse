@@ -13,13 +13,13 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
 
-Current Shader of the Week (1th of March 2024):
+Current Shader of the Week (20th of March 2024):
 <center>
 
-[![SpaceAtHome](https://github.com/nmbr73/Shaderfuse/assets/78935215/be61cfce-b844-406b-af44-30c9a5a78532)
-](ShaderOfTheWeek/SpaceAtHome.md)
+[![MountainbytesPppp4KibWindows](https://github.com/nmbr73/Shaderfuse/assets/78935215/bd35d012-2810-463d-8f8e-ca783a02438a)
+](ShaderOfTheWeek/MountainbytesPppp4KibWindows.md)
 
-[SpaceAtHome](ShaderOfTheWeek/SpaceAtHome.md) by [tz](https://www.shadertoy.com/user/tz)
+[MountainbytesPppp4KibWindows](ShaderOfTheWeek/MountainbytesPppp4KibWindows.md) by [mrange](https://www.shadertoy.com/user/mrange)
 </center>
 
 
