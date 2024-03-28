@@ -13,6 +13,19 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Simplex Truchet Tubing](https://www.shadertoy.com/view/XsffWj)| incub | ShaderOfTheWeek 13/24 |
+|[Mesh caustics [slow]](https://www.shadertoy.com/view/lX2GRt)| incub | ABC |
+|[sdf font - cos(mos);](https://www.shadertoy.com/view/Xl2fD3)| incub | AB ! |
+|[FIRE](https://www.shadertoy.com/view/wt2yD3)| incub | AB !! Blending |
+|[Blinn-Phong Test](https://www.shadertoy.com/view/XXSGRV)| incub | ! |
+|[3D Ripple Test (RS)](https://www.shadertoy.com/view/lcs3Wr)| incub |  |
+|[Sound Reactive Circle](https://www.shadertoy.com/view/MXSXDt)| incub | ! Audio |
+|[Beauty Clouds](https://www.shadertoy.com/view/MldcW2)| incub | !! |
+|[The Determined Sphere](https://www.shadertoy.com/view/styBW1)| incub | !!!  |
+|[oil ink art graffiti](https://www.shadertoy.com/view/XXfXWB)| incub | A Blending |
+|[Automata Orb](https://www.shadertoy.com/view/43S3Wy)| incub | AB ! |
+|[switch panel](https://www.shadertoy.com/view/l3SSRV)| incub |  |
+|[kundalini drive](https://www.shadertoy.com/view/lX2SDh)| incub | ABC !! Blending |
 |[MountainBytes: PPPP 4KiB Windows](https://www.shadertoy.com/view/lX2GzD)| incub | ShaderOfTheWeek 12/24 |
 |[Lumirefraction](https://www.shadertoy.com/view/4Xl3Rj)| incub | ! |
 |[Dragon Smoke](https://www.shadertoy.com/view/MXBSDm)| incub | ABC !! Blending |
