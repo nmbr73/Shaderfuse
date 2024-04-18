@@ -13,6 +13,27 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Orbital Megastructure](https://www.shadertoy.com/view/WlKXzm)| incub | ShaderOfTheWeek 16/24|
+|[Show items borders](https://www.shadertoy.com/view/DdfGzs)| incub | ! |
+|[Bim Boom Bam](https://www.shadertoy.com/view/lcKGRc)| incub | ! |
+|[3D von karman vortex](https://www.shadertoy.com/view/MfG3Rt)| incub | ABCD !!! |
+|[Terrain from Texture](https://www.shadertoy.com/view/XcyGzd)| incub | A !! |
+|[Yet another flame](https://www.shadertoy.com/view/lfVGRR)| incub | ! |
+|[Pressure Particles](https://www.shadertoy.com/view/4ft3R2)| incub | ABCD !! Blending |
+|[Barren rock island on a journey](https://www.shadertoy.com/view/XfVGRR)| incub | !! |
+|[tentacles](https://www.shadertoy.com/view/XfK3z1)| incub | ABCD ! Start-Tex |
+|[Particle Beam](https://www.shadertoy.com/view/4cy3zD)| incub | ABCD ! Blending |
+|[Sunset Cloud Formation](https://www.shadertoy.com/view/4fyGzw)| incub | ABCD !! Blending |
+|[Caustic After 5k Frames](https://www.shadertoy.com/view/lcGGRD)| incub | ABCD !! Blending |
+|[Better Rain](https://www.shadertoy.com/view/dslczf)| incub | A !! |
+|[wave attempt 2](https://www.shadertoy.com/view/dd2fzG)| incub | A ! |
+|[Thin Film Instability](https://www.shadertoy.com/view/l3j3Dm)| incub | ABCD !! Blending |
+|[Sciency Fluid](https://www.shadertoy.com/view/43S3Dw)| incub | ABCD !! Blending |
+|[Temple ruins](https://www.shadertoy.com/view/ld2GWy)| incub | ShaderOfTheWeek 14/24 |
+|[Nothing New](https://www.shadertoy.com/view/Xf33zX)| incub | ABCD !! Blending |
+|[Graph Simulation](https://www.shadertoy.com/view/XftGD7)| incub | ABCD !! Blending |
+|[Goldbear Family](https://www.shadertoy.com/view/DtlBDS)| incub | !!! |
+|[The Root of Reality](https://www.shadertoy.com/view/lcdGDN)| incub | Audioshader ! |
 |[Simplex Truchet Tubing](https://www.shadertoy.com/view/XsffWj)| incub | ShaderOfTheWeek 13/24 |
 |[Mesh caustics [slow]](https://www.shadertoy.com/view/lX2GRt)| incub | ABC |
 |[sdf font - cos(mos);](https://www.shadertoy.com/view/Xl2fD3)| incub | AB ! |

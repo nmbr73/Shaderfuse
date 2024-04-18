@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 17th of April 2024
+#### [OrbitalMegastructure](OrbitalMegastructure.md) (Shadertoy ID [WlKXzm](https://www.shadertoy.com/view/WlKXzm))
+[![OrbitalMegastructure](https://github.com/nmbr73/Shaderfuse/assets/78935215/0a4dece3-aead-4e6d-b26c-8d8dfab01354)
+](ShaderOfTheWeek/OrbitalMegastructure.md)
+----
 ## 27th of March 2024
 #### [SimplexTruchetTubing](SimplexTruchetTubing.md) (Shadertoy ID [XsffWj](https://www.shadertoy.com/view/XsffWj))
 [![SimplexTruchetTubing](https://github.com/nmbr73/Shaderfuse/assets/78935215/f36723da-c9e6-4b0a-b403-2f94da123ae0)
