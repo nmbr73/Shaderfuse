@@ -13,6 +13,35 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Let's self reflect](https://www.shadertoy.com/view/XfyXRV)| incub | ShaderOFTheWeek 21/24 |
+|[Branches II](https://www.shadertoy.com/view/lfKSzK)| incub | ABCD ! |
+|[Branches](https://www.shadertoy.com/view/l4cKSzK)| defect | ABCD  |
+|[Gravity sucks](https://www.shadertoy.com/view/4cyXWw)| incub | Springende Bälle !! |
+|[The sun, the sky and the clouds](https://www.shadertoy.com/view/tdSXzD)| defect | kein Bildaufbau |
+|[Fork Fluidy flu vec2 725](https://www.shadertoy.com/view/lfGXDw)| incub | ABCD Fluid mit Hindernissen ! |
+|[Fork Thunder Energy](https://www.shadertoy.com/view/McKSRy)| incub | AB Blitze um Linien !!! |
+|[Fluidy fluid](https://www.shadertoy.com/view/ftlXW8)| incub | ABCD Fluid Blending !! |
+|[Texture Fluid](https://www.shadertoy.com/view/XcVSz1)| incub | ABCD Fluid Blending !!! |
+|[Navier-Stokes using Transport](https://www.shadertoy.com/view/XfGXRR)| incub | AB Fluid !! |
+|[<3 Garden](https://www.shadertoy.com/view/MfV3Dd)| incub | Herz ! |
+|[Impact](https://www.shadertoy.com/view/MfdXWl)| incub | ABCD Projektil schlägt ein !!|
+|[Charged Particles](https://www.shadertoy.com/view/XfcXWB)| incub | A Leuchtende Partikel mit Schablone !!! |
+|[Oceanic](https://www.shadertoy.com/view/4sXGRM)| incub | Ocean mit Wolken !!|
+|[Shifting Topology](https://www.shadertoy.com/view/dsdSW7)| incub | Bildverfremdung !! |
+|[Lonely Waters](https://www.shadertoy.com/view/NlKGWK)| incub | Sonne, Meer, Ocean !! |
+|[cool fpn ray tracing effect](https://www.shadertoy.com/view/lc3SR2)| incub | Nebelschwaden |
+|[Seascape](https://www.shadertoy.com/view/Ms2SD1)| incub |  mit Textur auf Wasseroberfläche ! |
+|[Lover 2](https://www.shadertoy.com/view/ssjyWc)| incub | ABCD Auch andere Formen !! |
+|[marblelike](https://www.shadertoy.com/view/ltdcD7)| incub |  |
+|[OrangeMode](https://www.shadertoy.com/view/MldBzX)| incub | !! |
+|[Dante's natty vessel](https://www.shadertoy.com/view/Nds3W7) | incub | Boot auf hoher See !!! |
+|[flood automata](https://www.shadertoy.com/view/wsKGzw)| incub | A !! |
+|[Drawing practice #3](https://www.shadertoy.com/view/l3lSzs)| incub | A !! |
+|[fire and icebergs](https://www.shadertoy.com/view/dl3Gzl)| incub | AB ! |
+|[multiscale epidemia simulation 2](https://www.shadertoy.com/view/wdlyDj)| incub | A ! |
+|[My Fluid Learn 2](https://www.shadertoy.com/view/3dtBWM)| incub | ABC !! Blending |
+|[Liminal Drops V2](https://www.shadertoy.com/view/lfGGWd)| incub | ! |
+|[a cloud of music](https://www.shadertoy.com/view/ssdGR2)| incub | A !! Blending |
 |[Orbital Megastructure](https://www.shadertoy.com/view/WlKXzm)| incub | ShaderOfTheWeek 16/24|
 |[Show items borders](https://www.shadertoy.com/view/DdfGzs)| incub | ! |
 |[Bim Boom Bam](https://www.shadertoy.com/view/lcKGRc)| incub | ! |
