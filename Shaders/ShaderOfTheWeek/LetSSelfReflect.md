@@ -6,7 +6,6 @@ Otherwise, colors and shapes can be changed using countless setting options.
 Have fun playing
 
 
-
 [![Thumbnail](LetSSelfReflect_screenshot.png)](LetSSelfReflect.fuse)
 
 ### Description of the Shader in Shadertoy:
