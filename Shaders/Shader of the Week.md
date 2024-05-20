@@ -5,9 +5,9 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
 ## 20th of May 2024
-#### [Letsselfreflect](Letsselfreflect.md) (Shadertoy ID [XfyXRV](https://www.shadertoy.com/view/XfyXRV))
+#### [Let's self reflect](LetSSelfReflect.md) (Shadertoy ID [XfyXRV](https://www.shadertoy.com/view/XfyXRV))
 [![Letsselfreflect](https://github.com/nmbr73/Shaderfuse/assets/78935215/d5f9a763-c57d-42a1-b0e6-55606a3fc5f8)
-](ShaderOfTheWeek/Letsselfreflect.md)
+](ShaderOfTheWeek/LetSSelfReflect.md)
 ----
 ## 17th of April 2024
 #### [OrbitalMegastructure](OrbitalMegastructure.md) (Shadertoy ID [WlKXzm](https://www.shadertoy.com/view/WlKXzm))

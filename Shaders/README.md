@@ -11,15 +11,15 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 ## Fuses
 
-See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek/ShaderOfTheWeek.md) list.
+See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](ShaderOfTheWeek.md) list.
 
 Current Shader of the Week (20th of May 2024):
 <center>
 
 [![Letsselfreflect](https://github.com/nmbr73/Shaderfuse/assets/78935215/d5f9a763-c57d-42a1-b0e6-55606a3fc5f8)
-](ShaderOfTheWeek/Letsselfreflect.md)
+](ShaderOfTheWeek/LetSSelfReflect.md)
 
-[Let's self reflect](ShaderOfTheWeek/Letsselfreflect.md) by [mrange](https://www.shadertoy.com/user/mrange)
+[Let's self reflect](ShaderOfTheWeek/LetSSelfReflect.md) by [mrange](https://www.shadertoy.com/user/mrange)
 </center>
 
 
