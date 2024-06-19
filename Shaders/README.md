@@ -13,13 +13,13 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (9th of June 2024):
+Current Shader of the Week (19th of June 2024):
 <center>
 
-[![Saturday Weirdness](https://github.com/nmbr73/Shaderfuse/assets/78935215/5d1db868-6552-4857-abd9-28fc224a763c)
-](ShaderOfTheWeek/SaturdayWeirdness.md)
+[![RussianRouletteAudioViz](https://github.com/nmbr73/Shaderfuse/assets/78935215/b309b12c-03d0-408a-b264-a09720d9b577)
+](ShaderOfTheWeek/RussianRouletteAudioViz.md)
 
-[LSaturday Weirdness](ShaderOfTheWeek/SaturdayWeirdness.md) by [mrange](https://www.shadertoy.com/user/mrange)
+[Russian Roulette (Audio Viz)](ShaderOfTheWeek/RussianRouletteAudioViz.md) by [orblivius](https://www.shadertoy.com/user/orblivius)
 </center>
 
 

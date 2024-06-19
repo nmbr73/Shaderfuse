@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 19th of June 2024
+#### [Russian Roulette (Audio Viz)](RussianRouletteAudioViz.md) (Shadertoy ID [MfG3Ry](https://www.shadertoy.com/view/MfG3Ry))
+[![RussianRouletteAudioViz](https://github.com/nmbr73/Shaderfuse/assets/78935215/b309b12c-03d0-408a-b264-a09720d9b577)
+](ShaderOfTheWeek/RussianRouletteAudioViz.md)
+----
 ## 9th of June 2024
 #### [Saturday Weirdness](SaturdayWeirdness.md) (Shadertoy ID [43jXWt](https://www.shadertoy.com/view/43jXWt))
 [![Saturday Weirdness](https://github.com/nmbr73/Shaderfuse/assets/78935215/5d1db868-6552-4857-abd9-28fc224a763c)
