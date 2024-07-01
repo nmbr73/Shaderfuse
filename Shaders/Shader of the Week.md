@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 1th of July 2024
+#### [Nested Octahedrons2](RussianRouletNestedOctahedrons2teAudioViz.md) (Shadertoy ID [X3cXDj](https://www.shadertoy.com/view/X3cXDj))
+[![NestedOctahedrons2](https://github.com/nmbr73/Shaderfuse/assets/78935215/e1ed62a3-5df8-462b-9eae-143988f20c2a)
+](ShaderOfTheWeek/NestedOctahedrons2.md)
+----
 ## 19th of June 2024
 #### [Russian Roulette (Audio Viz)](RussianRouletteAudioViz.md) (Shadertoy ID [MfG3Ry](https://www.shadertoy.com/view/MfG3Ry))
 [![RussianRouletteAudioViz](https://github.com/nmbr73/Shaderfuse/assets/78935215/b309b12c-03d0-408a-b264-a09720d9b577)
