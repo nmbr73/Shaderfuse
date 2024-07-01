@@ -1,0 +1,1296 @@
+--[[--/*
+
+  ControllableMachinery.fuse
+
+  Based on https://www.shadertoy.com/view/fsXyDj a WebGL shader created by dr2.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  float  Speed;
+  int    nBlk;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#if defined(DEVICE_IS_METAL)
+  #define POINTERPARAMETER thread
+#else
+  #define POINTERPARAMETER
+#endif
+
+
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 B, mat3 A)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+ #define fract_f3(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define sin_f2(i) sin(i)
+ #define cos_f2(i) cos(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sign_f(a) sign(a)
+ #define sign_f3(a) sign(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) _fmod(a,b)
+ #define sin_f2(i) sin(i)
+ #define cos_f2(i) cos(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sign_f(a) sign(a)
+ #define sign_f3(a) sign(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define cos_f2(i) to_float2( _cosf((i).x), _cosf((i).y))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define sign_f3(a) to_float3((a).x==0.0f?0.0f:(a).x>0.0f?1.0f:-1.0f, (a).y==0.0f?0.0f:(a).y>0.0f?1.0f:-1.0f,(a).z==0.0f?0.0f:(a).z>0.0f?1.0f:-1.0f)
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel0
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+// "Controllable Machinery" by dr2 - 2022
+// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0f Unported License
+
+__DEVICE__ float Maxv2 (float2 p)
+{
+  return _fmaxf (p.x, p.y);
+}
+
+__DEVICE__ mat3 StdVuMat (float el, float az)
+{
+  float2 ori, ca, sa;
+  ori = to_float2 (el, az);
+  ca = cos_f2(ori);
+  sa = sin_f2(ori);
+  return mul_mat3_mat3(to_mat3 (ca.y, 0.0f, - sa.y, 0.0f, 1.0f, 0.0f, sa.y, 0.0f, ca.y) ,
+                       to_mat3 (1.0f, 0.0f, 0.0f, 0.0f, ca.x, - sa.x, 0.0f, sa.x, ca.x));
+}
+
+#define txBuf iChannel0
+//#define txSize swi2(iChannelResolution[0],x,y)
+#define txSize iResolution
+
+
+__DEVICE__ float4 Loadv4 (__TEXTURE2D__ txBuf, int idVar, float2 iResolution, float txRow)
+{
+  float fi;
+  fi = (float)(idVar);
+  return texture (txBuf, (to_float2 (mod_f (fi, txRow), _floor (fi / txRow)) + 0.5f) / txSize);
+}
+
+__DEVICE__ void Savev4 (int idVar, float4 val, inout float4 *fCol, float2 fCoord, float txRow)
+{
+  float fi;
+  fi = (float)(idVar);
+  //  if (Maxv2 (abs_f2(fCoord - to_float2 (mod_f (fi, txRow), _floor (fi / txRow)) - 0.5f)) < 0.5f) *fCol = val;
+
+  *fCol = val;
+
+}
+
+#define pi 3.1415927f
+
+
+//**************************************************************************************************************************************************************************
+__KERNEL__ void ControllableMachineryFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  //float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 iMouse      = to_float4_v(params->iMouse);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float  Speed = params->Speed;
+//  int    nBlk = params->nBlk;
+
+  // --------
+
+  const float txRow = 128.0f;
+
+  mat3 vuMat;
+  float4 mPtr, stDat, wgObj;
+  float3 vCon, ro;
+  float2 canvas, iFrag, ud;
+  float tCur, tMov, az, el, asp, zmFac, spd, cnPos, mPtrPz, s;
+  int pxId, wgSel, wgReg;
+  bool init;
+  canvas = iResolution;
+  tCur = iTime;
+  mPtr = iMouse;
+  swi2S(mPtr,x,y, swi2(mPtr,x,y) / canvas - 0.5f);
+  iFrag = _floor (fragCoord);
+
+  pxId = (int)(iFrag.x + txRow * iFrag.y);
+  if (pxId >= 2) { _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor); return;} // discard;
+
+  wgSel = -1;
+  wgReg = -2;
+  asp = canvas.x / canvas.y;
+  init = (iFrame <= 2);
+  if (init) {
+    tMov = 0.0f;
+    spd = 0.5f;
+    cnPos = 0.5f;
+    az = 0.0f;
+    el = -0.12f * pi;
+    mPtrPz = mPtr.z;
+  } else {
+    stDat = Loadv4 (txBuf,0,iResolution,txRow);
+    tMov = stDat.x;
+    cnPos = stDat.y;
+    spd = stDat.z;
+    tMov += 0.02f * spd;
+    stDat = Loadv4 (txBuf,1,iResolution,txRow);
+    az = stDat.x;
+    el = stDat.y;
+    mPtrPz = stDat.z;
+    wgSel = (int) (stDat.w);
+  }
+  if (! init) {
+    if (mPtr.z > 0.0f) {
+      vuMat = StdVuMat (el, az);
+      ro = mul_mat3_f3(vuMat , to_float3 (0.0f, 0.0f, -8.0f));
+      ro.z += 0.9f;
+      zmFac = 4.0f;
+      vCon = mul_mat3_f3(vuMat , normalize (to_float3_aw(2.0f * swi2(mPtr,x,y) * to_float2 (asp, 1.0f), zmFac)));
+      wgObj = to_float4 (cnPos - 0.5f, -1.12f, -0.4f, 0.08f);
+      ud = (swi2(ro,x,z) + (- (ro.y - wgObj.y) / vCon.y) * swi2(vCon,x,z));
+      s = Maxv2 (abs_f2(ud - swi2(wgObj,x,z))) - wgObj.w - 0.1f;
+      if (s < 0.0f || wgSel == 0) {
+        if (s < 0.0f && wgSel == 0) cnPos = clamp (ud.x + 0.5f, 0.0f, 1.0f);
+        wgReg = 0;
+      } else if (wgReg < 0) {
+        az = 2.0f * pi * mPtr.x;
+        el = pi * mPtr.y;
+        el = clamp (el, -0.4f * pi, 0.1f * pi);
+      }
+      if (mPtrPz <= 0.0f) wgSel = wgReg;
+    } else {
+      wgSel = -1;
+      wgReg = -2;
+      az = _mix (az, 0.0f, 0.003f + 0.05f * step (_fabs (az), 0.15f));
+      el = _mix (el, -0.12f * pi, 0.003f + 0.05f * step (_fabs (el + 0.12f * pi), 0.15f));
+    }
+  }
+  if (Speed != 0.0f)
+    spd = 2.0f * cnPos + Speed;
+  else
+    spd = 0.0f;
+  if      (pxId == 0) stDat = to_float4 (tMov, cnPos, spd, 0.0f);
+  else if (pxId == 1) stDat = to_float4 (az, el, mPtr.z, (float)(wgSel));
+  Savev4 (pxId, stDat, &fragColor, fragCoord, txRow);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+
+
+
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+
+
+// "Controllable Machinery" by dr2 - 2022
+// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0f Unported License
+
+// (Extension of "Machinery"; control widget in world space - as in "Maze Ball Solved 2")
+
+#define AA    0  // (= 0/1) optional antialiasing
+
+#if 0
+#define VAR_ZERO _fminf (iFrame, 0)
+#else
+#define VAR_ZERO 0
+#endif
+
+__DEVICE__ float PrBoxDf (float3 p, float3 b)
+{
+  float3 d;
+  d = abs_f3(p) - b;
+  return _fminf (max (d.x, _fmaxf (d.y, d.z)), 0.0f) + length (_fmaxf (d, to_float3_s(0.0f)));
+}
+
+__DEVICE__ float PrRoundBoxDf (float3 p, float3 b, float r)
+{
+  return length (_fmaxf (abs_f3(p) - b, to_float3_s(0.0f))) - r;
+}
+
+__DEVICE__ float PrCylDf (float3 p, float r, float h)
+{
+  return _fmaxf (length (swi2(p,x,y)) - r, _fabs (p.z) - h);
+}
+
+__DEVICE__ float PrRoundCylDf (float3 p, float r, float rt, float h)
+{
+  return length (_fmaxf (to_float2 (length (swi2(p,x,y)) - r, _fabs (p.z) - h), to_float2_s(0.0f))) - rt;
+}
+
+__DEVICE__ float PrCaps2Df (float2 p, float r, float h)
+{
+  return length (p - to_float2 (0.0f, clamp (p.y, - h, h))) - r;
+}
+
+__DEVICE__ float Minv3 (float3 p)
+{
+  return _fminf (p.x, _fminf (p.y, p.z));
+}
+
+__DEVICE__ float Maxv3 (float3 p)
+{
+  return _fmaxf (p.x, _fmaxf (p.y, p.z));
+}
+
+__DEVICE__ float Minv2 (float2 p)
+{
+  return _fminf (p.x, p.y);
+}
+
+//__DEVICE__ float Maxv2 (float2 p)
+//{
+//  return _fmaxf (p.x, p.y);
+//}
+
+__DEVICE__ float SmoothMin (float a, float b, float r)
+{
+  float h;
+  h = clamp (0.5f + 0.5f * (b - a) / r, 0.0f, 1.0f);
+  return _mix (b - h * r, a, h);
+}
+
+__DEVICE__ float SmoothMax (float a, float b, float r)
+{
+  return - SmoothMin (- a, - b, r);
+}
+
+__DEVICE__ float SmoothBump (float lo, float hi, float w, float x)
+{
+  return (1.0f - smoothstep (hi - w, hi + w, x)) * smoothstep (lo - w, lo + w, x);
+}
+
+//__DEVICE__ mat3 StdVuMat (float el, float az)
+//{
+//  float2 ori, ca, sa;
+//  ori = to_float2 (el, az);
+//  ca = cos_f2 (ori);
+//  sa = sin_f2 (ori);
+//  return mul_mat3_mat3(to_mat3 (ca.y, 0.0f, - sa.y, 0.0f, 1.0f, 0.0f, sa.y, 0.0f, ca.y) ,
+//                       to_mat3 (1.0f, 0.0f, 0.0f, 0.0f, ca.x, - sa.x, 0.0f, sa.x, ca.x));
+//}
+
+__DEVICE__ float2 Rot2D (float2 q, float a)
+{
+  float2 cs;
+  cs = sin_f2(a + to_float2 (0.5f * pi, 0.0f));
+  return to_float2 (dot (q, to_float2 (cs.x, - cs.y)), dot (swi2(q,y,x), cs));
+}
+
+__DEVICE__ float3 HsvToRgb (float3 c)
+{
+  return c.z * _mix(to_float3_s (1.0f), clamp (abs_f3(fract_f3(swi3(c,x,x,x) + to_float3 (1.0f, 2.0f/3.0f, 1.0f/3.0f)) * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f), c.y);
+}
+
+#define txBuf iChannel0
+//#define txSize iChannelResolution[0].xy
+#define txSize iResolution
+
+
+
+//__DEVICE__ float4 Loadv4 (__TEXTURE2D__ txBuf, int idVar, float2 iResolution, float txRow)
+//{
+//  float fi;
+//  fi = (float)(idVar);
+//  return texture (txBuf, (to_float2 (mod_f (fi, txRow), _floor (fi / txRow)) + 0.5f) / txSize);
+//}
+
+
+
+//float4 wgObj;
+//float3 ltDir, vnBlk;
+//float2 qBlk;
+//float dstFar, tCur, tMov, angRot, bEdge, tCyc, cnPos, hitBlk;
+//int idObj;
+
+//const int idGr = 1, idPln = 2, idConv = 3, idSup = 4, idAx = 5, idBas = 6,
+//          idWhl = 7, idSpl = 8, idCon = 9, idBlk = 10;
+#define idGr  1
+#define idPln 2
+#define idConv 3
+#define idSup  4
+#define idAx   5
+#define idBas  6
+#define idWhl  7
+#define idSpl  8
+#define idCon  9
+#define idBlk  10
+
+//const float pi = 3.1415927f;
+
+//const float nBlk = 13.0f;
+//#define nBlk  13.0f
+
+#define DMIN(id) if (d < dMin) { dMin = d;  *idObj = id; }
+
+__DEVICE__ float GearWlDf (float3 p, float rad, float wlThk, float tWid, float nt, float aRot,
+   bool bev, float dMin)
+{
+  float3 q;
+  float d, s;
+  q = p;
+  d = _fmaxf (length (swi2(q,x,y)) - rad, _fabs (q.z) - wlThk);
+  if (d < dMin) {
+    swi2S(q,x,y, Rot2D (swi2(q,x,y), aRot));
+    swi2S(q,x,y, Rot2D (swi2(q,x,y), _floor (nt * _atan2f (q.y, - q.x) / (2.0f * pi) + 0.5f) * 2.0f * pi / nt));
+    if (bev)  swi2S(q,x,y, swi2(q,x,y) * 1.2f - 0.2f * q.z / wlThk);
+    s = q.x - 2.0f * clamp (1.5f * tWid + 0.5f * q.x * step (0.0f, q.x) - _fabs (q.y), 0.0f, tWid);
+    d = _fmaxf (d, - rad - 0.95f * s);
+  }
+  return _fminf (dMin, d);
+}
+
+__DEVICE__ float4 BPos (float t, float tCyc, float bEdge)
+{
+  float3 p;
+  float a;
+  t = mod_f (t, tCyc);
+  if (t < 5.0f) {
+    a = 0.0f;
+    p = to_float3 (-1.018f + 2.118f * t / 5.0f, bEdge, 0.0f);
+  } else if (t < 10.0f) {
+    a = 0.5f * pi * (t - 5.0f) / 5.0f;
+    p = to_float3(1.1f, bEdge + 1.0f * _sinf (a), 1.0f - 1.0f * _cosf (a));
+  } else if ( t < 15.0f) {
+    a = 0.5f * pi;
+    p = to_float3 (1.1f - 2.118f * (t - 10.0f) / 5.0f, 1.0f + bEdge, 1.0f);
+  } else if (t < 17.5f) {
+    a = 0.5f * pi;
+    p = to_float3 (-1.018f, 1.0f + bEdge, 1.0f - 1.0f * (t - 15.0f) / 2.5f);
+  } else {
+    t -= 17.5f;
+    a = -0.5f * pi * t;
+    p = to_float3 (-1.018f, 1.0f + bEdge - t * t, 0.0f);
+  }
+  return to_float4_aw (p, a);
+}
+
+__DEVICE__ float GearDf (float3 p, float dstFar, float angRot, float bEdge)
+{
+  float3 q;
+  float dMin, wlThk, tWid, nt, rad, gRat;
+  dMin = dstFar / 0.3f;
+  gRat = 2.0f;
+  rad = 0.3f;
+  wlThk = rad / 7.0f;
+  tWid = rad / 10.0f;
+  nt = 20.0f;
+  q = p - to_float3 (-1.05f, -0.21f, 1.3f);
+  dMin = GearWlDf (- q, rad, wlThk, tWid, nt, angRot * gRat, true, dMin);
+  dMin = GearWlDf ( swi3(q - to_float3 (0.85f * rad, 0.0f, 0.85f * rad),y,z,x),
+                    rad, wlThk, tWid, nt, angRot * gRat + pi / nt, true, dMin);
+  rad = 0.43f;
+  wlThk = rad / 15.0f;
+  tWid = rad / 16.0f;
+  nt = 32.0f;
+  q = p -to_float3 (0.1f, 0.0f, 1.0f);
+  dMin = GearWlDf (swi3(q - to_float3 (0.0f, bEdge, 0.0f),y,z,x), rad, wlThk, tWid, nt,
+                   - angRot - 0.3f * pi / nt, false, dMin);
+  dMin = GearWlDf (- 1.0f*swi3(q - to_float3 (0.0f, -0.21f, 0.555f),z,y,x), rad / gRat, wlThk, tWid,
+                   nt / gRat, - angRot * gRat, false, dMin);
+  rad = 0.32f;
+  wlThk = rad / 15.0f;
+  tWid = rad / 12.0f;
+  nt = 24.0f;
+  q = p - to_float3 (-1.05f, -0.21f, 0.6f);
+  dMin = GearWlDf ((q - to_float3 (0.0f, 0.0f, 0.1f)), rad, wlThk, tWid, nt,
+     angRot * gRat + pi / nt, false, dMin);
+  dMin = GearWlDf ((q - to_float3 (0.0f, -0.47f, 0.1f)), rad / gRat, wlThk, tWid, nt / gRat,
+     - angRot * gRat * gRat, false, dMin);
+  dMin = GearWlDf ((q - to_float3 (0.0f, -0.47f, -0.1f)), rad, wlThk, tWid, nt,
+     - angRot * gRat * gRat - pi / nt, false, dMin);
+  dMin = GearWlDf ((q - to_float3 (0.0f, 0.0f, -0.1f)), rad / gRat, wlThk, tWid, nt / gRat,
+     angRot * gRat * gRat * gRat, false, dMin);
+  return dMin * 0.3f;
+}
+
+__DEVICE__ float ObjDf (float3 p, int *idObj, float dstFar, float angRot, float bEdge, float4 wgObj)
+{
+  float4 a4;
+  float3 q; //, bPos;
+  float dMin, d, r, a;
+  dMin = dstFar;
+  q = p - to_float3 (1.13f + bEdge, bEdge, 1.0f);
+  r = length (swi2(q,y,z));
+  swi2S(q,y,z, Rot2D (swi2(q,y,z), - angRot));
+  a = (r > 0.0f) ? _atan2f (q.z, - q.y) / (2.0f * pi) : 0.0f;
+  swi2S(q,y,z, Rot2D (swi2(q,y,z), 2.0f * pi * (_floor (8.0f * a + 0.5f)) / 8.0f));
+  q.z = _fabs (q.z);
+  d = SmoothMax (_fminf (min (_fabs (r - 1.01f) - 0.1f, r - 0.3f),
+                 _fmaxf (r - 1.0f, dot (swi2(q,y,z), to_float2 (_sinf (0.8f * 2.0f * pi / 32.0f),
+                 _cosf (0.8f * 2.0f * pi / 32.0f))))), _fabs (q.x) - 0.02f, 0.01f);
+  DMIN (idWhl);
+  d = _fminf (PrBoxDf (p - to_float3 (0.0f, 0.98f, 1.0f), to_float3 (1.12f, 0.02f, 0.1f)),
+              PrBoxDf (p - to_float3 (-1.018f, 0.98f, 0.5f), to_float3 (0.1f, 0.02f, 0.5f - bEdge)));
+  DMIN (idPln);
+  d = SmoothMax (_fabs (PrCaps2Df (swi2(p - to_float3 (-0.05f, -0.21f, 0.0f),y,x), 0.2f, 1.0f)) - 0.01f,
+                 _fabs (p.z) - 0.1f, 0.02f);
+  DMIN (idConv);
+  q = p - to_float3 (-0.05f, -0.21f, 0.0f);
+  q.x = _fabs (q.x) - 1.0f;
+  d = PrRoundCylDf (q, 0.18f, 0.01f, 0.11f);
+  DMIN (idSpl);
+  q = p - to_float3 (0.65f, -0.14f, 1.0f);
+  q.x = _fabs (q.x) - 0.3f;
+  d = PrRoundBoxDf (q, to_float3 (0.01f, 1.08f, 0.06f), 0.02f);
+  q = p - to_float3 (-0.05f, -0.68f, 0.0f);
+  swi2S(q,x,z, abs_f2(swi2(q,x,z)) - to_float2 (1.0f, 0.2f));
+  d = _fminf (d, PrRoundBoxDf (q, to_float3 (0.04f, 0.55f, 0.01f), 0.02f));
+  q = p - to_float3 (-1.05f, -0.14f, 1.0f);
+  d = _fminf (d, PrRoundBoxDf (q, to_float3 (0.04f, 1.08f, 0.01f), 0.02f));
+  q = p - to_float3 (-1.05f, -0.68f, 0.6f);
+  q.z = _fabs (q.z) - 0.2f;
+  d = _fminf (d, PrRoundBoxDf (q, to_float3 (0.04f, 0.55f, 0.01f), 0.02f));
+  q = p - to_float3 (-0.33f, -0.68f, 1.555f);
+  q.x = _fabs (q.x) - 0.3f;
+  d = _fminf (d, PrRoundBoxDf (q, to_float3 (0.01f, 0.55f, 0.04f), 0.02f));
+  DMIN (idSup);
+  q = p - to_float3 (0.65f, bEdge, 1.0f);
+  d = PrCylDf (swi3(q,y,z,x), 0.04f, 0.62f);
+  q = p - to_float3 (-0.36f, -0.21f, 1.555f);
+  d = _fminf (d, PrCylDf (swi3(q,y,z,x), 0.03f, 0.51f));
+  q = p - to_float3 (-0.05f, -0.21f, 0.0f);
+  q.x -= 1.0f;
+  d = _fminf (d, PrCylDf (q, 0.03f, 0.27f));
+  swi2S(q,x,z, swi2(q,x,z) - to_float2 (-2.0f, 0.14f));
+  d = _fminf (d, PrCylDf (q, 0.03f, 0.4f));
+  q.z -= 0.87f;
+  d = _fminf (d, PrCylDf (q, 0.03f, 0.36f));
+  q = p - to_float3 (-1.05f, -0.68f, 0.6f);
+  d = _fminf (d, PrCylDf (q, 0.03f, 0.25f));
+  DMIN (idAx);
+  q = p - to_float3 (0.0f, -1.2f, 0.9f);
+  d = PrRoundBoxDf (q, to_float3 (1.7f, 0.03f, 1.5f), 0.02f);
+  DMIN (idBas);
+  q = p - swi3(wgObj,x,y,z);
+  d = PrRoundCylDf (swi3(q,x,z,y), wgObj.w, 0.02f, 0.02f);
+  DMIN (idCon);
+  return dMin;
+}
+
+__DEVICE__ float ObjRay (float3 ro, float3 rd, int *idObj, float dstFar, float angRot, float bEdge, float4 wgObj)
+{
+  float dHit, d;
+  dHit = 0.0f;
+  for (int j = VAR_ZERO; j < 150; j ++) {
+    d = ObjDf (ro + dHit * rd, idObj,dstFar,angRot,bEdge,wgObj);
+    dHit += d;
+    if (d < 0.0005f || dHit > dstFar) break;
+  }
+  return dHit;
+}
+
+__DEVICE__ float GearRay (float3 ro, float3 rd, float dstFar, float angRot, float bEdge)
+{
+  float dHit, d;
+  dHit = 0.0f;
+  for (int j = VAR_ZERO; j < 250; j ++) {
+    d = GearDf (ro + dHit * rd, dstFar, angRot, bEdge);
+    dHit += d;
+    if (d < 0.0005f || dHit > dstFar) break;
+  }
+
+  return dHit;
+}
+
+__DEVICE__ float3 GearNf (float3 p, float dstFar, float angRot, float bEdge)
+{
+  float _v[4];
+  float2 e;
+  e = to_float2 (0.0005f, -0.0005f);
+  for (int j = VAR_ZERO; j < 4; j ++) {
+    _v[j] = GearDf (p + ((j < 2) ? ((j == 0) ? swi3(e,x,x,x) : swi3(e,x,y,y)) : ((j == 2) ? swi3(e,y,x,y) : swi3(e,y,y,x))),dstFar,angRot,bEdge);
+  }
+  float4 v = to_float4(_v[0],_v[1],_v[2],_v[3]);
+  v.x = - v.x;
+  return normalize (2.0f * swi3(v,y,z,w) - dot (v, to_float4_s (1.0f)));
+}
+
+__DEVICE__ float3 ObjNf (float3 p, int *idObj, float dstFar, float angRot, float bEdge, float4 wgObj)
+{
+  float _v[4];
+  float2 e;
+  e = to_float2 (0.0005f, -0.0005f);
+  for (int j = VAR_ZERO; j < 4; j ++) {
+    _v[j] = ObjDf (p + ((j < 2) ? ((j == 0) ? swi3(e,x,x,x) : swi3(e,x,y,y)) : ((j == 2) ? swi3(e,y,x,y) : swi3(e,y,y,x))),idObj,dstFar,angRot,bEdge,wgObj);
+  }
+  float4 v = to_float4(_v[0],_v[1],_v[2],_v[3]);
+  v.x = - v.x;
+
+  return normalize (2.0f * swi3(v,y,z,w) - dot (v, to_float4_s (1.0f)));
+}
+
+__DEVICE__ float BlkHit (float3 ro, float3 rd, float tCyc, float dstFar, float bEdge, float tMov, POINTERPARAMETER float *hitBlk, POINTERPARAMETER float3 *vnBlk, POINTERPARAMETER float2 *qBlk, int nBlk)
+{
+  float4 a4;
+  float3 rm, rdm, u, v, tm, tp;
+  float dMin, dn, df;
+  dMin = dstFar;
+  for (float k = (float) (VAR_ZERO); k < nBlk; k +=1.0f) {
+    a4 = BPos (tMov + tCyc * k / nBlk, tCyc, bEdge);
+    rm = ro - swi3(a4,x,y,z);
+    rdm = rd;
+    swi2S(rm,z,y, Rot2D (swi2(rm,z,y), a4.w));
+    swi2S(rdm,z,y, Rot2D (swi2(rdm,z,y), a4.w));
+    v = rm / rdm;
+    tp = bEdge / abs_f3(rdm) - v;
+    tm = - tp - 2.0f * v;
+    dn = Maxv3 (tm);
+    df = Minv3 (tp);
+
+    if (df > 0.0f && dn < _fminf (df, dMin)) {
+      dMin = dn;
+      *hitBlk = k;
+      *vnBlk = -1.0f * sign_f3(rdm) * step (swi3(tm,z,x,y), tm) * step (swi3(tm,y,z,x), tm);
+      u = (v + dn) * rdm;
+      *qBlk = to_float2 (dot (swi3(u,z,x,y), *vnBlk), dot (swi3(u,y,z,x), *vnBlk));
+      swi2S((*vnBlk),z,y, Rot2D (swi2(*vnBlk,z,y), - a4.w));
+    }
+  }
+  return dMin;
+}
+
+__DEVICE__ float BlkHitSh (float3 ro, float3 rd, float rng, float tCyc, float bEdge, float dstFar, float tMov, int nBlk)
+{
+  float4 a4;
+  float3 rm, rdm, v, tm, tp;
+  float dMin, dn, df;
+  dMin = dstFar;
+  for (float k = (float) (VAR_ZERO); k < nBlk; k +=1.0f) {
+    a4 = BPos (tMov + tCyc * k / nBlk, tCyc,bEdge);
+    rm = ro - swi3(a4,x,y,z);
+    rdm = rd;
+    swi2S(rm,z,y, Rot2D (swi2(rm,z,y), a4.w));
+    swi2S(rdm,z,y, Rot2D (swi2(rdm,z,y), a4.w));
+    v = rm / rdm;
+    tp = bEdge / abs_f3(rdm) - v;
+    tm = - tp - 2.0f * v;
+    dn = Maxv3 (tm);
+    df = Minv3 (tp);
+    if (df > 0.0f && dn < _fminf (df, dMin)) dMin = dn;
+  }
+
+  return smoothstep (0.0f, rng, dMin);
+}
+
+__DEVICE__ float ObjSShadow (float3 ro, float3 rd, int *idObj, float dstFar, float angRot, float bEdge, float4 wgObj)
+{
+  float sh, d, h;
+  sh = 1.0f;
+  d = 0.02f;
+  for (int j = VAR_ZERO; j < 30; j ++) {
+    h = ObjDf (ro + rd * d,idObj,dstFar,angRot,bEdge,wgObj);
+    sh = _fminf (sh, smoothstep (0.0f, 0.05f * d, h));
+    d += h;
+    if (sh < 0.05f) break;
+  }
+  return sh;
+}
+
+__DEVICE__ float GearSShadow (float3 ro, float3 rd, float dstFar, float angRot, float bEdge)
+{
+  float sh, d, h;
+  sh = 1.0f;
+  d = 0.02f;
+  for (int j = VAR_ZERO; j < 30; j ++) {
+    h = GearDf (ro + rd * d, dstFar,angRot,bEdge);
+    sh = _fminf (sh, smoothstep (0.0f, 0.05f * d, h));
+    d += h;
+    if (sh < 0.05f) break;
+  }
+  return sh;
+}
+
+__DEVICE__ float3 ShowScene (float3 ro, float3 rd, float dstFar, float4 wgObj, float tMov, float tCur, float3 ltDir, __TEXTURE2D__ iChannel1, int nBlk)
+{
+  float3 vnBlk;
+  float2 qBlk;
+  float  hitBlk;
+
+  int idObj;
+  float4 col4;
+  float3 vn, col, q;
+  float dstObj, dstGear, dstBlk, sh, s, r, a, nDotL;
+  int idObjT;
+  bool isMet;
+  float tCyc = 18.5f;
+  float bEdge = 0.08f;
+  isMet = false;
+  float angRot = 0.1f * pi * tMov;
+  dstObj = ObjRay (ro, rd,&idObj,dstFar,angRot,bEdge,wgObj);
+  idObjT = idObj;
+  dstGear = GearRay (ro, rd, dstFar,angRot,bEdge);
+  if (dstGear < _fminf (dstObj, dstFar)) {
+    dstObj = dstGear;
+    idObj = idGr;
+  } else idObj = idObjT;
+  dstBlk = BlkHit (ro, rd, tCyc,dstFar,bEdge,tMov, &hitBlk, &vnBlk, &qBlk, nBlk);
+  if (_fminf (dstBlk, dstObj) < dstFar) {
+    if (dstBlk < dstObj) {
+      dstObj = dstBlk;
+      ro += dstObj * rd;
+      idObj = idBlk;
+      vn = vnBlk;
+      col4 = to_float4_aw(HsvToRgb (to_float3 (hitBlk / nBlk, 1.0f, 1.0f)), 0.2f) *
+             (1.0f - 0.4f * step (0.8f * bEdge, Maxv2 (abs_f2(qBlk))));
+      if (hitBlk == 2.0f )
+      {
+        col4 = to_float4_s(1.0f);
+        col4 = texture(iChannel1,ro);
+      }
+
+    } else {
+      ro += dstObj * rd;
+      vn = (idObj == idGr) ? GearNf (ro,dstFar,angRot,bEdge) : ObjNf (ro,&idObj,dstFar,angRot,bEdge,wgObj);
+      if (idObj == idWhl) {
+        col4 = to_float4 (0.9f, 0.7f, 0.3f, 0.2f);
+        q = ro - to_float3 (1.1f + bEdge + 0.03f, bEdge, 1.0f);
+        r = length (swi2(q,y,z));
+        swi2S(q,y,z, Rot2D (swi2(q,y,z), - angRot));
+        a = fract (64.0f * _atan2f (q.z, - q.y) / (2.0f * pi) + 0.5f);
+        if (r > 0.99f) swi2S(vn,y,z, Rot2D (swi2(vn,y,z), - _sinf (a - 0.5f)));
+        if (r > 0.92f) col4 *= 0.7f + 0.3f * SmoothBump (0.05f, 0.95f, 0.01f, a);
+        isMet = true;
+      } else if (idObj == idGr) {
+        col4 = to_float4 (0.9f, 0.8f, 0.4f, 0.2f);
+        isMet = true;
+      } else if (idObj == idSpl) {
+        col4 = to_float4 (0.8f, 0.8f, 0.85f, 0.2f) * (1.0f - 0.4f * step (_fabs (ro.z), 0.1f));
+        isMet = true;
+      } else if (idObj == idAx) {
+        col4 = to_float4 (0.8f, 0.8f, 0.85f, 0.2f);
+        isMet = true;
+      } else if (idObj == idPln) {
+        col4 = (_fabs (vn.y) > 0.99f) ? to_float4 (0.5f, 0.6f, 0.2f, 0.05f) : to_float4 (0.7f, 0.5f, 0.4f, 0.1f);
+      } else if (idObj == idConv) {
+        q = ro - to_float3 (-0.05f, -0.21f, 0.0f);
+        col4 = to_float4 (0.8f, 0.8f, 0.4f, 0.0f);
+        if (sign_f(vn.y) != sign_f(q.y)) {
+          if (_fabs (q.x) < 1.0f && _fabs (vn.y) > 0.5f) col4 *= 1.0f - 0.1f * SmoothBump (0.45f, 0.55f, 0.03f,
+           fract (10.0f * (q.x - sign_f(q.y) * mod_f (tMov, 20.0f) * 2.1f / 5.0f)));
+        } else col4 *= 0.8f + 0.2f * smoothstep (0.0f, 0.01f, _fabs (_fabs (q.z) - 0.07f));
+      } else if (idObj == idSup) {
+        col4 = to_float4 (0.7f, 0.5f, 0.4f, 0.1f);
+        isMet = true;
+      } else if (idObj == idBas) {
+        q = ro;
+        q.z -= 0.9f;
+        if (Maxv2 (abs_f2(swi2(q,x,z)) - to_float2 (1.65f, 1.45f)) > 0.0f) {
+          col4 = to_float4 (0.9f, 0.9f, 0.9f, 0.2f);
+          isMet = true;
+        } else {
+          col4 = to_float4 (0.3f, 0.5f, 0.4f, 0.0f);
+        }
+        col4 *= (0.5f + 0.5f * step (0.0f, Maxv2 (abs_f2(to_float2 (q.x, q.z + 1.3f)) - to_float2 (0.4f, 0.02f)))) *
+           (0.7f + 0.3f * step (0.0f, _fabs (PrCaps2Df (to_float2 (q.z + 1.3f, q.x), 0.08f, 0.5f)) - 0.01f));
+      } else if (idObj == idCon) {
+        col4 = to_float4 (0.0f, 1.0f, 1.0f, 0.2f);
+        if (length (swi2(ro,x,z) - swi2(wgObj,x,z)) < 0.6f * wgObj.w)
+           col4 = _mix (0.8f * col4, to_float4 (1.0f, 0.0f, 1.0f, 0.2f), step (0.0f, _sinf (2.0f * pi * tCur)));
+      }
+    }
+    sh = _fminf (ObjSShadow (ro, ltDir,&idObj,dstFar,angRot,bEdge,wgObj), GearSShadow (ro, ltDir,dstFar,angRot,bEdge));
+    sh = 0.6f + 0.4f * _fminf (sh, BlkHitSh (ro + 0.01f * ltDir, ltDir, 6.0f,tCyc,bEdge,dstFar,tMov,nBlk)); //, float dstFar, float tMov
+    nDotL = _fmaxf (dot (vn, ltDir), 0.0f);
+    if (isMet) nDotL *= nDotL;
+    col = swi3(col4,x,y,z) * (0.1f + 0.1f * _fmaxf (- dot (vn, ltDir), 0.0f) + 0.9f * sh * nDotL) +
+               col4.w * step (0.95f, sh) * sh * _powf (_fmaxf (0.0f, dot (ltDir, reflect (rd, vn))), 32.0f);
+    if (isMet) {
+      rd = reflect (rd, vn);
+      col = _mix (col, to_float3_s (1.0f), 0.01f * step (0.1f, Minv2 (fract_f2 (8.0f * to_float2 (_atan2f (rd.z, rd.x),
+                  2.0f * asin (rd.y)) + 0.5f) - 0.5f)));
+    }
+  } else col = to_float3 (0.0f, 0.0f, 0.1f) * (1.0f + 0.9f * rd.y);
+  return clamp (col, 0.0f, 1.0f);
+}
+//**************************************************************************************************************************************************************************
+__KERNEL__ void ControllableMachineryFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float  Speed = params->Speed;
+  int    nBlk = params->nBlk;
+
+  // --------
+
+  const float txRow = 128.0f;
+
+  mat3 vuMat;
+  float4 stDat;
+  float3 ro, rd, col;
+  float2 canvas, uv;
+  float el, az, zmFac, sr;
+  canvas = iResolution;
+  uv = 2.0f * fragCoord / canvas - 1.0f;
+  uv.x *= canvas.x / canvas.y;
+  float tCur = iTime;
+  float dstFar = 30.0f;
+  stDat = Loadv4 (txBuf,0,iResolution,txRow);
+  float tMov = stDat.x;
+  float cnPos = stDat.y;
+  float4 wgObj = to_float4 (cnPos - 0.5f, -1.12f, -0.4f, 0.08f);
+  stDat = Loadv4 (txBuf,1,iResolution,txRow);
+  az = stDat.x;
+  el = stDat.y;
+  vuMat = StdVuMat (el, az);
+  zmFac = 4.0f;
+  ro = mul_mat3_f3(vuMat , to_float3 (0.0f, 0.0f, -8.0f));
+  ro.z += 0.9f;
+  rd = mul_mat3_f3(vuMat , normalize (to_float3_aw (uv, zmFac)));
+  float3 ltDir = mul_mat3_f3(vuMat , normalize (to_float3 (-0.5f, 1.0f, -1.0f)));
+#if ! AA
+  const float naa = 1.0f;
+#else
+  const float naa = 3.0f;
+#endif
+  col = to_float3_s (0.0f);
+  sr = 2.0f * mod_f (dot (mod_f (_floor (0.5f * (uv + 1.0f) * canvas), 2.0f), to_float2_s (1.0f)), 2.0f) - 1.0f;
+  for (float a = (float)(VAR_ZERO); a < naa; a +=1.0f) {
+    rd = mul_mat3_f3(vuMat , normalize (to_float3_aw (uv + step (1.5f, naa) * Rot2D (to_float2 (0.5f / canvas.y, 0.0f),
+                                        sr * (0.667f * a + 0.5f) * pi), zmFac)));
+    col += (1.0f / naa) * ShowScene (ro, rd, dstFar,wgObj, tMov, tCur, ltDir, iChannel1, nBlk);
+  }
+  fragColor = to_float4_aw (col, 1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+
+
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, LINK_Visible = false, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+    IC_Visible         = false,
+  })
+
+    -- iMouse Controls
+
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InShowValueCheckbox = self:AddInput("ShowValue", "ShowValue", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+    IC_Visible          = false,
+  })
+
+  InSpeedSlider = self:AddInput("Speed", "Speed", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  InnBlkSlider = self:AddInput("nBlk", "nBlk", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 1,
+      INP_MaxScale       = 25,
+      INP_Default        = 13,
+      INP_Integer        = true,
+  })
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+	      IMG_DeferAlloc = false,
+        }
+
+Image_Buff_GlobalA = Image(ImgAttrs_Global)
+
+
+function Process(req)
+
+
+  SourceDepth = 8  -- Nur float32
+
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local dstA   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local nodeA = DVIPComputeNode(req,
+    "ControllableMachineryFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+-------------- BufferA -----------------
+  params = nodeA:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  params.iFrame = req.Time
+
+  -- iMouse
+
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+
+
+  params.Speed = InSpeedSlider:GetValue(req).Value
+  params.nBlk = InnBlkSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  nodeA:SetParamBlock(params)
+  nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  nodeA:AddInput("iChannel0",Image_Buff_GlobalA) -- TODO: add a better channel name
+  nodeA:AddOutput("dst", dstA)
+
+  local ok = nodeA:RunSession(req)
+
+	if (not ok) then
+		dstA = nil
+    dump(nodeA:GetErrorLog())
+	end
+
+  Image_Buff_GlobalA = dstA
+
+
+
+-------------- Image -----------------
+  local nodeI = DVIPComputeNode(req,
+                                "ControllableMachineryFuse", ShaderCompatibilityCode..ShaderKernelCode,
+                                "Params", ShaderParameters
+  )
+
+  nodeI:SetParamBlock(params)
+
+  nodeI:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+  nodeI:AddInput("iChannel0", Image_Buff_GlobalA)
+  nodeI:AddInput("iChannel1", iChannel0)
+  nodeI:AddOutput("dst", dst)
+
+  local success = nodeI:RunSession(req)
+  if not success then
+    dst = nil
+    dump(nodeI:GetErrorLog())
+  end
+
+
+  OutImage:Set(req,dst)
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+
