@@ -411,9 +411,9 @@ function create_package_fuses(repositorypath)
   local YourPackageName = 'Shadertoys'
   local PackageIdentifier = 'com.JiPi.Shadertoys'
   local TargetFilepath = repositorypath .. 'Atom/'
-  local YourPackageVersion = '1.1'
-  local YourPackageDate = "2022,12,19"      -- os.date("%Y,%m,%d")  -- !!!!!!
-  local YourPackageDateFuse = "Dec 2022"    -- os.date("%b %Y")     -- !!!!!!
+  local YourPackageVersion = '1.2'
+  local YourPackageDate = "2024,7,8"      -- os.date("%Y,%m,%d")  -- !!!!!!
+  local YourPackageDateFuse = "Jul 2024"    -- os.date("%b %Y")     -- !!!!!!
 
 
   -- bmd.createdir(TargetFilepath..PackageIdentifier)
