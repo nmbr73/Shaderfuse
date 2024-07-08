@@ -253,7 +253,7 @@ function Fuse:readInfo()
     -- if info.Fuse.InfoURL ~= nil then self:addError("Fuse.InfoURL must not be set in sfi file") end
 
     if self.Category ~= '' and self.Name ~= '' then
-      self.InfoURL = 'https://nmbr73.github.io/Shaderfuse/Shaders/'.. self.Category ..'/'.. self.Name ..'.html'
+      self.InfoURL = 'https://nmbr73.github.io/Shaderfuse/'.. self.Category ..'/'.. self.Name ..'/'
     else
       self.InfoURL = 'https://nmbr73.github.io/Shaderfuse/'
     end
