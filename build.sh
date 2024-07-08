@@ -7,7 +7,7 @@ cp -rp Tools/Assets/Profiles docs
 cp -rp Tools/Documentation docs/
 
 cd 'Tools/Shell/'
-lua generate_atom.lua
+# lua generate_atom.lua
 lua generate_csv.lua
 lua generate_markdown.lua
 lua generate_installer.lua
