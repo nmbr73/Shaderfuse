@@ -54,7 +54,13 @@ end
 --
 -- @return fuse source code without any ShaderFuse references.
 
-function patch_fuse_source(fuse,fuse_code)
+function patch_fuse_source(fuse,fuse_code,atom)
+
+  local warning = "It seems that this version of the Fuse had been installed using an installer script. Please note that it must therefore be regarded as an unstable beta version!"
+
+  if atom ~= nil then
+    warning = atom
+  end
 
   if not fuse_code then util.set_error("no code for patch_fuse_source()"); return nil end
 
@@ -105,7 +111,7 @@ function patch_fuse_source(fuse,fuse_code)
     .. [[  self:AddInput( "Fuse Info...", "ShaderfuseFuseInfoButton", { ICS_ControlPage = "Info", IC_ControlPage = 1, INPID_InputControl = "ButtonControl", INP_DoNotifyChanged = false, INP_External = false, BTNCS_Execute = 'bmd.openurl("]].. fuse.InfoURL .. [[")' })]] .."\n"
     .. [[  self:AddInput( "Shadertoy...", "ShaderfuseToyInfoButton", { ICS_ControlPage = "Info", IC_ControlPage = 1, INPID_InputControl = "ButtonControl", INP_DoNotifyChanged = false, INP_External = false, BTNCS_Execute = 'bmd.openurl("]].. fuse.Shadertoy.InfoURL ..[[")' })]] .."\n"
     .. [[  self:AddInput('<br /><p align="center"><img width="320" height="180" src="data:image/png;base64,]].. fuse.Thumbnail.Data ..[[" /></p>', "ShaderfuseThumbnail", { ICS_ControlPage = "Info", IC_ControlPage = 1, LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true } )]] .."\n"
-    .. [[  self:AddInput('&nbsp;<br /><p>It seems that this version of the Fuse had been installed using a installer script. Please note that this means it has to be considered being an instable beta version!</p>', "ShaderfuseInstallInfo", { ICS_ControlPage = "Info", IC_ControlPage = 1, LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true } )]] .."\n"
+    .. [[  self:AddInput('&nbsp;<br /><p>]].. warning ..[[</p>', "ShaderfuseInstallInfo", { ICS_ControlPage = "Info", IC_ControlPage = 1, LINKID_DataType = "Text", INPID_InputControl = "LabelControl", LBLC_MultiLine = true, IC_NoLabel = true, IC_NoReset = true, INP_External = false, INP_Passive = true } )]] .."\n"
 
   fuse_code, n = fuse_code:gsub('\n%s*ShaderFuse%.end_create%(%s*%)%s*\n',"\n\n"..end_create.."\n",1)
   if n ~= 1 then util.set_error("failed to eliminate ShaderFuse.end_create()"); return nil end
@@ -309,7 +315,7 @@ end
 -- Get the fuse's code as packaged for the atom.
 --
 
-function atom_code(fuse)
+function atom_code(fuse,reactor_release)
 
   if not fuse:isValid() then util.set_error("can't create installer for invalid Fuse"); return nil end
 
@@ -317,7 +323,11 @@ function atom_code(fuse)
   fuse.Commit    = fuse_commit(fuse)      ; if not fuse.Commit    then return nil end
   fuse.MiniLogo  = fuse_minilogo(fuse)
 
-  local fuse_code      = patch_fuse_source(fuse,fuse_source(fuse))
+  local fuse_code      = patch_fuse_source(fuse,fuse_source(fuse),reactor_release)
+
+  if reactor_release == nil then
+    reactor_release = ""
+  end
 
   if fuse_code then
     fuse_code=[[
@@ -335,9 +345,9 @@ function atom_code(fuse)
   --         pls. see https://github.com/nmbr73/Shaderfuse
   --                                           for details
   --
+  -- ]].. reactor_release
 
-  ]]
-    .."\n\n\n"..fuse_code
+    .."\n\n\n\n"..fuse_code
   end
 
 
@@ -356,14 +366,14 @@ end
 -- @param fuse The fuse to create an atom fuse for.
 -- @param targetpath Where to wrte the fuse.
 
-function create_package_fuse(fuse,targetpath)
+function create_package_fuse(fuse,targetpath,reactor_release)
 
   if not fuse:isValid() then
     util.set_error("can't create atom for invalid fuse ("..fuse:getErrorText()..")")
     return false
   end
 
-  local code = atom_code(fuse)
+  local code = atom_code(fuse,reactor_release)
 
   if util.has_error() then return false end
 
@@ -435,7 +445,7 @@ function create_package_fuses(repositorypath)
 
     util.clr_error()
 
-    create_package_fuse(fuse,targetpath)
+    create_package_fuse(fuse,targetpath, "This Fuse comes from the installation of the ".. YourPackageName .. " Reactor package in version " .. YourPackageVersion ..".")
 
     if not util.has_error() then
 
