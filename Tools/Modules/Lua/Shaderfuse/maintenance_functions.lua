@@ -420,7 +420,7 @@ function create_package_fuses(repositorypath)
   local YourCompanyName = 'JiPi'
   local YourPackageName = 'Shadertoys'
   local PackageIdentifier = 'com.JiPi.Shadertoys'
-  local TargetFilepath = repositorypath .. 'Atom/'
+  local TargetFilepath = repositorypath .. 'atom/'
   local YourPackageVersion = '1.2'
   local YourPackageDate = "2024,7,8"      -- os.date("%Y,%m,%d")  -- !!!!!!
   local YourPackageDateFuse = "Jul 2024"    -- os.date("%b %Y")     -- !!!!!!

@@ -21,8 +21,8 @@ simpleDialog.window(
       end,
 
       text=
-      [[<p>By clicking 'okay' all the files in in the 'Atom/' will be rewritten.
-      For a fresh install you should consider to delete that folders content first.
+      [[<p>By clicking 'okay' all the files in the 'atom/' directory will be rewritten.
+      For a fresh install you should consider to delete that folder's content first!
       </p>
             ]]
     }):Show()
