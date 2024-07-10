@@ -19,7 +19,7 @@ simpleDialog.window(
       end,
 
       text=
-      [[<p>By clicking 'okay' the Shaders.csv fil will be rewritten.
+      [[<p>'okay' rewrites the Shaders.csv file in your working copy.
       </p>
             ]]
     }):Show()

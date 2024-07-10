@@ -4,25 +4,31 @@
 
 The 'Repository Tools' should appear in your DaFusion's scripts submenu and ar meant to be called by selecting them from that menu. Alternatively most of the exact same functionality can be performed from the command line by calling the corresponding script in `Tools/Scripts/`.
 
+
 ## Overview
 
-'All Fuses in this Repository (just an OVERVIEW)' opens a window just showing a list of all the Shadertoy Fuses in your local working copy. In particular useful to quickly identify Fuses that may still need some rework.
+'**All Fuses in this Repository (just an OVERVIEW)**' opens a window just showing a list of all the Shaderfuses in your local working copy. In particular useful to quickly identify Fuses that may still need some rework / compatibility testing.
 
 
 ## Installer
 
-'Create an INSTALLER script for every Fuse'. Traverses your working copy for valid Fuses (valid means testes at least on Windows and Mac) and creates an installer Lua file that can be used to install a particular Fuse via drag'n'drop on any other DaFusion installation.
+'**Create an INSTALLER script for every Fuse**'. Traverses your working copy for valid Fuses (valid means tested to compile at least on Windows and Mac) and creates an installer Lua file that can be used to install a particular Fuse via drag'n'drop on any other DaFusion installation.
+
+You can cd into `Tools/Shell/` and call `lua generate_installer.lua` to perform the same functionality from the command line.
 
 
 ## Markdown
 
-'Refresh the Fuse overview MARKDOWN files' does rewrite the OVERVIEW.md and all the README.md files in the `Shaders/` folder.
+'**Refresh the Fuse overview MARKDOWN files**' does rewrite the OVERVIEW.md and all the README.md files in the `Shaders/` folder.
 
-...
+THIS DOES NOT WORK FROM WITHIN FUSION ANYMORE! AS IT DOES NOT WORK BY SIMPLY CALLING `generate_markdown.lua` AT THE MOMENT!
+
+For the time being use `build.sh docs` instead.
+
 
 ## CVS
 
-...
+'**Update the Fuse overview CSV table**' rewrites the file `Shaders.csv` in your working copy.
 
 
 ## Atom
