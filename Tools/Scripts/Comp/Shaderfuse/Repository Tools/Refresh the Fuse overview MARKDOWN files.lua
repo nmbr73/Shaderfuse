@@ -22,6 +22,9 @@ simpleDialog.window(
       [[<p>By clicking 'okay' all README.md files in the 'docs/' folder and all its subdirectories will be rewritten.
       Also the 'docs/OVERVIEW.md' files will be recreated.
       </p>
+      <p>
+      DOES NOT WORK AT THE MOMENT !!!
+      </p>
             ]]
     }):Show()
 

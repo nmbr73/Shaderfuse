@@ -2,7 +2,7 @@
 
 # Repository Tools
 
-The 'Repository Tools' should be linked into your DaFusion's scripts submenu and ar meant to be called by selecting them from that manu (so no drag'n'drop or whatsoever). Alternatively they can be called from the command line.
+The 'Repository Tools' should appear in your DaFusion's scripts submenu and ar meant to be called by selecting them from that menu. Alternatively most of the exact same functionality can be performed from the command line by calling the corresponding script in `Tools/Scripts/`.
 
 ## Overview
 
@@ -11,7 +11,7 @@ The 'Repository Tools' should be linked into your DaFusion's scripts submenu and
 
 ## Installer
 
-'Create an INSTALLER script for every Fuse' DOES NOT WORK YET! DOES NOTHING FOR THE TIME BEING!
+'Create an INSTALLER script for every Fuse'. Traverses your working copy for valid Fuses (valid means testes at least on Windows and Mac) and creates an installer Lua file that can be used to install a particular Fuse via drag'n'drop on any other DaFusion installation.
 
 
 ## Markdown
