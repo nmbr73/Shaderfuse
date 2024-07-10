@@ -323,14 +323,23 @@ function atom_code(fuse,reactor_release)
   fuse.Commit    = fuse_commit(fuse)      ; if not fuse.Commit    then return nil end
   fuse.MiniLogo  = fuse_minilogo(fuse)
 
-  local fuse_code      = patch_fuse_source(fuse,fuse_source(fuse),reactor_release)
+  local fuse_code      = patch_fuse_source(fuse,fuse_source(fuse),"This Fuse comes from the installation of the Shadertoys Reactor package in version "..reactor_release)
 
   if reactor_release == nil then
     reactor_release = ""
   end
 
   if fuse_code then
-    fuse_code=[[
+    fuse_code=
+         "-- MAGIC-A|v"..reactor_release
+         .. "\tNAME: " .. fuse.Shadertoy.Name
+         .. "\tAUTHOR: ".. fuse.Shadertoy.Author
+         .. "\tID: ".. fuse.Shadertoy.ID
+         .. "\tPORT: "..fuse.Author
+         .. "\tCATEGORY: "..fuse.Category
+         .. "\t\n"
+      .. "-- This Fuse comes from the installation of the Shadertoys Reactor package in version " .. reactor_release .."\n\n\n"
+      ..[[
 
   --
   --       _____        _   _       _   ______    _ _ _
@@ -345,9 +354,10 @@ function atom_code(fuse,reactor_release)
   --         pls. see https://github.com/nmbr73/Shaderfuse
   --                                           for details
   --
-  -- ]].. reactor_release
+  --
 
-    .."\n\n\n\n"..fuse_code
+]]
+    .."\n\n\n\n\n\n\n"..fuse_code
   end
 
 
@@ -445,7 +455,7 @@ function create_package_fuses(repositorypath)
 
     util.clr_error()
 
-    create_package_fuse(fuse,targetpath, "This Fuse comes from the installation of the ".. YourPackageName .. " Reactor package in version " .. YourPackageVersion ..".")
+    create_package_fuse(fuse,targetpath, YourPackageVersion)
 
     if not util.has_error() then
 
