@@ -92,7 +92,7 @@ function selectFusesDialog.window(ui,dispatcher,params)
     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
 
     if fuse~=nil then
-      bmd.openurl('https://nmbr73.github.io/Shaderfuse/Shaders/'..fuse.Category..'/'..fuse.Name..'.html')
+      bmd.openurl('https://nmbr73.github.io/Shaderfuse/'..fuse.Category..'/'..fuse.Name..'/')
     end
   end
 
