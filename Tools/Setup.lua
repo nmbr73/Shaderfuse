@@ -38,7 +38,7 @@ function init()
   paths.bmddir_comp= fusion:MapPath("Scripts:/")..'Comp'..pathseparator..'Shaderfuse'
   paths.gitdir_comp= repositorypath.. ('Tools/Scripts/Comp/Shaderfuse'):gsub('/',pathseparator)
   paths.bmddir_atom= fusepath.. 'Shaderfuse_wsl'
-  paths.gitdir_atom= repositorypath.. ('Atom/com.JiPi.Shadertoys/Fuses/Shaderfuse_wsl/'):gsub('/',pathseparator)
+  paths.gitdir_atom= repositorypath.. ('atom/com.JiPi.Shadertoys/Fuses/Shaderfuse_wsl/'):gsub('/',pathseparator)
   paths.bmddir_fuse= fusepath.. 'Shaderfuse_dev'
   paths.gitdir_fuse= repositorypath.. ('Shaders/'):gsub('/',pathseparator)
 
