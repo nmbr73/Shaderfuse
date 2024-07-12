@@ -298,9 +298,8 @@ function create_installers(repositorypath)
   repositorypath = get_repositorypath(repositorypath)
 
   fuses.fetch(repositorypath..'/Shaders/','installer')
-  -- fuses.fetch(repositorypath..'/docs/','installer')
 
-  for i, fuse in ipairs(fuses.list) do
+  for _, fuse in ipairs(fuses.list) do
     util.clr_error()
     create_installer(fuse,repositorypath)
     if util.has_error() then
@@ -322,7 +321,7 @@ end
 
 function atom_code(fuse,reactor_release)
 
-  -- if not fuse:isValid() then util.set_error("can't create installer for invalid Fuse"); return nil end
+  if not fuse:isValid() then util.set_error("can't create installer for invalid Fuse"); return nil end
 
   fuse.Thumbnail = fuse_thumbnail(fuse)   ; if not fuse.Thumbnail then return nil end
   fuse.Commit    = fuse_commit(fuse)      ; if not fuse.Commit    then return nil end
@@ -401,11 +400,6 @@ function create_package_fuse(fuse,targetpath,reactor_release)
   if (code or '') == '' then util.set_error("no code"); return false end
 
 
-
-
-  -- local fpath = repositorypath..'Installers/'..fuse.Category
-  -- bmd.createdir(fpath)
-
   local f = io.open(targetpath ..'/'.. fuse.Shadertoy.ID ..'.fuse',"wb")
   if not f then util.set_error("failed to write "..fuse.Shadertoy.ID ..'.fuse'); return false end
   f:write(code)
@@ -446,10 +440,6 @@ function create_package_fuses(repositorypath)
   local YourPackageDate = "2024,7,8"      -- os.date("%Y,%m,%d")  -- !!!!!!
   local YourPackageDateFuse = "Jul 2024"    -- os.date("%b %Y")     -- !!!!!!
 
-
-  -- bmd.createdir(TargetFilepath..PackageIdentifier)
-  -- bmd.createdir(TargetFilepath..PackageIdentifier..'/Fuses')
-  -- bmd.createdir(TargetFilepath..PackageIdentifier..'/Fuses/Shaderfuse_wsl')
 
   local targetpath = TargetFilepath..PackageIdentifier..'/Fuses/Shaderfuse_wsl'
   bmd.createdir(targetpath)
@@ -615,7 +605,7 @@ local function update_fuse_markdown_file(fuse)
 
   local prolog = '# '.. fuse.Name ..'\n'
 
-  if fuse:isValid() then
+  if fuse:isValid() and fuse:isCompatible() then
     -- prolog = prolog .. '[![Download Installer](https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue)]('..fuse.Name..'-Installer.lua "Installer")'
     prolog = prolog .. '<a href="../'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
   end
@@ -801,7 +791,7 @@ function create_markdown_files(repositorypath)
 
 
 
-    if fuse:hasErrors() then
+    if fuse:hasErrors() or not fuse:isCompatible() then
       boom=boom+1
     else
       okay=okay+1
@@ -816,7 +806,7 @@ function create_markdown_files(repositorypath)
     overview:write(
         ''
       ..'<img src="../'..fuse.Category..'/'..fuse.Name..'.png" align="left" width="320 height="180" />'
-      ..'<strong><a href="../'..fuse.Category..'/'..fuse.Name..'/" style="font-size:larger; ">'..fuse.Name..'</a></strong> '..(not(fuse:hasErrors()) and '🍀' or '💥')..'<br />'
+      ..'<strong><a href="../'..fuse.Category..'/'..fuse.Name..'/" style="font-size:larger; ">'..fuse.Name..'</a></strong> '..((not(fuse:hasErrors()) and fuse:isCompatible()) and '🍀' or '💥')..'<br />'
       )
 
 
@@ -901,7 +891,25 @@ function create_csv(repositorypath)
 
   csv:write("Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issue\n")
 
-  for i, fuse in ipairs(fuses.list) do
+  for _, fuse in ipairs(fuses.list) do
+
+    local info = ''
+
+    if fuse:hasErrors() then
+      info = fuse:getErrorText()
+    else
+      if fuse.Compatibility.Windows_CUDA and not fuse.Compatibility.macOS_Metal then
+        info = "Windows only"
+      else
+        if not fuse.Compatibility.Windows_CUDA and fuse.Compatibility.macOS_Metal then
+          info = "Mac only"
+        else
+          if not fuse.Compatibility.Windows_CUDA and not fuse.Compatibility.macOS_Metal then
+            info = "no compatibility"
+          end
+        end
+      end
+    end
 
     csv:write(
         '"'.. fuse.Shadertoy.ID ..'",' ..
@@ -910,7 +918,7 @@ function create_csv(repositorypath)
         '"'.. fuse.Category ..'",' ..
         '"'.. fuse.Name ..'",' ..
         '"'.. fuse.Author ..'",' ..
-        '"'.. (not(fuse:hasErrors()) and '' or fuse:getErrorText()) ..'"\n'
+        '"'.. info ..'"\n'
         )
 
   end
