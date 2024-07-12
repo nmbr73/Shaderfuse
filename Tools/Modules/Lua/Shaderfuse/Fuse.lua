@@ -116,7 +116,7 @@ function Fuse:isCompatible()
   end
 
   return self.Compatibility.Windows_CUDA and self.Compatibility.Windows_OpenCL
-    and self.Compatibility.macOS_Metal and self.Compatibility.macOS_OpenCL
+    and self.Compatibility.macOS_Metal
 
 end
 
@@ -415,7 +415,7 @@ function Fuse:readInfo()
     self:addError('Windows_CUDA compatibility not checked')
     self:addError('Windows_OpenCL compatibility not checked')
     self:addError('macOS_Metal compatibility not checked')
-    self:addError('macOS_OpenCL compatibility not checked')
+    -- self:addError('macOS_OpenCL compatibility not checked')
 
   elseif info.Compatibility == 15 then
     self.Compatibility = {  Windows_CUDA = true, Windows_OpenCL = true, macOS_Metal = true, macOS_OpenCL = true, }
@@ -444,11 +444,11 @@ function Fuse:readInfo()
         issue = ''
       elseif value == false then
         issue = 'does not work; no more details given'
-        self:addError('does not work for '.. k ..'; no more details given')
+        -- self:addError('does not work for '.. k ..'; no more details given')
       else
         issue = '' .. value
         value = false
-        self:addError(k ..' compatibility: '.. issue)
+        -- self:addError(k ..' compatibility: '.. issue)
       end
 
       self.Compatibility[k] = value
