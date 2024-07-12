@@ -21,7 +21,7 @@ for _, file in ipairs(files) do
 		Author = author,
 		Id = id,
 		Port = port,
-		Categorty = category,
+		Category = category,
 	})
 
 end
@@ -182,4 +182,7 @@ itm.Files:SortByColumn(0, "AscendingOrder")
 defaultInfoText = numFuses.." valid fuses found"
 
 
+
+win:Show()
 ui_dispatcher:RunLoop()
+win:Hide()
