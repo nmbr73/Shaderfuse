@@ -262,6 +262,11 @@ function create_installer(fuse,repositorypath)
     return false
   end
 
+  if not fuse:isCompatible() then
+    util.set_error("can't create installer for fuse that is not fully compatible")
+    return false
+  end
+
   code = installer_code(fuse)
 
   if util.has_error() then return false end
@@ -317,7 +322,7 @@ end
 
 function atom_code(fuse,reactor_release)
 
-  if not fuse:isValid() then util.set_error("can't create installer for invalid Fuse"); return nil end
+  -- if not fuse:isValid() then util.set_error("can't create installer for invalid Fuse"); return nil end
 
   fuse.Thumbnail = fuse_thumbnail(fuse)   ; if not fuse.Thumbnail then return nil end
   fuse.Commit    = fuse_commit(fuse)      ; if not fuse.Commit    then return nil end
@@ -451,8 +456,10 @@ function create_package_fuses(repositorypath)
 
   local OurPackageDescription=''
   local OurDeployments=''
+  local OurDeployments_windows=''
+  local OurDeployments_mac=''
 
-
+  local patch_atom_for_platform = ''
 
   local currentCategory=''
   local descriptionIndent='        '
@@ -482,8 +489,35 @@ function create_package_fuses(repositorypath)
 
         end
 
-        OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong></li>\n'
-        OurDeployments=OurDeployments..'          "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse",\n'
+
+        if fuse.Compatibility.Windows_CUDA then
+          if fuse.Compatibility.macOS_Metal then
+            OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong></li>\n'
+            OurDeployments=OurDeployments
+              ..'          "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse",\n'
+              ..'          "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
+          else
+            OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong> (Windows only)</li>\n'
+            OurDeployments_windows=OurDeployments_windows
+              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse",\n'
+              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
+            patch_atom_for_platform=patch_atom_for_platform
+              ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" "Windows/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" \n'
+              ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png"  "Windows/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png" \n'
+          end
+        else
+          if fuse.Compatibility.macOS_Metal then
+            OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong> (Mac only)</li>\n'
+            OurDeployments_mac=OurDeployments_mac
+              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse",\n'
+              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
+            patch_atom_for_platform=patch_atom_for_platform
+              ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" "Mac/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" \n'
+              ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png"  "Mac/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png" \n'
+          else
+            -- we should not get here
+          end
+        end
     end
   end
 
@@ -546,6 +580,21 @@ function create_package_fuses(repositorypath)
           </p>]])
 
   handle:write(']]')
+
+
+  if OurDeployments_windows ~= '' then
+    OurDeployments = OurDeployments
+      .. "\n          Windows = {\n"
+      .. OurDeployments_windows
+      .. "          },\n"
+  end
+
+  if OurDeployments_mac ~= '' then
+    OurDeployments = OurDeployments
+      .. "\n          Mac = {\n"
+      .. OurDeployments_mac
+      .. "          },\n"
+  end
 
   handle:write([[,
       Deploy = {]]..'\n'.. OurDeployments ..[[
