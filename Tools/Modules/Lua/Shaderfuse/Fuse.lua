@@ -412,9 +412,10 @@ function Fuse:readInfo()
   if not info.Compatibility then
     self.CompatbilityIssues = { Windows_CUDA = 'not checked', Windows_OpenCL = 'not checked', macOS_Metal = 'not checked', macOS_OpenCL = 'not checked', }
     self.Compatibility = {}
-    self:addError('Windows_CUDA compatibility not checked')
-    self:addError('Windows_OpenCL compatibility not checked')
-    self:addError('macOS_Metal compatibility not checked')
+    self:addError('no compatibility checked')
+    -- self:addError('Windows_CUDA compatibility not checked')
+    -- self:addError('Windows_OpenCL compatibility not checked')
+    -- self:addError('macOS_Metal compatibility not checked')
     -- self:addError('macOS_OpenCL compatibility not checked')
 
   elseif info.Compatibility == 15 then
@@ -432,6 +433,8 @@ function Fuse:readInfo()
     self.Compatibility = {}
     self.CompatbilityIssues = {}
 
+    local any_compatibility = false
+
     for _ , k in pairs({'macOS_Metal','macOS_OpenCL','Windows_CUDA','Windows_OpenCL'}) do
 
       local value = info.Compatibility[k]
@@ -439,9 +442,10 @@ function Fuse:readInfo()
 
       if value == nil then
         issue = 'not checked'
-        self:addError(k ..' compatibility not checked')
+        -- self:addError(k ..' compatibility not checked (undefined)')
       elseif value == true then
         issue = ''
+        any_compatibility = true
       elseif value == false then
         issue = 'does not work; no more details given'
         -- self:addError('does not work for '.. k ..'; no more details given')
@@ -454,6 +458,10 @@ function Fuse:readInfo()
       self.Compatibility[k] = value
       self.CompatbilityIssues[k] = issue
 
+    end
+
+    if not any_compatibility then
+      self:addError('not compatible to anything')
     end
   end
 
