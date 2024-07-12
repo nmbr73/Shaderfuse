@@ -1,1 +1,1 @@
-bmd.openurl("https://nmbr73.github.io/Shaderfuse/")
+bmd.openurl("https://github.com/nmbr73/Shaderfuse/")

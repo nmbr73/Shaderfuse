@@ -329,9 +329,15 @@ function atom_code(fuse,reactor_release)
     reactor_release = ""
   end
 
+  local fuse_compatibility =
+      (fuse.Compatibility.Windows_CUDA and 1 or 0)
+    + (fuse.Compatibility.Windows_OpenCL and 2 or 0)
+    + (fuse.Compatibility.macOS_Metal and 4 or 0)
+    + (fuse.Compatibility.macOS_OpenCL and 8 or 0)
+
   if fuse_code then
     fuse_code=
-         "-- MAGIC-A|v"..reactor_release
+         "-- MAGIC-A|v"..reactor_release.."|"..fuse_compatibility.."|"
          .. "\tNAME: " .. fuse.Shadertoy.Name
          .. "\tAUTHOR: ".. fuse.Shadertoy.Author
          .. "\tID: ".. fuse.Shadertoy.ID
