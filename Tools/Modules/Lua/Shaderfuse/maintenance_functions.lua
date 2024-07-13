@@ -342,7 +342,7 @@ function atom_code(fuse,reactor_release)
   if fuse_code then
     fuse_code=
          "-- MAGIC-A|v"..reactor_release.."|"..fuse_compatibility.."|"
-         .. "\tNAME: " .. fuse.Shadertoy.Name
+         .. "\tNAME: " .. fuse.Name
          .. "\tAUTHOR: ".. fuse.Shadertoy.Author
          .. "\tID: ".. fuse.Shadertoy.ID
          .. "\tPORT: "..fuse.Author
@@ -437,8 +437,9 @@ function create_package_fuses(repositorypath)
   local PackageIdentifier = 'com.JiPi.Shadertoys'
   local TargetFilepath = repositorypath .. 'atom/'
   local YourPackageVersion = '1.2'
-  local YourPackageDate = "2024,7,8"      -- os.date("%Y,%m,%d")  -- !!!!!!
-  local YourPackageDateFuse = "Jul 2024"    -- os.date("%b %Y")     -- !!!!!!
+  -- local YourPackageDate = "2024,7,13"      -- os.date("%Y,%m,%d")  -- !!!!!!
+  local YourPackageDate = os.date("%Y,%m,%d")
+  -- local YourPackageDateFuse = "Jul 2024"    -- os.date("%b %Y")     -- !!!!!!
 
 
   local targetpath = TargetFilepath..PackageIdentifier..'/Fuses/Shaderfuse_wsl'
@@ -585,14 +586,21 @@ function create_package_fuses(repositorypath)
     end
   end
 
+
+  local copy_browser_script = [[
+mkdir -p Scripts/Comp
+cp "../../Tools/Scripts/Comp/Shaderfuse/User Menu/Browser.lua" "Scripts/Comp/Shaderfuse Browser.lua"
+]]
+
+
   if patch_atom_for_platform ~= '' then
     patch_atom_for_platform =
          "mkdir -p Mac/Fuses/Shaderfuse_wsl/\n"
       .. "mkdir -p Windows/Fuses/Shaderfuse_wsl/\n"
       .. patch_atom_for_platform
+      .. copy_browser_script
       ..
-
-  'zip -r "../'..PackageIdentifier..'.zip" Fuses Windows Mac "'..PackageIdentifier..'.atom"\n'
+  'zip -r "../'..PackageIdentifier..'.zip" Scripts Fuses Windows Mac "'..PackageIdentifier..'.atom"\n'
 
       .. [[
   mv Windows/Fuses/Shaderfuse_wsl/* "Fuses/Shaderfuse_wsl/"
@@ -604,7 +612,8 @@ function create_package_fuses(repositorypath)
 ]]
   else
     patch_atom_for_platform =
-      'zip -r "../'..PackageIdentifier..'.zip" Fuses "'..PackageIdentifier..'.atom"\n'
+      copy_browser_script ..
+      'zip -r "../'..PackageIdentifier..'.zip" Scripts Fuses "'..PackageIdentifier..'.atom"\n'
   end
 
   if OurDeployments_windows ~= '' then
@@ -622,7 +631,9 @@ function create_package_fuses(repositorypath)
   end
 
   handle:write([[,
-      Deploy = {]]..'\n'.. OurDeployments ..[[
+      Deploy = {]]..'\n'..
+        '        "Scripts/Comp/Shaderfuse Browser.lua"\n'..
+        OurDeployments ..[[
       },
 
       Dependencies = {},

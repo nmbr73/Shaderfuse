@@ -48,7 +48,7 @@ function do_atom {
 
 
   cd "atom/${ATOM_URI}"
-  [ -f ../atomizer.sh ] && sh ../atomizer.sh
+  [ -f ../atomize.sh ] && sh ../atomize.sh
   cd ../..
 
 }
