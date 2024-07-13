@@ -46,9 +46,11 @@ function do_atom {
   lua generate_atom.lua
   cd ../..
 
+
   cd "atom/${ATOM_URI}"
-  zip -r "../${ATOM_URI}.zip" Fuses "${ATOM_URI}.atom"
+  [ -f ../atomizer.sh ] && sh ../atomizer.sh
   cd ../..
+
 }
 
 # ----------------------------------------------------------------------------

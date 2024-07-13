@@ -454,7 +454,7 @@ function create_package_fuses(repositorypath)
   local currentCategory=''
   local descriptionIndent='        '
 
-  for i, fuse in ipairs(fuses.list) do
+  for _, fuse in ipairs(fuses.list) do
 
     util.clr_error()
 
@@ -474,7 +474,7 @@ function create_package_fuses(repositorypath)
 
           OurPackageDescription=OurPackageDescription..
               descriptionIndent..'<p>\n'..
-              descriptionIndent..'    '..currentCategory..' Shaders:\n'..
+              descriptionIndent..'  '..currentCategory..' Shaders:\n'..
               descriptionIndent..'  <ul>\n'
 
         end
@@ -571,6 +571,41 @@ function create_package_fuses(repositorypath)
 
   handle:write(']]')
 
+  if OurDeployments_windows ~= '' then
+    if OurDeployments_mac == '' then
+      OurDeployments_mac = '              "Fuses/Shaderfuse_wsl/README_MAC.md",\n'
+      patch_atom_for_platform=patch_atom_for_platform
+        ..'echo "This is a dummy file to trick Reactor because there were some Windows only, but no Mac specific files." > "Mac/Fuses/Shaderfuse_wsl/README_MAC.md"\n'
+    end
+  else
+    if OurDeployments_mac ~= '' then
+      OurDeployments_windows = '              "Fuses/Shaderfuse_wsl/README_WINDOWS.md",\n'
+      patch_atom_for_platform=patch_atom_for_platform
+        ..'echo "This is a dummy file to trick Reactor because there were some Mac only, but no Windows specific files." > "Windows/Fuses/Shaderfuse_wsl/README_WINDOWS.md"\n'
+    end
+  end
+
+  if patch_atom_for_platform ~= '' then
+    patch_atom_for_platform =
+         "mkdir -p Mac/Fuses/Shaderfuse_wsl/\n"
+      .. "mkdir -p Windows/Fuses/Shaderfuse_wsl/\n"
+      .. patch_atom_for_platform
+      ..
+
+  'zip -r "../'..PackageIdentifier..'.zip" Fuses Windows Mac "'..PackageIdentifier..'.atom"\n'
+
+      .. [[
+  mv Windows/Fuses/Shaderfuse_wsl/* "Fuses/Shaderfuse_wsl/"
+  mv Mac/Fuses/Shaderfuse_wsl/* "Fuses/Shaderfuse_wsl/"
+  rm -f "Fuses/Shaderfuse_wsl/README_MAC.md"
+  rm -f "Fuses/Shaderfuse_wsl/README_WINDOWS.md"
+  rm -rf Mac
+  rm -rf Windows
+]]
+  else
+    patch_atom_for_platform =
+      'zip -r "../'..PackageIdentifier..'.zip" Fuses "'..PackageIdentifier..'.atom"\n'
+  end
 
   if OurDeployments_windows ~= '' then
     OurDeployments = OurDeployments
@@ -594,6 +629,17 @@ function create_package_fuses(repositorypath)
   }]])
 
   handle:close()
+
+  if patch_atom_for_platform ~= '' then
+    handle = io.open(TargetFilepath..'/atomize.sh',"wb")
+
+    if not handle then
+      print("dang! failed to write file!")
+      return false
+    end
+    handle:write(patch_atom_for_platform)
+    handle:close()
+  end
 
   return true
 
@@ -739,7 +785,7 @@ function create_markdown_files(repositorypath)
   local boom=0
   local okay=0
 
-  for i, fuse in ipairs(fuses.list) do
+  for _, fuse in ipairs(fuses.list) do
 
     util.clr_error()
 
