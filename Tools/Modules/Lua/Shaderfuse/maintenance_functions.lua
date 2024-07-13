@@ -454,7 +454,7 @@ function create_package_fuses(repositorypath)
   local patch_atom_for_platform = ''
 
   local currentCategory=''
-  local descriptionIndent='        '
+  local descriptionIndent=''
 
   for _, fuse in ipairs(fuses.list) do
 
@@ -476,8 +476,8 @@ function create_package_fuses(repositorypath)
 
           OurPackageDescription=OurPackageDescription..
               descriptionIndent..'<p>\n'..
-              descriptionIndent..'  '..currentCategory..' Shaders:\n'..
-              descriptionIndent..'  <ul>\n'
+              descriptionIndent..''..currentCategory..' Shaders:\n'..
+              descriptionIndent..'<ul>\n'
 
         end
 
@@ -515,7 +515,7 @@ function create_package_fuses(repositorypath)
 
   if currentCategory~='' then
     OurPackageDescription=OurPackageDescription
-      ..descriptionIndent..'  </ul>\n'
+      ..descriptionIndent..'</ul>\n'
       ..descriptionIndent..'</p>\n'
   end
 
@@ -537,39 +537,36 @@ function create_package_fuses(repositorypath)
       Description = ]]
       )
 
-  handle:write('[[\n        <center>\n')
-
-  handle:write('          <br />')
+  handle:write('[[\n<center>\n<br />')
   handle:write(image.logo_html())
   handle:write('<br /><br />\n')
 
   handle:write(
-          '          The package <font color="white">'..
-          YourPackageName..[[</font> adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
-          See our repository on <a href="https://github.com/nmbr73/Shaderfuse">GitHub</a> for some insights and to maybe constribute to this project?!?<br />
-          Find tons of example videos on what you can do with it on JiPi's <a href="https://www.youtube.com/c/JiPi_YT/videos">YouTube Channel</a>.<br />
-          Please note that - unless stated otherwise - all these Fuses fall under Creative Commond 'CC BY-NC-SA 3.0 unported'.<br />
-          For most shaders this regrettably means that in particular <font color="#ff6060">any commercial use is strictliy prohibited!</font>
-          </center>
-          ]])
+[[The package <font color="white">]].. YourPackageName ..[[</font> adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
+See our repository on <a href="https://github.com/nmbr73/Shaderfuse">GitHub</a> for some insights and to maybe constribute to this project?!?<br />
+Find tons of example videos on what you can do with it on JiPi's <a href="https://www.youtube.com/c/JiPi_YT/videos">YouTube Channel</a>.<br />
+Please note that - unless stated otherwise - all these Fuses fall under Creative Commond 'CC BY-NC-SA 3.0 unported'.<br />
+For most shaders this regrettably means that in particular <font color="#ff6060">any commercial use is strictliy prohibited!</font>
+</center>]].."\n")
 
   handle:write(OurPackageDescription)
 
   handle:write([[
-          <p>
-          See the following videos for some examples:
-          <ul>
-              <li><a href="https://youtu.be/GJz8Vgi8Qws">The Shader Cut</a> by <a href="https://nmbr73.github.io/Shaderfuse/Profiles/nmbr73.html" style="color:#a05050; ">nmbr73</a> and</li>
-              <li><a href="https://youtu.be/8sUu5GcDako">Other Worlds</a>,</li>
-              <li><a href="https://youtu.be/OYOar65omeM">Lego</a>,</li>
-              <li><a href="https://youtu.be/WGWCrhPNmdg">Mahnah Mahnah</a>,</li>
-              <li><a href="https://youtu.be/QE6--iYtikk">War of the Worlds</a>,</li>
-              <li><a href="https://youtu.be/ktloT0pUaZg">HappyEastern</a>,</li>
-              <li><a href="https://youtu.be/ntrp6BfVk0k">Shadertoy -Defilee</a>,</li>
-              <li><a href="https://youtu.be/4R7ZVMyKLnY">Fire Water</a>,</li>
-              <li><a href="https://youtu.be/oyndG0pLEQQ">Shadertoyparade</a> all by <a href="https://nmbr73.github.io/Shaderfuse/Profiles/JiPi.html" style="color:#a05050; ">JiPi</a></li>
-          </ul>
-          </p>]])
+<p>
+See the following videos for some examples:
+<ul>
+  <li><a href="https://youtu.be/GJz8Vgi8Qws">The Shader Cut</a> by <a href="https://nmbr73.github.io/Shaderfuse/Profiles/nmbr73.html" style="color:#a05050; ">nmbr73</a> and</li>
+  <li><a href="https://youtu.be/8sUu5GcDako">Other Worlds</a>,</li>
+  <li><a href="https://youtu.be/OYOar65omeM">Lego</a>,</li>
+  <li><a href="https://youtu.be/WGWCrhPNmdg">Mahnah Mahnah</a>,</li>
+  <li><a href="https://youtu.be/QE6--iYtikk">War of the Worlds</a>,</li>
+  <li><a href="https://youtu.be/ktloT0pUaZg">HappyEastern</a>,</li>
+  <li><a href="https://youtu.be/ntrp6BfVk0k">Shadertoy -Defilee</a>,</li>
+  <li><a href="https://youtu.be/4R7ZVMyKLnY">Fire Water</a>,</li>
+  <li><a href="https://youtu.be/oyndG0pLEQQ">Shadertoyparade</a> all by <a href="https://nmbr73.github.io/Shaderfuse/Profiles/JiPi.html" style="color:#a05050; ">JiPi</a></li>
+</ul>
+Find these and even more videos on our <a href="https://www.youtube.com/playlist?list=PLqbIsaWc6bt1AuwEHF116QcFsNPKnLYHD">Shaderfuse</a> YouTube playlist. 
+</p>]])
 
   handle:write(']]')
 
@@ -632,6 +629,7 @@ cp "../../Tools/Scripts/Comp/Shaderfuse/User Menu/Browser.lua" "Scripts/Comp/Sha
   end
 
   handle:write([[,
+
       Deploy = {]]..'\n'..
         '          "Scripts/Comp/Shaderfuse Browser.lua",\n'..
         OurDeployments ..[[
