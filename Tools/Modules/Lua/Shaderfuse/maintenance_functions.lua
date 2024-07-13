@@ -632,11 +632,10 @@ cp "../../Tools/Scripts/Comp/Shaderfuse/User Menu/Browser.lua" "Scripts/Comp/Sha
 
   handle:write([[,
       Deploy = {]]..'\n'..
-        '        "Scripts/Comp/Shaderfuse Browser.lua"\n'..
+        '          "Scripts/Comp/Shaderfuse Browser.lua",\n'..
         OurDeployments ..[[
       },
 
-      Dependencies = {},
   }]])
 
   handle:close()
