@@ -437,9 +437,10 @@ function create_package_fuses(repositorypath)
   local PackageIdentifier = 'com.JiPi.Shadertoys'
   local TargetFilepath = repositorypath .. 'atom/'
   local YourPackageVersion = '1.2'
-  -- local YourPackageDate = "2024,7,13"      -- os.date("%Y,%m,%d")  -- !!!!!!
-  local YourPackageDate = os.date("%Y,%m,%d")
-  -- local YourPackageDateFuse = "Jul 2024"    -- os.date("%b %Y")     -- !!!!!!
+
+  -- date in "{ YYYY, M, D }" format; like `os.date("%Y,%m,%d")` but without leading zeros
+  local YourPackageDate= os.date("*t")
+  YourPackageDate = "{" .. YourPackageDate.year .. ", " .. tonumber( YourPackageDate.month ) .. ", " .. tonumber(YourPackageDate.day) .. "}"
 
 
   local targetpath = TargetFilepath..PackageIdentifier..'/Fuses/Shaderfuse_wsl'
@@ -531,7 +532,7 @@ function create_package_fuses(repositorypath)
       Category = "Shaders",
       Author = "]]..YourCompanyName..[[",
       Version = ]]..YourPackageVersion..[[,
-      Date = {]]..YourPackageDate..[[},
+      Date = ]]..YourPackageDate..[[,
 
       Description = ]]
       )
