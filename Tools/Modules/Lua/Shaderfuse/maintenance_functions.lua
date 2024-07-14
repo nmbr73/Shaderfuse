@@ -456,10 +456,14 @@ function create_package_fuses(repositorypath)
   local currentCategory=''
   local descriptionIndent=''
 
-  -- locla decribe    = {}
-  -- local deploy_all = {} -- on all platforms
-  -- local deploy_mac = {} -- on macOS
-  -- local deploy_win = {} -- on Windoes
+  local describe    = {}
+  local deploy_common = {} -- on all platforms
+  local deploy_windows = {} -- on Windoes
+  local deploy_mac = {} -- on macOS
+
+  local num_common = 0
+  local num_windows = 0
+  local num_mac = 0
 
   for _, fuse in ipairs(fuses.list) do
 
@@ -469,48 +473,34 @@ function create_package_fuses(repositorypath)
 
     if not util.has_error() then
 
-        if fuse.Category ~= currentCategory then
-
-          if currentCategory~='' then
-              OurPackageDescription=OurPackageDescription
-              ..descriptionIndent..'  </ul>\n'
-              ..descriptionIndent..'</p>\n'
-          end
-
-          currentCategory=fuse.Category
-
-          OurPackageDescription=OurPackageDescription..
-              descriptionIndent..'<p>\n'..
-              descriptionIndent..''..currentCategory..' Shaders:\n'..
-              descriptionIndent..'<ul>\n'
-
-        end
-
+        local info = ''
 
         if fuse.Compatibility.Windows_CUDA then
           if fuse.Compatibility.macOS_Metal then
-            OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong></li>\n'
-            OurDeployments=OurDeployments
-              ..'          "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse", "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
+            num_common = num_common + 1
+            table.insert(deploy_common,fuse.Shadertoy.ID)
           else
-            OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong> (Windows only)</li>\n'
-            OurDeployments_windows=OurDeployments_windows
-              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse", "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
-            patch_atom_for_platform=patch_atom_for_platform
-              ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" "Windows/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" \n'
-              ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png"  "Windows/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png" \n'
+            info = ' (Windows only)'
+            num_windows = num_windows + 1
+            table.insert(deploy_windows,fuse.Shadertoy.ID)
           end
         else
           if fuse.Compatibility.macOS_Metal then
-            OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong> (Mac only)</li>\n'
-            OurDeployments_mac=OurDeployments_mac
-              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse", "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
-            patch_atom_for_platform=patch_atom_for_platform
-              ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" "Mac/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" \n'
-              ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png"  "Mac/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png" \n'
+            info = ' (Mac only)'
+            num_mac = num_mac + 1
+            table.insert(deploy_mac,fuse.Shadertoy.ID)
           else
-            -- we should not get here
+            info = 'err'
+            print(fuse.Shadertoy.ID .. "is compatible to nothing?!?!!")
           end
+        end
+
+        if describe[fuse.Category] == nil then
+          describe[fuse.Category] = {}
+        end
+
+        if info ~= 'err' then
+          table.insert(describe[fuse.Category],{ Name = fuse.Name, Info = info, ID = fuse.Shadertoy.ID })
         end
     end
   end
@@ -538,10 +528,20 @@ function create_package_fuses(repositorypath)
 
   handle:write('      Description = [[<center><br />')
   handle:write(image.logo_html())
-  handle:write('<br /><br />\n')
+  handle:write('\n<br /><font color="#ffff60">')
+
+
+  handle:write("v".. YourPackageVersion .. " including " .. num_common .. " Toys")
+  if num_windows > 0 then
+    handle:write(" +" .. num_windows .. " on Windows")
+  end
+  if num_mac > 0 then
+    handle:write(" +" .. num_mac .. " on Mac")
+  end
+
 
   handle:write(
-[[At the moment <font color="#ff6060">THIS PACKAGE IS MAC AND WINDOWS ONLY</font>,<br />but if you have some dev skills you are very welcome to checkout the repo and test on Linux.<br />&nbsp;<br />
+[[</font><br /><br />For the time being <font color="#ff6060">THIS PACKAGE IS MAC AND WINDOWS ONLY</font>,<br />but if you have some dev skills you are very welcome to checkout the repo and test on Linux.<br />&nbsp;<br />
 The package <font color="white">]].. YourPackageName ..[[</font> adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
 See our repository on <a href="https://github.com/nmbr73/Shaderfuse">GitHub</a> for some insights and to maybe constribute to this project?!?<br />
 Find tons of example videos on what you can do with it on JiPi's <a href="https://www.youtube.com/c/JiPi_YT/videos">YouTube Channel</a>.<br />
@@ -549,7 +549,16 @@ Please note that - unless stated otherwise - all these Fuses fall under Creative
 For most shaders this regrettably means that in particular <font color="#ff6060">ANY COMMERCIAL USE IS STRICTLIY PROHIBITED!</font>
 </center>]].."\n")
 
-  handle:write(OurPackageDescription)
+  for c, l in pairs(describe) do
+    handle:write('<p>'.. c ..' Shaders:\n<ul>\n')
+
+    for _, f in pairs(l) do
+        handle:write('  <li><strong style="color:#c0a050; ">'.. f.Name ..
+          '</strong> <a href="https://nmbr73.github.io/Shaderfuse/'.. c .. '/' .. f.Name ..'">'.. f.ID .. '</a> '.. f.Info ..'</li>\n')
+    end
+
+      handle:write('</ul>\n</p>\n')
+  end
 
   handle:write([[
 <p>
@@ -596,44 +605,74 @@ Find these and even more videos on our <a href="https://www.youtube.com/playlist
   end
 
 
-  handle:write([[
-    Deploy = {
-]].. OurDeployments ..[[
+  handle:write('  Deploy = {\n')
+  for _, id in pairs(deploy_common) do handle:write('    "Fuses/Shaderfuse_wsl/'.. id ..'.fuse", "Fuses/Shaderfuse_wsl/'.. id ..'.png",\n') end
+  handle:write('\n    Windows = {\n      "Scripts/Comp/Shaderfuse Browser.lua",\n')
+  for _, id in pairs(deploy_windows) do handle:write('      "Fuses/Shaderfuse_wsl/'.. id ..'.fuse", "Fuses/Shaderfuse_wsl/'.. id ..'.png",\n') end
+  handle:write('    },\n\n    Mac = {\n      "Scripts/Comp/Shaderfuse Browser.lua",\n')
+  for _, id in pairs(deploy_mac) do handle:write('      "Fuses/Shaderfuse_wsl/'.. id ..'.fuse", "Fuses/Shaderfuse_wsl/'.. id ..'.png",\n') end
+  handle:write([[    },
 
-          Windows = {
-              "Scripts/Comp/Shaderfuse Browser.lua",
-]] .. OurDeployments_windows .. [[
-          },
-
-          Mac = {
-             "Scripts/Comp/Shaderfuse Browser.lua",
-]] .. OurDeployments_mac .. [[
-          },
-
-          -- Use the installers if you are brave enough to
-          -- test the Fuses on Linux.
-          -- Find a ZIP including all available installers on 
-          -- https://nmbr73.github.io/Shaderfuse/#installer
-          --
-          -- Linux = {
-          --   "Scripts/Comp/Shaderfuse Browser.lua",
-          -- },
-      },
-    }]])
+    -- Use the installers if you are brave enough to
+    -- test the Fuses on Linux.
+    -- Find a ZIP including all available installers on 
+    -- https://nmbr73.github.io/Shaderfuse/#installer
+    --
+    -- Linux = {
+    --   "Scripts/Comp/Shaderfuse Browser.lua",
+    -- },
+  },
+}]])
 
   handle:close()
 
-  if patch_atom_for_platform ~= '' then
-    handle = io.open(TargetFilepath..'/atomize.sh',"wb")
+  handle = io.open(TargetFilepath..'/atomize.sh',"wb")
 
-    if not handle then
-      print("dang! failed to write file!")
-      return false
-    end
-    handle:write(patch_atom_for_platform)
-    handle:close()
+  if not handle then
+    print("dang! failed to write atomize.sh file!")
+    return false
   end
 
+  if num_windows > 0 then
+    handle:write('mkdir -p Windows/Fuses/Shaderfuse_wsl/\n')
+    for _, id in pairs(deploy_windows) do
+      handle:write('mv Fuses/Shaderfuse_wsl/'.. id ..'.fuse Windows/Fuses/Shaderfuse_wsl/'.. id ..'.fuse\n')
+      handle:write('mv Fuses/Shaderfuse_wsl/'.. id ..'.png  Windows/Fuses/Shaderfuse_wsl/'.. id ..'.png\n')
+    end
+  end
+
+
+  if num_mac > 0 then
+    handle:write('mkdir -p Mac/Fuses/Shaderfuse_wsl/\n')
+    for _, id in pairs(deploy_mac) do
+      handle:write('mv Fuses/Shaderfuse_wsl/'.. id ..'.fuse Mac/Fuses/Shaderfuse_wsl/'.. id ..'.fuse\n')
+      handle:write('mv Fuses/Shaderfuse_wsl/'.. id ..'.png  Mac/Fuses/Shaderfuse_wsl/'.. id ..'.png\n')
+    end
+  end
+
+  handle:close()
+
+
+
+
+  handle = io.open(TargetFilepath..'/detomize.sh',"wb")
+
+  if not handle then
+    print("dang! failed to write detomize.sh file!")
+    return false
+  end
+
+  if num_windows > 0 then
+    handle:write('mv Windows/Fuses/Shaderfuse_wsl/* Fuses/Shaderfuse_wsl/\n')
+  end
+
+  if num_mac > 0 then
+    handle:write('mv Mac/Fuses/Shaderfuse_wsl/* Fuses/Shaderfuse_wsl/\n')
+  end
+
+
+
+  handle:close()
   return true
 
 end

@@ -47,9 +47,22 @@ function do_atom {
   cd ../..
 
 
-  # cd "atom/${ATOM_URI}"
-  # [ -f ../atomize.sh ] && sh ../atomize.sh
-  # cd ../..
+  cd "atom/${ATOM_URI}"
+  mkdir -p Windows/Scripts/Comp
+  mkdir -p Mac/Scripts/Comp
+  cp "../../Tools/Scripts/Comp/Shaderfuse/User Menu/Browser.lua" "Windows/Scripts/Comp/Shaderfuse Browser.lua" 
+  cp "../../Tools/Scripts/Comp/Shaderfuse/User Menu/Browser.lua" "Mac/Scripts/Comp/Shaderfuse Browser.lua" 
+
+  [ -f ../atomize.sh ] && sh ../atomize.sh
+
+  zip -r "../${ATOM_URI}.zip" Fuses Windows Mac "${ATOM_URI}.atom"
+
+  [ -f ../detomize.sh ] && sh ../detomize.sh
+
+  rm -rf Windows
+  rm -rf Mac
+
+  cd ../..
 
 }
 
