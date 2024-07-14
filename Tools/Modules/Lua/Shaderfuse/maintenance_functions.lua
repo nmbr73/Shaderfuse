@@ -456,6 +456,11 @@ function create_package_fuses(repositorypath)
   local currentCategory=''
   local descriptionIndent=''
 
+  -- locla decribe    = {}
+  -- local deploy_all = {} -- on all platforms
+  -- local deploy_mac = {} -- on macOS
+  -- local deploy_win = {} -- on Windoes
+
   for _, fuse in ipairs(fuses.list) do
 
     util.clr_error()
@@ -486,13 +491,11 @@ function create_package_fuses(repositorypath)
           if fuse.Compatibility.macOS_Metal then
             OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong></li>\n'
             OurDeployments=OurDeployments
-              ..'          "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse",\n'
-              ..'          "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
+              ..'          "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse", "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
           else
             OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong> (Windows only)</li>\n'
             OurDeployments_windows=OurDeployments_windows
-              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse",\n'
-              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
+              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse", "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
             patch_atom_for_platform=patch_atom_for_platform
               ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" "Windows/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" \n'
               ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png"  "Windows/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png" \n'
@@ -501,8 +504,7 @@ function create_package_fuses(repositorypath)
           if fuse.Compatibility.macOS_Metal then
             OurPackageDescription=OurPackageDescription..descriptionIndent..'    <li><strong style="color:#c0a050; ">'..fuse.Name..'</strong> (Mac only)</li>\n'
             OurDeployments_mac=OurDeployments_mac
-              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse",\n'
-              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
+              ..'              "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse", "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png",\n'
             patch_atom_for_platform=patch_atom_for_platform
               ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" "Mac/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.fuse" \n'
               ..'mv "Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png"  "Mac/Fuses/Shaderfuse_wsl/'..fuse.Shadertoy.ID..'.png" \n'
@@ -526,27 +528,25 @@ function create_package_fuses(repositorypath)
     return false
   end
 
-  handle:write([[
-    Atom {
+  handle:write([[Atom {
       Name = "]]..YourPackageName..[[",
       Category = "Shaders",
       Author = "]]..YourCompanyName..[[",
       Version = ]]..YourPackageVersion..[[,
-      Date = ]]..YourPackageDate..[[,
-
-      Description = ]]
+      Date = ]]..YourPackageDate..",\n\n"
       )
 
-  handle:write('[[\n<center>\n<br />')
+  handle:write('      Description = [[<center><br />')
   handle:write(image.logo_html())
   handle:write('<br /><br />\n')
 
   handle:write(
-[[The package <font color="white">]].. YourPackageName ..[[</font> adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
+[[At the moment <font color="#ff6060">THIS PACKAGE IS MAC AND WINDOWS ONLY</font>,<br />but if you have some dev skills you are very welcome to checkout the repo and test on Linux.<br />&nbsp;<br />
+The package <font color="white">]].. YourPackageName ..[[</font> adds some Fuses that utilize DCTL to implement various Shaders as found on <a href="https://www.shadertoy.com/">Shadertoy.com</a>.<br />
 See our repository on <a href="https://github.com/nmbr73/Shaderfuse">GitHub</a> for some insights and to maybe constribute to this project?!?<br />
 Find tons of example videos on what you can do with it on JiPi's <a href="https://www.youtube.com/c/JiPi_YT/videos">YouTube Channel</a>.<br />
 Please note that - unless stated otherwise - all these Fuses fall under Creative Commond 'CC BY-NC-SA 3.0 unported'.<br />
-For most shaders this regrettably means that in particular <font color="#ff6060">any commercial use is strictliy prohibited!</font>
+For most shaders this regrettably means that in particular <font color="#ff6060">ANY COMMERCIAL USE IS STRICTLIY PROHIBITED!</font>
 </center>]].."\n")
 
   handle:write(OurPackageDescription)
@@ -568,35 +568,17 @@ See the following videos for some examples:
 Find these and even more videos on our <a href="https://www.youtube.com/playlist?list=PLqbIsaWc6bt1AuwEHF116QcFsNPKnLYHD">Shaderfuse</a> YouTube playlist. 
 </p>]])
 
-  handle:write(']]')
-
-  if OurDeployments_windows ~= '' then
-    if OurDeployments_mac == '' then
-      OurDeployments_mac = '              "Fuses/Shaderfuse_wsl/README_MAC.md",\n'
-      patch_atom_for_platform=patch_atom_for_platform
-        ..'echo "This is a dummy file to trick Reactor because there were some Windows only, but no Mac specific files." > "Mac/Fuses/Shaderfuse_wsl/README_MAC.md"\n'
-    end
-  else
-    if OurDeployments_mac ~= '' then
-      OurDeployments_windows = '              "Fuses/Shaderfuse_wsl/README_WINDOWS.md",\n'
-      patch_atom_for_platform=patch_atom_for_platform
-        ..'echo "This is a dummy file to trick Reactor because there were some Mac only, but no Windows specific files." > "Windows/Fuses/Shaderfuse_wsl/README_WINDOWS.md"\n'
-    end
-  end
+  handle:write('\n]],\n\n') -- end endscription
 
 
-  local copy_browser_script = [[
-mkdir -p Scripts/Comp
-cp "../../Tools/Scripts/Comp/Shaderfuse/User Menu/Browser.lua" "Scripts/Comp/Shaderfuse Browser.lua"
-]]
 
 
   if patch_atom_for_platform ~= '' then
     patch_atom_for_platform =
          "mkdir -p Mac/Fuses/Shaderfuse_wsl/\n"
       .. "mkdir -p Windows/Fuses/Shaderfuse_wsl/\n"
+      .. "mkdir -p Scripts/Comp\n"
       .. patch_atom_for_platform
-      .. copy_browser_script
       ..
   'zip -r "../'..PackageIdentifier..'.zip" Scripts Fuses Windows Mac "'..PackageIdentifier..'.atom"\n'
 
@@ -610,32 +592,34 @@ cp "../../Tools/Scripts/Comp/Shaderfuse/User Menu/Browser.lua" "Scripts/Comp/Sha
 ]]
   else
     patch_atom_for_platform =
-      copy_browser_script ..
       'zip -r "../'..PackageIdentifier..'.zip" Scripts Fuses "'..PackageIdentifier..'.atom"\n'
   end
 
-  if OurDeployments_windows ~= '' then
-    OurDeployments = OurDeployments
-      .. "\n          Windows = {\n"
-      .. OurDeployments_windows
-      .. "          },\n"
-  end
 
-  if OurDeployments_mac ~= '' then
-    OurDeployments = OurDeployments
-      .. "\n          Mac = {\n"
-      .. OurDeployments_mac
-      .. "          },\n"
-  end
+  handle:write([[
+    Deploy = {
+]].. OurDeployments ..[[
 
-  handle:write([[,
+          Windows = {
+              "Scripts/Comp/Shaderfuse Browser.lua",
+]] .. OurDeployments_windows .. [[
+          },
 
-      Deploy = {]]..'\n'..
-        '          "Scripts/Comp/Shaderfuse Browser.lua",\n'..
-        OurDeployments ..[[
+          Mac = {
+             "Scripts/Comp/Shaderfuse Browser.lua",
+]] .. OurDeployments_mac .. [[
+          },
+
+          -- Use the installers if you are brave enough to
+          -- test the Fuses on Linux.
+          -- Find a ZIP including all available installers on 
+          -- https://nmbr73.github.io/Shaderfuse/#installer
+          --
+          -- Linux = {
+          --   "Scripts/Comp/Shaderfuse Browser.lua",
+          -- },
       },
-
-  }]])
+    }]])
 
   handle:close()
 
