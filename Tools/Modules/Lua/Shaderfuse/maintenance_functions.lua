@@ -436,7 +436,7 @@ function create_package_fuses(repositorypath)
   local YourPackageName = 'Shadertoys'
   local PackageIdentifier = 'com.JiPi.Shadertoys'
   local TargetFilepath = repositorypath .. 'atom/'
-  local YourPackageVersion = '1.2'
+  local YourPackageVersion = '2.0'
 
   -- date in "{ YYYY, M, D }" format; like `os.date("%Y,%m,%d")` but without leading zeros
   local YourPackageDate= os.date("*t")

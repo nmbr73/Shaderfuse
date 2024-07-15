@@ -15,7 +15,7 @@ for _, file in ipairs(files) do
     local line = handle:read("*l")
     handle:close()
 
-    _, _, compatibility, name, author, id, port, category = string.find(line, "%-%- MAGIC%-A|v1%.2|(%d+)|\tNAME: ([^\t]+)\tAUTHOR: ([^\t]+)\tID: ([^\t]+)\tPORT: ([^\t]+)\tCATEGORY: ([^\t]+)\t")
+    _, _, version, compatibility, name, author, id, port, category = string.find(line, "%-%- MAGIC%-A|(v%d%.%d)|(%d+)|\tNAME: ([^\t]+)\tAUTHOR: ([^\t]+)\tID: ([^\t]+)\tPORT: ([^\t]+)\tCATEGORY: ([^\t]+)\t")
 
     if id ~= nil then
       table.insert(fuses,{
@@ -25,6 +25,7 @@ for _, file in ipairs(files) do
         Id = id,
         Port = port,
         Category = category,
+        Version = version,
       })
     end
   end
