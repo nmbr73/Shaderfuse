@@ -124,6 +124,10 @@ function do_docs {
   lua generate_markdown.lua
   cd ../..
 
+  cd docs
+  find . -type f -name 'DESCRIPTION.md' -delete
+  cd ..
+
   # create the videos list file
   lua Tools/Shell/print_videos.lua > docs/Videos.md
 
