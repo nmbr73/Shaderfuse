@@ -13,13 +13,13 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (1th of July 2024):
+Current Shader of the Week (17th of July 2024):
 <center>
 
-[![NestedOctahedrons2](https://github.com/nmbr73/Shaderfuse/assets/78935215/e1ed62a3-5df8-462b-9eae-143988f20c2a)
-](ShaderOfTheWeek/NestedOctahedrons2.md)
+[![AlienTunnel](https://github.com/user-attachments/assets/7db038b1-170f-4978-9e69-6f67424991f9)
+](ShaderOfTheWeek/AlienTunnel.md)
 
-[NestedOctahedrons2](ShaderOfTheWeek/NestedOctahedrons2.md) by [pb](https://www.shadertoy.com/user/pb)
+[Alien Tunnel](ShaderOfTheWeek/AlienTunnel.md) by [lz](https://www.shadertoy.com/user/lz)
 </center>
 
 

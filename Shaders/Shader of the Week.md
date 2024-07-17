@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 17th of July 2024
+#### [Alien Tunnel](AlienTunnel.md) (Shadertoy ID [X3ySRc](https://www.shadertoy.com/view/X3ySRc))
+[![AlienTunnel](https://github.com/user-attachments/assets/7db038b1-170f-4978-9e69-6f67424991f9)
+](ShaderOfTheWeek/AlienTunnel.md)
+----
 ## 1th of July 2024
 #### [Nested Octahedrons2](RussianRouletNestedOctahedrons2teAudioViz.md) (Shadertoy ID [X3cXDj](https://www.shadertoy.com/view/X3cXDj))
 [![NestedOctahedrons2](https://github.com/nmbr73/Shaderfuse/assets/78935215/e1ed62a3-5df8-462b-9eae-143988f20c2a)
