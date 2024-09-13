@@ -13,6 +13,58 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Slime Mold Attempt](https://www.shadertoy.com/view/MfScDc)| defect | A texelfetch  |
+|[Dan's Discrete Particle Sim](https://www.shadertoy.com/view/4cBBzc)| incub | Ab !! |
+|[Lava Lamp](https://www.shadertoy.com/view/Xf2cWt)| incub | ABCD Blending  |
+|[Autumn Leaf](https://www.shadertoy.com/view/4fsfWX)| incub | ABC Blending ! |
+|[Lake Coeur D'Alene](https://www.shadertoy.com/view/4fXBWf)| incub | ABC Blending !!! |
+|[Taughannock Falls](https://www.shadertoy.com/view/4csBW2)| incub | ABCD ! |
+|[Viscous Buckling](https://www.shadertoy.com/view/4cffWS)| incub | ABCD Blending !!! |
+|[Windscreen](https://www.shadertoy.com/view/XclBD2)| incub | AB Blending ! |
+|[smashing](https://www.shadertoy.com/view/lflBRl)| incub | ABCD Blending !!! |
+|[MoltenLand](https://www.shadertoy.com/view/4fBBzW)| incub | A  |
+|[Lightning Simulation](https://www.shadertoy.com/view/lfBfWh)| incub | ABC Blending !! |
+|[Shower Door](https://www.shadertoy.com/view/XclfD2)| incub | ABCD Blending !! |
+|[Starry planes](https://www.shadertoy.com/view/MfjyWK)| fuse | ShaderOFTheWeek 37/24 |
+|[TV Scene, wall of TV](https://www.shadertoy.com/view/4fffR7)| defect | sehr aufwändig - Fehler in Buf A |
+|[Noise, octaves, fBM & heightmaps](https://www.shadertoy.com/view/4fsBzB)| incub | Organische Substanz !! |
+|[Suds II](https://www.shadertoy.com/view/MffBRn)| incub | AB ! |
+|[Stress Test](https://www.shadertoy.com/view/XcXfDr)| incub | ABCD Blending !!! |
+|[Cloud Simulation](https://www.shadertoy.com/view/XcXBzN)| incub | ABCD |
+|[Air Bubbles](https://www.shadertoy.com/view/lfjcDy)| incub | ABCD Blending !! |
+|[Dry Earth](https://www.shadertoy.com/view/lfByDd)| incub | ABCD Blending !! |
+|[Deposits](https://www.shadertoy.com/view/4c2cDK)| incub | ABCD Blending !! |
+|[Painting with Fluids](https://www.shadertoy.com/view/XcfcDl)| incub | ABC !! |
+|[MiPhone_](https://www.shadertoy.com/view/4clyDj)| incub | !! |
+|[ARTS1308: Neon Warrior](https://www.shadertoy.com/view/Mc2cWw)| incub | !! |
+|[Waterfall 11](https://www.shadertoy.com/view/lfjcR1)| incub | AB !! |
+|[Waterfall 10](https://www.shadertoy.com/view/lf2cRD)| incub | A ! |
+|[Fork Between th ZnW 663](https://www.shadertoy.com/view/4f2yzR)| incub | Leichte Abweichungen |
+|[Burn O Flame!](https://www.shadertoy.com/view/XfByRD)| incub | ! |
+|[Toasting Bread - hw9](https://www.shadertoy.com/view/MffyW2)| incub | Toaster !! |
+|[Waterfall 8](https://www.shadertoy.com/view/MclyWf)| incub | A ! |
+|[Waterfall 7](https://www.shadertoy.com/view/MclcDB)| incub | A !! |
+|[Ithaca Falls](https://www.shadertoy.com/view/XcXyDB)| incub | ABC Wasserfall !!! |
+|[pachigutierrez](https://www.shadertoy.com/view/lcfcRB)| incub | Regentropfen !! |
+|[Alien Tunnel](https://www.shadertoy.com/view/X3ySRc)| fuse | ShaderOfTheWeek 27/24 |
+|[Dante's natty vessel](https://www.shadertoy.com/view/Nds3W7)| fuse | Boot auf hoher See !!! |
+|[wave attempt 2](https://www.shadertoy.com/view/dd2fzG)| incub | A |
+|[Byt3-daily-004](https://www.shadertoy.com/view/MXdXWX)| incub | !! |
+|[Byt3-daily-005](https://www.shadertoy.com/view/lXdXWf)| incub | !! |
+|[nested octahedrons 2](https://www.shadertoy.com/view/X3cXDj)| fuse | ShaderOfTheWeek 25/24 |
+|[Feedback Fractals](https://www.shadertoy.com/view/XXcXWn)| incub | A !! |
+|[Audio Line](https://www.shadertoy.com/view/cdyBRw)| incub | ! |
+|[Russian Roulette (Audio Viz)](https://www.shadertoy.com/view/MfG3Ry)| incub |  |
+|[Fire segmentation](https://www.shadertoy.com/view/3lKyRz)| incub | AB ! |
+|[Plasma Globe Audio Visualizer](https://www.shadertoy.com/view/43GGDm)| incub | ! |
+|[Saturday weirdness](https://www.shadertoy.com/view/43jXWt)| fuse | ShaderOFTheWeek 23/24 |
+|[Fluid Art II](https://www.shadertoy.com/view/4cyXRw)| incub | ABC !! Blending |
+|[Fluid Art](https://www.shadertoy.com/view/XfVSzW)| incub | ABCD ! Blending |
+|[Texture Fluid ](https://www.shadertoy.com/view/XcVSz1)| incub | ABCD !! Blending |
+|[Mach1](https://www.shadertoy.com/view/lXjGzt)| incub | ABCD |
+|[sound reactive](https://www.shadertoy.com/view/DdlyW2)| incub | A ! |
+|[Rift Portal](https://www.shadertoy.com/view/dsByWy)| incub | ABCD !!! |
+|[Pilot Wave Particles](https://www.shadertoy.com/view/MfKSRy)| incub | ABCD Blending !! |
 |[Let's self reflect](https://www.shadertoy.com/view/XfyXRV)| incub | ShaderOFTheWeek 21/24 |
 |[Branches II](https://www.shadertoy.com/view/lfKSzK)| incub | ABCD ! |
 |[Branches](https://www.shadertoy.com/view/l4cKSzK)| defect | ABCD  |
