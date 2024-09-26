@@ -1,0 +1,352 @@
+--[[--/*
+
+    StainedLights.fuse
+
+    Based on https://www.shadertoy.com/view/WlsSzM a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion.
+
+    Shader created by 104
+
+*/--]]--
+
+
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+ST_StainedLightsParams =
+[[
+  float freq;
+  float noise;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+ST_StainedLightsKernel = [[
+
+// -----
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+// 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+#if 1
+  #if defined(DEVICE_IS_METAL)
+    #define USE_NATIVE_METAL_IMPL   1
+  #elif defined(DEVICE_IS_CUDA)
+    #define USE_NATIVE_CUDA_IMPL    1
+  #elif defined(DEVICE_IS_OPENCL)
+    #define USE_NATIVE_OPENCL_IMPL  1
+  #endif
+#endif
+
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  #define swixy(V) (V).xy
+
+  #define swixxy(V) (V).xxy
+  #define swixyx(V) (V).xyx
+  #define swiyxz(V) (V).yxz
+  #define swiyzz(V) (V).yzz
+  #define swizyx(V) (V).zyx
+
+  __DEVICE__ inline float3 fract_float3(float3 v) { return fract(v); }
+  __DEVICE__ inline float4 pow_float4(float4 a, float4 b) { return pow(a,b); }
+
+#else
+
+  #define swixy(V) to_float2((V).x,(V).y)
+
+  #define swixxy(V) to_float3((V).x,(V).x,(V).y)
+  #define swixyx(V) to_float3((V).x,(V).y,(V).x)
+  #define swiyxz(V) to_float3((V).y,(V).x,(V).z)
+  #define swiyzz(V) to_float3((V).y,(V).z,(V).z)
+  #define swizyx(V) to_float3((V).z,(V).y,(V).x)
+
+  __DEVICE__ inline float3 fract_float3(float3 v)          { return to_float3(v.x - _floor(v.x), v.y - _floor(v.y), v.z - _floor(v.z)                   ); }
+  __DEVICE__ inline float4 pow_float4(float4 a, float4 b) { return to_float4( pow(a.x,b.x),pow(a.y,b.y),pow(a.z,b.z),pow(a.w,b.w) ); }
+
+#endif
+
+
+
+
+
+__DEVICE__ float3 hash32(float2 p)
+{ // credits: Dave_Hoskins Hash functions: https://www.shadertoy.com/view/4djSRW
+  float3 p3 = fract_float3( swixyx(p) * to_float3(0.1031f, 0.1030f, 0.0973f));
+  p3 += dot(p3, swiyxz(p3)+19.19f);
+  return fract_float3((swixxy(p3)+swiyzz(p3))*swizyx(p3));
+}
+
+__DEVICE__ float4 disco(float2 uv)
+{ // returns { RGB, dist to edge (0 = edge, 1 = center) }
+  float v = _fabs(cos(uv.x * M_PI * 2.0f) + cos(uv.y *M_PI * 2.0f)) * 0.5f;
+  uv.x -= 0.5f;
+  float3 cid2 = hash32(to_float2(floor(uv.x - uv.y), floor(uv.x + uv.y))); // generate a color
+  return to_float4_aw(cid2, v);
+}
+
+//############################################################################
+
+__KERNEL__ void ST_StainedLightsKernel(
+    __CONSTANTREF__ ST_StainedLightsParams*   params,
+    __TEXTURE2D__                             iChannel0,
+    __TEXTURE2D_WRITE__                       dst
+    )
+{
+
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  float2 fragCoord   = to_float2(x, y);
+  float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+  float4 fragColor   = to_float4_s(0.0f);
+
+  //##########################################################################
+
+  float4 o; // hmhmhm
+
+  float2 R = swixy(iResolution);
+  float2 uv = fragCoord / R;
+  uv.x *= R.x / R.y; // aspect correct
+
+  float t = iTime * 0.6f; //t = 0.0f;
+  uv *= 8.0f;
+  uv -= to_float2(t*0.5f, -t*0.3f);
+
+  o = to_float4_s(1.0f);
+  for(float i = 1.0f; i <= 4.0f; i+=1.0f) {
+      uv /= i*0.9f;
+      float4 d = disco(uv);
+      float curv = pow(d.w, 0.44f-((1.0f/i)*0.3f));
+      curv = pow(curv, 0.8f+(d.z * 2.0f));
+      o *= clamp(d * curv,0.35f, 1.0f);
+      uv += t*(i+0.3f);
+  }
+
+  // post
+  o = clamp(o,0.0f,1.0f);
+  float2 N = (fragCoord / R )- 0.5f;
+  o = to_float4_s(1.0f)-pow_float4(to_float4_s(1.0f)-o, to_float4_s(30.0f));// curve
+
+  //o.rgb += hash32(fragCoord + iTime).x*0.07f;//noise
+  float noise=hash32(fragCoord + iTime).x*  (params->noise / 10.0f); //0.07f
+  o.x += noise;
+  o.y += noise;
+  o.z += noise;
+
+  o *= 1.1f-smoothstep(0.4f,0.405f,_fabs(N.y));
+  o *= 1.0f-dot(N,N*1.7f);// vingette
+  o.w = 1.0f;
+
+  // fragColor   = to_float4(0.0f,1.0f,0.0f,0.0f);
+
+  fragColor   = o;
+
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+
+}
+
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+	LINK_Visible = false,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+   InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "SliderControl",
+    INP_Default         = 2.0,
+    INP_MinScale 	      = 0.0,
+    INP_MaxScale 	      = 5.0,
+  })
+
+   InNoise = self:AddInput("Noise", "Noise", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "SliderControl",
+    INP_Default         = 0.7,
+    INP_MinScale 	      = 0.0,
+    INP_MaxScale 	      = 4.0,
+  })
+
+  -- and your controlls here ...
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+
+    -- Extern Texture or create a new one
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+    else
+        src1 = Image(imgattrs)
+        local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+        src1:Fill(p)
+    end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+    -- Interface for running DCTL-Code
+
+    node = DVIPComputeNode(req, "ST_StainedLightsKernel", ST_StainedLightsKernel, "ST_StainedLightsParams", ST_StainedLightsParams)
+
+
+    if not pcall(function ()  -- necessary to avoid memory leakage
+        params.freq         = InFreq:GetValue(req).Value
+        params.noise        = InNoise:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        node:SetParamBlock(params)
+    end) then
+        params              = node:GetParamBlock(ST_StainedLightsParams)
+        params.freq         = InFreq:GetValue(req).Value
+        params.noise        = InNoise:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        node:SetParamBlock(params)
+    end
+
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst",      dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+    end
+    OutImage:Set(req, dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- **/
+
+
