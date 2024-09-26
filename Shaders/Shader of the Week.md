@@ -4,6 +4,17 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 29th of September 2024
+#### [AlienSpaceJockey](AlienSpaceJockey.md) (Shadertoy ID [mdB3Rh](https://www.shadertoy.com/view/mdB3Rh))
+[![AlienSpaceJockey](https://github.com/user-attachments/assets/76e1ad70-ef5c-4f0c-af24-d96488499edd)
+](ShaderOfTheWeek/AlienSpaceJockey.md)
+----
+----
+## 10th of September 2024
+#### [Starry Planes](StarryPlanes.md) (Shadertoy ID [MfjyWK](https://www.shadertoy.com/view/MfjyWK))
+[![StarryPlanes](https://github.com/user-attachments/assets/bb5f6226-ca3c-4fb3-94c8-4e2d72450020)
+](ShaderOfTheWeek/StarryPlanes.md)
+----
 ## 17th of July 2024
 #### [Alien Tunnel](AlienTunnel.md) (Shadertoy ID [X3ySRc](https://www.shadertoy.com/view/X3ySRc))
 [![AlienTunnel](https://github.com/user-attachments/assets/7db038b1-170f-4978-9e69-6f67424991f9)
