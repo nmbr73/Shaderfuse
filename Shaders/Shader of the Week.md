@@ -4,11 +4,20 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 22th of October 2024
+#### [Unstable Universe](UnstableUniverse.md) (Shadertoy ID [wtlfz8](https://www.shadertoy.com/view/wtlfz8))
+[![UnstableUniverse](https://github.com/user-attachments/assets/a83665fb-dcdf-4eb0-94c7-a1213941293d)
+](ShaderOfTheWeek/UnstableUniverse.md)
+----
+## 22th of October 2024
+#### [Abstract Wave Thing](AlienSpaceAbstractWaveThingJockey.md) (Shadertoy ID [tttSW7](https://www.shadertoy.com/view/tttSW7))
+[![AbstractWaveThing](https://github.com/user-attachments/assets/abbb6894-010a-4ee4-a524-37602635cceb)
+](ShaderOfTheWeek/AbstractWaveThing.md)
+----
 ## 29th of September 2024
-#### [AlienSpaceJockey](AlienSpaceJockey.md) (Shadertoy ID [mdB3Rh](https://www.shadertoy.com/view/mdB3Rh))
+#### [Alien Space Jockey](AlienSpaceJockey.md) (Shadertoy ID [mdB3Rh](https://www.shadertoy.com/view/mdB3Rh))
 [![AlienSpaceJockey](https://github.com/user-attachments/assets/76e1ad70-ef5c-4f0c-af24-d96488499edd)
 ](ShaderOfTheWeek/AlienSpaceJockey.md)
-----
 ----
 ## 10th of September 2024
 #### [Starry Planes](StarryPlanes.md) (Shadertoy ID [MfjyWK](https://www.shadertoy.com/view/MfjyWK))
