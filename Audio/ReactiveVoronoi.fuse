@@ -1,0 +1,782 @@
+--[[--/*
+
+  ReactiveVoronoi.fuse
+
+  Based on https://www.shadertoy.com/view/Ml3GDX a WebGL shader created by glk7.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f( float a ) { return mat3(a,a,a,a,a,a,a,a,a); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f( float  a )
+  {
+    mat3 t;
+    t.r0.x = t.r0.y = t.r0.z = t.r1.x = t.r1.y = t.r1.z = t.r2.x = t.r2.y = t.r2.z = a;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 A, mat3 B)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+
+ #define sin_f2(i) sin(i)
+ #define cos_f3(i) cos(i)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define sin_f2(i) sin(i)
+ #define cos_f3(i) cos(i)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define cos_f3(i) to_float3( _cosf((i).x), _cosf((i).y), _cosf((i).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image '/media/a/a6a1cf7a09adfed8c362492c88c30d74fb3d2f4f7ba180ba34b98556660fada1.mp3' to iChannel0
+
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+// Created by genis sole - 2016
+// License Creative Commons Attribution-NonCommercial-ShareAlike 4.0f International.
+
+// A remastered version of this can be found here: https://www.shadertoy.com/view/MtyGWK
+// Adds a better traversal, stronger lighting, softer shadows and AO.
+
+#define PI 3.1416f
+
+__DEVICE__ float2 hash2( float2 p )
+{
+    // procedural white noise
+  return fract_f2(sin_f2(to_float2(dot(p,to_float2(127.1f,311.7f)),
+                                   dot(p,to_float2(269.5f,183.3f))))*43758.5453f);
+}
+
+// From http://www.iquilezles.org/www/articles/voronoilines/voronoilines.htm
+__DEVICE__ float3 voronoit( in float2 _x, float iTime )
+{
+    float2 n = _floor(_x);
+    float2 f = fract_f2(_x);
+
+    //----------------------------------
+    // first pass: regular voronoi
+    //----------------------------------
+    float2 mg, mr;
+
+    float md = 8.0f;
+    for( int j=-1; j<=1; j++ )
+    for( int i=-1; i<=1; i++ )
+    {
+        float2 g = to_float2((float)(i),(float)(j));
+        float2 o = hash2( n + g );
+    #ifdef ANIMATE
+        o = 0.5f + 0.5f*_sinf( iTime + 6.2831f*o );
+    #endif
+        float2 r = g + o - f;
+        float d = dot(r,r);
+
+        if( d<md )
+        {
+            md = d;
+            mr = r;
+            mg = g;
+        }
+    }
+
+    //----------------------------------
+    // second pass: distance to borders
+    //----------------------------------
+    md = 8.0f;
+    for( int j=-2; j<=2; j++ )
+    for( int i=-2; i<=2; i++ )
+    {
+        float2 g = mg + to_float2((float)(i),(float)(j));
+        float2 o = hash2( n + g );
+    #ifdef ANIMATE
+        o = 0.5f + 0.5f*_sinf( iTime + 6.2831f*o );
+    #endif
+        float2 r = g + o - f;
+
+        if( dot(mr-r,mr-r)>0.00001f )
+          md = _fminf( md, dot( 0.5f*(mr+r), normalize(r-mr) ) );
+    }
+
+    return to_float3( md, mr.x,mr.y );
+}
+
+
+// Modified version of the above iq's voronoi borders.
+// Returns the distance to the border in a given direction.
+__DEVICE__ float3 voronoi( in float2 _x, in float2 dir)
+{
+    float2 n = _floor(_x);
+    float2 f = fract_f2(_x);
+
+    //----------------------------------
+    // first pass: regular voronoi
+    //----------------------------------
+    float2 mg, mr;
+
+    float md = 8.0f;
+    for( int j=-1; j<=1; j++ )
+    for( int i=-1; i<=1; i++ )
+    {
+        float2 g = to_float2((float)(i),(float)(j));
+        float2 o = hash2( n + g );
+        float2 r = g + o - f;
+        float d = dot(r,r);
+
+        if( d<md )
+        {
+            md = d;
+            mr = r;
+            mg = g;
+        }
+    }
+
+    //----------------------------------
+    // second pass: distance to borders
+    //----------------------------------
+    md = 1e5;
+    for( int j=-2; j<=2; j++ )
+    for( int i=-2; i<=2; i++ )
+    {
+        float2 g = mg + to_float2((float)(i),(float)(j));
+        float2 o = hash2( n + g );
+        float2 r = g + o - f;
+
+
+     if( dot(r-mr,r-mr) > 1e-5 ) {
+          float2 l = r-mr;
+
+          if (dot(dir, l) > 1e-5) {
+              md = _fminf(md, dot(0.5f*(mr+r), l)/dot(dir, l));
+          }
+      }
+
+    }
+
+    return to_float3( md, n.x+mg.x, n.y+mg.y);
+}
+
+__DEVICE__ bool IRayAABox(in float3 ro, in float3 rd, in float3 invrd, in float3 bmin, in float3 bmax,
+               out float3 *p0, out float3 *p1)
+{
+    float3 t0 = (bmin - ro) * invrd;
+    float3 t1 = (bmax - ro) * invrd;
+
+    float3 tmin = _fminf(t0, t1);
+    float3 tmax = _fmaxf(t0, t1);
+
+    float fmin = _fmaxf(_fmaxf(tmin.x, tmin.y), tmin.z);
+    float _fmax = min( min(tmax.x, tmax.y), tmax.z); // kein _fminf() möglich - wrum auch immer - total krude, weil min für integer _fmax ist aber eine float
+
+    // Fehlermeldung in OpenCL
+    // Build Log: <kernel>:1910:30: error: called object type 'float' is not a function or function pointer
+    // float _fmax = min( _fminf(tmax.x, tmax.y), tmax.z);
+
+    *p0 = ro + rd*fmin;
+    *p1 = ro + rd*_fmax;
+
+    return _fmax >= fmin;
+}
+
+__DEVICE__ float3 AABoxNormal(float3 bmin, float3 bmax, float3 p)
+{
+
+    //float3 n1 = -(1.0f - smoothstep(to_float3_s(0.0f), to_float3_s(0.03f), p - bmin));
+    float3 n1 = (-1.0f + smoothstep(to_float3_s(0.0f), to_float3_s(0.03f), p - bmin));
+    float3 n2 = (1.0f -  smoothstep(to_float3_s(0.0f), to_float3_s(0.03f), bmax - p));
+
+    return normalize(n1 + n2);
+}
+
+
+
+// From http://iquilezles.org/www/articles/palettes/palettes.htm
+__DEVICE__ float3 pal( in float t, in float3 a, in float3 b, in float3 c, in float3 d )
+{
+    return a + b*cos_f3( 6.28318f*(c*t+d) );
+}
+
+__DEVICE__ float3 color(float2 p) {
+    return pal(3.434f+(hash2(p).x*0.02f),
+               to_float3(0.5f,0.5f,0.5f),to_float3(0.5f,0.5f,0.5f),to_float3(1.0f,0.7f,0.4f),to_float3(0.0f,0.15f,0.20f)  );
+}
+
+__DEVICE__ float disp(in float2 p, float3 scmin, __TEXTURE2D__ iChannel0) {
+    return scmin.y + 0.1f + hash2(p).x * 0.5f + texture(iChannel0, to_float2(hash2(p).x, 0.0f)).x*2.0f;
+}
+
+__DEVICE__ float4 map(in float2 p, in float2 dir, float3 scmin, __TEXTURE2D__ iChannel0) {
+
+    float3 v = voronoi(p*2.0f, dir)*0.5f;
+    return to_float4_aw(v, disp(swi2(v,y,z),scmin,iChannel0));
+}
+
+__DEVICE__ float ShadowFactor(in float3 ro, in float3 rd, float3 scmin, float3 scmax, __TEXTURE2D__ iChannel0) {
+    float3 p0 = to_float3_s(0.0f);
+    float3 p1 = to_float3_s(0.0f);
+
+    IRayAABox(ro, rd, 1.0f/rd, scmin, scmax, &p0, &p1);
+    p0 = ro + rd*0.02f;
+
+    float2 dir = normalize(swi2(rd,x,z));
+    float sf = rd.y / length(swi2(rd,x,z));
+
+    float m = -1e5;
+
+    const int max_steps = 32;
+    for (int i = max_steps; i > 0; --i) {
+        if (p0.y < m) break;
+
+        if (dot((p1 - p0), rd) < 0.0f) return 1.0f;
+
+        float4 v = map(swi2(p0,x,z), dir,scmin,iChannel0);
+
+        m = v.w;
+        if (p0.y < m) return 0.0f;
+
+        p0 += rd*(length(to_float2(v.x, v.x*sf)) + 0.02f);
+    }
+
+    p0 += rd * (m - p0.y)/rd.y;
+    if (dot((p1 - p0), rd) < 0.0f) return 1.0f;
+
+    return 0.0f;
+}
+
+__DEVICE__ float3 Shade(in float3 p, in float3 n, in float3 ld, in float2 c, float3 scmin, float3 scmax, __TEXTURE2D__ iChannel0) {
+    float3 col = color(c);
+  return (col * 0.15f + col * _fmaxf(0.0f, dot(n,ld)) * ShadowFactor(p, ld,scmin,scmax,iChannel0) * 0.85f) * 3.5f;
+}
+
+__DEVICE__ float3 Render(in float3 ro, in float3 rd, in float3 ld, float3 scmin, float3 scmax, float3 background, __TEXTURE2D__ iChannel0,float iTime) {
+    float3 p0 = to_float3_s(0.0f);
+    float3 p1 = to_float3_s(0.0f);
+
+    if (!IRayAABox(ro, rd, 1.0f/rd, scmin, scmax, &p0, &p1)) return background;
+
+    float2 dir = normalize(swi2(rd,x,z));
+    float sf = rd.y / length(swi2(rd,x,z));
+
+    float2 lvp = to_float2_s(0);
+    float2 vp = swi2(p0,x,z);
+
+    float m = -1e5;
+
+    float3 n = to_float3_s(0.0f);
+
+    const int max_steps = 32;
+    for (int i = max_steps; i > 0; --i) {
+        if (p0.y < m) {
+            n = to_float3(0.0f, 1.0f, 0.0f);
+            break;
+        }
+
+        if (dot((p1 - p0), rd) < 0.0f) return background;
+
+        float4 v = map(swi2(p0,x,z), dir,scmin,iChannel0);
+
+        lvp = vp;
+        vp = swi2(v,y,z);
+
+        m = v.w;
+        if (p0.y < m) break;
+
+        p0 += rd*(length(to_float2(v.x, v.x*sf)) + 0.02f);
+    }
+
+
+
+    if (n.y != 0.0f) {
+      p0 += rd * (-p0.y + m)/rd.y;
+        if (dot((p1 - p0), rd) < 0.0f) return background;
+    }
+
+    n = normalize(_mix(swi3(to_float3_aw(normalize(lvp - vp), 0.0f),x,z,y), n,
+                  smoothstep(0.00f, 0.03f, voronoit(swi2(p0,x,z)*2.0f,iTime).x*0.5f)));
+
+    //if (all(equal(swi2(p0,x,z), lvp))) {
+    if (p0.x == lvp.x && p0.z == lvp.y) {
+      n = AABoxNormal(scmin, scmax, p0);
+    }
+
+    return Shade(p0, n, ld, vp,scmin,scmax,iChannel0);
+}
+
+__DEVICE__ void CameraOrbitRay(in float2 fragCoord, in float n, in float3 c, in float d,
+                    out float3 *ro, out float3 *rd, out mat3 *t, float2 iResolution, float4 iMouse)
+{
+    float a = 1.0f/_fmaxf(iResolution.x, iResolution.y);
+    *rd = normalize(to_float3_aw((fragCoord - iResolution*0.5f)*a, n));
+
+    *ro = to_float3(0.0f, 0.0f, -d);
+
+    float ff = _fminf(1.0f, step(0.001f, iMouse.x) + step(0.001f, iMouse.y));
+    float2 m = PI*ff + (((swi2(iMouse,x,y) + 0.1f) / iResolution) * (PI*2.0f));
+    m.y = -m.y;
+    m.y = _sinf(m.y*0.5f)*0.6f + 0.6f;
+
+    mat3 rotX = to_mat3(1.0f, 0.0f, 0.0f, 0.0f, _cosf(m.y), _sinf(m.y), 0.0f, -_sinf(m.y), _cosf(m.y));
+    mat3 rotY = to_mat3(_cosf(m.x), 0.0f, -_sinf(m.x), 0.0f, 1.0f, 0.0f, _sinf(m.x), 0.0f, _cosf(m.x));
+
+    *t = mul_mat3_mat3(rotY , rotX);
+
+    *ro = mul_mat3_f3(*t , *ro);
+    *ro = c + *ro;
+
+    *rd = mul_mat3_f3(*t , *rd);
+
+    *rd = normalize(*rd);
+}
+
+__DEVICE__ float3 LightDir(in mat3 t)
+{
+    float3 l = normalize(to_float3(1.0f, 1.0f, -1.0f));
+    return mul_mat3_f3(t , l);
+}
+
+__KERNEL__ void ReactiveVoronoiFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+
+  // --------
+
+
+
+    const float3 background = to_float3_s(0.04f);
+    const float3 scmin = -1.0f*to_float3(1.77f, 1.0f, 1.77f);
+    const float3 scmax = to_float3(1.77f, 1.5f, 1.77f);
+
+    float3 ro = to_float3_s(0.0f);
+    float3 rd = to_float3_s(0.0f);
+    mat3 t = to_mat3_f(1.0f);
+
+    CameraOrbitRay(fragCoord, 1.0f, to_float3_s(0.0f), 10.0f, &ro, &rd, &t, iResolution, iMouse);
+    fragColor = to_float4_aw(pow_f3(Render(ro, rd, LightDir(t),scmin,scmax,background,iChannel0,iTime), to_float3_s(0.5454f)), 1.0f);
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+
+  -- iMouse Controls
+
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "ReactiveVoronoiFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  -- iMouse
+
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+
