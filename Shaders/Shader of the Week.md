@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 11th of November 2024
+#### [Torus Hive](TorusHive.md) (Shadertoy ID [NsdXzf](https://www.shadertoy.com/view/NsdXzf))
+[![TorusHive](https://github.com/user-attachments/assets/9b746fea-75ec-4db9-9af1-a37fc65dd5d7)
+](ShaderOfTheWeek/TorusHive.md)
+----
 ## 22th of October 2024
 #### [Unstable Universe](UnstableUniverse.md) (Shadertoy ID [wtlfz8](https://www.shadertoy.com/view/wtlfz8))
 [![UnstableUniverse](https://github.com/user-attachments/assets/a83665fb-dcdf-4eb0-94c7-a1213941293d)
@@ -284,7 +289,7 @@ Not a worthwhile shader for fusion
 ----
 ## 14th of April 2022
 #### [StarsAndGalaxy](ShaderOfTheWeek/StarsAndGalaxy.md) (Shadertoy ID [stBcW1](https://www.shadertoy.com/view/stBcW1))
-[![StarsAndGalaxy](StarsAndGalaxy_320x180.png)](ShaderOfTheWeek/StarsAndGalaxy.md)
+[![StarsAndGalaxy](StarsAndGalaxy.png)](ShaderOfTheWeek/StarsAndGalaxy.md)
 
 ----
 ## 7th of April 2022

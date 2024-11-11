@@ -13,22 +13,16 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (22th of October 2024):
+Current Shader of the Week (11th of November 2024):
 <center>
 
-[![UnstableUniverse](https://github.com/user-attachments/assets/a83665fb-dcdf-4eb0-94c7-a1213941293d)
-](ShaderOfTheWeek/UnstableUniverse.md)
+[![TorusHive](https://github.com/user-attachments/assets/9b746fea-75ec-4db9-9af1-a37fc65dd5d7)
+](ShaderOfTheWeek/TorusHive.md)
 
-[Unstable Universey](ShaderOfTheWeek/UnstableUniverse.md) by [julianlumia](https://www.shadertoy.com/user/julianlumia)
+[Torus Hive](ShaderOfTheWeek/TorusHive.md) by [Flopine](https://www.shadertoy.com/user/Flopine)
 </center>
 
-<center>
 
-[![AbstractWaveThing](https://github.com/user-attachments/assets/abbb6894-010a-4ee4-a524-37602635cceb)
-](ShaderOfTheWeek/AbstractWaveThing.md)
-
-[Abstract Wave Thing](ShaderOfTheWeek/AbstractWaveThing.md) by [bad_dreams_](https://www.shadertoy.com/user/bad_dreams_)
-</center>
 
 
 ## Installation
