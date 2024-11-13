@@ -13,6 +13,45 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Le miracle des fleurs](https://www.shadertoy.com/view/XXXfDn)| defect | Ablauf funktioniert nicht-stürzt ab |
+|[Circuit Sand](https://www.shadertoy.com/view/3s2BDV)| incub | A Blending !! |
+|[Another Funky life](https://www.shadertoy.com/view/X3BBRy)| defect | AB Fehler |
+|[Spheres 2 with pathtracing](https://www.shadertoy.com/view/l3ffzH)| defect | ABCD zu kompliziert  |
+|[Cube Physics](https://www.shadertoy.com/view/l33GDn)| defect | kein Bildaufbau |
+|[Swiss Alps](https://www.shadertoy.com/view/ttcSD8)| incub | ABCD coole Landschaft mit Wolken  |
+|[Polar Grid Raymarch Traversal](https://www.shadertoy.com/view/XXscRs)| incub | Kleine Fehler |
+|[Torus Hive](https://www.shadertoy.com/view/NsdXzf)| incub | ShaderOfTheWeek |
+|[test cave +spiral water 4](https://www.shadertoy.com/view/4fdcWf)| incub | Tunnel !! |
+|[Meteor Storm](https://www.shadertoy.com/view/wtffRr)| incub | A Blending !! |
+|[Lenia 3 (multi-kernel)](https://www.shadertoy.com/view/ftl3Dn)| incub | A Blending !! |
+|[Several Basic Edge Detection](https://www.shadertoy.com/view/XftyzX)| incub | !! |
+|[DCT-II](https://www.shadertoy.com/view/lfdyW8)| incub | ABCD !! |
+|[Boiling Colors](https://www.shadertoy.com/view/Mc3cRM)| incub | A Blending !! |
+|[Lego blocks](https://www.shadertoy.com/view/Mc3cRn)| incub | !! |
+|[[Fork] Helix Nebula](https://www.shadertoy.com/view/cdK3Wy)| incub | !! |
+|[Chuva de cubos](https://www.shadertoy.com/view/lcfyW7)| incub | ! |
+|[Pier View](https://www.shadertoy.com/view/4csyzf)| incub | ABCD !! |
+|[Super Simple fluid buoyancy test](https://www.shadertoy.com/view/3ttBRX)| incub | ABCD Blending |
+|[ScanScreen](https://www.shadertoy.com/view/4XBfDV)| incub | Transition ! |
+|[Trivial Water](https://www.shadertoy.com/view/X3cSzr)| incub | AB Blending !!! |
+|[particle clustering single pass](https://www.shadertoy.com/view/4X3XzX)| incub | A Blending !!! |
+|[Unstable Universe](https://www.shadertoy.com/view/wtlfz8)| fuse | ShaderOfTheWeek |
+|[Abstract Wave Thing](https://www.shadertoy.com/view/tttSW7)| fuse | ShaderOfTheWeek |
+|[Simple Fluid Sym](https://www.shadertoy.com/view/Mt3SDr)| incub | A Blending !! |
+|[Quicksand (Viscous Fingering)](https://www.shadertoy.com/view/lX2yzy)| incub | A !! |
+|[Alien Space Jockey](https://www.shadertoy.com/view/mdB3Rh)| fuse | ShaderOfTheWeek |
+|[Fluid simulation expe](https://www.shadertoy.com/view/3tyfzG)| incub | A Blending !! |
+|[Pixel scan](https://www.shadertoy.com/view/McjBzK)| incub | !! Transition |
+|[Lava Lamp II](https://www.shadertoy.com/view/McXBRr)| incub | ABCD Blending !! |
+|[Video Sludge 2](https://www.shadertoy.com/view/Mf2fR3)| incub | A !! |
+|[Newton's Cradle Simulation](https://www.shadertoy.com/view/XcXfWH)| incub | ABCD Blending !! |
+|[Electro flash](https://www.shadertoy.com/view/MfjyWt)| incub | !!! |
+|[grid and lines](https://www.shadertoy.com/view/lcBcDw)| incub | !!! |
+|[metastasis](https://www.shadertoy.com/view/MfsBDN)| incub | ABCD !! |
+|[Dump](https://www.shadertoy.com/view/lcfBWH)| incub | ABCD Blending !! |
+|[Obstruction Ripples](https://www.shadertoy.com/view/4fBcDy)| incub | ABCD Blending !! |
+|[Rubber Balls](https://www.shadertoy.com/view/MffBDn)| incub | ABCD Blending !! |
+
 |[Slime Mold Attempt](https://www.shadertoy.com/view/MfScDc)| defect | A texelfetch  |
 |[Dan's Discrete Particle Sim](https://www.shadertoy.com/view/4cBBzc)| incub | Ab !! |
 |[Lava Lamp](https://www.shadertoy.com/view/Xf2cWt)| incub | ABCD Blending  |
