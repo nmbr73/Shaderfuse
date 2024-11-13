@@ -1,6 +1,10 @@
 # Shaderfuse
 
-DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion"). See the [videos](Videos.md) to get an idea of what this does look like. The Fuses are based on WebGL shaders released on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each Fuse's source code and/or info pane for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are obviously and definitely huge fans of this amazing website!
+DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion").
+
+See the [videos](Videos.md) to get an idea of what this does look like; let yourself be convinced by the charm of the legendary Lazy Artist, who advertises it as an ["Actually MIND BLOWING Free Tool"](https://www.youtube.com/watch?v=vb57Sgh0dtM); or watch Sonny Helzer's full [Reactor "ShaderToys" nodes and a project in fusion](https://www.youtube.com/watch?v=87bNprz53CE) tutorial.
+
+The Fuses are based on WebGL shaders released on [Shadertoy.com](https://www.shadertoy.com/) with a license that allows for porting (see each Fuse's source code and/or info pane for the respective license information); please note that neither we are related to Shadertoy.com, nor is this an official Shadertoy.com repository; but we are obviously and definitely huge fans of this amazing website!
 
 > [!danger] Watch out for each shader's license information!
 >
