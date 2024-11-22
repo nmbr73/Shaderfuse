@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 22th of November 2024
+#### [Starfield](Starfield.md) (Shadertoy ID [lcjGWV](https://www.shadertoy.com/view/lcjGWV))
+[![Starfield](https://github.com/user-attachments/assets/166233c2-cfbd-42dc-9f02-b9e8b0bf6650)
+](ShaderOfTheWeek/Starfield.md)
+----
 ## 11th of November 2024
 #### [Torus Hive](TorusHive.md) (Shadertoy ID [NsdXzf](https://www.shadertoy.com/view/NsdXzf))
 [![TorusHive](https://github.com/user-attachments/assets/9b746fea-75ec-4db9-9af1-a37fc65dd5d7)
