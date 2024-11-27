@@ -13,6 +13,18 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Fork Neon Tunne Infames 758](https://www.shadertoy.com/view/mtl3RB)| fuse | ShaderOfTheWeek48/24 |
+|[water P0izon](https://www.shadertoy.com/view/4XByWD)| incub | ! |
+|[Very fast procedural ocean](https://www.shadertoy.com/view/MdXyzX)| incub | !! |
+|[Wavy terrain raymarching test](https://www.shadertoy.com/view/4fVcWV)| incub | !! |
+|[basic clouds sunset](https://www.shadertoy.com/view/4fffDH)| incub | A !! |
+|[byt3 m3chanic text effects](https://www.shadertoy.com/view/4fX3Dr)| incub | A |
+|[Year of Truchets #038](https://www.shadertoy.com/view/DdlcWH)| incub | !! |
+|[Voronoi Tracking Cell Colonies](https://www.shadertoy.com/view/MccyRH)| incub | AB !! |
+|[Here Comes The Sun...](https://www.shadertoy.com/view/MfKyzh)| incub | !! |
+|[Alternative boombox wall](https://www.shadertoy.com/view/lfVcRD)| incub | !!! |
+|[Crystal Drops](https://www.shadertoy.com/view/XlSBRW)| incub | AB !! |
+|[大龙猫 - Starfield](https://www.shadertoy.com/view/lcjGWV)| fuse | ShaderOfTheWeek47/24 |
 |[Le miracle des fleurs](https://www.shadertoy.com/view/XXXfDn)| defect | Ablauf funktioniert nicht-stürzt ab |
 |[Circuit Sand](https://www.shadertoy.com/view/3s2BDV)| incub | A Blending !! |
 |[Another Funky life](https://www.shadertoy.com/view/X3BBRy)| defect | AB Fehler |
