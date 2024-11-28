@@ -4,10 +4,15 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 28th of November 2024
+#### [Weird Truchet New Keyboard](WeirdTruchetNewKeyboard.md) (Shadertoy ID [4ccfRn](https://www.shadertoy.com/view/4ccfRn))
+[![WeirdTruchetNewKeyboard](https://github.com/user-attachments/assets/45c1d9b9-ba86-4e4b-b502-ad658ff16371)
+](ShaderOfTheWeek/WeirdTruchetNewKeyboard.md)
+----
 ## 27th of November 2024
-#### [Fork Neon Tunne Infames 758](Starfield.md) (Shadertoy ID [lcjGWV](https://www.shadertoy.com/view/mtl3RB))
+#### [Fork Neon Tunne Infames 758](NeonTunne.md) (Shadertoy ID [lcjGWV](https://www.shadertoy.com/view/mtl3RB))
 [![NeonTunne](https://github.com/user-attachments/assets/447ae918-971e-49a4-b59b-9b7ad4395008)
-](ShaderOfTheWeek/Starfield.md)
+](ShaderOfTheWeek/NeonTunne.md)
 ----
 ## 22th of November 2024
 #### [Starfield](Starfield.md) (Shadertoy ID [lcjGWV](https://www.shadertoy.com/view/lcjGWV))

@@ -20,6 +20,12 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 Current Shader of the Week (27th of November 2024):
 <center>
 
+[![WeirdTruchetNewKeyboard](https://github.com/user-attachments/assets/45c1d9b9-ba86-4e4b-b502-ad658ff16371)
+](ShaderOfTheWeek/WeirdTruchetNewKeyboard.md)
+
+[Weird Truchet New Keyboard](ShaderOfTheWeek/NeonTunne.md) by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)
+
+
 [![NeonTunne](https://github.com/user-attachments/assets/447ae918-971e-49a4-b59b-9b7ad4395008)
 ](ShaderOfTheWeek/NeonTunne.md)
 
