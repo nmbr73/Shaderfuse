@@ -1,0 +1,830 @@
+--[[--
+CrackerCars
+
+Based on https://www.shadertoy.com/view/4sdXzr Erstellt von zackpudil am 2016-03-08
+
+
+--]] --
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess    = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  })
+
+-----------------------------------
+-- Description of kernel parameters
+
+----------------CrackerCars---------------
+CrackerCarsParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  float color1[3];
+  float color2[3];
+  float color3[3];
+  float color4[3];
+  float alpha;
+  int width;
+  int height;
+  float itime;
+  int compOrder;
+]]
+
+
+-- source of kernel
+CrackerCarsKernel =
+    [[
+//-----------------------
+//-------- mat2 ---------
+//-----------------------
+ typedef struct
+  {
+  float2 r0, r1;
+  } mat2;
+
+ __DEVICE__ inline mat2 make_mat2_2( float A, float B, float C, float D)
+  {
+  mat2 E;
+  E.r0 = to_float2(A,B);
+  E.r1 = to_float2(C,D);
+  return E;
+  }
+
+__DEVICE__ inline float2 mat2_multi_2f( mat2 B, float2 A)
+  {
+  float2 C;
+  C.x = A.x * B.r0.x + A.y * B.r0.y;
+  C.y = A.x * B.r1.x + A.y * B.r1.y;
+  return C;
+  }
+
+ //**** mat3 ****
+ typedef struct
+  {
+  float3 r0, r1, r2;
+  } mat3;
+
+__DEVICE__ inline mat3 make_mat3( float3 A, float3 B, float3 C)
+  {
+  mat3 D;
+  D.r0 = A;
+  D.r1 = B;
+  D.r2 = C;
+  return D;
+  }
+ __DEVICE__ inline float3 mat3_multi_3f( mat3 B, float3 A)
+  {
+  float3 C;
+  C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+  C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+  C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+  return C;
+  }
+
+__DEVICE__ float3 reflect_emu(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+__DEVICE__ float2 max2ff(float2 v, float i) {return to_float2(_fmaxf(v.x,i),_fmaxf(v.y,i));}
+__DEVICE__ float3 max3ff(float3 v, float i) {return to_float3(_fmaxf(v.x,i),_fmaxf(v.y,i),_fmaxf(v.z,i));}
+__DEVICE__ float2 abs2f(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+__DEVICE__ float3 abs3f(float3 a) {return (to_float3(_fabs(a.x), _fabs(a.y),_fabs(a.z)));}
+__DEVICE__ float mod1f(float value, float divisor) {  return value - divisor * _floor(value / divisor);}
+__DEVICE__ float2 mod2f(float2 value, float divisor) {return to_float2(mod1f(value.x, divisor),mod1f(value.y, divisor));}
+__DEVICE__ float3 reflect3f(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+
+  #define swixy(V) to_float2((V).x,(V).y)
+  #define swixx(V) to_float2((V).x,(V).x)
+  #define swiyx(V) to_float2((V).y,(V).x)
+  #define swiyy(V) to_float2((V).y,(V).y)
+
+  #define swizy(V) to_float2((V).z,(V).y)
+  #define swixz(V) to_float2((V).x,(V).z)
+  #define swiyzx(V) to_float3((V).y,(V).z,(V).x)
+
+__DEVICE__ float dBox(float3 p, float3 b) {
+	float3 d = abs3f(p) - b;
+	return _fminf(_fmaxf(d.x, _fmaxf(d.y, d.z)), 0.0f) + length(max3ff(d, 0.0f));
+}
+
+__DEVICE__ float dCylinder(float3 p, float2 c) {
+	float2 d = abs2f(to_float2(length(swixz(p)),p.y)) - c;
+	return _fminf(_fmaxf(d.x,d.y),0.0f) + length(max2ff(d,0.0f));
+}
+
+__DEVICE__ float2  rotate_42(float2 p, float a, float f) {
+	return mat2_multi_2f(make_mat2_2(a*_cosf(f), a*_sinf(f), -a*_sinf(f), a*_cosf(f)),p);
+}
+
+__DEVICE__ float2 opU(float2 a, float2 b) {
+	return a.x < b.x ? a : b;
+}
+
+__DEVICE__ float2 scene(float3 p, bool db, float itime) {
+	//p = to_float3_aw(rotate(swizy(p.zy), 1.0f, db ? -itime : itime);
+	float2 pzy = rotate_42(swizy(p), 1.0f, db ? -itime : itime);
+	p.z = pzy.x;
+	p.y = pzy.y;
+
+	p.y = _fabs(p.y) - 3.15f - 0.02f*_sinf(20.0f*p.x)*_sinf(20.0f*p.y)*_sinf(20.0f*p.z);
+	float2 d1 = to_float2(dBox(p, to_float3(0.3f, 0.1f, 0.5f)), 1.0f);
+
+      //rotate(p.xz, 1.0, 3.14/2.0);
+	float2 pxz=rotate_42(swixz(p), 1.0f, 3.14f/2.0f);
+	p.x = pxz.x;
+	p.z = pxz.y;
+
+	pzy = rotate_42(swizy(p), 1.0f, 3.14f/2.0f);
+	p.z = pzy.x;
+	p.y = pzy.y;
+
+	p.x = _fabs(p.x) - 0.4f;
+	p.y = _fabs(p.y) - 0.3f;
+
+	float2 d2 = to_float2(dCylinder(p, to_float2(0.2f, 0.03f)), 2.0f);
+
+	return opU(d1, d2);
+}
+
+__DEVICE__ float2 map(float3 p, float itime) {
+    float2 chk = mod2f(swixz(p) + 4.0f, 16.0f) - 8.0f;
+	p.x = mod1f(p.x + 4.0f, 8.0f) - 4.0f;
+    p.z = mod1f(p.z + 4.0f, 8.0f) - 4.0f;
+    bool db = chk.x*chk.y < 0.0f;
+	float2 w = to_float2(length(p) - 3.0f + 0.05f*_sinf(10.0f*p.x)*_sinf(10.0f*p.y)*_sinf(10.0f*p.z), 0.0f);
+	float2 s1 = scene(p, db, itime);
+	p = swiyzx(p);//p.yzx;
+	float2 s2 = scene(p, db, itime);
+	p = swiyzx(p);//p.yzx;
+	float2 s3 = scene(p, db, itime);
+
+	float2 s = opU(s1, opU(s2, s3));
+
+	return opU(w, s);
+}
+
+__DEVICE__ float2 intersect(float3 ro, float3 rd, float itime) {
+	float mid = 0.0f;
+	float td = 0.0f;
+
+	for(int i = 0; i < 128; i++) {
+		float2 s = map(ro + rd*td, itime);
+		if(s.x == 0.0f) break;
+		td += s.x;
+		mid = s.y;
+	}
+
+	if(td > 50.0f) mid = -1.0f;
+	return to_float2(td, mid);
+}
+
+__DEVICE__ float3 normal(float3 p, float itime) {
+	float2 e = to_float2(0.01f, 0.0f);
+	float3 exyy = to_float3(e.x,e.y,e.y);
+    float3 eyxy = to_float3(e.y,e.x,e.y);
+    float3 eyyx = to_float3(e.y,e.y,e.x);
+
+
+	float3 n = to_float3(
+		map(p + exyy, itime).x - map(p - exyy, itime).x,
+		map(p + eyxy, itime).x - map(p - eyxy, itime).x,
+		map(p + eyyx, itime).x - map(p - eyyx, itime).x	);
+
+	return normalize(n);
+}
+
+__DEVICE__ float shadow(float3 p, float3 lig, float itime) {
+	float res = 1.0f;
+	float td = 0.02f;
+
+	for(int i = 0; i < 64; i++) {
+		float h = map(p + lig*td, itime).x;
+		td += h;
+		res = _fminf(res, 8.0f*h/td);
+		if(h == 0.0f || td > 10.0f) break;
+	}
+
+	return _clampf(res, 0.0f, 1.0f);
+}
+
+__DEVICE__ float3 lighting(float3 p, float3 l, float3 rd, float itime) {
+	float3 lig = normalize(l);
+	float3 n = normal(p, itime);
+	float3 ref = reflect3f(n, rd);
+
+	float amb = _clampf(0.7f, 0.0f, 1.0f);
+	float dif = _clampf(dot(n, lig), 0.0f, 1.0f);
+	float spe = _powf(_clampf(dot(ref, lig), 0.0f, 1.0f), 152.0f);
+
+	dif *= shadow(p, lig, itime);
+
+	float3 lin = to_float3_s(0);
+
+	lin += 0.3f*amb*to_float3_s(1);
+	lin += 0.8f*dif*to_float3(1.0f, 0.97f, 0.85f);
+	lin += spe*to_float3(1.0f, 0.97f, 0.56f)*dif;
+
+	return lin;
+}
+
+__DEVICE__ mat3 camera(float3 e, float3 la) {
+	float3 roll = to_float3(0, 1, 0);
+	float3 f = normalize(la - e);
+	float3 r = normalize(cross(roll, f));
+	float3 u = normalize(cross(f, r));
+
+	return make_mat3(r, u, f);
+}
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+    float C = _cosf(angle);
+  float S = _sinf(angle);
+
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+
+return uv;
+}
+
+//############################################################################################################################
+__KERNEL__ void CrackerCarsKernel(__CONSTANTREF__ CrackerCarsParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height)
+  {
+     //-----------------------
+     float2 fragCoord = to_float2(x, y);
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime * params->freq;
+	 float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+	float2 uv = -1.0f+2.0f*(fragCoord/iResolution);
+	//uv.x *= iResolution.x/iResolution.y;
+    uv.x*=ratio;
+
+	// Standardparameter
+    uv -=  to_float2( (params->center[0]-0.5f)*2.0f*ratio, (params->center[1]-0.5f)*2.0f);
+    uv *= params->scale;
+    float2 pivot = to_float2(((params->pivot[0]-0.5f)*2.0f*ratio),(params->pivot[1]-0.5f)*2.0f);
+    uv = spin(uv, pivot, params->angle, 1.0f);
+
+	float3 la = 4.0f*to_float3(_cosf(itime*0.3f), 0, -_sinf(itime*0.3f));
+	float3 ro = 3.0f*to_float3(1, 3.0f, 0);
+	float3 rd = mat3_multi_3f(camera(ro, la) , normalize(to_float3_aw(uv, 2.0f)));
+
+	float3 l = 3.0f*to_float3(_cosf(itime*0.2f), 1.0f, -_sinf(itime));
+
+	float3 col = to_float3(params->color4[0],params->color4[1],params->color4[2]);
+	col *= _mix(0.6f, 1.0f, uv.y);
+	float2 i = intersect(ro, rd, itime);
+
+    float alpha = params->alpha;
+
+	if(i.y > -1.0f) {
+		float3 p = ro + rd*i.x;
+		if(i.y == 0.0f) col = to_float3(params->color1[0],params->color1[1],params->color1[2]), alpha = 1.0f;
+		if(i.y == 1.0f) col = to_float3(params->color2[0],params->color2[1],params->color2[2]), alpha = 1.0f;
+		if(i.y == 2.0f) col = to_float3(params->color3[0],params->color3[1],params->color3[2]), alpha = 1.0f;
+	col *= lighting(p, l, rd, itime);
+	}
+
+	fragColor = to_float4_aw(col, alpha);
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+function Create()
+--------------------------------------------
+ShaderFuse.begin_create()
+--------------------------------------------
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  --------------- CrackerCars ---------------
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "Center",
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+    })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",
+    IC_Visible          = false,
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+    })
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true,
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+  })
+
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+
+
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+
+
+self:BeginControlNest("Parameter", "_Parameter", true, {})
+    -- color wheel
+ Sep6 = self:AddInput("_______Planeten________", "Separator6", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+ InRed1 = self:AddInput("Red 1", "Red1", {
+    ICS_Name            = "Planeten",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.75,
+    INP_MaxScale        = 1.0,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 0,
+  })
+  InGreen1 = self:AddInput("Green 1", "Green1", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.0,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 1,
+  })
+  InBlue1 = self:AddInput("Blue 1", "Blue1", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.85,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 2,
+  })
+
+  Sep7 = self:AddInput("_________Body__________", "Separator7", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  -- color wheel
+  InRed2 = self:AddInput("Red 2", "Red2", {
+    ICS_Name            = "Body",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.95,
+    INP_MaxScale        = 1.0,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 0,
+  })
+  InGreen2 = self:AddInput("Green 2", "Green2", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.34,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 1,
+  })
+  InBlue2 = self:AddInput("Blue 2", "Blue2", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.0,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 2,
+  })
+
+  Sep9 = self:AddInput("________Wheels_________", "Separator9", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  -- color wheel
+  InRed3 = self:AddInput("Red 3", "Red3", {
+    ICS_Name            = "Wheels",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.7,
+    INP_MaxScale        = 1.0,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 3,
+    IC_ControlID        = 0,
+  })
+  InGreen3 = self:AddInput("Green 3", "Green3", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.4,
+    IC_ControlGroup     = 3,
+    IC_ControlID        = 1,
+  })
+  InBlue3 = self:AddInput("Blue 3", "Blue3", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.5,
+    IC_ControlGroup     = 3,
+    IC_ControlID        = 2,
+  })
+  Sep10 = self:AddInput("______Background_______", "Separator10", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+    -- color wheel
+  InRed4 = self:AddInput("Red 4", "Red4", {
+    ICS_Name            = "Background",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.34,
+    INP_MaxScale        = 1.0,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 4,
+    IC_ControlID        = 0,
+  })
+  InGreen4 = self:AddInput("Green 4", "Green4", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.54,
+    IC_ControlGroup     = 4,
+    IC_ControlID        = 1,
+  })
+  InBlue4 = self:AddInput("Blue 4", "Blue4", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.89,
+    IC_ControlGroup     = 4,
+    IC_ControlID        = 2,
+  })
+
+  InAlpha = self:AddInput("Alpha", "Alpha", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+
+
+self:EndControlNest()
+
+--------------------------------------------
+  -- InLogoSw = self:AddInput("Logo", "LogoSw", {
+  --   LINKID_DataType = "Number",
+  --   INPID_InputControl = "CheckboxControl",
+  -- 	INP_Integer = true,
+  --   INP_DoNotifyChanged = true,
+  --   INP_Default         = 1,
+  --   IC_Visible          = true,
+  --   INP_External        = false,
+	--   INP_Passive         = true,
+  -- })
+
+--------------------------------------------
+ShaderFuse.end_create()
+--------------------------------------------
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Ground", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+	  LINK_Visible = false,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end
+-------------------------------------------------------------------
+--       NotifyChanged
+-------------------------------------------------------------------
+function NotifyChanged(inp, param, time)
+
+
+  if inp ~= nil and param ~= nil then
+
+    if inp == InCenter then
+        -- the center moved, reposition the axis according to the current offset
+        nCenterX = param.X
+        nCenterY = param.Y
+
+        InPivot:SetAttrs({
+            PCD_OffsetX = nCenterX - 0.5,
+            PCD_OffsetY = nCenterY - 0.5,
+            })
+
+        InAngle:SetAttrs({
+            PCD_OffsetX = (nCenterX - 0.5)/100,
+            PCD_OffsetY = (nCenterY - 0.5)/100,
+            })
+    end
+    if inp == InWidgets then
+      if param.Value == 1.0 then
+         InCenter:SetAttrs({ PC_Visible = false })
+         InAngle:SetAttrs({ PC_Visible = false })
+         InPivot:SetAttrs({ PC_Visible = false })
+         InScale:SetAttrs({ PC_Visible = false })
+      else
+         InCenter:SetAttrs({ PC_Visible = true })
+         InAngle:SetAttrs({ PC_Visible = true })
+         InPivot:SetAttrs({ PC_Visible = true })
+         InScale:SetAttrs({ PC_Visible = true })
+      end
+    end
+
+    if inp == InStop then
+      if param.Value == 1 then
+	     InActtime:SetAttrs({IC_Visible = true})
+	  else
+	     InActtime:SetAttrs({IC_Visible = false})
+	  end
+	end
+
+    -- if inp == InLogoSw then
+    --   if param.Value == 1 then
+    --     authorlogo:SetAttrs({IC_Visible = true})
+    --   else
+    --     authorlogo:SetAttrs({IC_Visible = false})
+  	--   end
+	  -- end
+  end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle = -InAngle:GetValue(req).Value/360*3.1415*2
+    local debug = InDebug:GetValue(req).Value
+    local scale = InScale:GetValue(req).Value
+    local freq = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+    local p = Pixel({R=0,G=0,B=0,A=0})
+
+      if (InImage1:GetValue(req) ~= nil) then
+         src1 = InImage1:GetValue(req)
+      else
+         src1 = Image(imgattrs)
+         src1:Fill(p)
+      end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+    if req:IsPreCalc() then
+	   --print("\n######################### Precalc ##############################\n")
+	   local out = Image({IMG_Like = dst, IMG_NoData = true})
+       OutImage:Set(req, out)
+	   return
+	end
+
+
+
+    --StartStop
+    if InStop:GetValue(req).Value == 0 then
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   else
+	      _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	   end
+	end
+
+    acttime = _acttime / framerate
+
+
+    --Sep1:SetAttrs({LINKS_Name = "____________CrackerCars______________________",LBLC_LabelColor = 3,})
+
+    node = DVIPComputeNode(req, "CrackerCarsKernel", CrackerCarsKernel, "CrackerCarsParams", CrackerCarsParams)
+
+    if not pcall(function ()
+        params.center[0] = center.X
+        params.center[1] = center.Y
+  	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.color1  = {InRed1:GetValue(req).Value, InGreen1:GetValue(req).Value, InBlue1:GetValue(req).Value}
+        params.color2  = {InRed2:GetValue(req).Value, InGreen2:GetValue(req).Value, InBlue2:GetValue(req).Value}
+        params.color3  = {InRed3:GetValue(req).Value, InGreen3:GetValue(req).Value, InBlue3:GetValue(req).Value}
+		    params.color4  = {InRed4:GetValue(req).Value, InGreen4:GetValue(req).Value, InBlue4:GetValue(req).Value}
+        params.alpha    = InAlpha:GetValue(req).Value
+
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+
+        params.itime = acttime --req.Time / framerate
+
+        node:SetParamBlock(params)
+    end) then
+        params = node:GetParamBlock(CrackerCarsParams)
+
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	      params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.color1  = {InRed1:GetValue(req).Value, InGreen1:GetValue(req).Value, InBlue1:GetValue(req).Value}
+        params.color2  = {InRed2:GetValue(req).Value, InGreen2:GetValue(req).Value, InBlue2:GetValue(req).Value}
+        params.color3  = {InRed3:GetValue(req).Value, InGreen3:GetValue(req).Value, InBlue3:GetValue(req).Value}
+		    params.color4  = {InRed4:GetValue(req).Value, InGreen4:GetValue(req).Value, InBlue4:GetValue(req).Value}
+        params.alpha    = InAlpha:GetValue(req).Value
+
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+
+        params.itime = acttime  --req.Time / framerate
+
+        node:SetParamBlock(params)
+
+    end
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Fehlerausgabe des DCTL
+    end
+
+    OutImage:Set(req, dst)
+end
+
+
