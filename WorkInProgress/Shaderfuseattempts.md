@@ -13,6 +13,33 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[大龙猫 - Tunnel Cable](https://www.shadertoy.com/view/MfVfz3)| Fuse | ShaderOfTheWeek 51/24 |
+|[Christmas Tree Star](https://www.shadertoy.com/view/lfVfzt)| Fuse | Planet mit Bäumen |
+|[Underground Passageway](https://www.shadertoy.com/view/XdcfDf)| incub | A !! Cooler Tunnel |
+|[Ink Splatter](https://www.shadertoy.com/view/7t3cR7)| incub | Transition ! |
+|[DjBloove](https://www.shadertoy.com/view/lfGBzc)| incub | !! Audioreaktiv |
+|[Sunlit Cave Falls](https://www.shadertoy.com/view/MfyBRK)| incub | ABCD ! Blending |
+|[Bubble Shader](https://www.shadertoy.com/view/XcKfWw)| incub | ABCD !! Blending |
+|[Zen Garden Make](https://www.shadertoy.com/view/sldSzr)| incub | ABCD Fläche nicht reproduzierbar änderbar |
+|[Particles Party](https://www.shadertoy.com/view/mssXDf)| incub | A !! |
+|[[phreax] aurora borrealis](https://www.shadertoy.com/view/lfjSWc)| incub | A !! Coole Farben |
+|[Supah Lights Race v1](https://www.shadertoy.com/view/sscSWf)| incub | AB 3 tanzende Lichter |
+|[The Occultist](https://www.shadertoy.com/view/McdBz4)| incub | ABC Blending unzureichend |
+|[Jija](https://www.shadertoy.com/view/MctfD2)| incub | A ! |
+|[Dual Delaunay Sim](https://www.shadertoy.com/view/lcGfRW)| incub | ABCD ! Blending |
+|[Cygnus X-1](https://www.shadertoy.com/view/lfyBzW)| incub | AB !! Blending |
+|[Wave eq](https://www.shadertoy.com/view/Mf3fDX)| incub | ABCD ! Blending |
+|[Fork grandmas c drewyfive 764](https://www.shadertoy.com/view/4cVfRz)| incub | Tannenbaum |
+|[Billboard Tunnel](https://www.shadertoy.com/view/lf3fWf)| incub | !!! 5 Texturen |
+|[Photo Slideshow w/ Simplex Noise](https://www.shadertoy.com/view/43yGzy)| incub | Coole Transition |
+|[ShaderAmp DodecaIcosaStellations](https://www.shadertoy.com/view/McKyRW)| incub | Audioreaktiv |
+|[Fork Projeto 2 - Mouse Movement](https://www.shadertoy.com/view/Mc3cWH)| incub | ABC ! Blending |
+|[Tunnel loading screen](https://www.shadertoy.com/view/lfcfRS)| incub |  |
+|[Trifid nebula (M20)](https://www.shadertoy.com/view/McdBRM)| incub | !! |
+|[Connectionss](https://www.shadertoy.com/view/Mfdfz7)| incub | !!! |
+|[Weird Truchet | New Keyboar](https://www.shadertoy.com/view/4ccfRn )| fuse | ShaderOfTheWeek 49/24 |
+|[Cube Fall](https://www.shadertoy.com/view/ttSyR3)| incub | !! |
+|[Crab Nebula (M1)](https://www.shadertoy.com/view/MfcBzH)| incub | !! |
 |[Fork Neon Tunne Infames 758](https://www.shadertoy.com/view/mtl3RB)| fuse | ShaderOfTheWeek48/24 |
 |[water P0izon](https://www.shadertoy.com/view/4XByWD)| incub | ! |
 |[Very fast procedural ocean](https://www.shadertoy.com/view/MdXyzX)| incub | !! |

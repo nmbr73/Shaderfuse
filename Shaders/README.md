@@ -17,22 +17,31 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (27th of November 2024):
+Current Shader of the Week (17th of Dezember 2024):
 <center>
 
-[![WeirdTruchetNewKeyboard](https://github.com/user-attachments/assets/45c1d9b9-ba86-4e4b-b502-ad658ff16371)
-](ShaderOfTheWeek/WeirdTruchetNewKeyboard.md)
 
-[Weird Truchet New Keyboard](ShaderOfTheWeek/NeonTunne.md) by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)
+[![TunnelCable](https://github.com/user-attachments/assets/0db548e4-0b3e-4acc-b889-b79f83ce150d)
+](ShaderOfTheWeek/TunnelCable.md)
+
+[大龙猫 - Tunnel Cable](ShaderOfTheWeek/TunnelCable.md) by [totetmatt](https://www.shadertoy.com/user/totetmatt)
+
+My personal shader of the week:
+
+[![Billboard Tunnel](https://github.com/user-attachments/assets/8752bb7d-fd43-4b11-83a6-9d7f4f12bb2a)
+](Tunnel/BillboardTunnel.md)
+
+[Billboard Tunnel](ShaderOfTheWeek/NeonTunne.md) by [wyatt](https://www.shadertoy.com/user/wyatt)
 
 
-[![NeonTunne](https://github.com/user-attachments/assets/447ae918-971e-49a4-b59b-9b7ad4395008)
-](ShaderOfTheWeek/NeonTunne.md)
+And a new category: Christmas
 
-[Fork Neon Tunne Infames 758](ShaderOfTheWeek/NeonTunne.md) by [Infames](https://www.shadertoy.com/user/Infames)
+[![ChristmasTreeStar](https://github.com/user-attachments/assets/0b8ee524-d83e-4297-b476-537a974a229b)
+](Christmas/ChristmasTreeStar.md)
+
+[Christmas Tree Star](ShaderOfTheWeek/ChristmasTreeStar.md) by [TekF](https://www.shadertoy.com/user/TekF)
+
 </center>
-
-
 
 
 ## Installation
