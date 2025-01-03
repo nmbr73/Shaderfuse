@@ -1,0 +1,1403 @@
+--[[--/*
+
+  ChristmasTreeStar.fuse
+
+  Based on https://www.shadertoy.com/view/lfVfzt a WebGL shader created by JiPi.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   Fun;
+  bool   CLONES;
+  bool   DANCE;
+  bool   Auto;
+  float  ColorBKG[4];
+  float  PatternXY[2];
+  float  PatternZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  whiteSoftness;
+  float  Zoom;
+  float  Manual;
+  float  Alpha;
+  int    Background;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+ #define fract_f3(A) fract(A)
+
+ #define sin_f2(i) sin(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define sin_f2(i) sin(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+__DEVICE__ float4 decube_f3(__TEXTURE2D__ t, float3 xyz)
+{
+  float ax=_fabs(xyz.x);
+  float ay=_fabs(xyz.y);
+  float az=_fabs(xyz.z);
+
+  if (xyz.x>0.0f && ax>=ay && ax>=az) // +X, Face 0, right
+    return _tex2DVecN(t,(-xyz.z/ax+1.0f)/8.0f + 0.5f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y>0.0f && ay>=ax && ay>=az) // +Y, Face 2, top
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(-xyz.z/ay+1.0f)/6.0f + (2.0f/3.0f),15);
+
+  if (xyz.z>0.0f && az>=ax && az>=ay) // +Z, Face 4, front
+    return _tex2DVecN(t,(xyz.x/az+1.0f)/8.0f + 0.25f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.x<0.0f && ax>=ay && ax>=az) // -X, Face 1, left
+    return _tex2DVecN(t,(xyz.z/ax+1.0f)/8.0f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y<0.0f && ay>=ax && ay>=az) // -Y, Face 3, bottom
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(xyz.z/ay+1.0f)/6.0f,15);
+
+  if (xyz.z<0.0f && az>=ax && az>=ay) // -Z, Face 5, back
+    return _tex2DVecN(t,(-xyz.x/az+1.0f)/8.0f + 0.75f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  return to_float4(1.0f,0.0f,0.0f,1.0f); // error
+}
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+
+
+__DEVICE__ float3 HDRtoLDR( float3 col, float whiteSoftness )
+{
+    // soft clamp to white (oh this is so good)
+    float w2 = whiteSoftness*whiteSoftness;
+    col += w2;
+    col = (1.0f-col)*0.5f;
+    col = 1.0f - (sqrt_f3(col*col+w2) + col);
+
+    // linear to sRGB (approx)
+    col = pow_f3( col, to_float3_s(1.0f/2.2f) );
+
+    return col;
+}
+
+__DEVICE__ float3 LDRtoHDR( float3 col, float whiteSoftness )
+{
+    // sRGB to linear (approx)
+    col = pow_f3( col, to_float3_s(2.2f) );
+
+    col = clamp(col,0.0f,0.99f);
+
+    float w2 = whiteSoftness*whiteSoftness;
+    col = (w2 - col*col + 2.0f*col - 1.0f)/(2.0f*(col - 1.0f)); // inverted by wolfram
+    col = 1.0f-col*2.0f;
+    col -= w2;
+
+    return col;
+}
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Cubemap: St Peters Basilica_0' to iChannel0
+// Connect Image 'Cubemap: Forest_0' to iChannel1
+// Connect Image 'Texture: Pebbles' to iChannel2
+
+
+// Fork of "Christmas Tree Star" by TekF. https://shadertoy.com/view/wtd3D4
+// 2024-12-16 17:00:58
+
+// Christmas Tree Star
+// by Hazel Quantock 2019
+// This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0f International License. http://creativecommons.org/licenses/by-nc-sa/4.0f/
+
+
+// fun variations:
+//#define CLONES 1
+//#define DANCE 1
+
+
+// reduce this to improve frame rate in windowed mode
+#define AA_QUALITY 0.5f
+
+// allow a little bleed between pixels - I think this looks more photographic, but blurrier
+#define AA_ROUND true
+#define AA_ROUND_RADIUS 0.7071f
+
+// very silly effect, but it kinda shows some of how the branch and bauble placement works
+//#define PATTERN_SCROLL to_float3(0,0.3f,0)
+//#define PATTERN_SCROLL to_float3_s(0)
+
+
+//--
+
+// hashes from https://www.shadertoy.com/view/4dVBzz
+#define M1 1597334677U     //1719413*929
+#define M2 3812015801U     //140473*2467*11
+#define M3 3299493293U     //467549*7057
+
+#define F0 _exp2f(-32.0f)
+//(1.0f/float(0xffffffffU))
+
+#define hash(n) n*(n^(n>>15))
+
+#define coord1(p) (p*M1)
+#define coord2(p) ((p).x*M1^(p).y*M2)
+#define coord3(p) ((p).x*M1^(p).y*M2^(p).z*M3)
+
+__DEVICE__ float hash1(uint n){return (float)(hash(n))*F0;}
+//__DEVICE__ float2 hash2(uint n){return to_float2(hash(n)*make_uint2(0x1U,0x3fffU))*F0;}
+__DEVICE__ float2 hash2(uint n){return to_float2((float)(hash(n)*0x1U), (float)(hash(n)*0x3fffU))*F0;}
+//__DEVICE__ float3 hash3(uint n){return to_float3(hash(n)*make_uint3(0x1U,0x1ffU,0x3ffffU))*F0;}
+__DEVICE__ float3 hash3(uint n){return to_float3((float)(hash(n)*0x1U),(float)(hash(n)*0x1ffU),(float)(hash(n)*0x3ffffU))*F0;}
+//__DEVICE__ float4 hash4(uint n){return to_float4(hash(n)*make_uint4(0x1U,0x7fU,0x3fffU,0x1fffffU))*F0;}
+//__DEVICE__ float4 hash4(uint n){
+
+//  return to_float4((float)(hash(n)*0x1U), (float)(hash(n)*0x7fU), (float)(hash(n)*0x3fffU), (float)(hash(n)*,0x1fffffU) )*F0;
+//  }
+
+
+__DEVICE__ float TreeBoundsSDF( float3 pos )
+{
+    // just a cone
+    float r = length(swi2(pos,x,z));
+    return _fmaxf(//_fmaxf(
+                  dot( to_float2(pos.y-7.0f,r), normalize(to_float2(0.3f,1)) ),
+                  //pos.y-7.0f), // something goes wrong with the cone SDF?
+                  -pos.y+1.8f+r*0.6f
+                  );
+}
+
+
+/*
+Warp space into a series of repeated cells ("branches") around the y axis
+This causes some distortion, causing marching errors near the axis when branches are
+particularly sparse. But this can be worked round by tweaking the SDF.
+
+Cells are mirrored so whatever's placed in them will tile with itself!
+
+yByOutStep - tilts branches along the axis, but breaks vertical tiling.
+*/
+__DEVICE__ float3 HelixGrid( out int2 *grid, float3 pos, int numSpokes, float yStepPerRotation, float yByOutStep, float iTime, bool Fun )
+{
+
+    // convert to polar coordinates
+    float3 p = to_float3(_atan2f(pos.x,pos.z),pos.y,length(swi2(pos,x,z)));
+
+    p.y -= yByOutStep*p.z;
+    float l = _sqrtf(1.0f+yByOutStep*yByOutStep);
+
+    // draw a grid of needles
+    float2 scale = to_float2(6.283185f/(float)(numSpokes),yStepPerRotation);
+    swi2S(p,x,y, swi2(p,x,y) / scale);
+
+    // rotate and skew the grid to get a spiral with nice irrational period
+    float sn = 1.0f/(float)(numSpokes); // so we step by an integer number of rows
+
+    swi2S(p,x,y, swi2(p,x,y) + swi2(p,y,x)*to_float2(-1,1)*sn);
+
+    if(Fun)
+      p.x += iTime; // Fun!
+
+    // make horizontal triangle-waved, so edges of cells match up no matter what's put inside them!
+    *grid = to_int2_cfloat(_floor(swi2(p,x,y)));
+    float2 pair = fract_f2((swi2(p,x,y) + 1.0f)*0.5f)*2.0f-1.0f;
+    swi2S(p,x,y, (abs_f2(pair)-0.5f));
+    float2 flip = step(to_float2_s(0.0f),pair)*2.0f-1.0f; // sign() but without a 0.
+    swi2S(p,x,y, swi2(p,x,y) * scale);
+
+    // unshear...
+    p.y += flip.y*yByOutStep*p.z;
+
+    // reconstruct a non-bent space
+    swi2S(p,x,z, p.z*to_float2(_sinf(p.x),_cosf(p.x)));
+
+    // ...and apply rotation to match the shear (now we've sorted out the grid stuff)
+    swi2S(p,y,z, ( swi2(p,y,z) + swi2(flip,y,y)*swi2(p,z,y)*to_float2(-1,1)*yByOutStep )/l); // dammit - I think it breaks the wrap
+
+// might be worth returning a bound on y to mask the discontinuous area
+// I think it will just be yByAngleStep/_sqrtf(1.0f+yByOutStep*yByOutStep) which caller can do if desired
+// Or, could make z NOT start at 0 - so caller has to bound using parent-level's length (totally viable and I'm doing it a lot)
+// so mirroring WOULD line up!
+
+    return p;
+}
+
+
+
+struct TreeSpace
+{
+    float3 branch;
+    float3 twig;
+    float3 needle;
+    int2 branchGrid;
+    int2 twigGrid;
+    int2 needleGrid;
+};
+
+
+__DEVICE__ struct TreeSpace GetTreeSpace( in float3 pos, float iTime, bool Fun )
+{
+    struct TreeSpace o;
+    o.branch = HelixGrid( &o.branchGrid, pos, 12, 0.5f, 0.5f , iTime, Fun); //.5
+    o.twig   = HelixGrid( &o.twigGrid,   swi3(o.branch,x,z,y), 5, 0.5f, 1.0f, iTime, Fun );
+    o.needle = HelixGrid( &o.needleGrid, swi3(o.twig,x,z,y), 9, 0.04f, 1.0f, iTime, Fun );
+
+    return o;
+}
+
+
+__DEVICE__ float TreeSDF( float3 pos, float iTime, bool Fun, float3 PATTERN_SCROLL )
+{
+    float bounds = TreeBoundsSDF(pos);
+
+    if ( bounds > 1.0f ) return bounds-0.0f;
+
+    pos += PATTERN_SCROLL*iTime;
+    struct TreeSpace ts = GetTreeSpace(pos, iTime, Fun);
+
+    uint2 tmp = {ts.branchGrid.x+0x10000, ts.branchGrid.y+0x10000};
+
+    float branchRand = hash1(coord2(tmp));
+    float branchEndLength = 0.3f*(branchRand-0.5f);
+
+    return
+        _fminf(
+            _fmaxf(
+                _fminf(
+                    _fminf(
+                        // twig
+                        length(swi2(ts.twig,x,y))-0.005f,
+                        // needle
+                        length( to_float3_aw( swi2(ts.needle,x,y), _fmaxf(0.0f,ts.needle.z-0.05f) ) ) - 0.003f
+                    ),
+                    // branch
+                    _fmaxf(
+                      (length(swi2(ts.branch,x,y)
+                               + 0.004f*sin_f2(to_float2(0,6.283f/4.0f)+ts.branch.z*6.283f/0.1f) // spiral wobble
+                              )-0.01f)*0.9f,
+                      bounds - branchEndLength - 0.2f // trim branches shorter than twigs
+                    )
+              ),
+              // branch length (with rounded tip to clip twigs nicely)
+                length( to_float3_aw(swi2(ts.branch,x,y),_fmaxf(0.0f,bounds-branchEndLength  // this seems to cause more floating twigs (or more obvious ones)
+                                             )) )-0.3f
+              ),
+              _fmaxf(
+                    // trunk
+                    length(swi2(pos,x,z))-0.03f,
+                    bounds  // this will give a sharp point - better to just chop it - but might not show it
+                    )
+              )*0.7f; // the helical distortion bends the SDF, so gradient can get higher than 1:1
+}
+
+
+// baubles only spawn in negative areas of this mask
+__DEVICE__ float BaubleBoundsSDF( float3 pos )
+{
+    return _fabs(TreeBoundsSDF(pos))-0.3f; // half the width of the area bauble centres can be placed in
+}
+
+
+// pass different seeds and densities to generate different sets of baubles
+// if spacing = radius*2.0f the baubles will lie on a grid touching each other
+__DEVICE__ float BaublesSDF( float3 pos, uint seed, float spacing, float radius, float power, float twist, float iTime, float3 PATTERN_SCROLL )
+{
+    // avoid looping over every bauble - find closest one from a handful of candidates, using a jittered grid
+    float f = BaubleBoundsSDF(pos);
+    f -= radius;
+
+    float margin = 0.1f; // distance at which to start computing bauble SDFs - affects speed of marching (trial and error suggests 0.1f is fairly optimal)
+    if ( f > margin ) return f;
+
+    float3 offset = spacing*(hash3(coord1(seed))-0.5f); // use a different grid for each set of baubles
+    offset += PATTERN_SCROLL*iTime;
+    pos += offset;
+
+    // find closest centre point
+    float3 c = _floor(pos/spacing);
+    int3 ic = to_int3_cfloat(c);//(c.x, c.y, c.z);
+    c = (c+0.5f)*spacing; // centre of the grid square
+
+    uint3 tmp = {ic.x+63356, ic.y+63356, ic.z+63356};
+
+    c += (spacing*0.5f - radius /*- margin*/) * ( hash1(coord3(tmp)^seed)*2.0f - 1.0f );
+
+    // cull it if it's outside bounds
+    if ( BaubleBoundsSDF(c-offset) > 0.0f ) return margin; // could do _fmaxf (margin, distance to grid cell edge)
+
+//    float f = length(pos-c)-radius;
+    float3 v = pos-c;
+    swi2S(v,x,z, swi2(v,x,z)*_cosf(v.y*twist) + swi2(v,z,x)*to_float2(1,-1)*_sinf(v.y*twist));
+    v = abs_f3(v)/radius;
+    f = (_powf(dot(v,pow_f3(v,to_float3_s(power-1.0f))),1.0f/power)-1.0f)*radius;
+    return _fminf( f, margin ); // don't return values > margin otherwise we'll overshoot in next cell!
+}
+
+__DEVICE__ float Baubles1( float3 pos, float iTime, float3 PATTERN_SCROLL ) { return BaublesSDF( pos, 0x1002U, 0.8f, 0.08f, 2.1f, -150.0f , iTime, PATTERN_SCROLL); }
+__DEVICE__ float Baubles2( float3 pos, float iTime, float3 PATTERN_SCROLL ) { return BaublesSDF( pos, 0x2037U, 1.0f, 0.08f, 1.2f,  -45.0f , iTime, PATTERN_SCROLL); }
+__DEVICE__ float Baubles3( float3 pos, float iTime, float3 PATTERN_SCROLL ) { return BaublesSDF( pos, 0x3003U, 0.8f, 0.08f, 1.8f,   50.0f , iTime, PATTERN_SCROLL); }
+
+
+__DEVICE__ float Ground( float3 pos, __TEXTURE2D__ iChannel2 )
+{
+    return length(pos-to_float3(0,-2,0))-2.0f-1.7f + 0.003f*texture(iChannel2,swi2(pos,x,z)*5.0f).x - 0.04f*texture(iChannel2,swi2(pos,x,z)*0.4f).x;
+}
+
+
+__DEVICE__ float3 FoldSpace( float3 pos, bool CLONES, bool DANCE, float iTime )
+{
+    if(CLONES)
+      pos = (abs_f3(fract_f3(pos/60.0f+0.25f)-0.5f)-0.25f)*70.0f; // tile space
+
+
+    // mirror space in an octahedron, tilted so one face points up
+    float3 k = to_float3(0,_sqrtf(1.0f/3.0f),_sqrtf(2.0f/3.0f));
+    float3 i = to_float3(k.z*_sqrtf(3.0f/4.0f),k.y,-k.z*_sqrtf(1.0f/4.0f)); //rotate 120 about y
+    float3 j = i*to_float3(-1,1,1);
+
+    // mirror on each axis
+    pos = pos + i*_fmaxf(0.0f,-dot(i,pos)*2.0f);
+    pos = pos + j*_fmaxf(0.0f,-dot(j,pos)*2.0f);
+    pos = pos + k*_fmaxf(0.0f,-dot(k,pos)*2.0f);
+
+//    pos += _sinf(iTime*8.0f*to_float3(0.11f,0.13f,0.102f))*to_float3(1,0,1);
+
+    if (DANCE)
+    {
+      float a = _sinf(pos.y*2.0f-5.0f*iTime)*0.2f;
+      swi2S(pos,x,z, swi2(pos,x,z)*_cosf(a) + swi2(pos,z,x)*to_float2(-1,1)*_sinf(a));
+    }
+
+    return pos;
+}
+
+__DEVICE__ float SDF( float3 pos, float iTime, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, __TEXTURE2D__ iChannel2 )
+{
+    pos = FoldSpace(pos, CLONES, DANCE, iTime);
+
+    return _fminf(_fminf(_fminf(_fminf(
+                  TreeSDF(pos, iTime, Fun, PATTERN_SCROLL),
+                  Baubles1(pos, iTime, PATTERN_SCROLL)),
+                  Baubles2(pos, iTime, PATTERN_SCROLL)),
+                  Baubles3(pos, iTime, PATTERN_SCROLL)),
+                  Ground(pos, iChannel2));
+}
+
+
+// assign a material index to each of the SDFs
+// return whichever one we're closest to at this point in space
+__DEVICE__ int GetMat( float3 pos, float iTime, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, __TEXTURE2D__ iChannel2 )
+{
+    struct MatDist { int mat; float dist; };
+    struct MatDist mats[] = {
+                              {0, TreeSDF(pos, iTime, Fun, PATTERN_SCROLL)  },
+                              {1, Baubles1(pos, iTime, PATTERN_SCROLL) },
+                              {2, Baubles2(pos, iTime, PATTERN_SCROLL) },
+                              {3, Baubles3(pos, iTime, PATTERN_SCROLL) },
+                              {4, Ground(pos, iChannel2)   }
+                            };
+
+    struct MatDist mat = mats[0];
+    //for ( int i=1; i < mats.length(); i++ )
+      for ( int i=1; i < sizeof(mats); i++ )
+    {
+        if ( mats[i].dist < mat.dist ) mat = mats[i];
+    }
+
+    return mat.mat;
+}
+
+
+#define epsilon 0.0004f // todo: compute from t everywhere it's used (see "size of pixel"\/\/)
+
+__DEVICE__ float Trace( float3 rayStart, float3 rayDirection, float far, out int *count, float iTime, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, __TEXTURE2D__ iChannel2 )
+{
+
+  int loopCount = 400; // because of the early out this can actually be pretty high without costing much
+  float t = epsilon;
+    for ( int i=0; i < loopCount; i++ )
+    {
+        float h = SDF(rayDirection*t+rayStart, iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2);
+        t += h;
+        if ( t > far || h < epsilon ) // *t )
+            return t;
+    }
+
+    return t;
+}
+
+
+__DEVICE__ void mainImage2( out float4 *fragColour, in float2 fragCoord, float2 iResolution, float iTime, float4 iMouse, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, float whiteSoftness, bool Auto, float3 View, float Zoom, float Manual, int Background, float4 ColorBKG, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2 )
+{
+
+    float time = 3.0f-3.0f*_cosf(iTime/5.0f);//fract(iTime/12.0f)*12.0f;
+
+    if(!Auto)
+      time = Manual;
+
+    float3 camPos = _mix( to_float3(2,3,-5), to_float3(0,-5,-24), smoothstep(0.5f,6.0f,time) );
+    float2 a = to_float2(-0.05f,1.35f-(iTime/5.0f-_sinf(iTime/5.0f))*0.25f) + 0.02f*sin_f2(to_float2(1,0.618f)*iTime/3.0f);
+
+    if ( iMouse.z > 0.0f ) a += (swi2((swi2(iMouse,x,y)/iResolution),y,x)-0.5f)*to_float2(-3,6);
+
+    swi2S(camPos,y,z, swi2(camPos,y,z)*_cosf(a.x)+_sinf(a.x)*to_float2(-1,1)*swi2(camPos,z,y));
+    swi2S(camPos,z,x, swi2(camPos,z,x)*_cosf(a.y)+_sinf(a.y)*to_float2(-1,1)*swi2(camPos,x,z));
+
+    float3 camLook = _mix( to_float3(0,3,0), to_float3(0,1,0), smoothstep(0.5f,5.5f,time) ) + View;
+
+    float3 camK = normalize(camLook-camPos);
+    float3 camI = normalize(cross(to_float3(0,1,0),camK));
+    float3 camJ = cross(camK,camI);
+
+    camPos -= camI*(0.5f+1.0f*smoothstep(0.5f,5.5f,time));
+
+    float zoom = 5.0f-3.0f*smoothstep(0.5f,5.5f,time) + Zoom;
+
+
+    float3 ray = to_float3_aw((fragCoord-0.5f*iResolution)/iResolution.y,zoom);
+    ray = ray.x*camI + ray.y*camJ + ray.z*camK;
+    ray = normalize(ray);
+
+    int count = 0;
+    float far = _exp2f(5.5);
+
+    if (CLONES)
+          far = _exp2f(5.5+3.5);
+
+
+    float t = Trace( camPos, ray, far, &count, iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2 );
+
+    *fragColour = to_float4_aw(to_float3_s(0.05f),1);
+
+    if ( t < far )
+    {
+      float3 pos = camPos + t*ray;
+
+        // size of 1 pixel
+        // _tanf(a) = h / zoom
+        // h = 0.5f / (resolution.y*0.5f)
+        float2 d = to_float2(-1,1) * t / (zoom*iResolution.y);
+        float3 normal = normalize(
+              SDF(pos+swi3(d,x,x,x), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2)*swi3(d,x,x,x) +
+              SDF(pos+swi3(d,x,y,y), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2)*swi3(d,x,y,y) +
+              SDF(pos+swi3(d,y,x,y), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2)*swi3(d,y,x,y) +
+              SDF(pos+swi3(d,y,y,x), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2)*swi3(d,y,y,x)
+            );
+
+        float3 uvw = FoldSpace(pos, CLONES, DANCE, iTime);
+
+        int matIdx = GetMat(uvw, iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2);
+
+        struct Material
+        {
+            float3 albedo;
+            float3 subsurfaceColour;
+            float metallicity;
+            float roughness; // blurriness of the metallicity
+        };
+
+        //Material mat[matIdx] = {
+        //   Material mat[5] = {
+        //                         { to_float3_s(0/*overridden*/), to_float3_s(0/*overridden*/), 0.0f, 0.0f }, // tree
+        //                         { to_float3(1,0.7f,0.5f),  to_float3_s(0), 0.5f, 0.7f },
+        //                         { to_float3(1,0.4f,0.1f),  to_float3_s(0), 1.0f, 0.0f },
+        //                         { to_float3(1,0.1f,0.15f), to_float3_s(0), 1.0f, 0.4f },
+        //                         { to_float3_s(0.9f)*smoothstep(-0.8f,1.5f,TreeBoundsSDF(uvw)), to_float3_s(0.2f), 0.0f, 0.05f } // not getting enough shine on the snow so make it metallic
+        //                        }; // is this bad? I kind of like it!
+        //
+        struct Material _mat0 = { to_float3_s(0/*overridden*/), to_float3_s(0/*overridden*/), 0.0f, 0.0f }; // tree
+        struct Material _mat1 = { to_float3(1,0.7f,0.5f),  to_float3_s(0), 0.5f, 0.7f };
+        struct Material _mat2 = { to_float3(1,0.4f,0.1f),  to_float3_s(0), 1.0f, 0.0f };
+        struct Material _mat3 = { to_float3(1,0.1f,0.15f), to_float3_s(0), 1.0f, 0.4f };
+        struct Material _mat4 = { to_float3_s(0.9f)*smoothstep(-0.8f,1.5f,TreeBoundsSDF(uvw)), to_float3_s(0.2f), 0.0f, 0.05f }; // not getting enough shine on the snow so make it metallic
+
+
+        struct Material mat;
+
+        switch(matIdx)
+        {
+          case 0:
+            mat = _mat0;
+          break;
+          case 1:
+            mat = _mat1;
+          break;
+          case 2:
+            mat = _mat2;
+          break;
+          case 3:
+            mat = _mat3;
+          break;
+          case 4:
+            mat = _mat4;
+          break;
+        }
+
+
+        if ( matIdx == 3 )
+        {
+            // glitter bauble / snow
+            uint3 tmp = {(uint)(pos.x/0.002f + 65536.0f),(uint)(pos.y/0.002f + 65536.0f),(uint)(pos.z/0.002f + 65536.0f)};
+            normal += 0.4f*(hash3(coord3(tmp))-0.5f);
+            normal = normalize(normal);
+        }
+
+        float3 refl = reflect( ray, normal );
+
+        // very broad AO - just use the tree's bound SDF
+        float AO = _exp2f(_fminf(0.0f,TreeBoundsSDF(uvw)-0.3f)/0.3f);
+
+        struct TreeSpace ts = GetTreeSpace(uvw, iTime, Fun);
+        if ( matIdx == 0 )
+        {
+            // compute tree albedo
+
+            float leafness =  smoothstep(0.0f,0.05f,  ts.needle.z) // // gradient along needle
+                            * smoothstep(0.01f,0.04f, length(swi2(ts.branch,x,y)))
+                            * smoothstep(0.03f,0.06f, length(swi2(uvw,x,z)));
+
+            // blend wood to leaf colour
+            mat.albedo = _mix( to_float3(0.05f,0.025f,0.01f), to_float3(0,0.3f,0), leafness );
+            mat.subsurfaceColour = _mix( to_float3_s(0), to_float3(0.04f,0.5f,0), leafness );
+
+            // snow
+            //float snow = textureLod(iChannel2,swi2(pos,x,z)/0.02f,_log2f(t/iResolution.x)+13.0f).x;
+            float snow = texture(iChannel2,swi2(pos,x,z)/0.02f).x;
+            snow = smoothstep(0.1f,0.5f,normal.y*0.1f+snow-0.3f*(1.0f-AO));
+            mat.albedo = _mix( mat.albedo, to_float3_s(1), snow );
+            mat.subsurfaceColour = _mix( mat.subsurfaceColour, to_float3_s(0.1f), snow );
+
+            // and use the same things to paint the albedo trunk/branch colours
+            mat.roughness = 0.7f;
+        }
+
+        // fake reflection of the tree
+        // I can probably afford a reflection trace - but I want to blur it based on roughness
+        float SO = smoothstep(-1.0f,1.0f,(TreeBoundsSDF(uvw + refl*1.0f)
+                              -1.0f*(texture(iChannel2,swi2(refl,y,z)*2.0f).x*2.0f-0.7f)*_powf(1.0f-mat.roughness,5.0f)
+                              +0.4f)/(1.0f*(mat.roughness+0.3f))
+                             );
+
+        float4 diffuseSample = decube_f3( iChannel0, normal);
+        float3 diffuseLight = swi3(diffuseSample,x,y,z)/diffuseSample.w;
+
+        // sub surface scattering
+        float4 subsurfaceSample = decube_f3( iChannel0, -1.0f*normal);
+        diffuseLight += mat.subsurfaceColour * swi3(subsurfaceSample,x,y,z)/subsurfaceSample.w;
+
+        diffuseLight *= AO;
+
+        //float3 specularLight = LDRtoHDR(textureLod( iChannel1, refl, _mix(4.0f,9.0f,mat.roughness) ).rgb);
+        float3 specularLight = LDRtoHDR(swi3(decube_f3( iChannel1, refl),x,y,z), whiteSoftness);
+
+        specularLight = _mix( to_float3(0.01f,0.02f,0.0f)+0.0f, specularLight, SO ); // blend to a rough tree colour
+
+        float fresnel = _powf(1.0f-_fabs(dot(ray,normal)),5.0f);
+
+        swi3S(*fragColour,x,y,z,
+            _mix(
+                _mix ( mat.albedo, to_float3_s(1.0f), mat.metallicity*(1.0f-mat.roughness)*fresnel ) *
+                mat.albedo *
+                _mix(
+                    diffuseLight,
+                    specularLight,
+                    mat.metallicity
+                ),
+                specularLight,
+                _mix( 0.02f, 1.0f, fresnel )*(1.0f-mat.roughness)
+            ));
+
+        // debug colours
+        //swi3S(*fragColour,x,y,z, fract_f3( pos ));
+        //swi3S(*fragColour,x,y,z, normal*0.5f+0.5f);
+    }
+    else
+    {
+        // sky texture looks crap so do something simpler
+        //swi3(fragColour,x,y,z) = LDRtoHDR(swi3(decube_f3( iChannel1, ray),x,y,z));
+
+        //swi3S(*fragColour,x,y,z, to_float3_s(0.45f+0.2f*_cosf(ray.y*6.0f)));
+        if(Background == 0)
+          *fragColour = to_float4_aw(to_float3_s(0.45f+0.2f*_cosf(ray.y*6.0f)), ColorBKG.w);
+        if(Background == 1)
+          *fragColour = to_float4_aw(LDRtoHDR(swi3(decube_f3( iChannel1, ray),x,y,z), whiteSoftness), ColorBKG.w);
+        if(Background == 2)
+          *fragColour = ColorBKG;
+    }
+}
+
+
+__KERNEL__ void ChristmasTreeStarFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColour   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Fun = params->Fun;
+  bool   CLONES = params->CLONES;
+  bool   DANCE = params->DANCE;
+  bool   Auto = params->Auto;
+  float4 ColorBKG = to_float4(params->ColorBKG[0], params->ColorBKG[1], params->ColorBKG[2], params->ColorBKG[3]);
+  float2 PatternXY = to_float2(params->PatternXY[0], params->PatternXY[1]);
+  float  PatternZ = params->PatternZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  whiteSoftness = params->whiteSoftness;
+  float  Zoom = params->Zoom;
+  float  Manual = params->Manual;
+  float  Alpha = params->Alpha;
+  int    Background = params->Background;
+
+  // --------
+
+    //CONNECT_INTSLIDER0(Background, 0, 2, 0); // 0: Orignal, 1: Channel1 2: ColorBKG
+
+
+    float3 View = to_float3_aw(ViewXY, ViewZ);
+
+    //const float whiteSoftness = 0.2f; // this mostly affects the diffuse light - rewind to recompute it!
+
+    float3 PATTERN_SCROLL = to_float3_aw(PatternXY, PatternZ);
+
+    // todo: compute numSamples dynamically
+    int numSamples = max( 1, (int)((1920.0f*1080.0f*AA_QUALITY) / (iResolution.x*iResolution.y)) ); // I get 35fps at 1080p
+
+    fragColour = to_float4_s(0);
+    for ( int i=0; i < numSamples; i++ )
+    {
+        uint2 quasi2 = {0xC13FA9A9u, 0x91E10DA5u};
+        uint seed = (uint)(i);
+        //seed += uint(iFrame*numSamples); // randomize per frame - causes shimmering
+        if ( numSamples > 1 ) seed += (uint)(fragCoord.x)*quasi2.x+(uint)(fragCoord.y)*quasi2.y; // randomize per pixel - this looks bad at low sample counts (and at high counts it's less important)
+        float2 jitter = to_float2( (float)(quasi2.x * seed), (float)(quasi2.y * seed) ) / _exp2f(32.0f);
+
+        if ( AA_ROUND )
+        {
+            // circle of confusion slightly bigger than a pixel - should look more photographic
+            jitter.x *= 6.283185f;
+            jitter = AA_ROUND_RADIUS*(1.0f-jitter.y*jitter.y)*to_float2(_cosf(jitter.x),_sinf(jitter.x));
+        }
+        else
+        {
+            jitter -= 0.5f;
+        }
+
+        float4 col;
+
+        mainImage2( &col, fragCoord + jitter, iResolution, iTime, iMouse, Fun, CLONES, DANCE, PATTERN_SCROLL, whiteSoftness, Auto, View, Zoom, Manual, Background, ColorBKG, iChannel0, iChannel1, iChannel2 );
+        fragColour += col;
+    }
+    fragColour /= (float)(numSamples);
+
+    // exposure
+    swi3S(fragColour,x,y,z, swi3(fragColour,x,y,z) * 1.8f);
+
+    swi3S(fragColour,x,y,z, HDRtoLDR( swi3(fragColour,x,y,z), whiteSoftness ));
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColour);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InFunCheckbox = self:AddInput("Fun", "Fun", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InCLONESCheckbox = self:AddInput("CLONES", "CLONES", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InDANCECheckbox = self:AddInput("DANCE", "DANCE", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAutoCheckbox = self:AddInput("Auto", "Auto", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  self:BeginControlNest("ColorBKG", "ColorBKG", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBKG",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBKGColorR = self:AddInput("Red",   "ColorBKGRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InColorBKGColorG = self:AddInput("Green", "ColorBKGGreen", { INP_Default  = 0.0, IC_ControlID = 1, attrs})
+    InColorBKGColorB = self:AddInput("Blue",  "ColorBKGBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColorBKGColorA = self:AddInput("Alpha", "ColorBKGAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InPatternXYPoint = self:AddInput("PatternXY", "PatternXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InPatternZSlider = self:AddInput("PatternZ", "PatternZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InwhiteSoftnessSlider = self:AddInput("whiteSoftness", "whiteSoftness", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.2,
+      })
+
+  InZoomSlider = self:AddInput("Zoom", "Zoom", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InManualSlider = self:AddInput("Manual", "Manual", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -100.0,
+          INP_MaxScale       = 100.0,
+          INP_Default        = 0.0,
+      })
+
+  InAlphaSlider = self:AddInput("Alpha", "Alpha", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 1.0,
+      })
+
+  InBackgroundSlider = self:AddInput("Background", "Background", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 2,
+      INP_Default        = 0,
+      INP_Integer        = true,
+  })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+  InChannel2 = self:AddInput( "iChannel2",  "iChannel2",  { LINKID_DataType = "Image", LINK_Main = 3, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+
+  node = DVIPComputeNode(req,
+    "ChristmasTreeStarFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  iChannel2 = InChannel2:GetValue(req)
+
+  if iChannel2==nil then
+    iChannel2 = Image(imgattrs)
+    iChannel2:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+
+  params = node:GetParamBlock(ShaderParameters)
+  
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.Fun = InFunCheckbox:GetValue(req).Value
+  params.CLONES = InCLONESCheckbox:GetValue(req).Value
+  params.DANCE = InDANCECheckbox:GetValue(req).Value
+  params.Auto = InAutoCheckbox:GetValue(req).Value
+  params.ColorBKG = {
+    InColorBKGColorR:GetValue(req).Value,
+    InColorBKGColorG:GetValue(req).Value,
+    InColorBKGColorB:GetValue(req).Value,InColorBKGColorA:GetValue(req).Value
+  }
+  params.PatternXY = {InPatternXYPoint:GetValue(req).X,InPatternXYPoint:GetValue(req).Y}
+  params.PatternZ = InPatternZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.whiteSoftness = InwhiteSoftnessSlider:GetValue(req).Value
+  params.Zoom = InZoomSlider:GetValue(req).Value
+  params.Manual = InManualSlider:GetValue(req).Value
+  params.Alpha = InAlphaSlider:GetValue(req).Value
+  params.Background = InBackgroundSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  
+  node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  node:AddInput("iChannel2",iChannel2) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
