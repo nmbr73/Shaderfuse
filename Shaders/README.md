@@ -1,5 +1,15 @@
 # Shaderfuse
 
+> [!attention] Does not work with the free versions of BMD's software anymore!
+>
+> Unfortunately, with version 19.1 of DaVinci Resolve, BMD has decided to disable the so-called 'UI Manager' for the free version; from now on, it can only be used through extensions in the paid Studio version. However, essential parts of Shaderfuses (and many other great free tools out there) are based on exactly this component. So unless you have the paid version, the Shaderfuses cannot be installed properly from this version onwards - neither via the Reactor nor our installer scripts.
+>
+> See for example:
+> - [19.1 - Broken Scripts Megathread](https://www.reddit.com/r/davinciresolve/comments/1gpo20i/191_broken_scripts_megathread/) on Reddit
+> - [UIManager has been disabled in Resolve Free in v19.1](https://forum.blackmagicdesign.com/viewtopic.php?f=12&t=213158) on the Blackmagic Forum
+> - [Blackmagic Design has released Resolve Studio v19.1](https://www.linkedin.com/posts/andrewhazelden_hello-after-several-months-of-development-activity-7262128142125793280-Jd8b/) post on LinkedIn
+
+
 DCTL shader fuses for use within Fusion and/or DaVinci Resolve's Fusion page (aka "DaFusion").
 
 See the [videos](Videos.md) to get an idea of what this does look like; let yourself be convinced by the charm of the legendary Lazy Artist, who advertises it as an ["Actually MIND BLOWING Free Tool"](https://www.youtube.com/watch?v=vb57Sgh0dtM); or watch Sonny Helzer's full [Reactor "ShaderToys" nodes and a project in fusion](https://www.youtube.com/watch?v=87bNprz53CE) tutorial.

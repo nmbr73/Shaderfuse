@@ -1,5 +1,16 @@
 **README**  | [Setup](Tools/README.md) | [Repository Tools](Tools/Scripts/Comp/Shaderfuse/Repository%20Tools/README.md)
 
+ :warning: **Unfortunately, with version 19.1 of DaVinci Resolve, BMD has decided to disable the so-called 'UI Manager' for the free version; from now on, it can only be used through extensions in the paid Studio version. However, essential parts of Shaderfuses (and many other great free tools out there) are based on exactly this component. So unless you have the paid version, the Shaderfuses cannot be installed via the Reactor or our installer scripts from this version onwards. The setup for development on the fuses no longer works either, nor does the browser for selecting a Shaderfuse and probably a few other things - all in all, meaningful use is virtually impossible.**
+
+*We do this in our spare time and as a hobby. We understand that we are absolutely not part of BMD's target group and we are sure that the people over there at BMD know best how to run their business - from this perspective this step may be reasonable. But for people like us, it makes little sense to invest much more of our free time in this and similar projects. Not because of the Studio license (we bought our own licenses with our own money), but rather because it was fun to develop free things that can be used for free. But contributing unpaid work to a commercial product where others have to pay for our unpaid work - that doesn't feel right somehow.*
+
+*However, it was not the software in particular, but above all the community that had formed around it that gave us a lot of support and motivation. If BMD is now restricting itself to professional use - which they absolutely deserve as a provider of professional tools - then in this world there is obviously no room for hobbyists, enthusiasts, beginners and tinkerer. It's sad, but it is what it is.*
+
+*Long story short: If you don't have Studio, then we can't help you; and if you have Studio, then you must be a "pro" and in case of any questions we can't help you either - because we ourselves are neither professionals nor are we the support staff of BMD ... in our personal opinion this is how you kill a great and enthusiastic community.*
+
+
+-------
+
 
 # Shaderfuse
 [![GitHub release](https://img.shields.io/github/v/release/nmbr73/Shaderfuse?include_prereleases)](https://github.com/nmbr73/Shaderfuse/releases/latest) [![License](https://img.shields.io/badge/license-various-critical)](LICENSE) [![Discord](https://img.shields.io/discord/793508729785155594?label=discord)](https://discord.gg/Zb48E4z3Pg)
@@ -9,6 +20,8 @@
 
 
 # Installation
+
+:bomb::bomb::bomb: **With v19.1 the installation of this project will not work anymore in any of the free variants of BMD's software.**
 
 Make sure to read, understand and respect the [LICENSE](LICENSE) information: As we do run some shady scripts that make changes to your system you need to know that in particular absolutely no warranties are made and all of this is completely at your own risk!
 
