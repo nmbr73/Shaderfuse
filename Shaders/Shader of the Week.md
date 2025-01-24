@@ -4,6 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 22th of Dezember 2025
+#### [Abstract Truchet Inversion](Abstract Truchet Inversion.md) (Shadertoy ID [7ljXWt](https://www.shadertoy.com/view/7ljXWt))
+[![Abstract Truchet Inversion](https://github.com/user-attachments/assets/420359df-e3e1-47c7-a139-07e8396f7d41)
+](ShaderOfTheWeek/AbstractTruchetInversion.md)
+----
 ## 16th of Dezember 2024
 #### [大龙猫 - Tunnel Cable](WeirdTruchetNewKeyboard.md) (Shadertoy ID [MfVfz3](https://www.shadertoy.com/view/MfVfz3))
 [![TunnelCable](https://github.com/user-attachments/assets/0db548e4-0b3e-4acc-b889-b79f83ce150d)

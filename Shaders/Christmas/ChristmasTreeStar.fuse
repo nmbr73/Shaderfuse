@@ -52,6 +52,7 @@ ShaderParameters =
   bool   CLONES;
   bool   DANCE;
   bool   Auto;
+  bool   Planet;
   float  ColorBKG[4];
   float  PatternXY[2];
   float  PatternZ;
@@ -498,7 +499,7 @@ __DEVICE__ float Ground( float3 pos, __TEXTURE2D__ iChannel2 )
 }
 
 
-__DEVICE__ float3 FoldSpace( float3 pos, bool CLONES, bool DANCE, float iTime )
+__DEVICE__ float3 FoldSpace( float3 pos, bool CLONES, bool DANCE, float iTime, bool Planet )
 {
     if(CLONES)
       pos = (abs_f3(fract_f3(pos/60.0f+0.25f)-0.5f)-0.25f)*70.0f; // tile space
@@ -522,12 +523,26 @@ __DEVICE__ float3 FoldSpace( float3 pos, bool CLONES, bool DANCE, float iTime )
       swi2S(pos,x,z, swi2(pos,x,z)*_cosf(a) + swi2(pos,z,x)*to_float2(-1,1)*_sinf(a));
     }
 
+    if (Planet)
+    {
+      // fold space again, within each face
+      pos.y += 2.0f;
+      float3 v = normalize(to_float3(0,1,-4.45f));//_mix(3.1f,6.0f,0.5f+0.5f*_cosf(iTime/3.0f)),-5));
+      pos = pos + v*_fmaxf(0.0f,-dot(v,pos)*2.0f);
+      v = to_float3(v.z*_sqrtf(3.0f/4.0f),v.y,-v.z*_sqrtf(1.0f/4.0f)); //rotate 120 about y
+      pos = pos + v*_fmaxf(0.0f,-dot(v,pos)*2.0f);
+      v.x = -v.x;
+      pos = pos + v*_fmaxf(0.0f,-dot(v,pos)*2.0f);
+      pos.y -= 2.0f;
+      pos.y -= 2.0f; // make the planet bigger so I have more room to play
+    }
+
     return pos;
 }
 
-__DEVICE__ float SDF( float3 pos, float iTime, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, __TEXTURE2D__ iChannel2 )
+__DEVICE__ float SDF( float3 pos, float iTime, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, bool Planet, __TEXTURE2D__ iChannel2 )
 {
-    pos = FoldSpace(pos, CLONES, DANCE, iTime);
+    pos = FoldSpace(pos, CLONES, DANCE, iTime, Planet);
 
     return _fminf(_fminf(_fminf(_fminf(
                   TreeSDF(pos, iTime, Fun, PATTERN_SCROLL),
@@ -564,14 +579,14 @@ __DEVICE__ int GetMat( float3 pos, float iTime, bool Fun, bool CLONES, bool DANC
 
 #define epsilon 0.0004f // todo: compute from t everywhere it's used (see "size of pixel"\/\/)
 
-__DEVICE__ float Trace( float3 rayStart, float3 rayDirection, float far, out int *count, float iTime, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, __TEXTURE2D__ iChannel2 )
+__DEVICE__ float Trace( float3 rayStart, float3 rayDirection, float far, out int *count, float iTime, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, bool Planet, __TEXTURE2D__ iChannel2 )
 {
 
   int loopCount = 400; // because of the early out this can actually be pretty high without costing much
   float t = epsilon;
     for ( int i=0; i < loopCount; i++ )
     {
-        float h = SDF(rayDirection*t+rayStart, iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2);
+        float h = SDF(rayDirection*t+rayStart, iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, Planet, iChannel2);
         t += h;
         if ( t > far || h < epsilon ) // *t )
             return t;
@@ -581,7 +596,7 @@ __DEVICE__ float Trace( float3 rayStart, float3 rayDirection, float far, out int
 }
 
 
-__DEVICE__ void mainImage2( out float4 *fragColour, in float2 fragCoord, float2 iResolution, float iTime, float4 iMouse, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, float whiteSoftness, bool Auto, float3 View, float Zoom, float Manual, int Background, float4 ColorBKG, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2 )
+__DEVICE__ void mainImage2( out float4 *fragColour, in float2 fragCoord, float2 iResolution, float iTime, float4 iMouse, bool Fun, bool CLONES, bool DANCE, float3 PATTERN_SCROLL, float whiteSoftness, bool Auto, float3 View, float Zoom, float Manual, int Background, float4 ColorBKG, bool Planet, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2 )
 {
 
     float time = 3.0f-3.0f*_cosf(iTime/5.0f);//fract(iTime/12.0f)*12.0f;
@@ -592,12 +607,21 @@ __DEVICE__ void mainImage2( out float4 *fragColour, in float2 fragCoord, float2 
     float3 camPos = _mix( to_float3(2,3,-5), to_float3(0,-5,-24), smoothstep(0.5f,6.0f,time) );
     float2 a = to_float2(-0.05f,1.35f-(iTime/5.0f-_sinf(iTime/5.0f))*0.25f) + 0.02f*sin_f2(to_float2(1,0.618f)*iTime/3.0f);
 
+    if(Planet)
+    {
+      camPos = _mix( to_float3(2,12,-6), to_float3(0,_sinf(iTime/7.0f)*7.0f,-33), smoothstep(0.0f,6.0f,time) );
+      a = to_float2(-0.05f,1.35f-(iTime/5.0f-0.5f*_sinf(iTime/5.0f))*0.3f)+0.02f*sin_f2(to_float2(1,0.618f)*iTime/3.0f);
+    }
+
     if ( iMouse.z > 0.0f ) a += (swi2((swi2(iMouse,x,y)/iResolution),y,x)-0.5f)*to_float2(-3,6);
 
     swi2S(camPos,y,z, swi2(camPos,y,z)*_cosf(a.x)+_sinf(a.x)*to_float2(-1,1)*swi2(camPos,z,y));
     swi2S(camPos,z,x, swi2(camPos,z,x)*_cosf(a.y)+_sinf(a.y)*to_float2(-1,1)*swi2(camPos,x,z));
 
     float3 camLook = _mix( to_float3(0,3,0), to_float3(0,1,0), smoothstep(0.5f,5.5f,time) ) + View;
+
+    if (Planet)
+      camLook = _mix( to_float3(1.5f,6,0), to_float3(0,1,0), smoothstep(1.0f,5.0f,time) );
 
     float3 camK = normalize(camLook-camPos);
     float3 camI = normalize(cross(to_float3(0,1,0),camK));
@@ -619,7 +643,7 @@ __DEVICE__ void mainImage2( out float4 *fragColour, in float2 fragCoord, float2 
           far = _exp2f(5.5+3.5);
 
 
-    float t = Trace( camPos, ray, far, &count, iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2 );
+    float t = Trace( camPos, ray, far, &count, iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, Planet, iChannel2 );
 
     *fragColour = to_float4_aw(to_float3_s(0.05f),1);
 
@@ -632,13 +656,13 @@ __DEVICE__ void mainImage2( out float4 *fragColour, in float2 fragCoord, float2 
         // h = 0.5f / (resolution.y*0.5f)
         float2 d = to_float2(-1,1) * t / (zoom*iResolution.y);
         float3 normal = normalize(
-              SDF(pos+swi3(d,x,x,x), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2)*swi3(d,x,x,x) +
-              SDF(pos+swi3(d,x,y,y), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2)*swi3(d,x,y,y) +
-              SDF(pos+swi3(d,y,x,y), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2)*swi3(d,y,x,y) +
-              SDF(pos+swi3(d,y,y,x), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2)*swi3(d,y,y,x)
+              SDF(pos+swi3(d,x,x,x), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, Planet, iChannel2)*swi3(d,x,x,x) +
+              SDF(pos+swi3(d,x,y,y), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, Planet, iChannel2)*swi3(d,x,y,y) +
+              SDF(pos+swi3(d,y,x,y), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, Planet, iChannel2)*swi3(d,y,x,y) +
+              SDF(pos+swi3(d,y,y,x), iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, Planet, iChannel2)*swi3(d,y,y,x)
             );
 
-        float3 uvw = FoldSpace(pos, CLONES, DANCE, iTime);
+        float3 uvw = FoldSpace(pos, CLONES, DANCE, iTime, Planet);
 
         int matIdx = GetMat(uvw, iTime, Fun, CLONES, DANCE, PATTERN_SCROLL, iChannel2);
 
@@ -800,6 +824,7 @@ __KERNEL__ void ChristmasTreeStarFuse(__CONSTANTREF__ Params*  params,  __TEXTUR
   bool   CLONES = params->CLONES;
   bool   DANCE = params->DANCE;
   bool   Auto = params->Auto;
+  bool   Planet = params->Planet;
   float4 ColorBKG = to_float4(params->ColorBKG[0], params->ColorBKG[1], params->ColorBKG[2], params->ColorBKG[3]);
   float2 PatternXY = to_float2(params->PatternXY[0], params->PatternXY[1]);
   float  PatternZ = params->PatternZ;
@@ -847,7 +872,7 @@ __KERNEL__ void ChristmasTreeStarFuse(__CONSTANTREF__ Params*  params,  __TEXTUR
 
         float4 col;
 
-        mainImage2( &col, fragCoord + jitter, iResolution, iTime, iMouse, Fun, CLONES, DANCE, PATTERN_SCROLL, whiteSoftness, Auto, View, Zoom, Manual, Background, ColorBKG, iChannel0, iChannel1, iChannel2 );
+        mainImage2( &col, fragCoord + jitter, iResolution, iTime, iMouse, Fun, CLONES, DANCE, PATTERN_SCROLL, whiteSoftness, Auto, View, Zoom, Manual, Background, ColorBKG, Planet, iChannel0, iChannel1, iChannel2 );
         fragColour += col;
     }
     fragColour /= (float)(numSamples);
@@ -938,6 +963,13 @@ function Create()
     INPID_InputControl  = "CheckboxControl",
     INP_Integer         = true,
     INP_Default         = 1,
+  })
+
+  InPlanetCheckbox = self:AddInput("Planet", "Planet", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
   })
 
   self:BeginControlNest("ColorBKG", "ColorBKG", true, {})
@@ -1312,6 +1344,7 @@ function Process(req)
   params.CLONES = InCLONESCheckbox:GetValue(req).Value
   params.DANCE = InDANCECheckbox:GetValue(req).Value
   params.Auto = InAutoCheckbox:GetValue(req).Value
+  params.Planet = InPlanetCheckbox:GetValue(req).Value
   params.ColorBKG = {
     InColorBKGColorR:GetValue(req).Value,
     InColorBKGColorG:GetValue(req).Value,

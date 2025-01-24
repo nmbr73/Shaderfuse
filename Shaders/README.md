@@ -27,21 +27,21 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (17th of Dezember 2024):
+Current Shader of the Week (22th of January 2025):
 <center>
 
 
-[![TunnelCable](https://github.com/user-attachments/assets/0db548e4-0b3e-4acc-b889-b79f83ce150d)
-](ShaderOfTheWeek/TunnelCable.md)
+[![AbstractTruchetInversion](https://github.com/user-attachments/assets/420359df-e3e1-47c7-a139-07e8396f7d41)
+](ShaderOfTheWeek/AbstractTruchetInversion.md)
 
-[大龙猫 - Tunnel Cable](ShaderOfTheWeek/TunnelCable.md) by [totetmatt](https://www.shadertoy.com/user/totetmatt)
+[Abstract Truchet Inversion](ShaderOfTheWeek/AbstractTruchetInversion.md) by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)
 
 My personal shader of the week:
 
-[![Billboard Tunnel](https://github.com/user-attachments/assets/8752bb7d-fd43-4b11-83a6-9d7f4f12bb2a)
-](Tunnel/BillboardTunnel.md)
+[![LittleBoxes](https://github.com/user-attachments/assets/5975841f-c494-4e46-993b-1ac8f5bb9a9f)
+](Misc/LittleBoxes.md)
 
-[Billboard Tunnel](ShaderOfTheWeek/NeonTunne.md) by [wyatt](https://www.shadertoy.com/user/wyatt)
+[Little Boxes](Misc/LittleBoxes.md) by [wyatt](https://www.shadertoy.com/user/wyatt)
 
 
 And a new category: Christmas
