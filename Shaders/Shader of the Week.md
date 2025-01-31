@@ -4,7 +4,11 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
-## 22th of Dezember 2025
+## 31th of January 2025
+#### [Eye of Phi](EyeOfPhi.md) (Shadertoy ID [7stfzB](https://www.shadertoy.com/view/7stfzB))
+[![Eye of Phi](https://github.com/user-attachments/assets/4b9aa8a6-9603-4233-a3fe-5b1d1a1fe3d3)](ShaderOfTheWeek/(EyeOfPhi.md)
+----
+## 22th of January 2025
 #### [Abstract Truchet Inversion](Abstract Truchet Inversion.md) (Shadertoy ID [7ljXWt](https://www.shadertoy.com/view/7ljXWt))
 [![Abstract Truchet Inversion](https://github.com/user-attachments/assets/420359df-e3e1-47c7-a139-07e8396f7d41)
 ](ShaderOfTheWeek/AbstractTruchetInversion.md)
