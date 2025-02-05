@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 5th of Febuary 2025
+#### [Segmented spiral whirlpool](SegmentedSpiralWhirlpool.md) (Shadertoy ID [4ctcRl](https://www.shadertoy.com/view/4ctcRl))
+[![Segmented spiral whirlpool](https://github.com/user-attachments/assets/a0f85857-d505-468c-a135-e7b8ff8259ab)](ShaderOfTheWeek/(SegmentedSpiralWhirlpool.md)
+----
 ## 31th of January 2025
 #### [Eye of Phi](EyeOfPhi.md) (Shadertoy ID [7stfzB](https://www.shadertoy.com/view/7stfzB))
 [![Eye of Phi](https://github.com/user-attachments/assets/4b9aa8a6-9603-4233-a3fe-5b1d1a1fe3d3)](ShaderOfTheWeek/(EyeOfPhi.md)

@@ -27,21 +27,21 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (31th of January 2025):
+Current Shader of the Week (5th of February 2025):
 <center>
 
 
-[![EyeOfPhi](https://github.com/user-attachments/assets/4b9aa8a6-9603-4233-a3fe-5b1d1a1fe3d3)
-](ShaderOfTheWeek/EyeOfPhi.md)
+[![Segmented spiral whirlpool](https://github.com/user-attachments/assets/a0f85857-d505-468c-a135-e7b8ff8259ab)
+](ShaderOfTheWeek/SegmentedSpiralWhirlpool.md)
 
-[Eye Of Phi](ShaderOfTheWeek/EyeOfPhi.md) by [ChunderFPV](https://www.shadertoy.com/user/ChunderFPV)
+[Segmented spiral whirlpool](ShaderOfTheWeek/SegmentedSpiralWhirlpool.md) by [ChunderFPV](https://www.shadertoy.com/user/ChunderFPV)
 
 My personal shader of the week:
 
-[![ParticleLifeWithRaymarching](https://github.com/user-attachments/assets/715c3cdd-75b6-4905-8e08-526518f7e8e0)
-](Blob/ParticleLifeWithRaymarching.md)
+[![Endless Screw Scroll Genuary28](https://github.com/user-attachments/assets/3ccae2cf-be8b-422c-b6ee-3ba89c479be6)
+](Object/EndlessScrewScrollGenuary28.md)
 
-[Particle Life With Raymarching](Misc/LittleBoxes.md) by [astrolorant](https://www.shadertoy.com/user/astrolorant)
+[Endless Screw Scroll Genuary28](Misc/LittleBoxes.md) by [flockaroo](https://www.shadertoy.com/user/flockaroo)
 
 
 And a new category: Christmas
