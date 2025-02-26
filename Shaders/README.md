@@ -27,21 +27,21 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (5th of February 2025):
+Current Shader of the Week (28th of February 2025):
 <center>
 
 
-[![Segmented spiral whirlpool](https://github.com/user-attachments/assets/a0f85857-d505-468c-a135-e7b8ff8259ab)
-](ShaderOfTheWeek/SegmentedSpiralWhirlpool.md)
+[![yee1212](https://github.com/user-attachments/assets/c5e285e6-340b-49d4-b693-1793860fa128)
+](ShaderOfTheWeek/yee1212.md)
 
-[Segmented spiral whirlpool](ShaderOfTheWeek/SegmentedSpiralWhirlpool.md) by [ChunderFPV](https://www.shadertoy.com/user/ChunderFPV)
+[yee1212](ShaderOfTheWeek/yee1212.md) by [dspindler](https://www.shadertoy.com/user/dspindler)
 
 My personal shader of the week:
 
-[![Endless Screw Scroll Genuary28](https://github.com/user-attachments/assets/3ccae2cf-be8b-422c-b6ee-3ba89c479be6)
-](Object/EndlessScrewScrollGenuary28.md)
+[![Lā Jī](https://github.com/user-attachments/assets/c2f669a6-1804-4ca4-8e44-06915db200d8)
+](Object/LaJi.md)
 
-[Endless Screw Scroll Genuary28](Misc/LittleBoxes.md) by [flockaroo](https://www.shadertoy.com/user/flockaroo)
+[Lā Jī](Object/LaJi.md) by [SL0ANE](https://www.shadertoy.com/user/SL0ANE)
 
 
 And a new category: Christmas
