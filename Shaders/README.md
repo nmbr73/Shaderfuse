@@ -27,29 +27,22 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (28th of February 2025):
+Current Shader of the Week (10th of March 2025):
 <center>
 
 
-[![yee1212](https://github.com/user-attachments/assets/c5e285e6-340b-49d4-b693-1793860fa128)
-](ShaderOfTheWeek/yee1212.md)
+[![CreationBySilexars](https://github.com/user-attachments/assets/aa651f48-3d52-45c8-8b10-71fd55a67d71)
+](ShaderOfTheWeek/CreationBySilexars.md)
 
-[yee1212](ShaderOfTheWeek/yee1212.md) by [dspindler](https://www.shadertoy.com/user/dspindler)
+[Creation By Silexars](ShaderOfTheWeek/CreationBySilexars.md) by [Danguafer](https://www.shadertoy.com/user/Danguafer)
 
 My personal shader of the week:
 
-[![Lā Jī](https://github.com/user-attachments/assets/c2f669a6-1804-4ca4-8e44-06915db200d8)
-](Object/LaJi.md)
+[![WovenElasticSimulation](https://github.com/user-attachments/assets/20955257-4046-4b05-b1f3-d233d09e9d8b)
+](Distortion/WovenElasticSimulation.md)
 
-[Lā Jī](Object/LaJi.md) by [SL0ANE](https://www.shadertoy.com/user/SL0ANE)
+[Woven Elastic Simulation](Distortion/WovenElasticSimulation.md) by [wyatt](https://www.shadertoy.com/user/wyatt)
 
-
-And a new category: Christmas
-
-[![ChristmasTreeStar](https://github.com/user-attachments/assets/0b8ee524-d83e-4297-b476-537a974a229b)
-](Christmas/ChristmasTreeStar.md)
-
-[Christmas Tree Star](ShaderOfTheWeek/ChristmasTreeStar.md) by [TekF](https://www.shadertoy.com/user/TekF)
 
 </center>
 

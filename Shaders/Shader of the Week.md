@@ -3,7 +3,10 @@ title: Shader of the Week
 ---
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
-
+----
+## 10th of March 2025
+#### [CreationBySilexars](CreationBySilexars.md) (Shadertoy ID [XsXXDn](https://www.shadertoy.com/view/XsXXDn))
+[![CreationBySilexars](https://github.com/user-attachments/assets/aa651f48-3d52-45c8-8b10-71fd55a67d71)](ShaderOfTheWeek/CreationBySilexars.md)
 ----
 ## 28th of Febuary 2025
 #### [yee1212](yee1212.md) (Shadertoy ID [sldGRS](https://www.shadertoy.com/view/sldGRS))
