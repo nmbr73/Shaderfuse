@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 2th of April 2025
+#### [CubeWave3](CubeWave3.md) (Shadertoy ID [lcSGDD](https://www.shadertoy.com/view/lcSGDD))
+[![Image](https://github.com/user-attachments/assets/b4a9ad14-25e6-4cd9-a503-099e42b34f74)](ShaderOfTheWeek/CreationBySilexars.md)
+----
 ## 10th of March 2025
 #### [CreationBySilexars](CreationBySilexars.md) (Shadertoy ID [XsXXDn](https://www.shadertoy.com/view/XsXXDn))
 [![CreationBySilexars](https://github.com/user-attachments/assets/aa651f48-3d52-45c8-8b10-71fd55a67d71)](ShaderOfTheWeek/CreationBySilexars.md)
