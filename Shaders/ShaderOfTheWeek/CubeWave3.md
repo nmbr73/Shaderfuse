@@ -1,7 +1,6 @@
-# Here insert a description of the shader! And maybe a gif
+![Image](CubeWave3.gif)
 
-# Description of the Shader in Shadertoy: 
+[![Thumbnail](CubeWave3_screenshot.png)](CubeWave3.fuse)
+
+### Description of the Shader in Shadertoy:
 reference: https://twitter.com/lejeunerenard/status/1742073493020188962
-
-[![Thumbnail](CubeWave3_screenshoot.png)](CubeWave3.fuse)
-

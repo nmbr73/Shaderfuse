@@ -6,7 +6,7 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 ----
 ## 2th of April 2025
 #### [CubeWave3](CubeWave3.md) (Shadertoy ID [lcSGDD](https://www.shadertoy.com/view/lcSGDD))
-[![Image](https://github.com/user-attachments/assets/b4a9ad14-25e6-4cd9-a503-099e42b34f74)](ShaderOfTheWeek/CreationBySilexars.md)
+[![Image](ShaderOfTheWeek/CubeWave3.gif)](ShaderOfTheWeek/CubeWave3.md)
 ----
 ## 10th of March 2025
 #### [CreationBySilexars](CreationBySilexars.md) (Shadertoy ID [XsXXDn](https://www.shadertoy.com/view/XsXXDn))

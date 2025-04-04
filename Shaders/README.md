@@ -30,13 +30,13 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 Current Shader of the Week (2th of April 2025):
 <center>
 
-[![CubeWave3](https://github.com/user-attachments/assets/d1ed6266-c135-4f75-92da-2a5d06bc1988)](ShaderOfTheWeek/CubeWave3.md)
+[![CubeWave3](ShaderOfTheWeek/CubeWave3.gif)](ShaderOfTheWeek/CubeWave3.md)
 
-[Cube Wave3](ShaderOfTheWeek/CreationBySilexars.md) by [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)
+[Cube Wave3](ShaderOfTheWeek/CubeWave3.md) by [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)
 
 My personal shader of the week:
 
-[![VirusAttack](https://github.com/user-attachments/assets/19fa8a18-1aa1-4934-b34f-870ee2f2a3f3)
+[![VirusAttack](Abstract/VirusAttack.gif)
 ](Abstract/VirusAttack.md)
 
 [virus attack](Abstract/VirusAttack.md) by [pb](https://www.shadertoy.com/user/pb)
