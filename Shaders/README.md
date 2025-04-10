@@ -27,19 +27,19 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
-Current Shader of the Week (2th of April 2025):
+Current Shader of the Week (10th of April 2025):
 <center>
 
-[![CubeWave3](ShaderOfTheWeek/CubeWave3.gif)](ShaderOfTheWeek/CubeWave3.md)
+[![Infrastructure](ShaderOfTheWeek/Infrastructure.gif)](ShaderOfTheWeek/Infrastructure.md)
 
-[Cube Wave3](ShaderOfTheWeek/CubeWave3.md) by [FabriceNeyret2](https://www.shadertoy.com/user/FabriceNeyret2)
+[Infrastructure](ShaderOfTheWeek/Infrastructure.md) by [R3N](https://www.shadertoy.com/user/R3N)
 
 My personal shader of the week:
 
-[![VirusAttack](Abstract/VirusAttack.gif)
-](Abstract/VirusAttack.md)
+[![VirusAttack](Object/JugglerRetroBallObjects.gif)
+](Object/JugglerRetroBallObjects.md)
 
-[virus attack](Abstract/VirusAttack.md) by [pb](https://www.shadertoy.com/user/pb)
+[Juggler (Retro Ball Objects)](Object/JugglerRetroBallObjects.md) by [misol101](https://www.shadertoy.com/user/misol101)
 
 
 </center>
