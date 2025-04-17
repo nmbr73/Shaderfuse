@@ -13,6 +13,48 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Infrastructure](https://www.shadertoy.com/view/ssBfz3)| incub | ShaderOfTheWeek15/25 |
+|[Juggler (Retro Ball Objects)](https://www.shadertoy.com/view/t3XGRN)| fuse | AB !! |
+|[Generic Particles: Boids](https://www.shadertoy.com/view/XX3BRr)| defect | kein Bildschirmaufbau |
+|[Fluid physics with viscosity](https://www.shadertoy.com/view/Wsf3Dj)| defect | partikel verhalten sich anders |
+|[amoeba world](https://www.shadertoy.com/view/7lKyz1)| defect | partikel werden nicht aufgebaut |
+|[Geyser(Fast Ater)](https://www.shadertoy.com/view/4lBGzt)| defect | verschoben |
+|[Islands in the Flow](https://www.shadertoy.com/view/WfXGR7)| defect | partikel werden nicht aufgebaut |
+|[Bubbles and thin film refraction](https://www.shadertoy.com/view/3fs3Rj)| defect |  |
+|[Fork cellular-a](https://www.shadertoy.com/view/33SGRw)| incub | A Blending ! |
+|[Smooth Loops](https://www.shadertoy.com/view/t3S3WR)| incub | A |
+|[https://www.shadertoy.com/view/lcSGDD]( )| fuse | ShaderOfTheWeek14/25 |
+|[CombFuse:virus attack](https://www.shadertoy.com/view/3fSSW1)| fuse | A ! |
+|[CombFuse:neuronal voyage](https://www.shadertoy.com/view/wfSXD1)| fuse | A ! |
+|[ Biiicycle, biiicycle #1](https://www.shadertoy.com/view/MXycRK)| incub | !! |
+|[sickly goo](https://www.shadertoy.com/view/McKfzV)| incub | ABCD Blending !! |
+|[4dwarp9](https://www.shadertoy.com/view/wc2Sz3)| incub | ! |
+|[4dwarp4](https://www.shadertoy.com/view/l3VyRy)| incub | ! |
+|[One-Pass Fire](https://www.shadertoy.com/view/tf2SWc)| incub | !! |
+|[GS Diffusion Zoom Map](https://www.shadertoy.com/view/t3l3Wr)| incub | A Blending !! |
+|[Fire [326]](https://www.shadertoy.com/view/WXX3RH)| incub | !!! |
+|[Currents](https://www.shadertoy.com/view/3fjSzD)| incub | ABCD Blending !! |
+|[Explosion Simulation](https://www.shadertoy.com/view/tcfSRf)| incub | ABC Blending ! |
+|[Ballon](https://www.shadertoy.com/view/WfXXRf)| incub | ABCD Blending ! |
+|[CombFuse:Sea Hairs](https://www.shadertoy.com/view/tfBSzh)| fuse | ABCD |
+|[CombFuse:Woven Elastic Simulation 3](https://www.shadertoy.com/view/3fBSR1)| fuse | ABCD |
+|[CombFuse:Woven Elastic Simulation 2 ](https://www.shadertoy.com/view/WfSSzh)| fuse | ABCD |
+|[CombFuse:Woven Elastic Simulation](https://www.shadertoy.com/view/3cSSRh)| fuse | ABCD |
+|[Warping stuff (sound)](https://www.shadertoy.com/view/ddjSW1)| incub | AB Blending ! |
+|[Wave Equation Light](https://www.shadertoy.com/view/WcsXWB)| incub | ABCD Blending ! |
+|[Starship [334]](https://www.shadertoy.com/view/l3cfW4)| incub | Kometen ! |
+|[Cellular Growth Simulation](https://www.shadertoy.com/view/tffXRX)| incub | AB Blending ! |
+|[Explosion Simulation 2](https://www.shadertoy.com/view/3fXSzl)| incub | AB Blending !!|
+|[Rapidly Evolving Fluid](https://www.shadertoy.com/view/MtdBDB)| incub | ABCD Blending !! |
+|[Watercolor alienfx 306](https://www.shadertoy.com/view/wflXD7)| incub | AB Blending !|
+|[Unsinkable II](https://www.shadertoy.com/view/wflSD8)| incub | ABCD Blending !! |
+|[Unsinkable](https://www.shadertoy.com/view/WflSW8)| incub | ABCD Blending !! |
+|[Thunder Energy Remix](https://www.shadertoy.com/view/WflSWr)| incub | AB !!! |
+|[firework2](https://www.shadertoy.com/view/wffSWr)| incub |  |
+|[firework1](https://www.shadertoy.com/view/tfXSWr)| incub |  |
+|[Fluid Webcam Effect](https://www.shadertoy.com/view/tcsXzr)| incub | ABC Blending ! |
+|[Bioluminescent Fluid Simulation](https://www.shadertoy.com/view/WffSzM)| incub | A Blending ! |
+|[Ball Buster](https://www.shadertoy.com/view/tcS3Dt)| incub | AB Blending ! |
 |[yee1212](https://www.shadertoy.com/view/sldGRS)| Fuse | ShaderOfTheWeek 09/25 |
 |[Burn up](https://www.shadertoy.com/view/tc2GWV)| incub | ! |
 |[Particle Tracking](https://www.shadertoy.com/view/4lVfzh)| incub | ABC !! |

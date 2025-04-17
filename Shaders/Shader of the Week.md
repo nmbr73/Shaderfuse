@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 17th of April 2025
+#### [DULL SKULL](DullSkull.md) (Shadertoy ID [DlyyWR](https://www.shadertoy.com/view/DlyyWR))
+[![Image](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
+----
 ## 10th of April 2025
 #### [Infrastructure](Infrastructure.md) (Shadertoy ID [ssBfz3](https://www.shadertoy.com/view/ssBfz3))
 [![Image](ShaderOfTheWeek/Infrastructure.gif)](ShaderOfTheWeek/Infrastructure.md)
