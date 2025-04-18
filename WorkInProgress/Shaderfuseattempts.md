@@ -13,6 +13,15 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[A FLYING MISSLE](https://www.shadertoy.com/view/3fBXDV)| incub | A !! |
+|[DULL SKULL](https://www.shadertoy.com/view/DlyyWR)| fuse | ShaderOfTheWeek16/25 |
+|[Crystal Cave](https://www.shadertoy.com/view/wflGWj)| fuse | Tunnel !! |
+|[Fork of oil on water](https://www.shadertoy.com/view/W3l3zf)| incub | !! |
+|[Purple Matrix](https://www.shadertoy.com/view/t3f3DX)| incub | ! |
+|[Bubble Wall](https://www.shadertoy.com/view/3323Rd)| incub | A ! |
+|[Wind](https://www.shadertoy.com/view/3XBGDy)| incub | AB Blending !! |
+|[Reactive Rainbow](https://www.shadertoy.com/view/3ld3Dn)| incub | ABC Blending !! |
+|[Reaction-Diffusion Patterns 3](https://www.shadertoy.com/view/t32GRV)| incub | ABCD Blending ! |
 |[Infrastructure](https://www.shadertoy.com/view/ssBfz3)| incub | ShaderOfTheWeek15/25 |
 |[Juggler (Retro Ball Objects)](https://www.shadertoy.com/view/t3XGRN)| fuse | AB !! |
 |[Generic Particles: Boids](https://www.shadertoy.com/view/XX3BRr)| defect | kein Bildschirmaufbau |
