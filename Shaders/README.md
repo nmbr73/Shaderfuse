@@ -30,50 +30,14 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 
 <center>
 
+### Current Shader of the Week (17th of April 2025):
 
-----
-## 17th of April 2025
-#### [DULL SKULL](DullSkull.md) (Shadertoy ID [DlyyWR](https://www.shadertoy.com/view/DlyyWR))
-
-
-.
-
-.
-
-.
-
-.
-
-.
-
-.
-
-.
-
-.
-
-.
 
 [![Image](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
 
-.
-
-.
-
-.
-My personal shader of the week:
-
-.
-
-.
-
-.
-
-[![CrystalCave](Tunnel/CrystalCave.gif)
-](Tunnel/CrystalCave.md)
 
 
-
+[DULL SKULL](ShaderOfTheWeek/DullSkull.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
 
 </center>
 
@@ -104,3 +68,11 @@ Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and star
 And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinci Resolve) pane under 'Tools' you should now find an entry 'Shaderfuse' (resp. 'Shaderfuse (beta)') that lists all the categories and the different fuses.
 
 Please note, that there a some specific shaders that might need additional Fuses at their input to be used. These are in particular all the [Cubemap](Cubemap/README.md) and [Audio](Audio/README.md) shaders.
+
+
+
+My personal shader of the week:
+
+[![CrystalCave](Tunnel/CrystalCave.gif)](Tunnel/CrystalCave.md)
+
+[Crystal Cave)](Tunnel/CrystalCave.md) by [diatribes](https://www.shadertoy.com/user/diatribes)
