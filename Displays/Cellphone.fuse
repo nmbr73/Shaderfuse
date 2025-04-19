@@ -1,0 +1,1354 @@
+--[[--/*
+
+  Cellphone.fuse
+
+  Based on https://www.shadertoy.com/view/MdfSRs a WebGL shader created by EvilRyu.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  bool   BKG;
+  float  ColorBG[4];
+  float  Color[4];
+  float  ColorBody[4];
+  float  ColorScreen[4];
+  float  ColorPower[4];
+  float  ColorEMI[4];
+  float  Satuation;
+  float  Vignette;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  Mix;
+  float  Level0;
+  float  Level1;
+  float  Level2;
+  float  View2XY[2];
+  float  View2Z;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Video' to iChannel0
+// Connect Image 'Texture: RGBA Noise Medium' to iChannel1
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+// It's my cellphone, created by EvilRyu 2014
+
+#define PI 3.14159265f
+#define screen_h 1.6f
+#define screen_w 0.9f
+#define DIFFUSE 0
+#define REFL    1
+#define EMI     2
+#define MTL_NUM 6
+
+
+//float stime, ctime;
+
+struct material_typ{
+  float3 color;
+  float r0;
+  float smoothness;
+  int type;
+};
+
+//struct material_typ mtl;
+
+
+__DEVICE__ float roundbox( float3 p, float3 b, float r )
+{
+  return length(_fmaxf(abs_f3(p)-b,to_float3_s(0.0f)))-r;
+}
+__DEVICE__ float sphere(float3 p, float r) {
+    return length(p)-r;
+}
+__DEVICE__ float plane(float3 p, float y) {
+    return length(to_float3(p.x, y, p.z) - p);
+}
+
+__DEVICE__ float expstep(float x, float k, float n)
+{
+    return _expf(-k*_powf(x,n));
+}
+
+__DEVICE__ float cylinder(float3 p, float2 h)
+{
+    float2 d = abs_f2(to_float2(length(swi2(p,x,z)),p.y)) - h;
+    return _fminf(_fmaxf(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f)));
+}
+
+__DEVICE__ float2 cellphonebody( float3 p, float3 b, float r )
+{
+    float screen = 0.0f;
+    float m = 0.0f;
+    float3 tmp = to_float3(-1.75f, 0.15f, -0.0f);
+
+    if(p.y < 0.0f) {
+      // curve of backside
+      b =  to_float3(b.x*1.0f/(0.1f*p.z*p.z+1.0f),
+                     b.y*1.0f*_cosf(p.z)*1.0f*_cosf(p.x*0.1f)-_powf(p.x*p.z*p.x*p.z,2.0f)*0.0071f,
+                     b.z);
+
+    }else {
+        // screen
+        if(p.x > -screen_h && p.x < screen_h && p.z > -screen_w && p.z < screen_w) {
+            screen = 1.0f;
+            b.y -= 0.02f;
+        }
+
+        // slop at both sides
+        float sl1 = -p.z*p.z*0.1f + 1.75f;
+        float sl2 = sl1 + 0.25f;
+        float by = b.y;
+        if(p.x > sl1) {
+            b.y = by * expstep((p.x - sl1)/(sl2 - sl1), 2.0f, 4.0f);
+        }
+        sl1 += 0.15f;
+        sl2 = sl1 + 0.25f;
+        if(p.x < -sl1) {
+          b.y = b.y * expstep((-p.x - sl1)/(sl2 - sl1), 1.0f, 1.5f);
+        }
+
+
+    if(_fabs(p.x-tmp.x) < 0.03f && _fabs(p.z-tmp.z) < 0.08f){
+      b.y -= 0.01f;
+      screen = 1.0f;
+    }
+
+    tmp = to_float3(-1.75f, 0.15f, -0.3f);
+      if(dot(p - tmp, p - tmp) < 0.002f) {
+        b.y -= 0.02f;
+        screen = 1.0f;
+      }
+    tmp.z -= 0.15f;
+    if(dot(p - tmp, p - tmp) < 0.006f) {
+      b.y -= 0.02f;
+      screen = 1.0f;
+    }
+    tmp.z -= 0.15f;
+    if(dot(p - tmp, p - tmp) < 0.002f) {
+      b.y -= 0.02f;
+      screen = 1.0f;
+    }
+    tmp.z -= 0.15f;
+    if(dot(p - tmp, p - tmp) < 0.002f) {
+      b.y -= 0.02f;
+      screen = 1.0f;
+    }
+    tmp = to_float3(1.85f, 0.15f, 0.6f);
+    if(dot(p - tmp, p - tmp) < 0.001f) {
+      b.y -= 0.02f;
+      screen = 1.0f;
+    }
+    tmp = to_float3(0.7f, 0.12f, 1.12f);
+    if(dot(p - tmp, p - tmp) < 0.001f) {
+      b.y -= 0.02f;
+      screen = 1.0f;
+    }
+
+       b = to_float3(b.x*1.0f/(0.1f*p.z*p.z+1.0f), b.y, b.z);
+    }
+    float body = (length(_fmaxf(abs_f3(p)-b, to_float3_s(0.0f)))-r) * 0.5f;
+
+    float d = 1e10;
+
+    // buttons
+    //float d8 = cylinder(to_float3(p.x + 0.7f, p.z + 1.12f, p.y - 0.03f), to_float2(0.03f, 0.1f));
+    //float d6 = cylinder(to_float3(p.x + 1.0f, p.z + 0.95f, p.y - 0.03f), to_float2(0.07f, 0.1f));
+    //float d7 = cylinder(to_float3(p.x - 1.0f, p.z + 0.95f, p.y - 0.03f), to_float2(0.07f, 0.1f));
+
+    // if(d > d8) {d = d8; m = 3.0f;}
+    if(-d < body){d = body; m = 1.0f+screen;} else {d = -d; m = 1.0f;}
+
+    //if(d > d6) {d = d6; m = 1.0f;}
+    //if(d > d7) {d = d7; m = 1.0f;}
+    return to_float2(d,m);
+}
+
+__DEVICE__ struct material_typ getmtl(float m, float3 Colors[4], inout float *Alpha) {
+  struct material_typ mtl;
+    mtl.type = DIFFUSE;
+    mtl.r0 = 0.1f;
+    mtl.smoothness = 0.3f;
+    mtl.color = Colors[0];//to_float3_s(1.0f);
+    if(m < 2.0f) {
+      mtl.color = Colors[1];//to_float3_s(1.0f); // body
+      mtl.type = DIFFUSE;
+      mtl.r0 = 0.21f;
+      mtl.smoothness = 0.6f;
+      *Alpha = 1.0f;
+    } else if( m < 3.0f) {
+      mtl.color = Colors[2];//to_float3_s(0.05f);  // screen
+      mtl.type = REFL;
+      mtl.r0 = 0.01f;
+      mtl.smoothness = 1.0f;
+      *Alpha = 1.0f;
+    } else if(m < 4.0f) {
+      mtl.color = Colors[3];//to_float3(0.0f, 2.0f, 0.0f);  // power
+      mtl.type = EMI;
+      mtl.r0 = 0.2f;
+      mtl.smoothness = 0.1f;
+      *Alpha = 1.0f;
+  }
+  return mtl;
+}
+
+ __DEVICE__ float2 f(float3 p){
+   //ry(p, stime);
+    float m = 0.0f;
+    float d = 1e10;
+    float2 dc = cellphonebody(p, to_float3(2.0f, 0.15f, 1.0f), 0.03f);
+    float d0 = plane(to_float3(p.x, p.y + 0.23f, p.z), 0.0f);
+
+    if(d > dc.x) {d = dc.x; m = dc.y;}
+    if(d > d0) {d = d0; m = 4.0f;}
+
+    return to_float2(d, m);
+ }
+
+
+ __DEVICE__ float softshadow(float3 ro, float3 rd, float k ){
+     float akuma=1.0f,h=0.0f;
+     float t = 0.01f;
+     for(int i=0; i < 70; ++i){
+         h=f(ro+rd*t).x;
+         if(h<0.001f)return 0.02f;
+         akuma=_fminf(akuma, k*_fmaxf(h, 0.0f)/t);
+         t+=clamp(h,0.01f,2.0f);
+     }
+     return akuma;
+ }
+
+ __DEVICE__ float3 nor(float3 p){
+    float3 e=to_float3(0.001f,0.0f,0.0f);
+    return normalize(to_float3(f(p+swi3(e,x,y,y)).x-f(p-swi3(e,x,y,y)).x,
+                               f(p+swi3(e,y,x,y)).x-f(p-swi3(e,y,x,y)).x,
+                               f(p+swi3(e,y,y,x)).x-f(p-swi3(e,y,y,x)).x));
+ }
+
+__DEVICE__ float2 intersect( in float3 ro, in float3 rd )
+{
+    float t = 0.0f;
+    float2 res = to_float2_s(-1.0f);
+    float2 h = to_float2_s(1.0f);
+    for( int i=0; i<64; i++ )
+    {
+      if( h.x<0.0005f || t>20.0f ) continue;
+        h = f(ro + rd*t);
+        res = to_float2(t,h.y);
+        t += h.x;
+    }
+    if( t>20.0f ) res=to_float2_s(-1.0f);
+    return res;
+}
+
+
+__DEVICE__ float phong(float3 light, float3 incident, float3 normal, float smoothness) {
+    float specpower = _exp2f(2.0f + 2.0f * smoothness);
+    return _fmaxf(0.0f, _powf(clamp(dot(light, reflect(incident, normal)), 0.0f, 1.0f), specpower));
+}
+
+
+
+__DEVICE__ float3 lighting(float3 n, float3 rd, float3 p, struct material_typ mtl, __TEXTURE2D__ iChannel0) {
+    float3 l0_dir = to_float3(1.0f, 1.0f, 0.5f);
+    float3 l0_col = to_float3(1.1f,1.0f,0.9f);
+    float3 ambi_col = to_float3(1.0f, 1.0f, 1.0f);
+    float3 diffuse, specular, lin;
+
+    float shadow = softshadow(p, l0_dir, 10.0f );
+
+    float diff = _fmaxf(0.0f, dot(n, l0_dir));
+    float spec = phong(l0_dir, rd, n, mtl.smoothness);
+    float ambi = 0.6f + 0.4f * _fmaxf(0.0f, dot(n, to_float3(0.0f, 1.0f, 0.0f)));
+    float back = _fmaxf(0.3f + 0.7f * dot(to_float3(-l0_dir.x, -1.0f, -l0_dir.z), n), 0.0f);
+
+
+    diffuse = 3.8f * diff * shadow * l0_col;
+    diffuse += 0.6f * ambi * ambi_col;
+    diffuse += 0.5f * back * l0_col;
+    diffuse *= mtl.color;
+    specular = 3.0f * spec * l0_col;
+
+    lin = diffuse + specular;
+
+    float be = 0.05f;// black edge for the screen
+    if(p.y>0.0f && p.x>-screen_h+be && p.x<screen_h-be && p.z>-screen_w+be && p.z<screen_w-be)
+        lin += 5.0f*swi3(texture(iChannel0, to_float2((p.x+screen_h-be) / (2.0f*(screen_h+be)),
+                              1.0f-(p.z+screen_w-be) / (2.0f*(screen_w+be)))),x,y,z);
+
+  return lin;
+
+}
+__DEVICE__ float3 banzai(float3 ro, float3 rd, inout float *t, float3 Colors[5], float ratio, inout float *Alpha, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1) {
+
+    float3 col;
+    float3 p=ro;
+
+    float2 res = intersect(ro, rd);
+    *t = res.x;
+
+    if(*t > -0.5f){
+        p = ro + *t * rd;
+        struct material_typ mtl = getmtl(res.y, Colors, Alpha);
+        float3 n=nor(p);
+
+      if(mtl.type == EMI) {
+          col = to_float3(0.0f,1.0f,0.0f);
+      } else {
+          //*Alpha = 1.0f;
+          col = lighting(n, rd, p, mtl, iChannel0);
+          float3 ground = to_float3_s(texture(iChannel1, swi2(p,x,z)*to_float2(ratio,1.0f)).x);
+          if((int)(res.y+0.1f) == 4) col *= ground;
+          col *= 0.2f;
+      }
+
+    }
+  return col;
+}
+
+ __KERNEL__ void CellphoneFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   BKG = params->BKG;
+  float4 ColorBG = to_float4(params->ColorBG[0], params->ColorBG[1], params->ColorBG[2], params->ColorBG[3]);
+  float4 Color = to_float4(params->Color[0], params->Color[1], params->Color[2], params->Color[3]);
+  float4 ColorBody = to_float4(params->ColorBody[0], params->ColorBody[1], params->ColorBody[2], params->ColorBody[3]);
+  float4 ColorScreen = to_float4(params->ColorScreen[0], params->ColorScreen[1], params->ColorScreen[2], params->ColorScreen[3]);
+  float4 ColorPower = to_float4(params->ColorPower[0], params->ColorPower[1], params->ColorPower[2], params->ColorPower[3]);
+  float4 ColorEMI = to_float4(params->ColorEMI[0], params->ColorEMI[1], params->ColorEMI[2], params->ColorEMI[3]);
+  float  Satuation = params->Satuation;
+  float  Vignette = params->Vignette;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  Mix = params->Mix;
+  float  Level0 = params->Level0;
+  float  Level1 = params->Level1;
+  float  Level2 = params->Level2;
+  float2 View2XY = to_float2(params->View2XY[0], params->View2XY[1]);
+  float  View2Z = params->View2Z;
+
+  // --------
+
+
+
+
+    float3 Colors[5] = {swi3(Color,x,y,z),swi3(ColorBody,x,y,z),swi3(ColorScreen,x,y,z),swi3(ColorPower,x,y,z),swi3(ColorEMI,x,y,z)};
+
+
+
+
+
+
+
+
+    float2 q=fragCoord/iResolution;
+    float2 uv = -1.0f + 2.0f*q;
+    uv.x*=iResolution.x/iResolution.y;
+
+    float ratio = iResolution.y/iResolution.x;
+
+    float Alpha = ColorBG.w;
+
+    // mouse
+    float2 mo = swi2(iMouse,x,y)/iResolution;
+
+    // camera
+    float stime=_sinf(iTime*0.2f+ 6.0f*mo.x)*Level1;
+    float ctime=_cosf(iTime*0.2f+ 6.0f*mo.x)*Level2;
+
+
+    float3 ta=to_float3(0.0f,0.0f,0.0f)+to_float3_aw(View2XY,View2Z);
+    float3 ro=to_float3(2.0f*stime,2.5f*mo.y, 4.5f + 0.5f*ctime);
+
+    float3 cf = normalize(ta-ro);
+    float3 cs = normalize(cross(cf,to_float3(0.0f,1.0f,0.0f)));
+    float3 cu = normalize(cross(cs,cf));
+    float3 rd = normalize(uv.x*cs + uv.y*cu + 2.8f*cf + to_float3_aw(ViewXY,ViewZ));  // transform from view to world
+
+    float3 bg = _expf(uv.y-2.0f)*swi3(ColorBG,x,y,z);//to_float3(0.1f, 0.1f, 0.1f);
+    if (BKG) bg = swi3(ColorBG,x,y,z);
+    float3 col;
+    float t;
+
+    col = banzai(ro, rd, &t, Colors, ratio, &Alpha, iChannel0, iChannel1);
+    if(t <= 0.0f) col = bg;
+    col=_mix(col,bg, 1.0f-_expf(-0.01f*t*t)*Mix);
+
+    // post
+    col=pow_f3(clamp(col,0.0f,1.0f),to_float3_s(0.45f)*Level0);
+    col=_mix(col, to_float3_s(dot(col, to_float3_s(0.33f))), -0.5f*Satuation);  // satuation
+    col*=0.5f+0.5f*_powf(16.0f*q.x*q.y*(1.0f-q.x)*(1.0f-q.y), 0.7f*Vignette);   // vigneting
+    fragColor=to_float4_aw(col, Alpha);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InBKGCheckbox = self:AddInput("BKG", "BKG", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  self:BeginControlNest("ColorBG", "ColorBG", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBG",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBGColorR = self:AddInput("Red",   "ColorBGRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColorBGColorG = self:AddInput("Green", "ColorBGGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InColorBGColorB = self:AddInput("Blue",  "ColorBGBlue",  { INP_Default  = 0.1, IC_ControlID = 2, attrs})
+    InColorBGColorA = self:AddInput("Alpha", "ColorBGAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color", "Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorColorR = self:AddInput("Red",   "ColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorColorG = self:AddInput("Green", "ColorGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColorColorB = self:AddInput("Blue",  "ColorBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColorColorA = self:AddInput("Alpha", "ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorBody", "ColorBody", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBody",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBodyColorR = self:AddInput("Red",   "ColorBodyRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorBodyColorG = self:AddInput("Green", "ColorBodyGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColorBodyColorB = self:AddInput("Blue",  "ColorBodyBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColorBodyColorA = self:AddInput("Alpha", "ColorBodyAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorScreen", "ColorScreen", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorScreen",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorScreenColorR = self:AddInput("Red",   "ColorScreenRed",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InColorScreenColorG = self:AddInput("Green", "ColorScreenGreen", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InColorScreenColorB = self:AddInput("Blue",  "ColorScreenBlue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InColorScreenColorA = self:AddInput("Alpha", "ColorScreenAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorPower", "ColorPower", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorPower",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorPowerColorR = self:AddInput("Red",   "ColorPowerRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InColorPowerColorG = self:AddInput("Green", "ColorPowerGreen", { INP_Default  = 2.0, IC_ControlID = 1, attrs})
+    InColorPowerColorB = self:AddInput("Blue",  "ColorPowerBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColorPowerColorA = self:AddInput("Alpha", "ColorPowerAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorEMI", "ColorEMI", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorEMI",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorEMIColorR = self:AddInput("Red",   "ColorEMIRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InColorEMIColorG = self:AddInput("Green", "ColorEMIGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColorEMIColorB = self:AddInput("Blue",  "ColorEMIBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColorEMIColorA = self:AddInput("Alpha", "ColorEMIAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InSatuationSlider = self:AddInput("Satuation", "Satuation", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -3.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.0,
+      })
+
+  InVignetteSlider = self:AddInput("Vignette", "Vignette", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -3.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InMixSlider = self:AddInput("Mix", "Mix", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 1.0,
+      })
+
+  InLevel0Slider = self:AddInput("Level0", "Level0", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InLevel1Slider = self:AddInput("Level1", "Level1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InLevel2Slider = self:AddInput("Level2", "Level2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InView2XYPoint = self:AddInput("View2XY", "View2XY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InView2ZSlider = self:AddInput("View2Z", "View2Z", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 52), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    { CCS_AddString = "BufferC", },
+    { CCS_AddString = "BufferD", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+      { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+      { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+      CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	{ CCS_AddString  = "int8", },
+	{ CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = false
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+  Image_Buff_GlobalC = Image(ImgAttrs_Global)
+  Image_Buff_GlobalD = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstC = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstD = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstI = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "CellphoneFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "CellphoneFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.BKG = InBKGCheckbox:GetValue(req).Value
+  params.ColorBG = {
+    InColorBGColorR:GetValue(req).Value,
+    InColorBGColorG:GetValue(req).Value,
+    InColorBGColorB:GetValue(req).Value,InColorBGColorA:GetValue(req).Value
+  }
+  params.Color = {
+    InColorColorR:GetValue(req).Value,
+    InColorColorG:GetValue(req).Value,
+    InColorColorB:GetValue(req).Value,InColorColorA:GetValue(req).Value
+  }
+  params.ColorBody = {
+    InColorBodyColorR:GetValue(req).Value,
+    InColorBodyColorG:GetValue(req).Value,
+    InColorBodyColorB:GetValue(req).Value,InColorBodyColorA:GetValue(req).Value
+  }
+  params.ColorScreen = {
+    InColorScreenColorR:GetValue(req).Value,
+    InColorScreenColorG:GetValue(req).Value,
+    InColorScreenColorB:GetValue(req).Value,InColorScreenColorA:GetValue(req).Value
+  }
+  params.ColorPower = {
+    InColorPowerColorR:GetValue(req).Value,
+    InColorPowerColorG:GetValue(req).Value,
+    InColorPowerColorB:GetValue(req).Value,InColorPowerColorA:GetValue(req).Value
+  }
+  params.ColorEMI = {
+    InColorEMIColorR:GetValue(req).Value,
+    InColorEMIColorG:GetValue(req).Value,
+    InColorEMIColorB:GetValue(req).Value,InColorEMIColorA:GetValue(req).Value
+  }
+  params.Satuation = InSatuationSlider:GetValue(req).Value
+  params.Vignette = InVignetteSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.Mix = InMixSlider:GetValue(req).Value
+  params.Level0 = InLevel0Slider:GetValue(req).Value
+  params.Level1 = InLevel1Slider:GetValue(req).Value
+  params.Level2 = InLevel2Slider:GetValue(req).Value
+  params.View2XY = {InView2XYPoint:GetValue(req).X,InView2XYPoint:GetValue(req).Y}
+  params.View2Z = InView2ZSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+    
+    
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+      node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",Image_Buff_GlobalC)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",Image_Buff_GlobalD)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "CellphoneFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeB:AddInput("iChannel1", Image_Buff_GlobalD)  -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+    
+
+    -------------------------- BufferC-Kernel----------------------------------------
+    local nodeC = DVIPComputeNode(req,
+      "CellphoneFuse__Buffer_C", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeC:SetParamBlock(params)
+
+    --nodeC:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeC)
+
+    nodeC:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeC:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeC:AddOutput("dst", dstC)
+
+    local success = nodeC:RunSession(req)
+    if not success then
+      dstC = nil
+      dump(nodeC:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalC = dstC --Recursiv Image	
+
+
+    -------------------------- BufferD-Kernel----------------------------------------
+    local nodeD = DVIPComputeNode(req,
+      "CellphoneFuse__Buffer_D", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeD:SetParamBlock(params)
+
+    --nodeD:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeD)
+
+    nodeD:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    nodeD:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeD:AddOutput("dst", dstD)
+
+    local success = nodeD:RunSession(req)
+    if not success then
+      dstD = nil
+      dump(nodeD:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalD = dstD --Recursiv Image	
+
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "CellphoneFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    node:AddInput("iChannel1", iChannel0)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+    if (InDebugImage:GetValue(req).Value == 3) then OutImage:Set(req, Image_Buff_GlobalC) end
+    if (InDebugImage:GetValue(req).Value == 4) then OutImage:Set(req, Image_Buff_GlobalD) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+    
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
