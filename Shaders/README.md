@@ -24,6 +24,9 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 ## Fuses
 
+See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
+
+
 Current Shader of the Week (17th of April 2025):
 
 [![DullSkull](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
@@ -31,23 +34,20 @@ Current Shader of the Week (17th of April 2025):
 [DULL SKULL](ShaderOfTheWeek/DullSkull.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
 
 
-## Fuses
-
-See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
-
 
 <center>
 
-### Current Shader of the Week (17th of April 2025):
-
-
 [![Image](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
 
-
-
-[DULL SKULL](ShaderOfTheWeek/DullSkull.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
-
 </center>
+
+
+My personal shader of the week:
+
+[![CrystalCave](Tunnel/CrystalCave.gif)](Tunnel/CrystalCave.md)
+
+[Crystal Cave)](Tunnel/CrystalCave.md) by [diatribes](https://www.shadertoy.com/user/diatribes)
+
 
 
 ## Installation
@@ -76,11 +76,3 @@ Alternatively you can open the *'Select Tool'* dialog (Shift+Space Bar) and star
 And last but not least in 'Effects' (Fusion) resp. the 'Effects Library' (DaVinci Resolve) pane under 'Tools' you should now find an entry 'Shaderfuse' (resp. 'Shaderfuse (beta)') that lists all the categories and the different fuses.
 
 Please note, that there a some specific shaders that might need additional Fuses at their input to be used. These are in particular all the [Cubemap](Cubemap/README.md) and [Audio](Audio/README.md) shaders.
-
-
-
-My personal shader of the week:
-
-[![CrystalCave](Tunnel/CrystalCave.gif)](Tunnel/CrystalCave.md)
-
-[Crystal Cave)](Tunnel/CrystalCave.md) by [diatribes](https://www.shadertoy.com/user/diatribes)
