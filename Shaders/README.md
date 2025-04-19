@@ -22,6 +22,14 @@ The Fuses are based on WebGL shaders released on [Shadertoy.com](https://www.sha
 
 Furthermore must be mentioned that this repository is only an incubator to develop such fuses and to exchange on experiences, approaches and solutions. If you are searching for production ready extensions to really use for your day to day work, then the [Reactor](https://www.steakunderwater.com/wesuckless/viewtopic.php?f=32&t=1814) is the right and de facto go to place for you. As soon as an implementation in this repository achieves an appropriate maturity we will suggest it for inclusion into the Reactor - thereby Reactor is the one and only source for the outcomes and stable versions of our experiments. You should find the stable Fuses in Reactor under the same name but without any of the annoying '`_DEV`', '`_BETA`', or whatsoever suffixes.
 
+## Fuses
+
+Current Shader of the Week (17th of April 2025):
+
+[![DullSkull](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
+
+[DULL SKULL](ShaderOfTheWeek/DullSkull.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
+
 
 ## Fuses
 
