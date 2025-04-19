@@ -27,29 +27,11 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
+
 <center>
-
-Current Shader of the Week (17th of April 2025):
-
 
 
 [![Image](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
-
-
-
-[DULL SKULL](ShaderOfTheWeek/DullSkull.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
-
-
-
-
-
-My personal shader of the week:
-
-[![CrystalCave](Tunnel/CrystalCave.gif)
-](Tunnel/CrystalCave.md)
-
-
-[Crystal Cave)](Tunnel/CrystalCave.md) by [diatribes](https://www.shadertoy.com/user/diatribes)
 
 
 </center>
