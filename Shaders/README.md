@@ -32,6 +32,7 @@ Current Shader of the Week (17th of April 2025):
 
 [![DullSkull](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
 
+
 [DULL SKULL](ShaderOfTheWeek/DullSkull.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
 
 My personal shader of the week:
