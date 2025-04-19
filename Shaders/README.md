@@ -30,23 +30,30 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 
 <center>
 
+
 Current Shader of the Week (17th of April 2025):
+
 
 
 
 ![Image](ShaderOfTheWeek/DullSkull.gif)
 
 
+
 [![Image](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
+
 
 
 
 My personal shader of the week:
 
+
 [![CrystalCave](Tunnel/CrystalCave.gif)](Tunnel/CrystalCave.md)
 
 
+
 </center>
+
 
 ## Installation
 
