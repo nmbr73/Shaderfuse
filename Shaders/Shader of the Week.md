@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 30th of April 2025
+#### [Zippy Zaps [399 Chars]](ZippsZaps.md) (Shadertoy ID [XXyGzh](https://www.shadertoy.com/view/XXyGzh))
+[![ZippyZaps](ShaderOfTheWeek/ZippyZaps.gif)](ShaderOfTheWeek/ZippyZaps.md)
+----
 ## 17th of April 2025
 #### [DULL SKULL](DullSkull.md) (Shadertoy ID [DlyyWR](https://www.shadertoy.com/view/DlyyWR))
 [![Image](ShaderOfTheWeek/DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
