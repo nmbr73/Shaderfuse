@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 17th of May 2025
+#### [Fidget Cube](FidgetCube.md) (Shadertoy ID [XXyGzh](https://www.shadertoy.com/view/M3sXDS))
+[![FidgetCube](ShaderOfTheWeek/FidgetCube.gif)](ShaderOfTheWeek/FidgetCube.md)
+----
 ## 30th of April 2025
 #### [Zippy Zaps [399 Chars]](ZippsZaps.md) (Shadertoy ID [XXyGzh](https://www.shadertoy.com/view/XXyGzh))
 [![ZippyZaps](ShaderOfTheWeek/ZippyZaps.gif)](ShaderOfTheWeek/ZippyZaps.md)
