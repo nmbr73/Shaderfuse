@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 23th of May 2025
+#### [TrailingTheTwinklingTunnel](TrailingTheTwinklingTunnel.md) (Shadertoy ID [WfcGWj](https://www.shadertoy.com/view/WfcGWj))
+[![TrailingTheTwinklingTunnel](ShaderOfTheWeek/TrailingTheTwinklingTunnel.gif)](ShaderOfTheWeek/TrailingTheTwinklingTunnel.md)
+----
 ## 17th of May 2025
 #### [Fidget Cube](FidgetCube.md) (Shadertoy ID [XXyGzh](https://www.shadertoy.com/view/M3sXDS))
 [![FidgetCube](ShaderOfTheWeek/FidgetCube.gif)](ShaderOfTheWeek/FidgetCube.md)

@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (17th of May 2025):
+#### Current Shader of the Week (23th of May 2025):
 
-[![FidgetCube](ShaderOfTheWeek/FidgetCube.gif)](ShaderOfTheWeek/FidgetCube.md) <br>
-[Fidget Cube](ShaderOfTheWeek/FidgetCube.md) by [TheBen27](https://www.shadertoy.com/user/TheBen27)
+[![TrailingTheTwinklingTunnel](ShaderOfTheWeek/TrailingTheTwinklingTunnel.gif)](ShaderOfTheWeek/TrailingTheTwinklingTunnel.md) <br>
+[Trailing the Twinkling Tunnel ..](ShaderOfTheWeek/TrailingTheTwinklingTunnel.md) by [mrange](https://www.shadertoy.com/user/mrange)
 
 <center>
 </center>
