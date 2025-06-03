@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 3th of June 2025
+#### [Undulating Urchin](UndulatingUrchin.md) (Shadertoy ID [332XWd](https://www.shadertoy.com/view/332XWd))
+[![UndulatingUrchin](ShaderOfTheWeek/UndulatingUrchin.gif)](ShaderOfTheWeek/UndulatingUrchin.md)
+----
 ## 28th of May 2025
 #### [Year Of Truchets #022](YearOfTruchets022.md) (Shadertoy ID [dtGGWw](https://www.shadertoy.com/view/dtGGWw))
 [![YearOfTruchets022](ShaderOfTheWeek/YearOfTruchets022.gif)](ShaderOfTheWeek/YearOfTruchets022.md)
