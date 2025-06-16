@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 15th of June 2025
+#### [ChainSpell](ChainSpell.md) (Shadertoy ID [Ms2BRz](https://www.shadertoy.com/view/Ms2BRz))
+[![ChainSpell](ShaderOfTheWeek/ChainSpell.gif)](ShaderOfTheWeek/ChainSpell.md)
+----
 ## 3th of June 2025
 #### [Undulating Urchin](UndulatingUrchin.md) (Shadertoy ID [332XWd](https://www.shadertoy.com/view/332XWd))
 [![UndulatingUrchin](ShaderOfTheWeek/UndulatingUrchin.gif)](ShaderOfTheWeek/UndulatingUrchin.md)
