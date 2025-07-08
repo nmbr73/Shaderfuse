@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 6th of July 2025
+#### [4D Beats](D4DBeats.md) (Shadertoy ID [tfK3Dy](https://www.shadertoy.com/view/tfK3Dy))
+[![ChainSpell](ShaderOfTheWeek/D4DBeats.gif)](ShaderOfTheWeek/D4DBeats.md)
+----
 ## 15th of June 2025
 #### [ChainSpell](ChainSpell.md) (Shadertoy ID [Ms2BRz](https://www.shadertoy.com/view/Ms2BRz))
 [![ChainSpell](ShaderOfTheWeek/ChainSpell.gif)](ShaderOfTheWeek/ChainSpell.md)

@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (15th of June 2025):
+#### Current Shader of the Week (6th of July 2025):
 
-[![ChainSpell](ShaderOfTheWeek/ChainSpell.gif)](ShaderOfTheWeek/ChainSpell.md) <br>
-[Chain Spell](ShaderOfTheWeek/UndulatingUrchin.md) by [leon](https://www.shadertoy.com/user/leon)
+[![4D Beats](ShaderOfTheWeek/D4DBeats.gif)](ShaderOfTheWeek/D4DBeats.md) <br>
+[4D Beats](ShaderOfTheWeek/D4DBeats.md) by [mrange](https://www.shadertoy.com/user/mrange)
 
 <center>
 </center>
