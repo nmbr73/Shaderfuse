@@ -13,6 +13,71 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Real time caustics, again](https://www.shadertoy.com/view/3cyGWG)| incub | ABCD ! |
+|[[SH18] Human Document](https://www.shadertoy.com/view/XtcyW4)| defect |  |
+|[Clearly a bug](https://www.shadertoy.com/view/33cGDj)| fuse | ShaderOfTheWeek26/25 2 |
+|[4D Beats](https://www.shadertoy.com/view/tfK3Dy)| fuse | ShaderOfTheWeek26/25 |
+|[Volumetric Passage](https://www.shadertoy.com/view/w33GRl)| incub | ! |
+|[watercolor](https://www.shadertoy.com/view/ltyGRV)| incub | !! |
+|[Fire Shadertoy](https://www.shadertoy.com/view/3fVSWG)| incub |  |
+|[The Sheep and the Biker-8k intro](https://www.shadertoy.com/view/tc3GD2)| incub | !!! |
+|[Cloud Waves](https://www.shadertoy.com/view/3cVXWD)| incub | ! |
+|[Water Cavern](https://www.shadertoy.com/view/WcyXzm)| incub |  |
+|[Infinity Matrix](https://www.shadertoy.com/view/Md2fRR)| incub | A !! |
+|[Chain Spell](https://www.shadertoy.com/view/Ms2BRz)| fuse | ShaderOfTheWeek25/25 |
+|[High Voltage Tendencies](https://www.shadertoy.com/view/csS3zW)| incub | !! |
+|[smooth game of life](https://www.shadertoy.com/view/stfcRM)| incub | A ! |
+|[Sitting By DJMJM 376](https://www.shadertoy.com/view/tf3XR2)| incub | !!! |
+|[Squishy ball pit](https://www.shadertoy.com/view/3ftGRl)| incub | AB !! |
+|[Slow Burn [280]](https://www.shadertoy.com/view/tfyGD3)| incub | !! |
+|[DeanAheadOcean](https://www.shadertoy.com/view/43VcRm)| incub | !! |
+|[Sunset Expanded](https://www.shadertoy.com/view/Wf3SWn)| incub | !! |
+|[Undulating Urchin](https://www.shadertoy.com/view/332XWd)| fuse | ShaderOfTheWeek24/25 |
+|[Glowing Spiral Lava Tunnel](https://www.shadertoy.com/view/Wcd3W2)| incub | !! |
+|[Dungeon Flythrough](https://www.shadertoy.com/view/t3l3zB)| incub | ! |
+|[my mind](https://www.shadertoy.com/view/3fdSRr)| incub | !! |
+|[Dream Entity #8474](https://www.shadertoy.com/view/WcV3Dt)| incub | ! |
+|[Year of Truchets #022](https://www.shadertoy.com/view/dtGGWw)| fuse | ShaderOfTheWeek23/25 |
+|[Fungants](https://www.shadertoy.com/view/7tlGzl)| incub | ABC ! |
+|[Endless Industry](https://www.shadertoy.com/view/WcG3zV)| incub | ! |
+|[Nox Woods](https://www.shadertoy.com/view/tcGGzV)| incub | ! |
+|[fire man](https://www.shadertoy.com/view/WcyGWW)| incub | ! |
+|[Nebula Blast](https://www.shadertoy.com/view/3cy3Wm)| incub | !! |
+|[Nox Fire](https://www.shadertoy.com/view/wfG3Dz)| incub | !! |
+|[fluidsim 3](https://www.shadertoy.com/view/wcdGRB)| incub | AB Blending ! |
+|[Trailing the Twinkling Tunnel ..](https://www.shadertoy.com/view/WfcGWj)| Fuse | ShaderOFTheWeek 22/25 |
+|[PBR cube!](https://www.shadertoy.com/view/mlS3DG)| defect | Perspektive falsch und Würfel defekt |
+|[floating around](https://www.shadertoy.com/view/ddtGzs)| incub | AB !!! |
+|[very old gears ball 3](https://www.shadertoy.com/view/l3tGzn)| incub | !! |
+|[Smokeshaders Copy](https://www.shadertoy.com/view/McdfRH)| incub | A Blending !!! |
+|[Sea Adventure](https://www.shadertoy.com/view/7llGz2)| incub | !! |
+|[Perhaps a screensaver](https://www.shadertoy.com/view/Wfy3zh)| incub |  |
+|[CircleS visualizer](https://www.shadertoy.com/view/332Xz1)| incub | Audioshader |
+|[Sun Water Clouds (refactor)](https://www.shadertoy.com/view/Wf33Df)| incub | !! |
+|[Fidget Cube](https://www.shadertoy.com/view/M3sXDS)| Fuse | ShaderOfTheWeek 20/25 |
+|[Happy Cloud [386]](https://www.shadertoy.com/view/tft3R2)| incub | !! |
+|[Laser Dance [272]](https://www.shadertoy.com/view/tct3Rf)| incub | !! |
+|[Sun [269]](https://www.shadertoy.com/view/tfdGRf)| incub |  |
+|[Don't LEGO of the wheel!](https://www.shadertoy.com/view/W3SSDh)| incub | A Steuerung ??? |
+|[Color Cloud Tunnels [485]](https://www.shadertoy.com/view/w32XDc)| incub | ! |
+|[Video on Tablet](https://www.shadertoy.com/view/lsGGzW)| incub | A !!! |
+|[Offworld Storage Facility](https://www.shadertoy.com/view/DsVfRV)| incub | A !! |
+|[Video glass plate](https://www.shadertoy.com/view/ldyGzy)| incub | ABC Farben defekt |
+|[Zozuar Flower](https://www.shadertoy.com/view/dtS3zG)| incub | ! |
+|[Dynamical Flesh](https://www.shadertoy.com/view/ltt3zS)| incub | AB !! |
+|[Zippy Zaps [399 Chars]](https://www.shadertoy.com/view/XXyGzh)| Fuse | ShaderOfTheWeek18/25 |
+|[The Gallery](https://www.shadertoy.com/view/XsSSzG)| incub | !!! |
+|[skully](https://www.shadertoy.com/view/3tGSDz)| Fuse | A !!! |
+|[DULL SKULL - Reflected](https://www.shadertoy.com/view/wcjGRW)| Fuse | !! |
+|[Fork DULL SKULL frostbyte_ 591](https://www.shadertoy.com/view/3XB3RW)| Fuse | A !! |
+|[DULL Speed SKULL](https://www.shadertoy.com/view/lcdcDH)| Fuse | !! |
+|[The Dark Mark [HP]](https://www.shadertoy.com/view/ftS3zG)| Fuse | !! |
+|[Lost_Astronaut](https://www.shadertoy.com/view/Mlfyz4)| Fuse | !! |
+|[Alas, poor Yorick!](https://www.shadertoy.com/view/3ddXR4)| Fuse | A !! |
+|[Gravity Sucks](https://www.shadertoy.com/view/msVBD3)| incub | ABC !! |
+|[DULL SKULL - Brained](https://www.shadertoy.com/view/lXSBzV)| Fuse | !! |
+|[DULL SKULL - Bumped](https://www.shadertoy.com/view/3cl3WB)| Fuse | !! |
+|[DULL SKULL - Prologue](https://www.shadertoy.com/view/4XsfDs)| Fuse | !! |
 |[A FLYING MISSLE](https://www.shadertoy.com/view/3fBXDV)| incub | A !! |
 |[DULL SKULL](https://www.shadertoy.com/view/DlyyWR)| fuse | ShaderOfTheWeek16/25 |
 |[Crystal Cave](https://www.shadertoy.com/view/wflGWj)| fuse | Tunnel !! |

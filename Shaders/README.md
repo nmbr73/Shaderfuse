@@ -32,6 +32,12 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 [![4D Beats](ShaderOfTheWeek/D4DBeats.gif)](ShaderOfTheWeek/D4DBeats.md) <br>
 [4D Beats](ShaderOfTheWeek/D4DBeats.md) by [mrange](https://www.shadertoy.com/user/mrange)
 
+#### Current Shader of the Week (9th of July 2025):
+
+[![Clearly a bug](ShaderOfTheWeek/ClearlyABug.gif)](ShaderOfTheWeek/ClearlyABug.md) <br>
+[Clearly a bug](ShaderOfTheWeek/ClearlyABug.md) by [mrange](https://www.shadertoy.com/user/mrange)
+
+
 <center>
 </center>
 
