@@ -1,0 +1,1342 @@
+--[[--/*
+
+  FidgetCube.fuse
+
+  Based on https://www.shadertoy.com/view/WctGWS a WebGL shader created by JiPi.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  iTimeDelta;
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  Angle[2];
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat4 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float4x4 mat4;
+
+  __DEVICE__ inline mat4 to_mat4( float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
+  {
+    return mat4(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p);
+  }
+
+  __DEVICE__ inline float4 mul_f4_mat4( float4 A, mat4 B) { return (A*B); }
+  __DEVICE__ inline mat4 mul_mat4_mat4( mat4 A, mat4 B) { return (A*B); }
+
+#else
+
+  typedef struct { float4 r0; float4 r1; float4 r2; float4 r3; } mat4;
+
+  __DEVICE__ inline mat4 to_mat4( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
+  {
+    mat4 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c; t.r0.w = d;
+    t.r1.x = e; t.r1.y = f; t.r1.z = g; t.r1.w = h;
+    t.r2.x = i; t.r2.y = j; t.r2.z = k; t.r2.w = l;
+    t.r3.x = m; t.r3.y = n; t.r3.z = o; t.r3.w = p;
+    return t;
+  }
+
+__DEVICE__ float4 mul_f4_mat4( float4 A, mat4 B)
+  {
+    float4 C;
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z + A.w * B.r0.w;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z + A.w * B.r1.w;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z + A.w * B.r2.w;
+    C.w = A.x * B.r3.x + A.y * B.r3.y + A.z * B.r3.z + A.w * B.r3.w;
+    return C;
+  }
+
+__DEVICE__ inline mat4 mul_mat4_mat4( mat4 B, mat4 A)
+{
+
+  float r[4][4];
+  float a[4][4] = {{A.r0.x, A.r0.y, A.r0.z, A.r0.w},
+                   {A.r1.x, A.r1.y, A.r1.z, A.r1.w},
+                   {A.r2.x, A.r2.y, A.r2.z, A.r2.w},
+                   {A.r3.x, A.r3.y, A.r3.z, A.r3.w}};
+  float b[4][4] = {{B.r0.x, B.r0.y, B.r0.z, B.r0.w},
+                   {B.r1.x, B.r1.y, B.r1.z, B.r1.w},
+                   {B.r2.x, B.r2.y, B.r2.z, B.r2.w},
+                   {B.r3.x, B.r3.y, B.r3.z, B.r3.w}};
+
+  for( int i = 0; i < 4; ++i)
+  {
+   for( int j = 0; j < 4; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 4; ++k)
+     {
+     r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat4 R = to_mat4(r[0][0], r[0][1], r[0][2], r[0][3],
+                   r[1][0], r[1][1], r[1][2], r[1][3],
+                   r[2][0], r[2][1], r[2][2], r[2][3],
+                   r[3][0], r[3][1], r[3][2], r[3][3]);
+  return R;
+}
+#endif // end of mat4 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+ #define mod_f2f2(value,divisor) fmod(value,divisor)
+
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f(a) sign(a)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define mod_f2f2(value,divisor) _fmod(value,divisor)
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f(a) sign(a)
+ #define distance_f3( p1, p2) distance(p1, p2)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define mod_f2f2(value,divisor) to_float2(mod_f((value).x, (divisor).x),mod_f((value).y, (divisor).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+
+
+#define PI 3.14159f
+#define MAT_METAL -1.0f
+
+__DEVICE__ float3 Tonemap_ACES(float3 x) {
+    // Narkowicz 2015, "ACES Filmic Tone Mapping Curve"
+    const float a = 2.51f;
+    const float b = 0.03f;
+    const float c = 2.43f;
+    const float d = 0.59f;
+    const float e = 0.14f;
+    return (x * (a * x + b)) / (x * (c * x + d) + e);
+}
+
+__DEVICE__ float fresnelFactor(float r0, float3 dir, float3 normal) {
+    float f = 1.0f - dot(normal, dir);
+    return r0 + (1.0f - r0) * (f * f * f * f * f);
+}
+
+__DEVICE__ float3 skyLight(float3 dir, float3 col, float3 center, float size, float smoothness) {
+    float falloff = _fmaxf(0.0f, dot(dir, normalize(center)));
+    float sizeMin = 1.0f - size;
+    falloff = smoothstep(sizeMin, _mix(sizeMin, 1.0f, smoothness), falloff);
+    // energy correction - smaller lamps should be brighter
+    return col * falloff / size;
+}
+
+__DEVICE__ float3 sky(float3 dir) {
+    float3 top = to_float3(0.4f, 0.4f, 0.6f);
+    float3 bottom = to_float3(0.3f, 0.3f, 0.5f);
+    float3 ambient = _mix(top, bottom, -dir.y);
+
+    float3 fill = skyLight(dir, to_float3_s(1.0f), to_float3(-0.1f, 1.0f, 0.5f), 0.5f, 1.0f);
+    float3 key = skyLight(dir, to_float3_s(0.6f), to_float3(-0.2f, 0.3f, -0.2f), 0.2f, 1.0f);
+    return ambient + fill + key;
+}
+
+__DEVICE__ float rand(float p)
+{
+    p = fract(p * 0.1031f);
+    p += 0.1f;
+    p *= p + 33.33f;
+    p *= p + p;
+    p -= 0.1f;
+    return fract(p);
+}
+
+__DEVICE__ float rand2(float2 st) {
+    return fract(_sinf(dot(swi2(st,x,y), to_float2(12.9898f,78.233f)))*43758.5453123f);
+}
+
+__DEVICE__ float3 randomSphereDir(float2 rnd)
+{
+    float s = rnd.x*PI*2.0f;
+    float t = rnd.y*2.0f-1.0f;
+    return to_float3(_sinf(s), _cosf(s), t) / _sqrtf(1.0f + t * t);
+}
+
+__DEVICE__ float3 randomHemisphereDir(float3 dir, float i)
+{
+    float3 v = randomSphereDir( to_float2(rand(i+1.0f), rand(i+2.0f)) );
+    return v * sign_f(dot(v, dir));
+}
+
+__DEVICE__ mat2 rot(float t) {
+    return to_mat2(_cosf(t), -_sinf(t), _sinf(t), _cosf(t));
+}
+
+//const mat4 id = to_mat4(
+//    1.0f, 0.0f, 0.0f, 0.0f,
+//    0.0f, 1.0f, 0.0f, 0.0f,
+//    0.0f, 0.0f, 1.0f, 0.0f,
+//    0.0f, 0.0f, 0.0f, 1.0
+//);
+
+__DEVICE__ mat4 scale(float3 p) {
+    return to_mat4(
+        p.x, 0.0f, 0.0f, 0.0f,
+        0.0f, p.y, 0.0f, 0.0f,
+        0.0f, 0.0f, p.z, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0
+    );
+}
+
+__DEVICE__ mat4 translate(float3 p) {
+    return to_mat4(
+        1.0f, 0.0f, 0.0f, p.x,
+        0.0f, 1.0f, 0.0f, p.y,
+        0.0f, 0.0f, 1.0f, p.z,
+        0.0f, 0.0f, 0.0f, 1.0
+    );
+}
+
+__DEVICE__ mat4 rotZ(float t) {
+    float ct = _cosf(t);
+    float st = _sinf(t);
+    return to_mat4(
+         ct, -st, 0.0f, 0.0f,
+         st,  ct, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0
+    );
+}
+
+__DEVICE__ mat4 rotY(float t) {
+    float ct = _cosf(t);
+    float st = _sinf(t);
+    return to_mat4(
+         ct, 0.0f,  st, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        -st, 0.0f,  ct, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0
+    );
+}
+
+__DEVICE__ mat4 rotX(float t) {
+    float ct = _cosf(t);
+    float st = _sinf(t);
+    return to_mat4(
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f,  ct, -st, 0.0f,
+        0.0f,  st,  ct, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0
+    );
+}
+
+__DEVICE__ float sdCapsule( float3 p, float3 a, float3 b, float r )
+{
+  float3 pa = p - a, ba = b - a;
+  float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0f, 1.0f );
+  return length( pa - ba*h ) - r;
+}
+
+__DEVICE__ float sdBox( float3 p, float3 b )
+{
+  float3 q = abs_f3(p) - b;
+  return length(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f);
+}
+
+__DEVICE__ float sdCircleBox(float3 p) {
+    float smoothness = 0.01f;
+    float b = sdBox(p, to_float3_s(0.25f) - smoothness) - smoothness;
+
+    float c = distance_f3(p, to_float3(-0.25f, -0.25f, 0.25f)) - 0.5f;
+    return _fmaxf(b, c);
+}
+
+__DEVICE__ float sdTriBox(float3 p) {
+    float smoothness = 0.01f;
+    float b = sdBox(p, to_float3_s(0.25f) - smoothness) - smoothness;
+
+    float magic = 0.577f;
+    float cutter = dot(p, normalize(to_float3(magic, magic, -magic))) - (0.15f);
+    return _fmaxf(b, cutter);
+}
+
+__DEVICE__ float2 sdfMin(float2 s1, float2 s2) {
+    if (s1.x < s2.x) {
+        return s1;
+    }
+    return s2;
+}
+// ----------------------------------------------------------------------------------
+// - Cubemap A                                                                       -
+// ----------------------------------------------------------------------------------
+
+__DEVICE__ float4 CubemapA(float3 rayDir)
+{
+  
+    // Diffuse
+    float3 diff = to_float3_s(0.0f);
+    const int diff_samples = 512;
+    for (int i = 0; i < diff_samples; i++) {
+        float3 dir = randomHemisphereDir(rayDir, (float)(i));
+        diff += dot(rayDir, dir) * sky(dir);
+    }
+    diff /= (float)(diff_samples);
+    // not physical
+    diff *= 2.0f;
+
+    // Specular
+    float3 specColor = sky(rayDir);
+    float spec = specColor.x + specColor.y + specColor.z;
+    spec /= 3.0f;
+
+    // Output to cubemap
+    return to_float4_aw(diff, spec);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image '/media/a//media/previz/cubemap00.png' to iChannel0
+// Connect Image 'Texture: Blue Noise' to iChannel3
+
+
+// Fork of "Fidget Cube" by TheBen27. https://shadertoy.com/view/M3sXDS
+// 2025-05-16 21:49:55
+
+#define MAX_DEPTH 8.0f
+#define CUBE_COUNT 8
+
+#define minDepth  0.01f
+#define matchEps  0.0001f
+
+
+
+__DEVICE__ float snapping(float a, float b, float t) {
+    t = clamp(t, a, b);
+    t = (t - a) / (b - a);
+    t = clamp(t * 2.0f, 0.0f, 1.0f);
+
+    float s = step(0.5f, t);
+    float ta = _powf(t * 2.0f, 2.0f) * 0.5f;
+    float tb = 0.5f + _powf(_fmaxf(0.0f, t * 2.0f - 1.0f), 0.5f) * 0.5f;
+    t = _mix(ta, tb, s);
+
+    return t;
+}
+
+__DEVICE__ float beat(float time) {
+    return mod_f(time * 2.0f, 8.0f);
+}
+
+__DEVICE__  void cubeTransforms(mat4 mats[CUBE_COUNT], float time, float shapeFactor) {
+
+    // 120BPM
+    float _time = beat(time);
+
+    mat4 preT = translate(to_float3(0.25f, -0.25f, -0.25f));
+
+//    mat4 mats[CUBE_COUNT];
+    mats[0] = mul_mat4_mat4(rotY(0.0f) , preT);
+    mats[1] = mul_mat4_mat4(rotY(PI / 2.0f) , preT);
+    mats[2] = mul_mat4_mat4(rotY(PI) , preT);
+    mats[3] = mul_mat4_mat4(rotY(PI * 3.0f / 2.0f) , preT);
+    mat4 sy = mul_mat4_mat4(translate(to_float3(0.0f, -1.0f, 0.0f)) , rotX(PI));
+    mats[4] = mul_mat4_mat4(sy , mats[0]);
+    mats[5] = mul_mat4_mat4(sy , mats[1]);
+    mats[6] = mul_mat4_mat4(sy , mats[2]);
+    mats[7] = mul_mat4_mat4(sy , mats[3]);
+
+    // first folding out
+    float s1 = snapping(0.0f, 1.0f, _time);
+    mat4 t1  = translate(to_float3(0.0f, -s1 * 0.5f, 0.0f));
+    mat4 r1  = mul_mat4_mat4(t1 , rotX(s1 * PI / 2.0f));
+    mat4 r1i = mul_mat4_mat4(t1 , rotX(-s1 * PI / 2.0f));
+    mats[0] = mul_mat4_mat4(r1i , mats[0]);
+    mats[1] = mul_mat4_mat4(r1  , mats[1]);
+    mats[2] = mul_mat4_mat4(r1  , mats[2]);
+    mats[3] = mul_mat4_mat4(r1i , mats[3]);
+    mats[4] = mul_mat4_mat4(r1  , mats[4]);
+    mats[5] = mul_mat4_mat4(r1i , mats[5]);
+    mats[6] = mul_mat4_mat4(r1i , mats[6]);
+    mats[7] = mul_mat4_mat4(r1  , mats[7]);
+
+    // second folding
+    float s2 = snapping(1.0f, 2.0f, _time);
+    mat4 t2  = translate(to_float3(0.0f, -s2 * 0.5f, 0.0f));
+    mat4 r2  = mul_mat4_mat4(t2 , rotZ(s2 * PI / 2.0f));
+    mat4 r2i = mul_mat4_mat4(t2 , rotZ(-s2 * PI / 2.0f));
+    mats[0] = mul_mat4_mat4(r2i , mats[0]);
+    mats[1] = mul_mat4_mat4(r2i , mats[1]);
+    mats[2] = mul_mat4_mat4(r2  , mats[2]);
+    mats[3] = mul_mat4_mat4(r2  , mats[3]);
+    mats[4] = mul_mat4_mat4(r2i , mats[4]);
+    mats[5] = mul_mat4_mat4(r2i , mats[5]);
+    mats[6] = mul_mat4_mat4(r2  , mats[6]);
+    mats[7] = mul_mat4_mat4(r2  , mats[7]);
+
+    // third folding
+    float s3 = snapping(2.0f, 3.0f, _time);
+    mat4 t3 = translate(to_float3(0.0f, -s3 * 0.5f, 0.0f));
+    mat4 r3  = mul_mat4_mat4(mul_mat4_mat4(mul_mat4_mat4(t3 , translate(to_float3(0.0f, 0.0f,  0.5f))) , rotX( s3 * PI)) , translate(to_float3(0.0f, 0.0f, -0.5f)));
+    mat4 r3i = mul_mat4_mat4(mul_mat4_mat4(mul_mat4_mat4(t3 , translate(to_float3(0.0f, 0.0f, -0.5f))) , rotX(-s3 * PI)) , translate(to_float3(0.0f, 0.0f,  0.5f)));
+    mats[0] = mul_mat4_mat4(t3  , mats[0]);
+    mats[1] = mul_mat4_mat4(t3  , mats[1]);
+    mats[2] = mul_mat4_mat4(t3  , mats[2]);
+    mats[3] = mul_mat4_mat4(t3  , mats[3]);
+    mats[4] = mul_mat4_mat4(r3  , mats[4]);
+    mats[5] = mul_mat4_mat4(r3i , mats[5]);
+    mats[6] = mul_mat4_mat4(r3i , mats[6]);
+    mats[7] = mul_mat4_mat4(r3  , mats[7]);
+
+    // TODO can get rid of remaining foldings
+
+    // fourth folding
+    float s4 = snapping(4.0f, 5.0f, _time);
+    mat4 t4  = translate(to_float3(0.0f, -s4 * 0.5f, 0.0f));
+    mat4 r4  = mul_mat4_mat4(t4 , rotZ(s4 * PI / 2.0f));
+    mat4 r4i = mul_mat4_mat4(t4 , rotZ(-s4 * PI / 2.0f));
+    mats[0] = mul_mat4_mat4(r4i , mats[0]);
+    mats[1] = mul_mat4_mat4(r4i , mats[1]);
+    mats[2] = mul_mat4_mat4(r4  , mats[2]);
+    mats[3] = mul_mat4_mat4(r4  , mats[3]);
+    mats[4] = mul_mat4_mat4(r4i , mats[4]);
+    mats[5] = mul_mat4_mat4(r4i , mats[5]);
+    mats[6] = mul_mat4_mat4(r4  , mats[6]);
+    mats[7] = mul_mat4_mat4(r4  , mats[7]);
+
+
+    // fifth folding
+    float s5 = snapping(5.0f, 6.0f, _time);
+    mat4 t5  = translate(to_float3(0.0f, -s5 * 0.5f, 0.0f));
+    mat4 r5  = mul_mat4_mat4(t5 , rotX(s5 * PI / 2.0f));
+    mat4 r5i = mul_mat4_mat4(t5 , rotX(-s5 * PI / 2.0f));
+    mats[0] = mul_mat4_mat4(r5i , mats[0]);
+    mats[1] = mul_mat4_mat4(r5  , mats[1]);
+    mats[2] = mul_mat4_mat4(r5  , mats[2]);
+    mats[3] = mul_mat4_mat4(r5i , mats[3]);
+    mats[4] = mul_mat4_mat4(r5  , mats[4]);
+    mats[5] = mul_mat4_mat4(r5i , mats[5]);
+    mats[6] = mul_mat4_mat4(r5i , mats[6]);
+    mats[7] = mul_mat4_mat4(r5  , mats[7]);
+
+    // sixth and final folding
+    float s6 = snapping(6.0f, 7.0f, _time);
+    mat4 t6  = translate(to_float3(0.0f, -s6 * 0.5f, 0.0f));
+    mat4 r6  = mul_mat4_mat4(mul_mat4_mat4(mul_mat4_mat4(t6 , translate(to_float3(-0.5f, 0.0f, 0.0f))) , rotZ( s6 * PI)) , translate(to_float3( 0.5f, 0.0f, 0.0f)));
+    mat4 r6i = mul_mat4_mat4(mul_mat4_mat4(mul_mat4_mat4(t6 , translate(to_float3(0.5f, 0.0f, 0.0f)))  , rotZ(-s6 * PI)) , translate(to_float3(-0.5f, 0.0f, 0.0f)));
+    mats[0] = mul_mat4_mat4(r6i , mats[0]);
+    mats[1] = mul_mat4_mat4(r6i , mats[1]);
+    mats[2] = mul_mat4_mat4(r6  , mats[2]);
+    mats[3] = mul_mat4_mat4(r6  , mats[3]);
+    mats[4] = mul_mat4_mat4(t6  , mats[4]);
+    mats[5] = mul_mat4_mat4(t6  , mats[5]);
+    mats[6] = mul_mat4_mat4(t6  , mats[6]);
+    mats[7] = mul_mat4_mat4(t6  , mats[7]);
+
+    // spin every fourth beat
+    mat4 spin = rotY(PI * 0.5f * (snapping(7.0f, 8.0f, _time) + snapping(3.0f, 4.0f, _time)) );
+    mats[0] = mul_mat4_mat4(spin , mats[0]);
+    mats[1] = mul_mat4_mat4(spin , mats[1]);
+    mats[2] = mul_mat4_mat4(spin , mats[2]);
+    mats[3] = mul_mat4_mat4(spin , mats[3]);
+    mats[4] = mul_mat4_mat4(spin , mats[4]);
+    mats[5] = mul_mat4_mat4(spin , mats[5]);
+    mats[6] = mul_mat4_mat4(spin , mats[6]);
+    mats[7] = mul_mat4_mat4(spin , mats[7]);
+
+    //return mats;
+}
+
+__DEVICE__ float2 sceneSDF(float3 pos, mat4 transforms[CUBE_COUNT], float shapeFactor) {
+    float2 sm = to_float2(MAX_DEPTH, 0.0f);
+    float4 p = to_float4_aw(pos, 1.0f);
+
+    for (int i = 0; i < CUBE_COUNT; i++) {
+        float tri = sdTriBox(swi3(mul_f4_mat4(p , transforms[i]),x,y,z));
+        float cir = sdCircleBox(swi3(mul_f4_mat4(p , transforms[i]),x,y,z));
+        float mixed = _mix(tri, cir, shapeFactor);
+        if (mixed < sm.x) {
+            sm.x = mixed;
+            sm.y = (float)(i);
+        }
+    }
+    return sm;
+}
+
+__DEVICE__ float3 sceneNormal( in float3 p, mat4 transforms[CUBE_COUNT], float shapeFactor)
+{
+    const float h = 0.001f;
+    const float2 k = to_float2(1,-1);
+    return normalize( swi3(k,x,y,y)*sceneSDF( p + swi3(k,x,y,y)*h, transforms, shapeFactor).x +
+                      swi3(k,y,y,x)*sceneSDF( p + swi3(k,y,y,x)*h, transforms, shapeFactor).x +
+                      swi3(k,y,x,y)*sceneSDF( p + swi3(k,y,x,y)*h, transforms, shapeFactor).x +
+                      swi3(k,x,x,x)*sceneSDF( p + swi3(k,x,x,x)*h, transforms, shapeFactor).x );
+}
+
+__DEVICE__ bool intersectPlane(float3 normal, float3 planeOrigin, float3 eye, float3 dir, out float *dist)
+{
+    eye.y = -eye.y;
+    dir.y = -dir.y;
+    // Assuming vectors are all normalized
+    float denom = dot(normal, dir);
+    if (denom > 1e-6) {
+        float3 p0l0 = planeOrigin - eye;
+        *dist = dot(p0l0, normal) / denom;
+        return (*dist >= 0.0f);
+    }
+
+    return false;
+}
+
+__DEVICE__ bool intersectFloor(float height, float3 eye, float3 dir, out float *t) {
+    return intersectPlane(to_float3(0.0f, 1.0f, 0.0f), to_float3(0.0f, height, 0.0f), eye, dir, t);
+}
+
+__DEVICE__ float2 intersectAABB(float3 rayOrigin, float3 rayDir, float3 boxMin, float3 boxMax) {
+    float3 tMin = (boxMin - rayOrigin) / rayDir;
+    float3 tMax = (boxMax - rayOrigin) / rayDir;
+    float3 t1 = _fminf(tMin, tMax);
+    float3 t2 = _fmaxf(tMin, tMax);
+    float tNear = _fmaxf(max(t1.x, t1.y), t1.z);
+    float tFar = _fminf(min(t2.x, t2.y), t2.z);
+    return to_float2(tNear, tFar);
+}
+
+__DEVICE__ float2 getDepthAndMaterial(float3 eye, float3 dir, mat4 transforms[CUBE_COUNT], float shapeFactor) {
+    // AABB check
+    float2 boxCheck =
+        intersectAABB(
+            eye,
+            dir,
+            to_float3(-0.75f, -0.25f, -1.25f),
+            to_float3(0.75f, 1.25f, 1.25f)
+    );
+    if (boxCheck.x > boxCheck.y) {
+        return to_float2(MAX_DEPTH, 0.0f);
+    }
+
+    float depth = boxCheck.x;
+    float sdf = matchEps;
+    float mat = 0.0f;
+    for (int steps = 0;
+         sdf >= matchEps && depth < MAX_DEPTH && steps < 40;
+         steps++) {
+        float2 sdf = sceneSDF(eye + depth * dir, transforms, shapeFactor);
+        depth += sdf.x;
+        mat = sdf.y;
+    }
+    depth = _fminf(depth, MAX_DEPTH);
+
+    return to_float2(depth, mat);
+}
+
+__DEVICE__ float occ( in float3 p, in float3 n, mat4 transforms[CUBE_COUNT], float shapeFactor)
+{
+    const float maxDist = 0.5f;
+    const float falloff = 1.0f;
+    const int nbIte = 8;
+    const float nbIteInv = 1.0f/(float)(nbIte);
+    const float rad = 1.0f-1.0f*nbIteInv; //Hemispherical factor (self occlusion correction)
+
+    float ao = 0.0f;
+
+    for( int i=0; i<nbIte; i++ )
+    {
+        float l = rand((float)(i))*maxDist;
+        float3 rd = normalize(n+randomHemisphereDir(n, l )*rad)*l; // mix direction with the normal for self occlusion problems!
+
+        ao += (l - _fmaxf(sceneSDF( p + rd, transforms, shapeFactor).x,0.0f)) / maxDist * falloff;
+    }
+
+    return clamp( 1.0f-ao*nbIteInv, 0.0f, 1.0f);
+}
+
+__DEVICE__ float3 getTexCoords(float3 pos, float mat, mat4 transforms[CUBE_COUNT]) {
+    float4 p = to_float4_aw(pos, 1.0f);
+    return swi3(mul_f4_mat4(p , transforms[(int)(mat)]),x,y,z);
+}
+
+// surprisingly acceptable for something so simple
+__DEVICE__ float2 boxMapping(float3 tc, float3 norm) {
+    float2 uvTop = swi2(tc,x,z);
+    float2 uvRight = swi2(tc,z,y);
+    float2 uvFront = swi2(tc,x,y);
+    float weightTop = _fabs(norm.y);
+    float weightRight = _fabs(norm.x);
+    float weightFront = _fabs(norm.z);
+    float totalWeights = weightTop + weightRight + weightFront;
+
+    return (uvTop * weightTop + uvRight * weightRight + uvFront * weightFront) / totalWeights;
+}
+
+__DEVICE__ float3 textureAt(float3 tc, float3 norm, float mat, mat4 transforms[CUBE_COUNT]) {
+    norm = swi3(mul_f4_mat4(to_float4_aw(norm, 0.0f) , transforms[(int)(mat)]),x,y,z);
+
+    // box mapping
+    float2 uv = boxMapping(tc, norm);
+
+    float3 color;
+
+    // outside faces:
+    // (0, 0, 1)
+    // (0, -1, 0)
+    // (-1, 0, 0)
+    float isOutside = step(0.9f, dot(norm, to_float3(-1.0f, -1.0f, 1.0f)));
+
+    // base colors
+    float checker = step(mod_f(mat, 2.0f), 0.99f);
+    float3 outside = _mix(
+        to_float3(1.0f, 0.5f, 0.9f), // pink
+        to_float3(0.5f, 0.7f, 0.8f), // blue
+        checker
+    );
+    float3 inside = _mix(
+        to_float3(0.8f, 0.2f, 0.2f), // red
+        to_float3(0.2f, 0.8f, 0.2f), // green
+        checker
+    );
+    color = _mix(inside, outside, isOutside);
+
+    // add an edge outline
+
+    // "snap" the normal vector to the nearest cardinal direction
+    // not sure if there's a better way to do this...
+    // bias the snap based on what side of the cube's diagonal we're on
+    // this makes the diagonal side look right
+    float bias = sign_f(-tc.x - tc.z) * 0.001f;
+    float3 snorm = to_float3_s(0.0f);
+
+    if (_fabs(norm.x) + bias > _fabs(norm.y) && _fabs(norm.x) + bias > _fabs(norm.z)) {
+        snorm = to_float3(sign_f(norm.x), 0.0f, 0.0f);
+    } else if (_fabs(norm.y) + bias > _fabs(norm.z)) {
+        snorm = to_float3(0.0f, sign_f(norm.y), 0.0f);
+    } else {
+        snorm = to_float3(0.0f, 0.0f, sign_f(norm.z));
+    }
+
+    // proj a onto b = dot(a, b) / dot(b, b) * b
+    // since |b| = 1...
+    float3 p = dot(tc, snorm) * snorm;
+    float3 r = tc - p;
+    float boxDist = _fmaxf(_fabs(r.x), _fmaxf(_fabs(r.y), _fabs(r.z)));
+    float edgeHighlight = smoothstep(0.24f, 0.25f, boxDist);
+
+    // apply edge highlight
+    color = _mix(color, to_float3(1.0f, 0.8f, 0.9f), edgeHighlight);
+
+    return color;
+}
+
+__KERNEL__ void FidgetCubeFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float  iTimeDelta  = params->iTimeDelta;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float2 Angle = to_float2(params->Angle[0], params->Angle[1]);
+
+  // --------
+
+    // Global vars
+    float time = 0.0f;
+    // For some reason, making this a global variable is good for performance,
+    // despite the fact that shaders don't have a stack. Maybe this array is
+    // copied into inner functions?
+    mat4 transforms[CUBE_COUNT];
+    float shapeFactor = 0.0f;
+
+
+    float2 uv = fragCoord/iResolution;
+    if (iMouse.z > 0.0f) {
+        time = 4.0f * iMouse.x / iResolution.x;
+    } else {
+        //int2 t = to_int2(mod_f2f2(fragCoord, to_float2(textureSize(iChannel0, 0))));
+        int2 t = to_int2_cfloat(mod_f2f2(fragCoord, iResolution));
+        time = iTime - 0.5f * texelFetch(iChannel0, t, 0).x * iTimeDelta;
+    }
+
+    float shape1 = snapping(3.0f, 4.0f, mod_f(beat(time), 4.0f));
+    shapeFactor = beat(time) > 4.0f ? (1.0f - shape1) : shape1;
+
+    float3 eye, dir;
+    uv -= 0.5f;
+    uv.x *= iResolution.x / iResolution.y;
+
+    float dist = -2.5f;
+    mat2 rx = rot(PI / 6.5f + Angle.x);
+    mat2 ry = rot(PI / 4.0f + Angle.y);
+    eye = to_float3(0.0f, 0.25f, dist) + to_float3_aw(ViewDXY, ViewDZ);
+    swi2S(eye,y,z, mul_f2_mat2(swi2(eye,y,z) , rx));
+    swi2S(eye,x,z, mul_f2_mat2(swi2(eye,x,z) , ry));
+    dir = normalize(to_float3_aw(uv, 1.0f)+ to_float3_aw(ViewXY, ViewZ));
+    swi2S(dir,y,z, mul_f2_mat2(swi2(dir,y,z) , rx));
+    swi2S(dir,x,z, mul_f2_mat2(swi2(dir,x,z) , ry));
+
+    float3 col = to_float3(1.0f, 1.0f, 0.0f);
+
+    // it looks like we do something wrong here...
+    cubeTransforms( transforms, time, shapeFactor );
+
+    float2 sdf = getDepthAndMaterial(eye, dir, transforms, shapeFactor);
+    float depth = sdf.x;
+    float mat = sdf.y;
+
+    if (depth >= MAX_DEPTH) {
+        float dist;
+        bool hitFloor = intersectFloor(0.0f, eye, dir, &dist);
+        if (hitFloor) {
+            depth = dist;
+            mat = -1.0f;
+        }
+    }
+
+    if (depth < MAX_DEPTH || mat == -1.0f) {
+        float3 pos = eye + dir * depth;
+        float3 norm;
+
+        if (mat < 0.0f) {
+            norm = to_float3(0.0f, 1.0f, 0.0f);
+            col = to_float3_s(1.0f);
+        } else {
+            // texture
+            norm = sceneNormal(pos, transforms, shapeFactor);
+            float3 color = textureAt(getTexCoords(pos, mat, transforms), norm, mat, transforms);
+            col = color;
+        }
+        pos += norm * 0.001f;
+
+        // diffuse light
+//        col *= _tex2DVecN(iChannel0,norm.x,norm.y,15).rgb;
+        col *= swi3(CubemapA(norm),x,y,z);
+
+
+        // specular highlights
+        float fresnel = 0.8f * fresnelFactor(1.2f, dir, norm);
+//        float spec = texture(iChannel0, reflect(dir, norm)).w;
+        float spec = CubemapA(reflect(dir, norm)).w;
+
+        col = _mix(col, to_float3_s(spec), _fmaxf(0.0f, fresnel));
+
+        float _occ = occ(pos, norm, transforms, shapeFactor);
+        _occ *= _occ;
+        col  *= _occ;
+
+    } else {
+        col = sky(dir);
+    }
+
+    // Output to screen
+    fragColor = to_float4_aw(sqrt_f3(Tonemap_ACES(col * 0.8f)),1.0f);
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InAnglePoint = self:AddInput("Angle", "Angle", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+ node = DVIPComputeNode(req,
+    "FidgetCubeFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iTimeDelta = 1/framerate
+
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.Angle = {InAnglePoint:GetValue(req).X,InAnglePoint:GetValue(req).Y}
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+ 
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+ 
+ 
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+    
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
