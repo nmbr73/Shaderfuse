@@ -27,15 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (6th of July 2025):
+#### Current Shader of the Week (17th of July 2025):
 
-[![4D Beats](ShaderOfTheWeek/D4DBeats.gif)](ShaderOfTheWeek/D4DBeats.md) <br>
-[4D Beats](ShaderOfTheWeek/D4DBeats.md) by [mrange](https://www.shadertoy.com/user/mrange)
-
-#### Current Shader of the Week (9th of July 2025):
-
-[![Clearly a bug](ShaderOfTheWeek/ClearlyABug.gif)](ShaderOfTheWeek/ClearlyABug.md) <br>
-[Clearly a bug](ShaderOfTheWeek/ClearlyABug.md) by [mrange](https://www.shadertoy.com/user/mrange)
+[![Tunnel of Lights](ShaderOfTheWeek/TunnelOfLights.gif)](ShaderOfTheWeek/TunnelOfLights.md) <br>
+[Tunnel of Lights](ShaderOfTheWeek/TunnelOfLights.md) by [nocrex](https://www.shadertoy.com/user/nocrex)
 
 
 <center>

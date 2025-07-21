@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 17th of July 2025
+#### [Tunnel of Lights](TunnelOfLights.md) (Shadertoy ID [w3KGRK](https://www.shadertoy.com/view/w3KGRK))
+[![Clearly a bug](ShaderOfTheWeek/TunnelOfLights.gif)](ShaderOfTheWeek/TunnelOfLights.md)
+----
 ## 6th of July 2025
 #### [Clearly a bug](ClearlyABug.md) (Shadertoy ID [33cGDj](https://www.shadertoy.com/view/33cGDj))
 [![Clearly a bug](ShaderOfTheWeek/ClearlyABug.gif)](ShaderOfTheWeek/ClearlyABug.md)
