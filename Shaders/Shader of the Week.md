@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 6th of August 2025
+#### [Glassy With Odd Rotation](GlassyWithOddRotation.md) (Shadertoy ID [3XdXWX](https://www.shadertoy.com/view/3XdXWX))
+[![GlassyWithOddRotation](ShaderOfTheWeek/GlassyWithOddRotation.gif)](ShaderOfTheWeek/GlassyWithOddRotation.md)
+----
 ## 23th of July 2025
 #### [JustAnotherCube](JustAnotherCube.md) (Shadertoy ID [3XdXRr](https://www.shadertoy.com/view/3XdXRr))
 [![Just Another Cube](ShaderOfTheWeek/JustAnotherCube.gif)](ShaderOfTheWeek/JustAnotherCube.md)
