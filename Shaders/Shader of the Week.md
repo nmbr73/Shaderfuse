@@ -5,8 +5,8 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
 ## 19th of August 2025
-#### [HexaGold 2](HexaGold2.md) (Shadertoy ID [sltSR2](https://www.shadertoy.com/view/sltSR2))
-[![HexaGold2](ShaderOfTheWeek/HexaGold2.gif)](ShaderOfTheWeek/HexaGold2.md)
+#### [HexaGold 2](Hexagold2.md) (Shadertoy ID [sltSR2](https://www.shadertoy.com/view/sltSR2))
+[![HexaGold 2](ShaderOfTheWeek/Hexagold2.gif)](ShaderOfTheWeek/Hexagold2.md)
 ----
 ## 6th of August 2025
 #### [Glassy With Odd Rotation](GlassyWithOddRotation.md) (Shadertoy ID [3XdXWX](https://www.shadertoy.com/view/3XdXWX))

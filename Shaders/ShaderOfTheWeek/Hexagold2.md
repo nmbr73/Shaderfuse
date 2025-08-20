@@ -1,4 +1,4 @@
-![HexaGold2](HexaGold2.gif)]
+![HexaGold2](Hexagold2.gif)]
 
 
 

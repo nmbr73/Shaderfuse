@@ -29,8 +29,8 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 
 #### Current Shader of the Week (19th of August 2025):
 
-[![HexaGold 2](ShaderOfTheWeek/HexaGold2.gif)](ShaderOfTheWeek/HexaGold2.md) <br>
-[HexaGold 2](ShaderOfTheWeek/HexaGold2otation.md) by [aiekick](https://www.shadertoy.com/user/aiekick)
+[![HexaGold 2](ShaderOfTheWeek/Hexagold2.gif)](ShaderOfTheWeek/Hexagold2.md) <br>
+[HexaGold 2](ShaderOfTheWeek/Hexagold2.md) by [aiekick](https://www.shadertoy.com/user/aiekick)
 
 
 <center>
