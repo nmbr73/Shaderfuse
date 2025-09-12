@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 12th of September 2025
+#### [TiledGildedRainbowTunnel](TiledGildedRainbowTunnel.md) (Shadertoy ID [tc2cWh](https://www.shadertoy.com/view/tc2cWh))
+[![Tiled Gilded Rainbow Tunnel](ShaderOfTheWeek/TiledGildedRainbowTunnel.gif)](ShaderOfTheWeek/TiledGildedRainbowTunnel.md)
+----
 ## 19th of August 2025
 #### [HexaGold 2](Hexagold2.md) (Shadertoy ID [sltSR2](https://www.shadertoy.com/view/sltSR2))
 [![HexaGold 2](ShaderOfTheWeek/Hexagold2.gif)](ShaderOfTheWeek/Hexagold2.md)
