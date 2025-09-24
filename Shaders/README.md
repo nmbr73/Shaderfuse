@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (12th of September 2025):
+#### Current Shader of the Week (22th of September 2025):
 
-[![TiledGildedRainbowTunnel](ShaderOfTheWeek/TiledGildedRainbowTunnel.gif)](ShaderOfTheWeek/TiledGildedRainbowTunnel.md) <br>
-[Tiled Gilded Rainbow Tunnel](ShaderOfTheWeek/TiledGildedRainbowTunnel.md) by [OldEclipse](https://www.shadertoy.com/user/OldEclipse)
+[![RootSanctum](ShaderOfTheWeek/RootSanctum.gif)](ShaderOfTheWeek/RootSanctum.md) <br>
+[Root Sanctum](ShaderOfTheWeek/RootSanctum.md) by [diatribes](https://www.shadertoy.com/user/diatribes)
 
 
 <center>
