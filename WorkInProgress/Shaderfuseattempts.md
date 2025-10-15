@@ -13,6 +13,37 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[hex at you](https://www.shadertoy.com/view/lflcR8)| fuse | ShaderOFTheWeek 42/25 |
+|[Mock_Scanner](https://www.shadertoy.com/view/t3XyzN)| incub | !! |
+|[Restless Souls](https://www.shadertoy.com/view/wXXyD8)| incub | !! |
+|[CombFuse: Pink Clouds & Blue Water](https://www.shadertoy.com/view/wfjfzt)| incub | !! |
+|[Combfuse: Visual Meditation](https://www.shadertoy.com/view/WXXyDX)| incub | !! |
+|[Worm City](https://www.shadertoy.com/view/t3lyDj)| incub | ! |
+|[noahs shader](https://www.shadertoy.com/view/WXXyWB)| incub | Transfer Texture |
+|[Turbulent Sim](https://www.shadertoy.com/view/WXlyRs)| incub | A Blending ! |
+|[Above the Dome](https://www.shadertoy.com/view/4sy3Ry)| incub | !!! |
+|[Pumpkin Carver V2](https://www.shadertoy.com/view/tXfyRH)| incub | A ! |
+|[Oil Paint in zero gravity](https://www.shadertoy.com/view/3fBBWd)| incub | ! |
+|[Path traced GI](https://www.shadertoy.com/view/Wt3XRX)| incub | ABCD ShaderOFTheWeek |
+|[Floating Hacker Characters](https://www.shadertoy.com/view/wfjfz1)| incub | A !!! |
+|[Fractalis Box Speaker ](https://www.shadertoy.com/view/WfSyz1)| incub | ABC !!! |
+|[KuKo #99.2](https://www.shadertoy.com/view/W3dSDf)| incub | A Blending ! |
+|[Testing Volumetric Accumulation](https://www.shadertoy.com/view/tf2BRh)| incub | ! |
+|[Chimera's  etekmen13](https://www.shadertoy.com/view/wcjfz3)| incub | ABCD Blending !! |
+|[spherical tunnel plexus](https://www.shadertoy.com/view/3fSBWh)| incub | ! |
+|[Insomnium](https://www.shadertoy.com/view/3cSBR1)| incub | ! |
+|[Root Sanctum](https://www.shadertoy.com/view/3c2fz1)| incub | ShaderOfTheWeek |
+|[Random Subdivision Traversal](https://www.shadertoy.com/view/W3VXWc)| incub | !! |
+|[Glow Walk (Interactive)](https://www.shadertoy.com/view/tcjfRz)| incub | A ! |
+|[Mouse airbrush paint](https://www.shadertoy.com/view/3cjfzW)| incub | A Blending ! |
+|[Neon Turbulent Blob](https://www.shadertoy.com/view/wcffDX)| incub | ! |
+|[Chill Smoke Orb](https://www.shadertoy.com/view/tflBDM)| incub | ! |
+|[1级火球术](https://www.shadertoy.com/view/3clfDH)| incub | !! |
+|[Cellular Automata test](https://www.shadertoy.com/view/wc2czd)| incub | A Blending !! |
+|[Gravity Orb](https://www.shadertoy.com/view/wfSczV)| incub | ! |
+|[Tunnel of tunnels](https://www.shadertoy.com/view/tcByRt)| incub | !!! |
+|[Tiled Gilded Rainbow Tunnel](https://www.shadertoy.com/view/tc2cWh)| incub | !! |
+|[一个球](https://www.shadertoy.com/view/tflBD8)| incub | ! |
 |[Real time caustics, again](https://www.shadertoy.com/view/3cyGWG)| incub | ABCD ! |
 |[[SH18] Human Document](https://www.shadertoy.com/view/XtcyW4)| defect |  |
 |[Clearly a bug](https://www.shadertoy.com/view/33cGDj)| fuse | ShaderOfTheWeek26/25 2 |

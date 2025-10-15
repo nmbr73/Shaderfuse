@@ -4,6 +4,10 @@ title: Shader of the Week
 
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 15th of October 2025
+#### [Hex At You](HexAtYou.md) (Shadertoy ID [lflcR8](https://www.shadertoy.com/view/lflcR8))
+[![HexAtYou](ShaderOfTheWeek/HexAtYou.gif)](ShaderOfTheWeek/HexAtYou.md)
+----
 ## 22th of September 2025
 #### [Root Sanctum](RootSanctum.md) (Shadertoy ID [3c2fz1](https://www.shadertoy.com/view/3c2fz1))
 [![Root Sanctum](ShaderOfTheWeek/RootSanctum.gif)](ShaderOfTheWeek/RootSanctum.md)
