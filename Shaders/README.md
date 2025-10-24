@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (15th of October 2025):
+#### Current Shader of the Week (24th of October 2025):
 
-[![hex at you](ShaderOfTheWeek/HexAtYou.gif)](ShaderOfTheWeek/HexAtYou.md) <br>
-[hex at you](ShaderOfTheWeek/HexAtYou.md) by [pb](https://www.shadertoy.com/user/pb)
+[![Hexagon X5](ShaderOfTheWeek/HexagonX5.gif)](ShaderOfTheWeek/HexagonX5.md) <br>
+[Hexagon X5](ShaderOfTheWeek/HexagonX5.md) by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)
 
 
 <center>
