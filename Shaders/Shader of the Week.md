@@ -1,8 +1,12 @@
 ---
 title: Shader of the Week
 ---
-
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
+
+----
+## 30th of October 2025
+#### [Endless Living Creature](EndlessLivingCreature.md) (Shadertoy ID [tljXWy](https://www.shadertoy.com/view/tljXWy))
+[![EndlessLivingCreature](ShaderOfTheWeek/EndlessLivingCreature.gif)](ShaderOfTheWeek/EndlessLivingCreature.md)
 ----
 ## 24th of October 2025
 #### [Hexagon X5](HexagonX5.md) (Shadertoy ID [4cVfWG](https://www.shadertoy.com/view/4cVfWG))
