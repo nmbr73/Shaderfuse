@@ -4,6 +4,10 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 4th of November 2025
+#### [Neonwave Sunrise](NeonwaveSunrise.md) (Shadertoy ID [7dyyRy](https://www.shadertoy.com/view/7dyyRy))
+[![NeonwaveSunrise](ShaderOfTheWeek/NeonwaveSunrise.gif)](ShaderOfTheWeek/NeonwaveSunrise.md)
+----
 ## 30th of October 2025
 #### [Endless Living Creature](EndlessLivingCreature.md) (Shadertoy ID [tljXWy](https://www.shadertoy.com/view/tljXWy))
 [![EndlessLivingCreature](ShaderOfTheWeek/EndlessLivingCreature.gif)](ShaderOfTheWeek/EndlessLivingCreature.md)
