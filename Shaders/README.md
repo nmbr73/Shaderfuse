@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (4th of November 2025):
+#### Current Shader of the Week (19th of November 2025):
 
-[![Neonwave Sunrise](ShaderOfTheWeek/NeonwaveSunrise.gif)](ShaderOfTheWeek/NeonwaveSunrise.md) <br>
-[Neonwave Sunrise](ShaderOfTheWeek/NeonwaveSunrise.md) by [mrange](https://www.shadertoy.com/user/mrange)
+[![Cartoon Ride](ShaderOfTheWeek/CartoonRide.gif)](ShaderOfTheWeek/CartoonRide.md) <br>
+[Cartoon Ride](ShaderOfTheWeek/CartoonRide.md) by [iapafoto](https://www.shadertoy.com/user/iapafoto)
 
 
 <center>
