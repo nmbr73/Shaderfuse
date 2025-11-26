@@ -12,7 +12,7 @@ Have fun playing!
 
 
 
-[![Thumbnail](CartoonRide_screenshot.png)](CartoonRide.fuse)
+[![Thumbnail](CartoonRide_Screenshot.png)](CartoonRide.fuse)
 
 ### Description of the Shader in Shadertoy:
 try a cartoon style with a kind of adaptative anti-aliasing.

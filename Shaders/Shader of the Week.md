@@ -4,6 +4,10 @@ title: Shader of the Week
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 
 ----
+## 26th of November 2025
+#### [Dark Transit](DarkTransit.md) (Shadertoy ID [WcdczB](https://www.shadertoy.com/view/WcdczB))
+[![Dark Transit](ShaderOfTheWeek/DarkTransit.gif)](ShaderOfTheWeek/DarkTransit.md)
+----
 ## 19th of November 2025
 #### [CartoonRide](CartoonRide.md) (Shadertoy ID [wtXBR4](https://www.shadertoy.com/view/wtXBR4))
 [![CartoonRide](ShaderOfTheWeek/CartoonRide.gif)](ShaderOfTheWeek/CartoonRide.md)
