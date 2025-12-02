@@ -2,7 +2,10 @@
 title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
-
+----
+## 2th of Dezember 2025
+#### [Tiny Hideout](TinyHideout.md) (Shadertoy ID [DlKBDh](https://www.shadertoy.com/view/DlKBDh))
+[![Tiny Hideout](ShaderOfTheWeek/TinyHideout.gif)](ShaderOfTheWeek/TinyHideout.md)
 ----
 ## 26th of November 2025
 #### [Dark Transit](DarkTransit.md) (Shadertoy ID [WcdczB](https://www.shadertoy.com/view/WcdczB))

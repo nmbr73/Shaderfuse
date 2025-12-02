@@ -29,8 +29,8 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 
 #### Current Shader of the Week (26th of November 2025):
 
-[![Dark Transit](ShaderOfTheWeek/DarkTransit.gif)](ShaderOfTheWeek/DarkTransit.md) <br>
-[Dark Transit](ShaderOfTheWeek/DarkTransit.md) by [diatribes](https://www.shadertoy.com/user/diatribes)
+[![Tiny Hideout](ShaderOfTheWeek/TinyHideout.gif)](ShaderOfTheWeek/TinyHideout.md) <br>
+[Tiny Hideout](ShaderOfTheWeek/TinyHideout.md) by [_pwd_](https://www.shadertoy.com/user/_pwd_)
 
 
 <center>
