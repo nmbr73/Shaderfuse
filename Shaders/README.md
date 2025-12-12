@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (26th of November 2025):
+#### Current Shader of the Week (9th of Dezember 2025):
 
-[![Tiny Hideout](ShaderOfTheWeek/TinyHideout.gif)](ShaderOfTheWeek/TinyHideout.md) <br>
-[Tiny Hideout](ShaderOfTheWeek/TinyHideout.md) by [_pwd_](https://www.shadertoy.com/user/_pwd_)
+[![Station17](ShaderOfTheWeek/Station17.gif)](ShaderOfTheWeek/Station17.md) <br>
+[Station17](ShaderOfTheWeek/Station17.md) by [Zerofile](https://www.shadertoy.com/user/Zerofile)
 
 
 <center>
