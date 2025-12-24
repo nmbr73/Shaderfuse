@@ -13,6 +13,63 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Industrial Complex + FPS Control](https://www.shadertoy.com/view/3cdBWl)| fuse | A !!! |
+|[BOIDS!!!!!](https://www.shadertoy.com/view/WcGyDy)| defect |  |
+|[KuKo #227](https://www.shadertoy.com/view/wfGczd)| incub | A !! |
+|[Christmas Evening](https://www.shadertoy.com/view/wfKcDK)| incub | !!! |
+|[Fireflow 3](https://www.shadertoy.com/view/lscBRs)| incub | A ! Blending |
+|[Fork Edge Disso willis 196](https://www.shadertoy.com/view/WctBzj)| incub | !! |
+|[Golden Electric Spiral](https://www.shadertoy.com/view/csj3zt)| incub | ShaderOFTheWeek |
+|[Archipelago [509]](https://www.shadertoy.com/view/wfKcDR)| incub | ! |
+|[Fun with Fluids](https://www.shadertoy.com/view/3fyyRG)| incub | ABCD ! Blending |
+|[Satya Yuga](https://www.shadertoy.com/view/3XBfRz)| incub | AB !! Blending |
+|[Minimal Fluid](https://www.shadertoy.com/view/tftcW8)| incub | ABC !! Blending |
+|[Ornamental Pattern](https://www.shadertoy.com/view/3ccfzM)| incub | A ! Blending |
+|[Cool Accident](https://www.shadertoy.com/view/WdsGD4)| incub | A !! Blending |
+|[STATION 17](https://www.shadertoy.com/view/3fVyDw)| fuse | ShaderOFTheWeek |
+|[Universe Ball 2](https://www.shadertoy.com/view/WcGcWV)| incub | ! |
+|[Xmas Gemini 1-2](https://www.shadertoy.com/view/3fVyR3)| incub | !!! |
+|[KuKo #225](https://www.shadertoy.com/view/tfKczy)| incub | ABCD !! Blending |
+|[Tutorial of Fluid 2](https://www.shadertoy.com/view/wfVcRG)| incub | ABCD !! Blending |
+|[Tiny Hideout](https://www.shadertoy.com/view/DlKBDh)| fuse | ShaderOfTheWeek  |
+|[Audio Reactive Defence](https://www.shadertoy.com/view/tcVcRD)| incub | !! |
+|[KuKo #217](https://www.shadertoy.com/view/WfdyDj)| incub | A ! |
+|[Bitmap Mountains](https://www.shadertoy.com/view/WfByzt)| incub | AB ! |
+|[Dark Transit](https://www.shadertoy.com/view/WcdczB)| incub | ! |
+|[Rain on a Window](https://www.shadertoy.com/view/WfdyRX)| incub | ! |
+|[advection-test](https://www.shadertoy.com/view/tcdyzs)| incub | A !! |
+|[Gaussian Blur](https://www.shadertoy.com/view/XdfGDH)| incub |  |
+|[Stylized Wake & Ripples](https://www.shadertoy.com/view/3X2fzd)| incub | A !! |
+|[Bouncing Water Ripples](https://www.shadertoy.com/view/WX2Bzd)| incub | A ! |
+|[Dangerous Mission](https://www.shadertoy.com/view/3c3yDM)| incub | A !!! |
+|[Cartoon ride](https://www.shadertoy.com/view/wtXBR4)| incub | A !!! |
+|[Na Na Na Na Bat Clouds](https://www.shadertoy.com/view/wc3yzM)| incub | !!! |
+|[DeepStairWay — Silence place](https://www.shadertoy.com/view/wctyRn)| incub | !!! |
+|[KuKo #205](https://www.shadertoy.com/view/w3BBWd)| incub | !! |
+|[emissive window border experimen](https://www.shadertoy.com/view/tdl3z4)| incub | ! |
+|[Voluminous](https://www.shadertoy.com/view/tX2fWV)| incub | ! |
+|[singing choir of meat blobs](https://www.shadertoy.com/view/wX2fzV)| incub | !!! |
+|[google slides cube transition](https://www.shadertoy.com/view/t3Bfzw)| incub | !! |
+|[Card Shader](https://www.shadertoy.com/view/W32fRz)| incub | !! |
+|[Neuron Garden (516 chars)](https://www.shadertoy.com/view/3XjfRR)| incub | !! |
+|[kriatura xploradora](https://www.shadertoy.com/view/WfsfDf)| incub | !!! |
+|[Neonwave sunrise](https://www.shadertoy.com/view/7dyyRy)| incub | ! |
+|[5-Way RPS](https://www.shadertoy.com/view/tXBfzz)| incub | ABCD !! Blending |
+|[Orb Clouds](https://www.shadertoy.com/view/wXXyz7)| incub | !! |
+|[Cloud LIghts](https://www.shadertoy.com/view/wXXBRX)| incub | !! |
+|[Fork Perlin Flu yufengjie 997](https://www.shadertoy.com/view/33sfWf)| incub | ! |
+|[Fork Curling Sm wrocha 155](https://www.shadertoy.com/view/33XfDj)| incub | A !!! |
+|[Pixel Boids 1.0](https://www.shadertoy.com/view/wXSyWK)| incub | AB |
+|[Endless living creature](https://www.shadertoy.com/view/tljXWy)| fuse | ShaderOFTheWeek |
+|[Mycorrhizae 294](https://www.shadertoy.com/view/33VGzW)| incub | ! |
+|[True Magnetism](https://www.shadertoy.com/view/tXfcR4)| incub | ABCD !! Blending |
+|[Shader On a Paper Airplane](https://www.shadertoy.com/view/WXScDK)| incub | ABCD !! |
+|[Radial Growth Model for Mold](https://www.shadertoy.com/view/w3Xfzn)| incub | A ! Blending |
+|[Hexagon X5](https://www.shadertoy.com/view/4cVfWG)| fuse | ShaderOfTheWeek |
+|[Scaffolding ll](https://www.shadertoy.com/view/3XSyzG)| incub | !!! |
+|[Magnet Goop Boids](https://www.shadertoy.com/view/W3ByR3)| incub | A !! |
+|[DULL SKULL - The Way Out](https://www.shadertoy.com/view/3X2yWD)| incub | !! |
+|[Neural Detonation](https://www.shadertoy.com/view/7lGBWw)| incub | AB !! |
 |[hex at you](https://www.shadertoy.com/view/lflcR8)| fuse | ShaderOFTheWeek 42/25 |
 |[Mock_Scanner](https://www.shadertoy.com/view/t3XyzN)| incub | !! |
 |[Restless Souls](https://www.shadertoy.com/view/wXXyD8)| incub | !! |

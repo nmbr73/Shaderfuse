@@ -33,41 +33,17 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 [Station17](ShaderOfTheWeek/Station17.md) by [Zerofile](https://www.shadertoy.com/user/Zerofile)
 
 
+
+#### My personal shader of the week:
+[![ Industrial Complex + FPS Control
+](Tunnel/IndustrialComplexFpsControl.gif)](Tunnel/IndustrialComplexFpsControl.md) <br>
+[ Industrial Complex + FPS Control
+](Tunnel/IndustrialComplexFpsControl.md) by [RedKef](https://www.shadertoy.com/user/RedKef)
+
 <center>
 </center>
 
-----
-#### A brandnew Category: Skulls
-----
-[![Skully](Skulls/Skully.gif)](Skulls/Skully.md) <br>
-[skully](Skulls/skully.md) by [monsterkodi](https://www.shadertoy.com/user/monsterkodi)
 
-[![The Dark Mark [HP]](Skulls/TheDarkMarkHp.gif)](Skulls/TheDarkMarkHp.md) <br>
-[The_Dark_Mark_[HP]](Skulls/TheDarkMarkHp.md) by [Yusef28](https://www.shadertoy.com/user/Yusef28)
-
-[![Alas,poorYorick!](Skulls/AlasPoorYorick.gif)](Skulls/AlasPoorYorick.md) <br>
-[Alas,poorYorick!](Skulls/AlasPoorYorick.md) by [schau](https://www.shadertoy.com/user/schau)
-
-[![DullSkullBrained](Skulls/DullSkullBrained.gif)](Skulls/DullSkullBrained.md) <br>
-[Dull Skull-Brained](Skulls/DullSkullBrained.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
-
-[![DullSkullBumped](Skulls/DullSkullBumped.gif)](Skulls/DullSkullBrained.md) <br>
-[Dull Skull-Bumped](Skulls/DullSkullBumped.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
-
-[![DullSkullPrologue](Skulls/DullSkullPrologue.gif)](Skulls/DullSkullPrologue.md) <br>
-[Dull Skull-Prologue](Skulls/DullSkullPrologue.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
-
-[![DullSkullReflected](Skulls/DullSkullReflected.gif)](Skulls/DullSkullReflected.md) <br>
-[Dull Skull-Reflected](Skulls/DullSkullReflected.md) by [Kris_Katur](https://www.shadertoy.com/user/Kris_Katur)
-
-[![LostAstronaut](Skulls/LostAstronaut.gif)](Skulls/LostAstronaut.md) <br>
-[Lost_Astronaut](Skulls/LostAstronaut.md) by [duvengar](https://www.shadertoy.com/user/duvengar)
-
-[![DullSpeedSkull](Skulls/DullSpeedSkull.gif)](Skulls/DullSpeedSkull.md) <br>
-[DULL Speed SKULL](Skulls/DullSpeedSkull.md) by [Spectraledge](https://www.shadertoy.com/user/Spectraledge)
-
-[![ForkDullSkullFrostbyte591](Skulls/ForkDullSkullFrostbyte591.gif)](Skulls/ForkDullSkullFrostbyte591.md) <br>
-[Fork DULL SKULL frostbyte_ 591](Skulls/ForkDullSkullFrostbyte591.md) by [Frostbyte_](https://www.shadertoy.com/user/Frostbyte_)
 
 ## Installation
 
