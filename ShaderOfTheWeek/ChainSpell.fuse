@@ -1,0 +1,748 @@
+--[[--/*
+
+  ChainSpell.fuse
+
+  Based on https://www.shadertoy.com/view/Ms2BRz a WebGL shader created by leon.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f3(a) _fabs(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f3(a) fabs(a)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+
+// Raymarching sketch about magic.
+// I've started with the three turning spells,
+// then a broken chain and finally a storm trapped in a sphere.
+
+// Leon 12 / 07 / 2017
+// using lines of code of IQ, Mercury, LJ, Koltes, Duke
+
+#define PI 3.14159f
+#define TAU PI*2.0f
+#define t iTime
+
+// number of ray
+#define STEPS 30.0f
+
+// distance minimum for volume collision
+#define BIAS 0.001f
+
+// distance minimum
+#define DIST_MIN 0.01f
+
+// rotation matrix
+__DEVICE__ mat2 rot(float a) { float c=_cosf(a),s=_sinf(a);return to_mat2(c,-s,s,c); }
+
+// distance field funtions
+__DEVICE__ float sdSphere (float3 p, float r) { return length(p)-r; }
+__DEVICE__ float sdCylinder (float2 p, float r) { return length(p)-r; }
+__DEVICE__ float sdTorus( float3 p, float2 s ) {
+  float2 q = to_float2(length(swi2(p,x,z))-s.x,p.y);
+  return length(q)-s.y;
+}
+__DEVICE__ float sdBox( float3 p, float3 b ) {
+  float3 d = abs_f3(p) - b;
+  return _fminf(_fmaxf(d.x,_fmaxf(d.y,d.z)),0.0f) + length(_fmaxf(d,to_float3_s(0.0f)));
+}
+
+// smooth minimum
+__DEVICE__ float smin (float a, float b, float r) {
+    float h = clamp(0.5f+0.5f*(b-a)/r,0.0f,1.0f);
+    return _mix(b,a,h)-r*h*(1.0f-h);
+}
+
+// dat one line random function
+__DEVICE__ float rand(float2 co) { return fract(_sinf(dot(co*0.123f,to_float2(12.9898f,78.233f))) * 43758.5453f); }
+
+// polar domain repetition
+__DEVICE__ float3 moda (float2 p, float count) {
+    float an = TAU/count;
+    float a = _atan2f(p.y,p.x)+an/2.0f;
+    float c = _floor(a/an);
+    a = mod_f(a,an)-an/2.0f;
+    return to_float3_aw(to_float2(_cosf(a),_sinf(a))*length(p),c);
+}
+
+// the rythm of animation
+// change the 3.0f to have more or less spell
+__DEVICE__ float getLocalWave (float x, float iTime) { return _sinf(-t+x*3.0f); }
+
+// displacement in world space of the animation
+__DEVICE__ float getWorldWave (float x, float iTime) { return 1.0f-0.1f*getLocalWave(x, iTime); }
+
+// camera cont, float2 iResolution, float4 iMouserol
+__DEVICE__ float3 camera (float3 p, float2 iResolution, float4 iMouse) {
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , rot((PI*(iMouse.y/iResolution.y-0.5f)))));
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot((PI*(iMouse.x/iResolution.x-0.5f)))));
+    return p;
+}
+
+// position of chain
+__DEVICE__ float3 posChain (float3 p, float count, float iTime) {
+
+    float za = _atan2f(p.z,p.x);
+    float3 dir = normalize(p);
+
+    // domain repetition
+    float3 m = moda(swi2(p,x,z), count);
+    swi2S(p,x,z, swi2(m,x,y));
+    float lw = getLocalWave(m.z/PI, iTime);
+    p.x -= 1.0f-0.1f*lw;
+
+    // the chain shape
+    p.z *= 1.0f-clamp(0.03f/_fabs(p.z),0.0f,1.0f);
+
+    // animation of breaking chain
+    float r1 = lw*smoothstep(0.1f,0.5f,lw);
+    float r2 = lw*smoothstep(0.4f,0.6f,lw);
+    p += dir*_mix(0.0f, 0.3f*_sinf(_floor(za*3.0f)), r1);
+    p += dir*_mix(0.0f, 0.8f*_sinf(_floor(za*60.0f)), r2);
+
+    // rotate chain for animation smoothness
+    float a = lw * 0.3f;
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , rot(a)));
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(a)));
+    return p;
+}
+
+// distance function for spell
+__DEVICE__ float mapSpell (float3 p, float iTime) {
+    float scene = 1.0f;
+    float a = _atan2f(p.z,p.x);
+    float l = length(p);
+    float lw = getLocalWave(a, iTime);
+
+    // warping space into cylinder
+    p.z = l-1.0f+0.1f*lw;
+
+    // torsade effect
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , rot(t+a*2.0f)));
+
+    // long cube shape
+    scene = _fminf(scene, sdBox(p, to_float3(10.0f, 0.25f-0.1f*lw, 0.25f-0.1f*lw)));
+
+    // long cylinder cutting the box (intersection difference)
+    scene = _fmaxf(scene, -sdCylinder(swi2(p,z,y), 0.3f-0.2f*lw));
+    return scene;
+}
+
+// distance function for the chain
+__DEVICE__ float mapChain (float3 p, float iTime) {
+    float scene = 1.0f;
+
+    // number of chain
+    float count = 21.0f;
+
+    // size of chain
+    float2 size = to_float2(0.1f,0.02f);
+
+    // first set of chains
+    float torus = sdTorus(swi3(posChain(p,count,iTime),y,x,z),size);
+    scene = smin(scene, torus,0.1f);
+
+    // second set of chains
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(PI/count)));
+    scene = _fminf(scene, sdTorus(swi3(posChain(p,count,iTime),x,y,z),size));
+    return scene;
+}
+
+// position of core stuff
+__DEVICE__ float3 posCore (float3 p, float count) {
+
+    // polar domain repetition
+    float3 m = moda(swi2(p,x,z), count);
+    swi2S(p,x,z, swi2(m,x,y));
+
+    // linear domain repetition
+    float c = 0.2f;
+    p.x = mod_f(p.x,c)-c/2.0f;
+    return p;
+}
+
+// distance field for the core thing in the center
+__DEVICE__ float mapCore (float3 p, float iTime) {
+    float scene = 1.0f;
+
+    // number of torus repeated
+    float count = 10.0f;
+    float a = p.x*2.0f;
+
+    // displace space
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(p.y*6.0f)));
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(t)));
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , rot(t*0.5f)));
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , rot(t*1.5f)));
+    float3 p1 = posCore(p, count);
+    float2 size = to_float2(0.1f,0.2f);
+
+    // tentacles torus shape
+    scene = _fminf(scene, sdTorus(swi3(p1,x,z,y)*1.5f,size));
+
+    // sphere used for intersection difference with the toruses
+    scene = _fmaxf(-scene, sdSphere(p,0.6f));
+    return scene;
+}
+
+
+
+__KERNEL__ void ChainSpellFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 color   = to_float4_s(0.0f);
+  float2 coord   = to_float2(fusion_x,fusion_y);
+
+  // --------
+
+    // raymarch camera
+    float2 uv = (swi2(coord,x,y)-0.5f*iResolution)/iResolution.y;
+    float3 eye = camera(to_float3_aw(uv,-1.5f), iResolution, iMouse);
+    float3 ray = camera(normalize(to_float3_aw(uv,1.0f)), iResolution, iMouse);
+    float3 pos = eye;
+
+    // dithering
+    float2 dpos = ( swi2(coord,x,y) / iResolution );
+    float2 seed = dpos + fract(iTime);
+
+    float shade = 0.0f;
+    for (float i = 0.0f; i < STEPS; ++i) {
+
+        // distance from the different shapes
+        float distSpell = _fminf(mapSpell(pos, iTime), mapCore(pos, iTime));
+        float distChain = mapChain(pos, iTime);
+        float dist = _fminf(distSpell, distChain);
+
+        // hit volume
+        if (dist < BIAS) {
+            // add shade
+            shade += 1.0f;
+
+            // hit non transparent volume
+            if (distChain < distSpell) {
+
+                // set shade and stop iteration
+                shade = STEPS-i-1.0f;
+                break;
+            }
+        }
+
+        // dithering
+        dist=_fabs(dist)*(0.8f+0.2f*rand(seed*to_float2_s(i)));
+
+        // minimum step
+        dist = _fmaxf(DIST_MIN,dist);
+
+        // raymarch
+        pos += ray*dist;
+    }
+
+    // color from the normalized steps
+    color = to_float4_s(shade/(STEPS-1.0f));
+
+    color.w = 1.0f;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, color);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+
+  node = DVIPComputeNode(req,
+    "ChainSpellFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+   
+  node:AddOutput("dst", dst)
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
