@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 26th of Dezember 2025
+#### [Fractured Orb](FracturedOrb.md) (Shadertoy ID [ttycWW](https://www.shadertoy.com/view/ttycWW))
+[![Fractured Orb](ShaderOfTheWeek/FracturedOrb.gif)](ShaderOfTheWeek/FracturedOrb.md)
+----
 ## 9th of Dezember 2025
 #### [Station 17](Station17.md) (Shadertoy ID [3fVyDw](https://www.shadertoy.com/view/3fVyDw))
 [![Station 17](ShaderOfTheWeek/Station17.gif)](ShaderOfTheWeek/Station17.md)
