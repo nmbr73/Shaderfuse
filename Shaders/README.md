@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (26th of Dezember 2025):
+#### Current Shader of the Week (1th of January 2026):
 
-[![Fractured Orb](ShaderOfTheWeek/FracturedOrb.gif)](ShaderOfTheWeek/FracturedOrb.md) <br>
-[Fractured Orb](ShaderOfTheWeek/FracturedOrb.md) by [tdhooper](https://www.shadertoy.com/user/tdhooper)
+[![Automata X Showcase 3x2 (3x3)](ShaderOfTheWeek/AutomataXShowcase3X23X3.gif)](ShaderOfTheWeek/AutomataXShowcase3X23X3.md) <br>
+[Automata X Showcase 3x2 (3x3)](ShaderOfTheWeek/AutomataXShowcase3X23X3.md) by [misol101](https://www.shadertoy.com/user/misol101)
 
 
 
