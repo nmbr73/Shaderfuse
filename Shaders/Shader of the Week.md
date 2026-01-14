@@ -3,6 +3,12 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 14th of January 2026
+#### [tm gyroid 2](TmGyroid2.md) (Shadertoy ID [tXtyW8](https://www.shadertoy.com/view/tXtyW8))
+[![tm gyroid 2](ShaderOfTheWeek/TmGyroid2.gif)](ShaderOfTheWeek/TmGyroid2.md)
+---
+On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
+----
 ## 1th of January 2026
 #### [Automata X Showcase 3x2 (3x3)](AutomataXShowcase3X23X3.md) (Shadertoy ID [ds2fD1](https://www.shadertoy.com/view/ds2fD1))
 [![Automata X Showcase 3x2 (3x3)](ShaderOfTheWeek/AutomataXShowcase3X23X3.gif)](ShaderOfTheWeek/AutomataXShowcase3X23X3.md)
