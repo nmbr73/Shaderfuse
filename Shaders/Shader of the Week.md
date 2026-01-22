@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 22th of January 2026
+#### [Saturday cubism experiment](SaturdayCubismExperiment.md) (Shadertoy ID [ftGfDK](https://www.shadertoy.com/view/ftGfDK))
+[![Saturday cubism experiment](ShaderOfTheWeek/SaturdayCubismExperiment.gif)](ShaderOfTheWeek/SaturdayCubismExperiment.md)
+----
 ## 14th of January 2026
 #### [tm gyroid 2](TmGyroid2.md) (Shadertoy ID [tXtyW8](https://www.shadertoy.com/view/tXtyW8))
 [![tm gyroid 2](ShaderOfTheWeek/TmGyroid2.gif)](ShaderOfTheWeek/TmGyroid2.md)
