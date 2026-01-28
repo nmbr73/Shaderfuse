@@ -3,6 +3,12 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 28th of January 2026
+#### [Mandelbrot Pattern Decoration](MandelbrotPatternDecoration.md) (Shadertoy ID [ttscWn](https://www.shadertoy.com/view/ttscWn))
+[![Mandelbrot Pattern Decoration](ShaderOfTheWeek/MandelbrotPatternDecoration.gif)](ShaderOfTheWeek/MandelbrotPatternDecoration.md)
+---
+On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
+----
 ## 22th of January 2026
 #### [Saturday cubism experiment](SaturdayCubismExperiment.md) (Shadertoy ID [ftGfDK](https://www.shadertoy.com/view/ftGfDK))
 [![Saturday cubism experiment](ShaderOfTheWeek/SaturdayCubismExperiment.gif)](ShaderOfTheWeek/SaturdayCubismExperiment.md)
@@ -18,6 +24,10 @@ On the home page of ShaderToy.com the "Shader of the Week" is presented. As far 
 [![Automata X Showcase 3x2 (3x3)](ShaderOfTheWeek/AutomataXShowcase3X23X3.gif)](ShaderOfTheWeek/AutomataXShowcase3X23X3.md)
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
+----
+## 28th of January 2026
+#### [Mandelbrot Pattern Decoration](MandelbrotPatternDecoration.md) (Shadertoy ID [ttscWn](https://www.shadertoy.com/view/ttscWn))
+[![Mandelbrot Pattern Decoration](ShaderOfTheWeek/MandelbrotPatternDecoration.gif)](ShaderOfTheWeek/MandelbrotPatternDecoration.md)
 ----
 ## 26th of Dezember 2025
 #### [Fractured Orb](FracturedOrb.md) (Shadertoy ID [ttycWW](https://www.shadertoy.com/view/ttycWW))
