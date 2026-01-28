@@ -1,0 +1,2140 @@
+--[[--/*
+
+  IndustrialComplexFpsControl.fuse
+
+  Based on https://www.shadertoy.com/view/3cdBWl a WebGL shader created by RedKef.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  iTimeDelta;
+  int    iFrame;
+  bool   Reset;
+  bool   OBJECT_CAMERA_WRAP;
+  bool   LookLeft;
+  bool   LookUp;
+  bool   LookRight;
+  bool   LookDown;
+  bool   Crouch1;
+  bool   Crouch2;
+  bool   Forward;
+  bool   Back;
+  bool   Right;
+  bool   Left;
+  bool   Sprint;
+  bool   Jump;
+  float  Modus;
+  float  ColorBKG1[4];
+  float  ColorBKG2[4];
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  R;
+  float  STAND_H;
+  float  CROUCH_H;
+  float  GRAV;
+  float  JUMP_V;
+  float  SPEED;
+  float  AIR_CTRL;
+  float  GND_ACCEL;
+  float  FRICTION;
+  float  RUN_MUL;
+  float  CROUCH_MUL;
+  float  PHYS_EPS;
+  float  HR_EPS;
+  float  ROT_SPEED;
+  float  MOUSE_SENS;
+  float  STEP_H;
+  float  STEP_EPS;
+  float  Fov;
+  float  ColTemp;
+  
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+ #define fract_f3(A) fract(A)
+ #define fract_f4(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+ #define mod_f3(value,divisor) fmod(value,divisor)
+ #define mod_f3f3(value,divisor) fmod(value,divisor)
+
+ #define sin_f2(i) sin(i)
+ #define sin_f4(i) sin(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define fract_f4(A) to_float4(fract((A).x),fract((A).y),fract((A).z),fract((A).w))
+ #define mod_f(a,b) _fmod(a,b)
+ #define mod_f3(value,divisor) _fmod(value,divisor)
+ #define mod_f3f3(value,divisor) _fmod(value,divisor)
+ #define sin_f2(i) sin(i)
+ #define sin_f4(i) sin(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define fract_f4(A) to_float4(fract((A).x),fract((A).y),fract((A).z),fract((A).w))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define mod_f3(value,divisor) to_float3(mod_f((value).x, (divisor)),mod_f((value).y, (divisor)),mod_f((value).z, (divisor)))
+ #define mod_f3f3(value,divisor) to_float3(mod_f((value).x, (divisor).x),mod_f((value).y, (divisor).y),mod_f((value).z, (divisor).z))
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define sin_f4(i) to_float4( _sinf((i).x), _sinf((i).y), _sinf((i).z), _sinf((i).w))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+
+
+__DEVICE__ float3 camPath(float t);
+
+//help for linux users
+#define Z 0 //_fminf(0, iFrame)
+
+
+// The distance field is a little messier than usual - mainly because it includes more objects,
+// but at it's core, it's just a simple amalgation of repetive objects placed in the scene with
+// repeat space tricks.
+//
+// In essence, it's a lattice with a floor and railings thrown in, and a bit of space taken out.
+// I put it together in a hurry, so could have planned it a bit better. I wanted it to be at least
+// a little readable, so didn't group as much stuff together as I could have. Either way, I'll
+// take a look at it later and tidy things up a bit.
+__DEVICE__ float lattice(float3 p, inout float *objID){
+
+    // Repeat space.
+    float3 q  = abs_f3(mod_f3f3(p, to_float3(32, 16, 32)) - to_float3(16, 8, 16));
+    float3 q2 = abs_f3(mod_f3f3(p - to_float3(4, 0, 0), to_float3(32, 2, 16)) - to_float3(16, 1, 8));
+
+    // Holes. I've called them holes, but they're more like square columns used to negate objects.
+    float hole1 = _fmaxf(q2.x - 7.65f, q.z - 8.0f); // Used to carve a hole beside the railings.
+    float hole2 = _fmaxf(-p.y - 0.75f, q.z - 4.85f); // Used to chop the top off of the bridge railings.
+    float hole3 = _fabs(mod_f(p.z + 16.0f, 32.0f) - 16.0f) - 2.85f; // Used to form the floor to ceiling partitions.
+
+    // Floor minus hole (repeat square columns) equals bridge. :)
+    float fl = _fmaxf(p.y + 3.5f, -hole1);
+
+    // The wall panels with rectangular windows.
+    float wall = _fmaxf(q2.x - 8.0f, q2.z - 2.15f);
+    wall = _fmaxf(wall, -_fmaxf(_fabs(_fabs(q2.x - 8.0f) - 4.0f) - 1.75f, _fabs(q.y - 8.0f) - 0.5f)); // Wall with window.
+
+    // This is a neat trick to subdivide space up further without the need for another
+    // modulo call... in a manner of speaking.
+    q2.x = _fabs(q2.x - 8.0f);
+    float rail = _fmaxf(q2.x - 0.15f, q2.y - 0.15f);
+    float rail2 = _fmaxf(q2.x - 0.15f/6.0f, _fabs(mod_f(q2.y + 1.0f/6.0f, 1.0f/3.0f) - 1.0f/6.0f) - 0.15f/6.0f);
+    rail = _fminf(rail, _fmaxf(rail2, -p.y - 3.0f));
+    // Optional bottom rail with no gap. Comment out the line above though.
+    //rail = _fminf(min(rail, rail2), _fmaxf(q2.x - 0.15f, _fabs(p.y + 3.75f) - 0.6f));
+
+    // Posts.
+    float posts = _fmaxf(q2.x - 0.15f, _fabs(mod_f(q2.z, 2.0f) - 1.0f) - 0.15f);
+
+    // Forming the railings. Comment out the 2nd and 3rd lines if you want to see what they're there for.
+    rail = _fminf(rail, posts);
+    rail = _fmaxf(rail, -hole2);
+    rail = _fmaxf(rail, -hole3);
+
+    // Subdividing space down again without using the modulo call. For all I know, I've made things
+    // slower. :)
+    swi2S(q,x,z, abs_f2(swi2(q,x,z) - to_float2_s(8)));
+    q.x = _fabs(q.x - 4.0f);
+
+    // Pylons and round pylons.
+    float pylon = _fminf( _fmaxf(_fmaxf(q.x, q.y) - 3.0f, -p.y) , _fminf(_fmaxf(q.y, q.z)*0.55f + length(swi2(q,y,z))*0.45f - 3.1f,
+                  _fmaxf(q.x, q.z)) - 2.0f);
+    float rndPylon = length((swi2(q,x,z))*to_float2(0.7f, 0.4f)) - 1.0f;
+
+    // Breaking space right down to 2x2x2 cubic segments.
+    q = abs_f3(mod_f3(q,  2.0f) - 1.0f);
+    float pylonHole = _fminf(q.x, _fminf(q.y, q.z)); // Used to take cubic chunks out of the pylons.
+
+    //objID = step(pylonHole - 0.15f, pylon);
+
+    // Forming the structure.
+    float structure = _fminf(_fmaxf(pylon, pylonHole) - 0.15f, _fminf(rndPylon, wall));
+
+    // Adding the floor and the railings to the structure.
+    return _fminf(structure, _fminf(fl, rail));
+}
+
+//float objID; // Structure object ID.
+//float bObjID; // Bump map detail ID.
+
+
+// For all intents and purposes, this is a twisty lattice smoothly bounded by a square
+// tube on the outside. I have a million different shaders based on this concept alone,
+// but I won't bore you with them. Instead, Dila and Aiekick have some pretty good examples
+// on Shadertoy making use of it that are worth looking at.
+__DEVICE__ float map(float3 p, inout float *objID, bool OBJECT_CAMERA_WRAP){
+
+    *objID = 0.0f;
+
+    if (OBJECT_CAMERA_WRAP)
+    {
+      // Wrap the scene around the path. Optional. See the bump mapping function also.
+      swi2S(p,x,y, swi2(p,x,y) - swi2(camPath(p.z),x,y));
+    }
+    else
+      p.x += 4.0f;
+
+    float d = lattice(p, objID);
+
+    return d*0.95f;//*0.7f;
+}
+
+__DEVICE__ float GetDist(float3 p, inout float *objID, bool OBJECT_CAMERA_WRAP){
+    return map(p, objID, OBJECT_CAMERA_WRAP);      // map() is your Industrial Complex SDF
+}
+
+__DEVICE__ float3 GetNormal(float3 p, inout float *objID, bool OBJECT_CAMERA_WRAP){
+    // physics normal: stable, small epsilon
+    float2 e = to_float2(0.001f, 0.0f);
+    return normalize(to_float3(
+                                  GetDist(p + swi3(e,x,y,y), objID, OBJECT_CAMERA_WRAP) - GetDist(p - swi3(e,x,y,y), objID, OBJECT_CAMERA_WRAP),
+                                  GetDist(p + swi3(e,y,x,y), objID, OBJECT_CAMERA_WRAP) - GetDist(p - swi3(e,y,x,y), objID, OBJECT_CAMERA_WRAP),
+                                  GetDist(p + swi3(e,y,y,x), objID, OBJECT_CAMERA_WRAP) - GetDist(p - swi3(e,y,y,x), objID, OBJECT_CAMERA_WRAP)
+                              ));
+}
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel0
+// Connect Buffer A 'Preset: Keyboard' to iChannel1
+
+
+// Buffer A — FPS controller with SDF collision + gravity + jump + crouch
+// iChannel0: Buffer A (self)
+// iChannel1: Keyboard
+
+
+//__DEVICE__ float keyDown(int code) {
+//    float2 uv = to_float2((float(code)+0.5f)/256.0f, 0.5f/3.0f);
+//    return _tex2DVecN(iChannel1,uv.x,uv.y,15).x;
+//}
+
+// (feet -> head).
+__DEVICE__ float capsuleWorldDist(float3 basePos, float H, float r, out float3 *hitP, inout float *objID, bool OBJECT_CAMERA_WRAP) {
+    float y0 = r;
+    float y1 = _fmaxf(H - r, r);
+
+    float3 c0 = basePos + to_float3(0.0f, _mix(y0, y1, 0.00f), 0.0f);
+    float3 c1 = basePos + to_float3(0.0f, _mix(y0, y1, 0.33f), 0.0f);
+    float3 c2 = basePos + to_float3(0.0f, _mix(y0, y1, 0.66f), 0.0f);
+    float3 c3 = basePos + to_float3(0.0f, _mix(y0, y1, 1.00f), 0.0f);
+
+    float d0 = GetDist(c0, objID, OBJECT_CAMERA_WRAP) - r;
+    float d1 = GetDist(c1, objID, OBJECT_CAMERA_WRAP) - r;
+    float d2 = GetDist(c2, objID, OBJECT_CAMERA_WRAP) - r;
+    float d3 = GetDist(c3, objID, OBJECT_CAMERA_WRAP) - r;
+
+    *hitP = c0; float d = d0;
+    if (d1 < d) { d = d1; *hitP = c1; }
+    if (d2 < d) { d = d2; *hitP = c2; }
+    if (d3 < d) { d = d3; *hitP = c3; }
+    return d;
+}
+
+__DEVICE__ void resolveCollisions(inout float3 *basePos, inout float3 *vel, float H, float r, out bool *grounded, float PHYS_EPS, float STEP_H, inout float *objID, bool OBJECT_CAMERA_WRAP) {
+    *grounded = false;
+
+    for (int i = 0; i < 6 + Z; i++) {
+        float3 hitP;
+        float d = capsuleWorldDist(*basePos, H, r, &hitP, objID, OBJECT_CAMERA_WRAP);
+        if (d >= PHYS_EPS) break;
+
+        float3 n = GetNormal(hitP, objID, OBJECT_CAMERA_WRAP);
+
+        float relY = hitP.y - (*basePos).y;          // height above feet origin
+        if (relY < (STEP_H + r) && n.y < 0.25f) {  // near feet + mostly horizontal normal
+
+            // detect walls vs stairs
+            float dAbove = GetDist(hitP + to_float3(0.0f, STEP_H, 0.0f), objID, OBJECT_CAMERA_WRAP) - r;
+
+            if (dAbove > 0.0f) {
+                //tiny sideways component to avoid sticking.
+                n = normalize(to_float3(n.x * 0.10f, 1.0f, n.z * 0.10f));
+            }
+        }
+
+        // push out
+        *basePos -= n * (d - PHYS_EPS);
+
+        // remove inward velocity
+        float vn = dot(*vel, n);
+        if (vn < 0.0f) *vel -= n * vn;
+
+        if (n.y > 0.6f) *grounded = true;
+    }
+}
+
+// MAX HEADROOM
+__DEVICE__ bool hasHeadroomToStand(float3 basePos, float standH, float r, float HR_EPS, inout float *objID, bool OBJECT_CAMERA_WRAP) {
+
+    float3 topC = basePos + to_float3(0.0f, standH - r, 0.0f);
+    float3 midC = basePos + to_float3(0.0f, standH * 0.65f, 0.0f);
+
+    float dTop = GetDist(topC, objID, OBJECT_CAMERA_WRAP) - r;
+    float dMid = GetDist(midC, objID, OBJECT_CAMERA_WRAP) - r;
+
+    return (dTop > HR_EPS) && (dMid > HR_EPS);
+}
+
+__KERNEL__ void IndustrialComplexFpsControlFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float  iTimeDelta  = params->iTimeDelta;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   OBJECT_CAMERA_WRAP = params->OBJECT_CAMERA_WRAP;
+  bool   LookLeft = params->LookLeft;
+  bool   LookUp = params->LookUp;
+  bool   LookRight = params->LookRight;
+  bool   LookDown = params->LookDown;
+  bool   Crouch1 = params->Crouch1;
+  bool   Crouch2 = params->Crouch2;
+  bool   Forward = params->Forward;
+  bool   Back = params->Back;
+  bool   Right = params->Right;
+  bool   Left = params->Left;
+  bool   Sprint = params->Sprint;
+  bool   Jump = params->Jump;
+  float  Modus = params->Modus;
+  float4 ColorBKG1 = to_float4(params->ColorBKG1[0], params->ColorBKG1[1], params->ColorBKG1[2], params->ColorBKG1[3]);
+  float4 ColorBKG2 = to_float4(params->ColorBKG2[0], params->ColorBKG2[1], params->ColorBKG2[2], params->ColorBKG2[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  R = params->R;
+  float  STAND_H = params->STAND_H;
+  float  CROUCH_H = params->CROUCH_H;
+  float  GRAV = params->GRAV;
+  float  JUMP_V = params->JUMP_V;
+  float  SPEED = params->SPEED;
+  float  AIR_CTRL = params->AIR_CTRL;
+  float  GND_ACCEL = params->GND_ACCEL;
+  float  FRICTION = params->FRICTION;
+  float  RUN_MUL = params->RUN_MUL;
+  float  CROUCH_MUL = params->CROUCH_MUL;
+  float  PHYS_EPS = params->PHYS_EPS;
+  float  HR_EPS = params->HR_EPS;
+  float  ROT_SPEED = params->ROT_SPEED;
+  float  MOUSE_SENS = params->MOUSE_SENS;
+  float  STEP_H = params->STEP_H;
+  float  STEP_EPS = params->STEP_EPS;
+  float  Fov = params->Fov;
+  float  ColTemp = params->ColTemp;
+
+  // --------
+
+    fragCoord += 0.5f;
+
+    float objID; // Structure object ID.
+    float bObjID; // Bump map detail ID.
+
+    int2 ip = to_int2_cfloat(fragCoord);
+
+    // (0,0): swi3(eye,x,y,z), yaw
+    // (1,0): pitch, swi2(lastMouse,x,y), wasMouseDown
+    // (2,0): swi3(base,x,y,z), crouchT
+    // (3,0): swi3(vel,x,y,z), flags
+    float4 st0 = texelFetch(iChannel0, to_int2(0,0), 0);
+    float4 st1 = texelFetch(iChannel0, to_int2(1,0), 0);
+    float4 st2 = texelFetch(iChannel0, to_int2(2,0), 0);
+    float4 st3 = texelFetch(iChannel0, to_int2(3,0), 0);
+
+    float3 eyePos = swi3(st0,x,y,z);
+    float yaw     = st0.w;
+
+    float pitch   = st1.x;
+    float2 lastMouse= swi2(st1,y,z);
+    float wasDown = st1.w;
+
+    float3 basePos  = swi3(st2,x,y,z);   // feet-anchored
+    float crouchT = st2.w;
+
+    float3 vel      = swi3(st3,x,y,z);
+    float flags   = st3.w;
+    float prevJumpDown = mod_f(flags, 2.0f);
+    float groundedPrev = step(1.5f, flags);
+
+    if (iFrame == 0 || Reset) {
+        yaw = 0.0f;
+        pitch = 0.0f;
+        lastMouse = swi2(iMouse,x,y);
+        wasDown = 0.0f;
+
+        basePos = to_float3(0.0f, -STAND_H, -3.0f);
+        vel = to_float3_s(0.0f);
+        crouchT = 0.0f;
+        prevJumpDown = 0.0f;
+        groundedPrev = 0.0f;
+    }
+
+    float dt = clamp(iTimeDelta, 1.0f/240.0f, 0.05f);
+
+    yaw   -= (LookLeft - LookRight) * ROT_SPEED * dt;
+    pitch += (LookUp - LookDown) * ROT_SPEED * dt;
+
+    bool down = (iMouse.z > 0.0f);
+    if (down) {
+        if (wasDown < 0.5f) {
+            lastMouse = swi2(iMouse,x,y);
+        } else {
+            float2 dm = (swi2(iMouse,x,y) - lastMouse) / iResolution;
+            yaw   -= dm.x * MOUSE_SENS;
+            pitch -= dm.y * MOUSE_SENS;
+            lastMouse = swi2(iMouse,x,y);
+        }
+    }
+    pitch = clamp(pitch, -1.55f, 1.55f);
+
+
+    bool crouchHeld = (Crouch1 > 0.5f) || (Crouch2 > 0.5f);
+
+    // introducing new, "Try to stand," now with FAILURE
+    float target = crouchHeld ? 1.0f : 0.0f;
+    if (target < 0.5f && crouchT > 0.001f) {
+        if (!hasHeadroomToStand(basePos, STAND_H, R, HR_EPS, &objID, OBJECT_CAMERA_WRAP)) {
+            target = 1.0f;
+        }
+    }
+
+    // Smooth crouch
+    float crouchSpeed = 10.0f;
+    crouchT = clamp(_mix(crouchT, target, 1.0f - _expf(-crouchSpeed * dt)), 0.0f, 1.0f);
+    float H = _mix(STAND_H, CROUCH_H, smoothstep(0.0f, 1.0f, crouchT));
+
+    // Keep forward the same (so W/S stay correct)
+    float3 fwd = normalize(to_float3(_sinf(yaw), 0.0f, -_cosf(yaw)));
+
+    // Fix right: cross(fwd, up) gives right in a RH system
+    float3 rgt = normalize(cross(fwd, to_float3(0.0f, 1.0f, 0.0f)));
+
+    float fb = Forward - Back; // W - S
+    float lr = Right - Left; // D - A
+
+    float3 wish = fwd * fb + rgt * lr;
+    float wishLen = length(wish);
+    float3 wishDir = (wishLen > 0.0f) ? (wish / wishLen) : to_float3_s(0.0f);
+
+    bool sprintHeld = (Sprint > 0.5f); // Shift
+
+    float crouchMul = _mix(1.0f, CROUCH_MUL, smoothstep(0.0f, 1.0f, crouchT));
+    float runMul    = (sprintHeld && crouchT < 0.1f) ? RUN_MUL : 1.0f; // usually no sprint while crouched
+
+    float wishSpeed = SPEED * crouchMul * runMul;
+
+    // Jump edge detect
+    float jumpDown = step(0.5f, Jump);
+    bool jumpPressed = (jumpDown > 0.5f) && (prevJumpDown < 0.5f);
+
+    // accel/friction
+    float2 vxz = swi2(vel,x,z);
+    if (groundedPrev > 0.5f) {
+        if (wishLen < 0.001f) {
+            float k = _expf(-FRICTION * dt);
+            vxz *= k;
+        } else {
+            float2 targetV = swi2(wishDir,x,z) * wishSpeed;
+            float a = 1.0f - _expf(-GND_ACCEL * dt);
+            vxz = _mix(vxz, targetV, a);
+        }
+
+        if (jumpPressed) {
+            vel.y = JUMP_V;
+            groundedPrev = 0.0f;
+        }
+    } else {
+        if (wishLen > 0.001f) {
+            float2 targetV = swi2(wishDir,x,z) * wishSpeed;
+            float a = 1.0f - _expf(-AIR_CTRL * dt);
+            vxz = _mix(vxz, targetV, a);
+        }
+    }
+    swi2S(vel,x,z, vxz);
+
+    // Integrate with substeps + collide (WHY CAN'T I DO ANYTHING WITHOUT LOOPS, PLEASE BEAT ME)
+    bool groundedNow = false;
+    int SUB = 4;
+    float hdt = dt / (float)(SUB);
+
+    for (int i = 0; i < SUB + Z; i++) {
+        vel.y -= GRAV * hdt;
+        basePos += vel * hdt;
+
+        bool g;
+        resolveCollisions(&basePos, &vel, H, R, &g, PHYS_EPS, STEP_H, &objID, OBJECT_CAMERA_WRAP);
+        groundedNow = g;
+
+        if (groundedNow && vel.y < 0.0f) vel.y = 0.0f;
+    }
+
+    eyePos = basePos + to_float3(0.0f, H - 0.02f, 0.0f);
+
+    float groundedF = groundedNow ? 1.0f : 0.0f;
+    float newFlags = jumpDown + 2.0f * groundedF;
+
+    float4 out0 = to_float4_aw(eyePos, yaw);
+    float4 out1 = to_float4(pitch, lastMouse.x, lastMouse.y, down ? 1.0f : 0.0f);
+    float4 out2 = to_float4_aw(basePos, crouchT);
+    float4 out3 = to_float4_aw(vel, newFlags);
+
+    //if (all(equal(ip, to_int2(0,0))))      fragColor = out0;
+    if (ip.x == 0 && ip.y == 0)      fragColor = out0;
+    //else if (all(equal(ip, to_int2(1,0)))) fragColor = out1;
+    else if (ip.x == 1 && ip.y == 0) fragColor = out1;
+    //else if (all(equal(ip, to_int2(2,0)))) fragColor = out2;
+    else if (ip.x == 2 && ip.y == 0) fragColor = out2;
+    //else if (all(equal(ip, to_int2(3,0)))) fragColor = out3;
+    else if (ip.x == 3 && ip.y == 0) fragColor = out3;
+    else                             fragColor = texelFetch(iChannel0, ip, 0);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Rusty Metal' to iChannel0
+// Connect Image 'Previsualization: Buffer A' to iChannel1
+
+
+/*
+
+  Industrial Complex
+  ------------------
+
+  Using standard distance field operations to produce an industrial-looking
+  architectual entity - albeit a pretty abstract one. It'd probably take a while
+  to walk from one end to the other. :)
+
+  The camera swings around a fair bit. I did that intentionally to show more of
+  the scene without distorting the lens and FOV too much.
+
+  Adding detail to a scene is pretty straight forward - in concept anyway. Simply
+  integrate more objects. Trying to add detail without frying your GPU is another
+  story. Bump mapping the finer details definitely helped, but my slowest computer
+  struggled to maintain 45 FPS with this particular scene, which meant a lot of my
+  original plans had to be abandoned.
+
+  Most of this was pretty straight forward, but there's always one annoying aspect.
+  For me, believe it or not, it was the simple mesh looking floors. With such high
+  frequency repetition, Moire effects became a problem. The solution was to abandon
+  the distance field approach and fake it with a smooth bump mapped function.
+
+  I try not to put too many conditional compiler options into shader code because
+  it can make things confusing to read, but I added in a couple for variety.
+  There's an option to wrap the object around the camera, and an optional "WARM"
+  aesthetic by default.
+
+
+*/
+
+// Maximum ray distance.
+#define FAR 50.0f
+
+// Wrap the scene itself around the camera path.
+//#define OBJECT_CAMERA_WRAP
+
+// Warm setting. Commenting it out gives it more of a twilight feel, which I prefer, but
+// fiery stuff tends to stand out more, so that's the default. :)
+// #define WARM
+
+
+// Comment this out to omit the detailing. Basically, the function-based bump mapping
+// won't be included. The texture-based bump mapping will remain though.
+// #define SHOW_DETAILS
+
+
+// 2D rotation. Always handy. Angle vector, courtesy of Fabrice.
+__DEVICE__ mat2 rot( float th ){ float2 a = sin_f2(to_float2(1.5707963f, 0) + th); return to_mat2(a.x, a.y, -a.y, a.x); }
+
+
+// Camera path. Arranged to coincide with the frequency of the lattice.
+__DEVICE__ float3 camPath(float t){
+
+    //return to_float3(4, 0, t); // Straight path.
+
+    // Curvy path. Weaving around the columns.
+    float a = _sinf(t * 3.14159265f/32.0f + 1.5707963f*1.0f);
+    float b = _cosf(t * 3.14159265f/32.0f);
+
+    return to_float3(a*5.0f, b*a, t);
+}
+
+
+// Regular Menger Sponge formula. Very simple, but if you're not sure, look it
+// up on Wikipedia, and look up a Void Cube image.
+__DEVICE__ float Menger(float3 q, inout float *objID, inout float *bObjID){
+
+    *objID = 0.0f;
+    *bObjID = 0.0f;
+
+    float3 p;
+  // Scale factor, and distance.
+    float s = 16.0f, d = 0.0f, d1;
+
+    // Repeat space.
+    p = abs_f3(fract_f3(q/s)*s - s/2.0f); // Equivalent to: p = _fabs(mod_f(q, s) - s/2.0f);
+    // Repeat Void Cubes. Cubes with a cross taken out.
+    d1 = _fminf(_fmaxf(p.x, p.y), _fminf(_fmaxf(p.y, p.z), _fmaxf(p.x, p.z))) - s/3.0f + 1.0f;
+    d = _fmaxf(d, d1);
+    s /= 4.0f; // Divide space (each dimension) by 4.
+
+    p = abs_f3(fract_f3(q/s)*s - s/2.0f); // Equivalent to: p = _fabs(mod_f(q, s) - s/2.0f);
+    // Repeat Void Cubes. Cubes with a cross taken out.
+
+    d1 = _fminf(_fmaxf(p.x, p.y), _fminf(_fmaxf(p.y, p.z), _fmaxf(p.x, p.z))) - s/3.0f;
+    d = _fmaxf(d, d1);
+    s /= 3.0f; // Divide space (each dimension) by 3.
+
+    p = abs_f3(fract_f3(q/s)*s - s/2.0f); // Equivalent to: p = _fabs(mod_f(q, s) - s/2.0f);
+    // Repeat Void Cubes. Cubes with a cross taken out.
+    d1 = _fminf(_fmaxf(p.x, p.y), _fminf(_fmaxf(p.y, p.z), _fmaxf(p.x, p.z))) - s/3.0f;
+    *bObjID = step(d, d1);
+    d = _fmaxf(d, d1);
+
+   return d;
+}
+
+// Raymarching.
+__DEVICE__ float trace(float3 ro, float3 rd, inout float *objID, bool OBJECT_CAMERA_WRAP){
+
+    float t = 0.0f, d;
+    for (int i=0; i<80; i++){
+
+        d = map(ro + rd*t, objID, OBJECT_CAMERA_WRAP);
+        if(_fabs(d)<0.001f*(t*0.125f + 1.0f) || t>FAR) break;
+        t += d;
+    }
+    return _fminf(t, FAR);
+}
+
+// Tri-Planar blending function. Based on an old Nvidia writeup:
+// GPU Gems 3 - Ryan Geiss: http://http.developer.nvidia.com/GPUGems3/gpugems3_ch01.html
+__DEVICE__ float3 tex3D(__TEXTURE2D__ channel, float3 p, float3 n){
+
+    n = _fmaxf(abs_f3(n) - 0.2f, to_float3_s(0.001f));
+    n /= dot(n, to_float3_s(1));
+    float3 tx = swi3(texture(channel, swi2(p,z,y)),x,y,z);
+    float3 ty = swi3(texture(channel, swi2(p,x,z)),x,y,z);
+    float3 tz = swi3(texture(channel, swi2(p,x,y)),x,y,z);
+
+    // Textures are stored in sRGB (I think), so you have to convert them to linear space
+    // (squaring is a rough approximation) prior to working with them... or something like that. :)
+    // Once the final color value is gamma corrected, you should see correct looking colors.
+    return tx*tx*n.x + ty*ty*n.y + tz*tz*n.z;
+}
+
+
+// Texture bump mapping. Four tri-planar lookups, or 12 texture lookups in total.
+__DEVICE__ float3 doBumpMapT( __TEXTURE2D__ tx, in float3 p, in float3 n, float bf){
+
+    const float2 e = to_float2(0.001f, 0);
+
+    // Three gradient vectors rolled into a matrix, constructed with offset greyscale texture values.
+    mat3 m = to_mat3_f3(tex3D(tx, p - swi3(e,x,y,y), n), tex3D(tx, p - swi3(e,y,x,y), n), tex3D(tx, p - swi3(e,y,y,x), n));
+
+    float3 g = mul_f3_mat3(to_float3(0.299f, 0.587f, 0.114f), m); // Converting to greyscale.
+    g = (g - dot(tex3D(tx,  p , n), to_float3(0.299f, 0.587f, 0.114f)) )/e.x; g -= n*dot(n, g);
+
+    return normalize( n + g*bf ); // Bumped normal. "bf" - bump factor.
+}
+
+// Smooth tiles. There are better ways, but it works.
+__DEVICE__ float tiles(float2 p){
+
+    p = abs_f2(fract_f2(p*4.0f) - 0.5f)*2.0f;
+    float s = _fmaxf(p.x, p.y);
+    return smoothstep(0.0f, 0.6f, s);//smoothstep(0.1f, 1.0f, s*2.0f - 0.35f);//
+
+ //   // Fancier grid pattern, but I decided to implement the "less is more" principle. :)
+ //   float2 q = abs_f2(fract_f2(p*1.0f) - 0.5f)*2.0f;
+ //   float s = _fmaxf(q.x, q.y);
+ //   s = smoothstep(0.5f, 0.85f, s);
+ //
+ //   q = abs_f2(fract_f2(p*4.0f + 0.5f) - 0.5f)*2.0f;
+ //   float s2 = _fmaxf(q.x, q.y);
+ //   s2 = smoothstep(0.0f, 1.0f, s2);
+ //
+ //   return _fmaxf(s, s2);
+}
+
+
+// The bump mapping function.
+__DEVICE__ float bumpFunction(in float3 p, inout float *objID, inout float *bObjID, bool OBJECT_CAMERA_WRAP){
+
+    // If wrapping the scene around the the camera path, the bump has to match.
+    if (OBJECT_CAMERA_WRAP)
+    {
+      swi2S(p,x,y, swi2(p,x,y) - swi2((camPath(p.z)),x,y));
+    }
+
+    // A reproduction of the lattice at higher frequency. Obviously, you could put
+    // anything here. Noise, Voronoi, other geometrical formulas, etc.
+    float c = 0.0f;
+    if(p.y>-3.49f || p.y<-3.51f) c = _fminf(_fabs(Menger(p*4.0f, objID, bObjID))*1.6f, 1.0f);
+    else {
+
+        // Another floor pattern. It didn't really work here.
+        //c = 1.0f-(Menger(p*8.0f + to_float3(0, 0.0f, 0))*1.6f) + 0.7f;
+        //c = smoothstep(0.1f, 1.0f, c);
+
+        // Simple grid setup for the floor.
+        c = tiles(swi2(p,x,z) + to_float2_s(0));
+
+        *bObjID = 0.0f;
+    }
+    return c;
+}
+
+// Standard function-based bump mapping function with some edging thrown into the mix.
+__DEVICE__ float3 doBumpMap(in float3 p, in float3 n, float bumpfactor, inout float *edge, float2 iResolution, inout float *objID, inout float *bObjID, bool OBJECT_CAMERA_WRAP){
+
+    // Resolution independent sample distance... Basically, I want the lines to be about
+    // the same pixel with, regardless of resolution... Coding is annoying sometimes. :)
+    float2 e = to_float2(2.0f/iResolution.y, 0);
+
+    float f  = bumpFunction(p, objID, bObjID, OBJECT_CAMERA_WRAP); // Hit point function sample.
+
+    float fx = bumpFunction(p - swi3(e,x,y,y), objID, bObjID, OBJECT_CAMERA_WRAP); // Nearby sample in the X-direction.
+    float fy = bumpFunction(p - swi3(e,y,x,y), objID, bObjID, OBJECT_CAMERA_WRAP); // Nearby sample in the Y-direction.
+    float fz = bumpFunction(p - swi3(e,y,y,x), objID, bObjID, OBJECT_CAMERA_WRAP); // Nearby sample in the Y-direction.
+
+    float fx2 = bumpFunction(p + swi3(e,x,y,y), objID, bObjID, OBJECT_CAMERA_WRAP); // Sample in the opposite X-direction.
+    float fy2 = bumpFunction(p + swi3(e,y,x,y), objID, bObjID, OBJECT_CAMERA_WRAP); // Sample in the opposite Y-direction.
+    float fz2 = bumpFunction(p + swi3(e,y,y,x), objID, bObjID, OBJECT_CAMERA_WRAP);  // Sample in the opposite Z-direction.
+
+    // The gradient vector. Making use of the extra samples to obtain a more locally
+    // accurate value. It has a bit of a smoothing effect, which is a bonus.
+    float3 grad = to_float3(fx - fx2, fy - fy2, fz - fz2)/(e.x*2.0f);
+    //float3 grad = (to_float3(fx, fy, fz ) - f)/e.x;  // Without the extra samples.
+
+    // Using the above samples to obtain an edge value. In essence, you're taking some
+    // surrounding samples and determining how much they differ from the hit point
+    // sample. It's really no different in concept to 2D edging.
+    *edge = _fabs(fx + fy + fz + fx2 + fy2 + fz2 - 6.0f*f);
+    *edge = smoothstep(0.0f, 1.0f, *edge/e.x);
+
+    // Some kind of gradient correction. I'm getting so old that I've forgotten why you
+    // do this. It's a simple reason, and a necessary one. I remember that much. :D
+    grad -= n*dot(n, grad);
+
+    return normalize(n + grad*bumpfactor); // Bump the normal with the gradient vector.
+}
+
+// The normal function with some edge detection rolled into it. Sometimes, it's possible to get away
+// with six taps, but we need a bit of epsilon value variance here, so there's an extra six.
+__DEVICE__ float3 nr(float3 p, inout float *edge, float t, float2 iResolution, inout float *objID, bool OBJECT_CAMERA_WRAP){
+
+    float2 e = to_float2(2.0f/iResolution.y, 0); // Larger epsilon for greater sample spread, thus thicker edges.
+
+    // Take some distance function measurements from either side of the hit point on all three axes.
+    float d1 = map(p + swi3(e,x,y,y), objID, OBJECT_CAMERA_WRAP), d2 = map(p - swi3(e,x,y,y), objID, OBJECT_CAMERA_WRAP);
+    float d3 = map(p + swi3(e,y,x,y), objID, OBJECT_CAMERA_WRAP), d4 = map(p - swi3(e,y,x,y), objID, OBJECT_CAMERA_WRAP);
+    float d5 = map(p + swi3(e,y,y,x), objID, OBJECT_CAMERA_WRAP), d6 = map(p - swi3(e,y,y,x), objID, OBJECT_CAMERA_WRAP);
+    float d  = map(p, objID, OBJECT_CAMERA_WRAP)*2.0f;  // The hit point itself - Doubled to cut down on calculations. See below.
+
+    // Edges - Take a geometry measurement from either side of the hit point. Average them, then see how
+    // much the value differs from the hit point itself. Do this for X, Y and Z directions. Here, the sum
+    // is used for the overall difference, but there are other ways. Note that it's mainly sharp surface
+    // curves that register a discernible difference.
+    *edge = _fabs(d1 + d2 - d) + _fabs(d3 + d4 - d) + _fabs(d5 + d6 - d);
+    //*edge = _fmaxf(_fmaxf(_fabs(d1 + d2 - d), _fabs(d3 + d4 - d)), _fabs(d5 + d6 - d)); // Etc.
+
+    // Once you have an edge value, it needs to normalized, and smoothed if possible. How you
+    // do that is up to you. This is what I came up with for now, but I might tweak it later.
+    *edge = smoothstep(0.0f, 1.0f, _sqrtf(*edge/e.x*2.0f));
+
+    // Redoing the calculations for the normal with a more precise epsilon value.
+    e = to_float2(0.005f*_fminf(1.0f + t, 5.0f), 0);
+    d1 = map(p + swi3(e,x,y,y), objID, OBJECT_CAMERA_WRAP), d2 = map(p - swi3(e,x,y,y), objID, OBJECT_CAMERA_WRAP);
+    d3 = map(p + swi3(e,y,x,y), objID, OBJECT_CAMERA_WRAP), d4 = map(p - swi3(e,y,x,y), objID, OBJECT_CAMERA_WRAP);
+    d5 = map(p + swi3(e,y,y,x), objID, OBJECT_CAMERA_WRAP), d6 = map(p - swi3(e,y,y,x), objID, OBJECT_CAMERA_WRAP);
+
+    // Return the normal.
+    // Standard, normalized gradient mearsurement.
+    return normalize(to_float3(d1 - d2, d3 - d4, d5 - d6));
+}
+
+// I keep a collection of occlusion routines... OK, that sounded really nerdy. :)
+// Anyway, I like this one. I'm assuming it's based on IQ's original.
+__DEVICE__ float cao(in float3 p, in float3 n, inout float *objID, bool OBJECT_CAMERA_WRAP){
+
+    float sca = 1.0f, occ = 0.0f;
+    for(float i=0.0f; i<5.0f; i++){
+
+        float hr = 0.01f + i*0.5f/4.0f;
+        float dd = map(n * hr + p, objID, OBJECT_CAMERA_WRAP);
+        occ += (hr - dd)*sca;
+        sca *= 0.7f;
+    }
+    return clamp(1.0f - occ, 0.0f, 1.0f);
+}
+
+
+// Cheap shadows are hard. In fact, I'd almost say, shadowing particular scenes with limited
+// iterations is impossible... However, I'd be very grateful if someone could prove me wrong. :)
+__DEVICE__ float softShadow(float3 ro, float3 lp, float k, inout float *objID, bool OBJECT_CAMERA_WRAP){
+
+    // More would be nicer. More is always nicer, but not really affordable... Not on my slow
+    // test machine, anyway.
+    const int maxIterationsShad = 20;
+
+    float3 rd = (lp-ro); // Unnormalized direction ray.
+
+    float shade = 1.0f;
+    float dist = 0.05f;
+    float end = _fmaxf(length(rd), 0.001f);
+    //float stepDist = end/float(maxIterationsShad);
+
+    rd /= end;
+
+    // Max shadow iterations - More iterations make nicer shadows, but slow things down. Obviously, the lowest
+    // number to give a decent shadow is the best one to choose.
+    for (int i=0; i<maxIterationsShad; i++){
+
+        float h = map(ro + rd*dist, objID, OBJECT_CAMERA_WRAP);
+        //shade = _fminf(shade, k*h/dist);
+        shade = _fminf(shade, smoothstep(0.0f, 1.0f, k*h/dist)); // Subtle difference. Thanks to IQ for this tidbit.
+        //dist += _fminf( h, stepDist ); // So many options here: dist += clamp( h, 0.0005f, 0.2f ), etc.
+        dist += clamp(h, 0.01f, 0.2f);
+
+        // Early exits from accumulative distance function calls tend to be a good thing.
+        if (h<0.001f || dist > end) break;
+    }
+
+    // I've added 0.5f to the final shade value, which lightens the shadow a bit. It's a preference thing.
+    return _fminf(max(shade, 0.0f) + 0.2f, 1.0f);
+}
+
+// Blackbody color palette. Handy for all kinds of things.
+__DEVICE__ float3 blackbodyPalette(float t, float ColTemp){
+
+    // t = tLow + (tHigh - tLow)*t;
+    t *= ColTemp;//4000.0f; // Temperature range. Hardcoded from 0K to 4000K, in this case.
+
+    // Planckian locus or black body locus approximated in CIE color space.
+    float cx = (0.860117757f + 1.54118254e-4*t + 1.28641212e-7*t*t)/(1.0f + 8.42420235e-4*t + 7.08145163e-7*t*t);
+    float cy = (0.317398726f + 4.22806245e-5*t + 4.20481691e-8*t*t)/(1.0f - 2.89741816e-5*t + 1.61456053e-7*t*t);
+
+    // Converting the chromacity coordinates to XYZ tristimulus color space.
+    float d = (2.0f*cx - 8.0f*cy + 4.0f);
+    float3 XYZ = to_float3(3.0f*cx/d, 2.0f*cy/d, 1.0f - (3.0f*cx + 2.0f*cy)/d);
+
+    // Converting XYZ color space to RGB: http://www.cs.rit.edu/~ncs/color/t_spectr.html
+    float3 RGB = mul_mat3_f3(to_mat3(3.240479f, -0.969256f, 0.055648f, -1.537150f, 1.875992f, -0.204043f, -0.498535f, 0.041556f, 1.057311f) , to_float3(1.0f/XYZ.y*XYZ.x, 1.0f, 1.0f/XYZ.y*XYZ.z));
+
+    // Apply Stefan–Boltzmann's law to the RGB color
+    return _fmaxf(RGB, to_float3_s(0.0f))*_powf(t*0.0004f, 4.0f);
+}
+
+// Pseudo environment mapping. Simlilar to above, but using tri-planar texturing for a more
+// even spread.
+__DEVICE__ float3 envMap(float3 rd, float3 n, bool WARM, __TEXTURE2D__ iChannel0){
+
+    float3 col = tex3D(iChannel0, rd, n);
+    col = smoothstep(to_float3_s(0.15f), to_float3_s(0.5f), col);
+    if (WARM)
+      col *= to_float3(1.35f, 1, 0.65f);
+
+    //col = col*0.5f + to_float3(1)*_powf(_fminf(to_float3(1.5f, 1, 1)*dot(col, to_float3(0.299f, 0.587f, 0.114f)), 1.0f),
+            //to_float3(1, 3, 10))*0.5f; // Contrast, coloring.
+
+    return col;
+}
+
+// Compact, self-contained version of IQ's 3D value noise function.
+__DEVICE__ float n3D(float3 p){
+
+    const float3 s = to_float3(7, 157, 113);
+    float3 ip = _floor(p); p -= ip;
+    float4 h = to_float4(0.0f, s.y, s.z, s.y + s.z) + dot(ip, s);
+    p = p*p*(3.0f - 2.0f*p); //p *= p*p*(p*(p * 6.0f - 15.0f) + 10.0f);
+    h = _mix(fract_f4(sin_f4(h)*43758.5453f), fract_f4(sin_f4(h + s.x)*43758.5453f), p.x);
+    swi2S(h,x,y, _mix(swi2(h,x,z), swi2(h,y,w), p.y));
+    return _mix(h.x, h.y, p.z); // Range: [0, 1].
+}
+
+// Layered noise.
+__DEVICE__ float fBm(float3 p){ return n3D(p)*0.57f + n3D(p*2.0f)*0.28f + n3D(p*4.0f)*0.15f; }
+
+__KERNEL__ void IndustrialComplexFpsControlFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float  iTimeDelta  = params->iTimeDelta;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   OBJECT_CAMERA_WRAP = params->OBJECT_CAMERA_WRAP;
+  bool   LookLeft = params->LookLeft;
+  bool   LookUp = params->LookUp;
+  bool   LookRight = params->LookRight;
+  bool   LookDown = params->LookDown;
+  bool   Crouch1 = params->Crouch1;
+  bool   Crouch2 = params->Crouch2;
+  bool   Forward = params->Forward;
+  bool   Back = params->Back;
+  bool   Right = params->Right;
+  bool   Left = params->Left;
+  bool   Sprint = params->Sprint;
+  bool   Jump = params->Jump;
+  float  Modus = params->Modus;
+  float4 ColorBKG1 = to_float4(params->ColorBKG1[0], params->ColorBKG1[1], params->ColorBKG1[2], params->ColorBKG1[3]);
+  float4 ColorBKG2 = to_float4(params->ColorBKG2[0], params->ColorBKG2[1], params->ColorBKG2[2], params->ColorBKG2[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  R = params->R;
+  float  STAND_H = params->STAND_H;
+  float  CROUCH_H = params->CROUCH_H;
+  float  GRAV = params->GRAV;
+  float  JUMP_V = params->JUMP_V;
+  float  SPEED = params->SPEED;
+  float  AIR_CTRL = params->AIR_CTRL;
+  float  GND_ACCEL = params->GND_ACCEL;
+  float  FRICTION = params->FRICTION;
+  float  RUN_MUL = params->RUN_MUL;
+  float  CROUCH_MUL = params->CROUCH_MUL;
+  float  PHYS_EPS = params->PHYS_EPS;
+  float  HR_EPS = params->HR_EPS;
+  float  ROT_SPEED = params->ROT_SPEED;
+  float  MOUSE_SENS = params->MOUSE_SENS;
+  float  STEP_H = params->STEP_H;
+  float  STEP_EPS = params->STEP_EPS;
+  float  Fov = params->Fov;
+  float  ColTemp = params->ColTemp;
+ 
+  // --------
+
+    Modus = (int)Modus<<1;
+
+    float objID; // Structure object ID.
+    float bObjID; // Bump map detail ID.
+
+    // Screen coordinates.
+    float2 u = (fragCoord - iResolution*0.5f)/iResolution.y;
+
+    // ---- Read FPS state from Buffer A in iChannel1 ----
+    float4 st0 = texelFetch(iChannel1, to_int2(0,0), 0); // swi3(eye,x,y,z), yaw
+    float4 st1 = texelFetch(iChannel1, to_int2(1,0), 0); // pitch, swi2(lastMouse,x,y), wasDown
+
+    float3 ro   = swi3(st0,x,y,z) + to_float3_aw(ViewXY, ViewZ);
+    float yaw = st0.w;
+    float pitch = st1.x;
+
+    // ---- Build camera basis from yaw/pitch ----
+    float3 fwd = normalize(to_float3(
+                                      _sinf(yaw) * _cosf(pitch),
+                                      _sinf(pitch),
+                                      -_cosf(yaw) * _cosf(pitch)
+                                    )+ to_float3_aw(ViewDXY, ViewDZ));
+    float3 rgt = normalize(cross(fwd, to_float3(0.0f, 1.0f, 0.0f)));
+    float3 up  = cross(rgt, fwd);
+
+    // ---- Ray direction (start simple; add distortion later) ----
+    float FOV = 3.14159f/Fov;//3.0f;
+    float3 rd = normalize(fwd + FOV*(u.x*rgt + u.y*up));
+
+    // ---- Light position: follow player (or keep original logic if you want) ----
+    float3 lp = ro + up*0.5f + fwd*5.5f;
+
+    // Raymarch.
+    float t = trace(ro, rd, &objID, OBJECT_CAMERA_WRAP);
+    float svObjID = objID;
+
+    // Surface hit point.
+    float3 sp = ro + rd*t;
+
+    // Normal with edge component.
+    float edge;
+    float3 sn = nr(sp, &edge, t, iResolution, &objID, OBJECT_CAMERA_WRAP);
+
+    // Shadows and ambient self shadowing.
+    float sh = softShadow(sp, lp, 16.0f, &objID, OBJECT_CAMERA_WRAP); // Soft shadows.
+    float ao = cao(sp, sn, &objID, OBJECT_CAMERA_WRAP); // Ambient occlusion.
+
+    // Light direction vector setup and light to surface distance.
+    float3 ld = lp - sp;
+    float lDist = _fmaxf(length(ld), 0.0001f);
+    ld /= lDist;
+
+    // Attenuation.
+    float atten = 1.0f/(1.0f + lDist*0.125f + lDist*lDist*0.025f);
+
+    // Heavy function-based bump mapping with bumped edges.
+    float edge2 = 0.0f;
+    if ((int)Modus&2) //(SHOW_DETAILS)
+      sn = doBumpMap(sp, sn, 0.15f/(1.0f + t/FAR), &edge2, iResolution, &objID, &bObjID, OBJECT_CAMERA_WRAP);
+
+    // Warping the texture cordinates by the camera path just slightly to break up the
+    // texture repetion a bit, especially on the floor.
+    float3 tsp = sp;
+    //swi2S(tsp,x,y, swi2(tsp,x,y) + swi2((camPath(tsp.z)),x,y)*0.35f);
+    swi2S(tsp,x,y, swi2(tsp,x,y) + to_float2(camPath(tsp.z).x,camPath(tsp.z).y)*0.35f);
+
+    // Texture-based bump mapping.
+    const float tSize = 1.0f/5.0f;
+    sn = doBumpMapT(iChannel0, tsp*tSize, sn, 0.01f/(1.0f + t/FAR));
+
+    // Diffuse, specular and Fresnel.
+    float dif = _fmaxf(dot(ld, sn), 0.0f);
+    float spe = _powf(_fmaxf(dot(reflect(rd, sn), ld), 0.0f), 8.0f);
+    float fre = _powf(clamp(dot(rd, sn) + 1.0f, 0.0f, 1.0f), 4.0f);
+    dif = _powf(dif, 4.0f)*0.66f + _powf(dif, 8.0f)*0.34f; // Ramping up the diffuse to make it shinier.
+
+    // Texturing the object -- Adding some rotation to break up the repetitiveness a bit.
+    float3 tspR = tsp;
+    swi2S(tspR,x,z, mul_mat2_f2(rot(3.14159f/2.5f), swi2(tspR,x,z)/1.5f));
+    float3 tx = tex3D(iChannel0, tspR*tSize, sn);
+    tx = smoothstep(to_float3_s(0.0f), to_float3_s(0.5f), tx)*1.5f; // Giving it a bit more brightness and contrast.
+    if ((int)Modus&4) //(WARM)
+      tx *= to_float3(1.35f, 1, 0.65f);
+
+    if ((int)Modus&2) //(SHOW_DETAILS)
+      if(bObjID > 0.5f && bObjID < 1.5f) tx *= to_float3(1.3f, 0.65f, 0.35f);//to_float3(1.5f, 0.85f, 0.25f);
+
+    // Lazy way to identify the mesh floor area. It saves an object identification in the
+    // distance function.
+    if(sp.y<-3.49f && sp.y>-3.51f) {
+        //dif = (_sqrtf(dif));
+        if ((int)Modus&2) //(SHOW_DETAILS)
+          tx *= tiles(swi2(sp,x,z));
+
+        tx *= to_float3(1.3f, 1, 0.7f);
+    }
+
+    // Applying the normal-based and bump mapped edges.
+    tx *= (1.0f-edge*0.7f)*(1.0f-edge2*0.7f);
+
+    // Combining the terms above to produce the final color.
+    float3 fc = tx*(dif*1.5f + 0.2f);
+    if ((int)Modus&4) //(WARM)
+      fc += tx*to_float3(1, 0.7f, 0.4f)*fre*4.0f + to_float3(1.35f, 1, 0.65f)*to_float3(1, 0.7f, 0.3f)*spe*3.0f;
+    else
+      fc += tx*to_float3(0.5f, 0.7f, 1)*fre*4.0f + to_float3(1, 0.7f, 0.3f)*spe*3.0f;
+
+    // Adding in some reflective looking color. It's completely fake, but subtle enough so
+    // that you don't notice.
+    float3 env = envMap(tsp*tSize + reflect(rd, sn), sn, ((int)Modus&2), iChannel0);//svSn*0.75f + sn*.25
+    fc += env*0.5f;
+
+    // Shading.
+    fc *= atten*sh*ao;
+
+    // Extra processing. A little too heavy going for my liking.
+    if ((int)Modus&8)
+      fc = fc*0.5f + to_float3_s(1)*pow_f3(_fmaxf(fc, to_float3_s(0.0f)), to_float3(1, 1.5f, 2.5f))*0.5f; // Contrast, coloring.
+
+    float noise;
+    float3 bg;
+    // Mixing in some fiery background haze, otherwise known as a lazy, two dollar, noise effect. :)
+    if ((int)Modus&4) //(WARM)
+    {
+      noise = (fBm(sp - iTime*2.0f)*0.08f + 0.94f)*(rd.y*0.25f + 0.75f);
+      bg   = blackbodyPalette(noise, ColTemp);
+    }
+    else
+    {
+      noise = (fBm(sp - iTime*2.0f)*0.15f + 0.9f)*(rd.y*0.5f + 0.5f);
+      //bg   = _mix(to_float3(0.3f, 0.4f, 0.7f), to_float3(0.7f, 0.9f, 1), noise);
+      bg   = _mix(swi3(ColorBKG1,x,y,z), swi3(ColorBKG2,x,y,z), noise);
+    }
+    fc = _mix(bg, fc, 1.0f - smoothstep(0.0f, 1.0f, t*t/FAR/FAR) ); //1.0f/(1.0f + t*t*0.003f)
+
+    // Approximate gamma correction.
+    fragColor = to_float4_aw(sqrt_f3(clamp(fc, 0.0f, 1.0f)), 1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InOBJECT_CAMERA_WRAPCheckbox = self:AddInput("OBJECT_CAMERA_WRAP", "OBJECT_CAMERA_WRAP", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InLookLeftCheckbox = self:AddInput("LookLeft", "LookLeft", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InLookUpCheckbox = self:AddInput("LookUp", "LookUp", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InLookRightCheckbox = self:AddInput("LookRight", "LookRight", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InLookDownCheckbox = self:AddInput("LookDown", "LookDown", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InCrouch1Checkbox = self:AddInput("Crouch1", "Crouch1", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InCrouch2Checkbox = self:AddInput("Crouch2", "Crouch2", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InForwardCheckbox = self:AddInput("Forward", "Forward", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InBackCheckbox = self:AddInput("Back", "Back", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InRightCheckbox = self:AddInput("Right", "Right", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InLeftCheckbox = self:AddInput("Left", "Left", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InSprintCheckbox = self:AddInput("Sprint", "Sprint", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InJumpCheckbox = self:AddInput("Jump", "Jump", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InModusButton = self:AddInput("Modus", "Modus", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "MultiButtonControl",
+      MBTNC_ForceButtons = true,
+      MBTNC_Type         = "Toggle", 
+      MBTNC_ShowName     = false,
+    { MBTNC_AddButton  = " SHOW_DETAILS", },  { MBTNC_AddButton  = " WARM", },  { MBTNC_AddButton  = " SPECIAL", }, 
+		  MBTNC_StretchToFit = true,
+      IC_NoLabel         = true,
+		  INP_Default        = 0,
+      IC_Visible         = true,
+  })
+
+  self:BeginControlNest("ColorBKG1", "ColorBKG1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBKG1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBKG1ColorR = self:AddInput("Red",   "ColorBKG1Red",   { INP_Default  = 0.3, IC_ControlID = 0, attrs})
+    InColorBKG1ColorG = self:AddInput("Green", "ColorBKG1Green", { INP_Default  = 0.4, IC_ControlID = 1, attrs})
+    InColorBKG1ColorB = self:AddInput("Blue",  "ColorBKG1Blue",  { INP_Default  = 0.7, IC_ControlID = 2, attrs})
+    InColorBKG1ColorA = self:AddInput("Alpha", "ColorBKG1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorBKG2", "ColorBKG2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBKG2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBKG2ColorR = self:AddInput("Red",   "ColorBKG2Red",   { INP_Default  = 0.7, IC_ControlID = 0, attrs})
+    InColorBKG2ColorG = self:AddInput("Green", "ColorBKG2Green", { INP_Default  = 0.9, IC_ControlID = 1, attrs})
+    InColorBKG2ColorB = self:AddInput("Blue",  "ColorBKG2Blue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColorBKG2ColorA = self:AddInput("Alpha", "ColorBKG2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InRSlider = self:AddInput("R", "R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.10,
+      })
+
+  InSTAND_HSlider = self:AddInput("STAND_H", "STAND_H", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.00,
+      })
+
+  InCROUCH_HSlider = self:AddInput("CROUCH_H", "CROUCH_H", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.75,
+      })
+
+  InGRAVSlider = self:AddInput("GRAV", "GRAV", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 9.8,
+      })
+
+  InJUMP_VSlider = self:AddInput("JUMP_V", "JUMP_V", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 6.8,
+      })
+
+  InSPEEDSlider = self:AddInput("SPEED", "SPEED", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 5.5,
+      })
+
+  InAIR_CTRLSlider = self:AddInput("AIR_CTRL", "AIR_CTRL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 6.0,
+      })
+
+  InGND_ACCELSlider = self:AddInput("GND_ACCEL", "GND_ACCEL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 30.0,
+          INP_Default        = 18.0,
+      })
+
+  InFRICTIONSlider = self:AddInput("FRICTION", "FRICTION", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 30.0,
+          INP_Default        = 12.0,
+      })
+
+  InRUN_MULSlider = self:AddInput("RUN_MUL", "RUN_MUL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 2.75,
+      })
+
+  InCROUCH_MULSlider = self:AddInput("CROUCH_MUL", "CROUCH_MUL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.45,
+      })
+
+  InPHYS_EPSSlider = self:AddInput("PHYS_EPS", "PHYS_EPS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.1,
+          INP_MaxScale       = 0.1,
+          INP_Default        = 0.0015,
+      })
+
+  InHR_EPSSlider = self:AddInput("HR_EPS", "HR_EPS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.1,
+          INP_MaxScale       = 0.1,
+          INP_Default        = 0.003,
+      })
+
+  InROT_SPEEDSlider = self:AddInput("ROT_SPEED", "ROT_SPEED", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.8,
+      })
+
+  InMOUSE_SENSSlider = self:AddInput("MOUSE_SENS", "MOUSE_SENS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 3.5,
+      })
+
+  InSTEP_HSlider = self:AddInput("STEP_H", "STEP_H", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.35,
+      })
+
+  InSTEP_EPSSlider = self:AddInput("STEP_EPS", "STEP_EPS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.1,
+          INP_MaxScale       = 0.1,
+          INP_Default        = 0.002,
+      })
+
+  InFovSlider = self:AddInput("Fov", "Fov", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.1,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.0,
+      })
+
+  InColTempSlider = self:AddInput("ColTemp", "ColTemp", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.1,
+          INP_MaxScale       = 6000.0,
+          INP_Default        = 4000.0,
+      })
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, LINK_Visible = false, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ShaderFuse.end_create()
+
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Nur ( float16/32 )
+  if InDepth:GetValue(req).Value == 0 then 
+ 	   SourceDepth = 7 
+	else
+	   SourceDepth = 8
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "IndustrialComplexFpsControlFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "IndustrialComplexFpsControlFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iTimeDelta = 1/framerate
+  params.iFrame = req.Time
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.OBJECT_CAMERA_WRAP = InOBJECT_CAMERA_WRAPCheckbox:GetValue(req).Value
+  params.LookLeft = InLookLeftCheckbox:GetValue(req).Value
+  params.LookUp = InLookUpCheckbox:GetValue(req).Value
+  params.LookRight = InLookRightCheckbox:GetValue(req).Value
+  params.LookDown = InLookDownCheckbox:GetValue(req).Value
+  params.Crouch1 = InCrouch1Checkbox:GetValue(req).Value
+  params.Crouch2 = InCrouch2Checkbox:GetValue(req).Value
+  params.Forward = InForwardCheckbox:GetValue(req).Value
+  params.Back = InBackCheckbox:GetValue(req).Value
+  params.Right = InRightCheckbox:GetValue(req).Value
+  params.Left = InLeftCheckbox:GetValue(req).Value
+  params.Sprint = InSprintCheckbox:GetValue(req).Value
+  params.Jump = InJumpCheckbox:GetValue(req).Value
+  params.Modus = InModusButton:GetValue(req).Value
+  params.ColorBKG1 = {
+    InColorBKG1ColorR:GetValue(req).Value,
+    InColorBKG1ColorG:GetValue(req).Value,
+    InColorBKG1ColorB:GetValue(req).Value,InColorBKG1ColorA:GetValue(req).Value
+  }
+  params.ColorBKG2 = {
+    InColorBKG2ColorR:GetValue(req).Value,
+    InColorBKG2ColorG:GetValue(req).Value,
+    InColorBKG2ColorB:GetValue(req).Value,InColorBKG2ColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.R = InRSlider:GetValue(req).Value
+  params.STAND_H = InSTAND_HSlider:GetValue(req).Value
+  params.CROUCH_H = InCROUCH_HSlider:GetValue(req).Value
+  params.GRAV = InGRAVSlider:GetValue(req).Value
+  params.JUMP_V = InJUMP_VSlider:GetValue(req).Value
+  params.SPEED = InSPEEDSlider:GetValue(req).Value
+  params.AIR_CTRL = InAIR_CTRLSlider:GetValue(req).Value
+  params.GND_ACCEL = InGND_ACCELSlider:GetValue(req).Value
+  params.FRICTION = InFRICTIONSlider:GetValue(req).Value
+  params.RUN_MUL = InRUN_MULSlider:GetValue(req).Value
+  params.CROUCH_MUL = InCROUCH_MULSlider:GetValue(req).Value
+  params.PHYS_EPS = InPHYS_EPSSlider:GetValue(req).Value
+  params.HR_EPS = InHR_EPSSlider:GetValue(req).Value
+  params.ROT_SPEED = InROT_SPEEDSlider:GetValue(req).Value
+  params.MOUSE_SENS = InMOUSE_SENSSlider:GetValue(req).Value
+  params.STEP_H = InSTEP_HSlider:GetValue(req).Value
+  params.STEP_EPS = InSTEP_EPSSlider:GetValue(req).Value
+  params.Fov = InFovSlider:GetValue(req).Value
+  params.ColTemp = InColTempSlider:GetValue(req).Value
+
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",Image_Buff_GlobalA)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",iChannel1)           -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "IndustrialComplexFpsControlFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", iChannel0)            -- Anpassen !!
+    node:AddInput("iChannel1", Image_Buff_GlobalA)   -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

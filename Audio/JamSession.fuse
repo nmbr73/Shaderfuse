@@ -1,0 +1,541 @@
+--[[--/*
+
+  JamSession.fuse
+
+  Based on https://www.shadertoy.com/view/XdsyW4 a WebGL shader created by Passion.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  Alpha;
+  bool   Textur;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'https://soundcloud.com/garth_knight/garth-knight-regardez-moi' to iChannel0
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+#define NUM_STEPS 32
+#define EPS 0.001f
+#define FAR_CLIP 15.0f
+#define LEVELS_SCALAR 1.0f
+
+#define time iTime
+
+// reference: https://www.shadertoy.com/view/4lGSzy
+// 2017 passion
+
+__DEVICE__ float noise3D(float3 p)
+{
+  return fract(_sinf(dot(p ,to_float3(12.9898f,78.233f,12.7378f))) * 43758.5453f)*2.0f-1.0f;
+}
+
+__DEVICE__ float3 mixc(float3 col1, float3 col2, float v)
+{
+    v = clamp(v,0.0f,1.0f);
+    return col1+v*(col2-col1);
+}
+
+// polynomial smooth _fminf (k = 0.1f);
+__DEVICE__ float smin( float a, float b, float k )
+{
+    float h = clamp( 0.5f+0.5f*(b-a)/k, 0.0f, 1.0f );
+    return _mix( b, a, h ) - k*h*(1.0f-h);
+}
+
+__DEVICE__ mat3 lookAt(float3 origin, float3 target, float roll) {
+  float3 rr = to_float3(_sinf(roll), _cosf(roll), 0.0f);
+  float3 ww = normalize(target - origin);
+  float3 uu = normalize(cross(ww, rr));
+  float3 vv = normalize(cross(uu, ww));
+
+  return to_mat3_f3(uu, vv, ww);
+}
+
+__DEVICE__ float map(float3 p,float iTime){
+    float c = length(p) - 0.5f;
+
+    float c1 = length(p) - 0.20f;
+    p.x += 0.75f*_sinf(time*1.4f);
+    p.y -= 0.75f*_cosf(time/2.0f);
+    p.z += 0.75f*_cosf(time+_sinf(time));
+
+    float c2 = length(p) - 0.33f;
+    p.x -= 0.75f*_sinf(time/0.4f);
+    p.y += 0.75f*_cosf(time/2.0f);
+    p.z -= 0.75f*_cosf(time+_sinf(time*3.0f));
+
+    float c3 = length(p) - 0.30f;
+    p.x += 0.75f*_cosf(time/2.4f);
+    p.y -= 0.75f*_cosf(time*1.2f);
+    p.z += 0.75f*_sinf(time+_sinf(time));
+
+    float c4 = length(p) - 0.175f;
+    p.x -= 0.75f*_sinf(time*1.8f);
+    p.y += 0.75f*_sinf(time/2.0f);
+    p.z -= 0.75f*_cosf(time+_sinf(time));
+
+    float f = smin(c, c2, 0.3f);
+    f = smin(f, c1, 0.2f);
+    f = smin(f, c3, 0.33f);
+    return smin(f, c4, 0.4f);
+}
+
+
+__DEVICE__ float trace(float3 r, float3 o,float iTime){
+    float t = 0.0f;
+    for(int i = 0; i < NUM_STEPS; i++){
+        float3 p = o+r * t;
+        float d = map(p,iTime);
+        if(_fabs(d) < EPS || t > FAR_CLIP)
+            break;
+        t += d;// * 0.75f;
+    }
+    return t;
+}
+
+__DEVICE__ float3 getNormal(float3 p,float iTime){
+    float2 e = to_float2(0.0f, EPS);
+  return normalize((to_float3(map(p + swi3(e,y,x,x),iTime),
+                              map(p + swi3(e,x,y,x),iTime),
+                              map(p + swi3(e,x,x,y),iTime)) - map(p,iTime)) / e.y);
+}
+
+__KERNEL__ void JamSessionFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float  Alpha = params->Alpha;
+  bool   Textur = params->Textur;
+
+  // --------
+
+
+
+    float2 uv = fragCoord / iResolution;
+    uv = uv * 2.0f - 1.0f;
+    uv.x *= iResolution.x / iResolution.y;
+
+    fragColor = to_float4_s(0.0f);
+
+    //float time = iTime;
+
+    float3 l = normalize(to_float3(0.3f, 0.8f, 0.2f));
+    float3 ray = normalize(to_float3_aw(uv, 1.0f - dot(uv, uv) * 0.25f));
+    float3 o = to_float3(2.0f*_cosf(time), -0.5f*0.75f+_sinf(time/2.0f)*0.75f,
+                         2.0f*_sinf(time));
+    mat3 camMat = lookAt(o, to_float3_s(0.0f), _sinf(time*0.13f)*0.25f);
+
+    ray = mul_mat3_f3(camMat , ray);
+
+    float3 col = to_float3_s(0.0f);
+    float3 ref = to_float3_s(0.0f);
+
+    // https://www.shadertoy.com/view/4lGSzy
+    float nBands = 32.0f;
+    float i = _floor(ray.x*nBands);
+    float f = fract(ray.x*nBands);
+    float band = i/nBands;
+    band *= band*band;
+    band = band*0.995f;
+    band += 0.005f;
+    float s = texture( iChannel0, to_float2(band,0.25f) ).x;
+
+    /* Gradient colors and amount here */
+    const int nColors = 4;
+    float3 colors[4];
+    colors[0] = to_float3(0.0f,0.0f,1.0f);
+    colors[1] = to_float3(0.0f,1.0f,1.0f);
+    colors[2] = to_float3(1.0f,1.0f,0.0f);
+    colors[3] = to_float3(1.0f,0.0f,0.0f);
+
+    float3 gradCol = colors[0];
+    float nc = (float)(nColors)-1.0f;
+    for(int i = 1; i < nColors; i++)
+    {
+      gradCol = mixc(gradCol,colors[i],(s-(float)(i-1)/nc)*nc);
+    }
+
+    col += to_float3_s(1.0f-smoothstep(0.0f,0.01f,ray.y-s*LEVELS_SCALAR));
+    col *= gradCol;
+
+    ref += to_float3_s(1.0f-smoothstep(0.0f,-0.01f,ray.y+s*LEVELS_SCALAR));
+    ref*= gradCol*smoothstep(-0.5f,0.5f,ray.y);
+
+    col = _mix(ref,col,smoothstep(-0.01f,0.01f,ray.y));
+
+    col *= smoothstep(0.125f,0.375f,f);
+    col *= smoothstep(0.875f,0.625f,f);
+
+    col = clamp(col, 0.0f, 1.0f);
+
+    float dither = noise3D(to_float3_aw(swi2(ray,z,y),time))*15.0f/256.0f;
+    col += dither;
+
+
+    float hit = trace(ray, o,iTime);
+    float3 sp = o+ray * hit;
+    float d = map(sp,iTime);
+    float3 n = getNormal(sp,iTime);
+
+
+    float3 diff = to_float3_s(clamp(dot(n, l), 0.15f, 1.0f));
+
+    if(Textur)
+       diff = swi3(texture(iChannel1, swi2(sp,x,z)+0.5f),x,y,z);
+
+
+    if(_fabs(d) < 0.05f)
+        fragColor = to_float4_aw(diff,Alpha);
+    else
+        fragColor = to_float4_aw(col, Alpha);
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  InAlphaSlider = self:AddInput("Alpha", "Alpha", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 1.0,
+  })
+
+  InTexturCheckbox = self:AddInput("Textur", "Textur", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "JamSessionFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.Alpha = InAlphaSlider:GetValue(req).Value
+  params.Textur = InTexturCheckbox:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+

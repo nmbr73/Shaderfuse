@@ -1,0 +1,768 @@
+--[[--
+EggHunt
+
+    Based on https://www.shadertoy.com/view/ttyfDV a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by JiPi (https://www.youtube.com/channel/UCItO4q_3JgMVV2MFIPDGQGg)
+    for use in DaFusion.
+
+    Shader created by sylvain69780
+
+--]] --
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+
+  })
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+EggHuntParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  float rainamount;
+  float clump;
+  float damp;
+  float phase;
+  float iMouse[2];
+  float color[3];
+  int width;
+  int height;
+  float itime;
+  int compOrder;
+]]
+
+
+-- source of kernel
+EggHuntKernel =
+    [[
+//-----------------------
+//-------- mat2 ---------
+//-----------------------
+ typedef struct
+  {
+  float2 r0, r1;
+  } mat2;
+
+ __DEVICE__ inline mat2 make_mat2( float A, float B, float C, float D)
+  {
+  mat2 E;
+  E.r0 = to_float2(A,B);
+  E.r1 = to_float2(C,D);
+  return E;
+  }
+
+__DEVICE__ inline float2 mat2_multi_f2( mat2 B, float2 A)
+  {
+  float2 C;
+  C.x = A.x * B.r0.x + A.y * B.r0.y;
+  C.y = A.x * B.r1.x + A.y * B.r1.y;
+  return C;
+  }
+
+
+#if defined(DEVICE_IS_OPENCL) || defined(DEVICE_IS_METAL)
+	#define reflect(I,N) (I-2.0f*dot(N,I)*N)
+#endif
+
+
+#define fract_f(a) a - _floor(a)
+__DEVICE__ float3 fract_f3(float3 A){return make_float3(A.x - _floor(A.x), A.y - _floor(A.y), A.z - _floor(A.z));}
+#define lpowf _powf
+__DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
+__DEVICE__ float2 abs_f2(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+
+__DEVICE__ float sign_f(float value) { if (value == 0.0f) return 0.0f; return value > 0.0f ? 1.0f : -1.0f;}
+__DEVICE__ float3 sign_f3(float3 a) {return (to_float3(sign_f(a.x), sign_f(a.y),sign_f(a.z)));}
+__DEVICE__ float3 cos_f3(float3 i) {float3 r; r.x = _cosf(i.x); r.y = _cosf(i.y); r.z = _cosf(i.z); return r;}
+
+
+#define swixyz(V) to_float3((V).x,(V).y,(V).z)
+#define swizyx(V) to_float3((V).z,(V).y,(V).x)
+
+#define swixy(V) to_float2((V).x,(V).y)
+#define swixz(V) to_float2((V).x,(V).z)
+#define swiyz(V) to_float2((V).y,(V).z)
+
+  #define swixyy(V) to_float3((V).x,(V).y,(V).y)
+  #define swiyxy(V) to_float3((V).y,(V).x,(V).y)
+  #define swiyyx(V) to_float3((V).y,(V).y,(V).x)
+
+
+// I invented nothing new here and I should thank all of you of course.
+// Thanks to IQ, BigWings, Shane, Fabrice, Blackle, Shaw ...
+// For all your code I reuse here ...
+// many thanks for your great tutorials, demos, and also your kind comments.
+
+// Fork of "RayMarching starting point" by BigWIngs. https://shadertoy.com/view/WtGXDD
+
+#define MAX_STEPS 100
+#define MAX_DIST 9.0f
+#define SURF_DIST 0.001f
+
+#define S smoothstep
+#define T (itime+2.0f)
+
+// Fabrice Neyrey https://www.shadertoy.com/view/ll2cDc
+// --- short approx hue --------------
+// Take care, already already sRGB final space, square it to fight final Gamma correction
+
+//#define hue(v)  ( 0.6f + 0.6f * _cosf( 6.3f*(v)  + to_float4(0,23,21,0)  ) )
+#define hue(v)  ( 0.6f + 0.6f * _cosf( 6.3f*(v)  + to_float3(0,23,21)  ) )
+
+// Moss's Egg SDF https://www.shadertoy.com/view/wsBBR3
+
+__DEVICE__ float sdMossEgg( float2 p)
+{
+    p.x = _fabs(p.x);
+    return ((p.y <= 0.0f)          ? length(p)   - 1.0f :
+           ((p.y-1.0f) > p.x)      ? length(p-to_float2( 0.0f,1.0f)) - (2.0f-_sqrtf(2.0f)) :
+                                   length(p-to_float2(-1.0f,0.0f)) - 2.0f);
+}
+
+__DEVICE__ mat2 Rot(float a) {
+    float s=_sinf(a), c=_cosf(a);
+    return make_mat2(c, -s, s, c);
+}
+
+// Dave Hoskins https://www.shadertoy.com/view/4djSRW
+__DEVICE__ float hash13(float3 p3)
+{
+    p3  = fract_f3(p3 * 0.1031f);
+    p3 += dot(p3, swizyx(p3) + 31.32f);
+    return fract_f((p3.x + p3.y) * p3.z);
+}
+
+__DEVICE__ float3 brownianMove(float3 p,float id, float itime) {
+
+    float2 pxy = mat2_multi_f2(Rot(id*T), swixy(p));
+    p.x=pxy.x;p.y=pxy.y;
+
+    float2 pxz = mat2_multi_f2(Rot(T*0.2f), swixz(p));
+    p.x=pxz.x;p.z=pxz.y;
+
+    p.y -= _sinf(id*6.28f+T)*0.2f-0.1f;
+    return p;
+}
+
+__DEVICE__ float GetDist(float3 p,float id, float itime) {
+    p = brownianMove(p,id, itime);
+    float2 q =to_float2(length(swixz(p)),p.y);
+    float d = sdMossEgg(q*6.0f)/6.0f;
+    return d;
+}
+
+// BigWIngs code for domain repetition
+// Comment Blackle shader https://www.shadertoy.com/view/Wl3fD2
+
+__DEVICE__ float RayMarch(float3 ro, float3 rd, float itime) {
+    float dO=0.0f;
+    float3 dir = sign_f3(rd)*0.5f;
+    for(int i=0; i<MAX_STEPS; i++) {
+        float3 p = ro + rd*dO,
+        q = fract_f3(p)-0.5f,    // get repeated domain
+        rC = (dir-q)/rd;// ray to cell boundary
+        float id=hash13(_floor(p));
+        float dC = _fminf(_fminf(rC.x, rC.y), rC.z)+0.0001f;// distance to cell just past boundary
+        float dS = GetDist(q,id, itime);
+        // get either distance to object current cell
+        // or distance (along ray) to cell boundary
+        dO += _fminf(dS, dC);
+        //dO += dS;        // normal version, with artifacts
+        if(dO>MAX_DIST || _fabs(dS)<SURF_DIST) break;
+    }
+    return dO;
+}
+
+__DEVICE__ float3 GetNormal(float3 p,float id, float itime) {
+	float d = GetDist(p,id, itime);
+    float2 e = to_float2(0.001f, 0);
+
+    float3 n = d - to_float3(
+        GetDist(p-swixyy(e),id, itime),
+        GetDist(p-swiyxy(e),id, itime),
+        GetDist(p-swiyyx(e),id, itime));
+    return normalize(n);
+}
+
+__DEVICE__ float3 GetRayDir(float2 uv, float3 p, float3 l, float z) {
+		float3 f = normalize(l-p),
+        r = normalize(cross(to_float3(0,1,0), f)),
+        u = cross(f,r),
+        c = f*z,
+        i = c + uv.x*r + uv.y*u,
+        d = normalize(i);
+    return d;
+}
+
+__DEVICE__ float3 Bg(float3 rd, __TEXTURE2D__ iChannel0) {
+
+    return swixyz(_tex2DVecN(iChannel0, rd.x,rd.y,15));
+
+//return swixyz(_tex2DVecN(iChannel0, (_atan2f(rd.y , rd.x) / 6.283185307179586476925286766559) + 0.5, _acosf(rd.z) / 3.1415926535897932384626433832795,15));
+
+
+}
+
+// Shane https://www.shadertoy.com/view/llSyDh
+__DEVICE__ float dots(float2 p,float id){
+	p = abs_f2(to_float2(fract_f(p.x)-0.5f,(p.y-clamp(_round(p.y),-1.0f,1.0f))));
+    return
+    id >0.80f ? length(p) : // Circles.
+    id >0.60f ? (p.x + p.y)/1.5f + 0.035f : // Diamonds.
+    id >0.40f ? _fmaxf(p.x, p.y) + 0.03f : // Squares.
+    id >0.20f ? _fmaxf(p.x*0.866025f + p.y*0.5f, p.y) + 0.01f: // Hexagons.
+    _fminf((p.x + p.y)*0.7071f, _fmaxf(p.x, p.y)) + 0.08f; // Stars.
+}
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+    float C = _cosf(angle);
+  float S = _sinf(angle);
+
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+
+return uv;
+}
+
+//############################################################################################################################
+__KERNEL__ void EggHuntKernel(__CONSTANTREF__ EggHuntParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height)
+  {
+
+     //-----------------------
+     float2 fragCoord = to_float2(x, y);
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime * params->freq;
+	 float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+    float2 uv = (fragCoord-0.5f*iResolution)/iResolution.y;
+
+	// Standardparameter
+    uv -=  to_float2( (params->center[0]-0.5f)*ratio, (params->center[1]-0.5f));
+    uv *= params->scale;
+    float2 pivot = to_float2(((params->pivot[0]-0.5f)*ratio),(params->pivot[1]-0.5f));
+    uv = spin(uv, pivot, params->angle, 1.0f);
+
+    float2 m = to_float2_v(params->iMouse);
+    float3 ro = to_float3(0, 0.5f, -3.5f);
+    float3 ta = to_float3(0,1.0f,0.0f);
+    if ( params->iMouse[0] > 0.0f ) {
+        m=2.0f*to_float2_v(params->iMouse)-1.0f;
+        float2 royz = mat2_multi_f2(Rot(-m.y*3.14f),swiyz(ro));
+	    ro.y=royz.x;ro.z=royz.y;
+
+        float2 roxz = mat2_multi_f2(Rot(-m.x*6.2831f), swixz(ro));
+	    ro.x=roxz.x;ro.z=roxz.y;
+    }
+    ro.z+=T*0.3f;
+    ta.z+=T*0.3f;
+
+    float3 rd = GetRayDir(uv, ro, ta, 1.0f);
+    float3 bgCol = 0.5f*to_float3(1.0f,1.0f,1.0f)/(1.5f+_sinf(rd.x*5.0f));
+    float3 col = bgCol;
+    float d = RayMarch(ro, rd, itime);
+    if(d<MAX_DIST) {
+        float3 p = ro + rd * d,
+        q = fract_f3(p)-0.5f;    // get repeated domain
+        float id=hash13(_floor(p));
+        float3 c = to_float3_s(1);
+        {
+            float3 pp = brownianMove(q,id, itime);
+            float2 uv = to_float2(_atan2f(pp.z,pp.x)/6.28f,pp.y);
+//          float3 hu = swixyz(hue(id*5.0f));
+
+	        float3 hu =  0.6f + 0.6f * cos_f3( 6.3f*(id*5.0f) + to_float3(0,23,21));
+			//float3 hu =  0.6f + 0.6f * cos_f3( 6.3f*(id*5.0f) + to_float3_v(params->color)*100);
+
+			hu *= to_float3_v(params->color);
+
+            c = _mix(c,hu*hu,S(0.35f,0.30f,dots(uv*10.0f,id)));
+        }
+        float3 n = GetNormal(q,id, itime);
+        float3 r = 1.0f-reflect(rd, n);
+        float dif = dot(n, normalize(to_float3(1,1,-3)))*0.5f+0.5f;
+        //r.y/=ratio;
+        float3 ref = Bg(n , iChannel0); //r
+        col = ref*dif*c;
+
+        // fog
+        float fog=S(9.0f,7.0f,d);
+        col = _mix(bgCol, col, fog);
+    }
+    col = pow_f3(col, to_float3_s(0.4545f));// gamma correction
+    fragColor = to_float4_aw(col,1.0f);
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+function Create()
+
+ShaderFuse.begin_create()
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  --------------- EggHunt ---------------
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "Center",
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+    })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",
+    IC_Visible          = false,
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	  INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+    })
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true,
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+  })
+
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	  INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+
+
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	  IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+self:BeginControlNest("Parameter", "Par", true, {})
+  InMouse = self:AddInput("Look","Look", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.5,
+    INP_DefaultY = 0.5,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+  InLayer1 = self:AddInput("Layer 1","Layer1", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.25,
+    INP_DefaultY = 0.75,
+	IC_Visible          = false,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+  InLayer2 = self:AddInput("Layer 2","Layer2", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.0,
+    INP_DefaultY = 0.5,
+	IC_Visible          = false,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+
+ InRedCH = self:AddInput("Red", "RedCH", {
+    ICS_Name            = "Egg Color",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.42,
+    INP_MaxScale        = 0.5,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 0,
+  })
+  InGreenCH = self:AddInput("Green", "GreenCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.32,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 1,
+  })
+  InBlueCH = self:AddInput("Blue", "BlueCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.12,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 2,
+  })
+
+self:EndControlNest()
+
+-- if dctlfuse_author=='JiPi' then
+-- 	sw_visible = true
+-- else
+-- 	sw_visible = false
+-- end
+	-- InLogoSw = self:AddInput("Logo", "LogoSw", {
+	--   LINKID_DataType = "Number",
+	--   INPID_InputControl = "CheckboxControl",
+	--   INP_Integer = true,
+	--   INP_DoNotifyChanged = true,
+	--   INP_Default         = 1,
+	--   IC_Visible          = sw_visible,
+	--   INP_External        = false,
+	--   INP_Passive         = true,
+	-- })
+--------------------------------------------
+ ShaderFuse.end_create()
+--------------------------------------------
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+	--LINK_Visible = false,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end
+
+
+-------------------------------------------------------------------
+--       NotifyChanged
+-------------------------------------------------------------------
+function NotifyChanged(inp, param, time)
+
+
+  if inp ~= nil and param ~= nil then
+
+    if inp == InCenter then
+        -- the center moved, reposition the axis according to the current offset
+        nCenterX = param.X
+        nCenterY = param.Y
+
+        InPivot:SetAttrs({
+            PCD_OffsetX = nCenterX - 0.5,
+            PCD_OffsetY = nCenterY - 0.5,
+            })
+
+        InAngle:SetAttrs({
+            PCD_OffsetX = (nCenterX - 0.5)/100,
+            PCD_OffsetY = (nCenterY - 0.5)/100,
+            })
+    end
+    if inp == InWidgets then
+      if param.Value == 1.0 then
+         InCenter:SetAttrs({ PC_Visible = false })
+         InAngle:SetAttrs({ PC_Visible = false })
+         InPivot:SetAttrs({ PC_Visible = false })
+         InScale:SetAttrs({ PC_Visible = false })
+      else
+         InCenter:SetAttrs({ PC_Visible = true })
+         InAngle:SetAttrs({ PC_Visible = true })
+         InPivot:SetAttrs({ PC_Visible = true })
+         InScale:SetAttrs({ PC_Visible = true })
+      end
+    end
+
+    if inp == InStop then
+      if param.Value == 1 then
+	     InActtime:SetAttrs({IC_Visible = true})
+	  else
+	     InActtime:SetAttrs({IC_Visible = false})
+	  end
+	end
+
+
+	  -- if param.Value == 1 then
+		--  authorlogo:SetAttrs({IC_Visible = true})
+	  -- else
+		--  authorlogo:SetAttrs({IC_Visible = false})
+	  -- end
+  end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle = -InAngle:GetValue(req).Value/360*3.1415*2
+    local debug = InDebug:GetValue(req).Value
+    local scale = InScale:GetValue(req).Value
+    local freq = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+    local p = Pixel({R=0,G=0,B=0,A=0})
+
+      if (InImage1:GetValue(req) ~= nil) then
+         src1 = InImage1:GetValue(req)
+      else
+         src1 = Image(imgattrs)
+         src1:Fill(p)
+      end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+    if req:IsPreCalc() then
+	   --print("\n######################### Precalc ##############################\n")
+	   local out = Image({IMG_Like = dst, IMG_NoData = true})
+       OutImage:Set(req, out)
+	   return
+	end
+
+
+
+    --StartStop
+    if InStop:GetValue(req).Value == 0 then
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   else
+	      _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	   end
+	end
+
+    acttime = _acttime / framerate
+
+
+    --Sep1:SetAttrs({LINKS_Name = "____________EggHunt______________________",LBLC_LabelColor = 3,})
+
+    node = DVIPComputeNode(req, "EggHuntKernel", EggHuntKernel, "EggHuntParams", EggHuntParams)
+
+    if not pcall(function ()
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.iMouse = {InMouse:GetValue(req).X,InMouse:GetValue(req).Y}
+        params.color       = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+
+        params.itime = acttime --req.Time / framerate
+
+        node:SetParamBlock(params)
+    end) then
+        params = node:GetParamBlock(EggHuntParams)
+
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        params.iMouse = {InMouse:GetValue(req).X,InMouse:GetValue(req).Y}
+        params.color       = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+
+        params.itime = acttime  --req.Time / framerate
+
+        node:SetParamBlock(params)
+
+    end
+
+     node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Fehlerausgabe des DCTL
+    end
+
+    OutImage:Set(req, dst)
+	collectgarbage();
+end
+
+-- **/ "End of LUA CODE"
+

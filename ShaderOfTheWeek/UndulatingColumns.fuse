@@ -1,0 +1,599 @@
+--[[--/*
+
+  UndulatingColumns.fuse
+
+  Based on https://www.shadertoy.com/view/WlXXDH a WebGL shader created by fizzer.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  ColColor[4];
+  float  Look[2];
+  float  LookZ;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define cos_f3(i) cos(i)
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define cos_f3(i) cos(i)
+ #define distance_f2( p1, p2) distance(p1, p2)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define cos_f3(i) to_float3( _cosf((i).x), _cosf((i).y), _cosf((i).z))
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+__DEVICE__ float4 decube_f3(__TEXTURE2D__ t, float3 xyz)
+{
+  float ax=_fabs(xyz.x);
+  float ay=_fabs(xyz.y);
+  float az=_fabs(xyz.z);
+
+  if (xyz.x>0.0f && ax>=ay && ax>=az) // +X, Face 0, right
+    return _tex2DVecN(t,(-xyz.z/ax+1.0f)/8.0f + 0.5f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y>0.0f && ay>=ax && ay>=az) // +Y, Face 2, top
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(-xyz.z/ay+1.0f)/6.0f + (2.0f/3.0f),15);
+
+  if (xyz.z>0.0f && az>=ax && az>=ay) // +Z, Face 4, front
+    return _tex2DVecN(t,(xyz.x/az+1.0f)/8.0f + 0.25f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.x<0.0f && ax>=ay && ax>=az) // -X, Face 1, left
+    return _tex2DVecN(t,(xyz.z/ax+1.0f)/8.0f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y<0.0f && ay>=ax && ay>=az) // -Y, Face 3, bottom
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(xyz.z/ay+1.0f)/6.0f,15);
+
+  if (xyz.z<0.0f && az>=ax && az>=ay) // -Z, Face 5, back
+    return _tex2DVecN(t,(-xyz.x/az+1.0f)/8.0f + 0.75f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  return to_float4(1.0f,0.0f,0.0f,1.0f); // error
+}
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Cubemap: Forest_0' to iChannel0
+// Connect Image 'Texture: Blue Noise' to iChannel1
+
+
+#define AA 1
+
+#define pi  3.14159265358979323f
+
+__DEVICE__ float pieceDist(float3 p, float th, int n, float r, float rs, float iTime)
+{
+    float2 delta = to_float2(_sinf(th), _cosf(th));
+    float y = 0.0f;
+    float d = dot(to_float2(delta.y, -delta.x), to_float2(length(swi2(p,x,z)) - r, p.y - y));
+    float r0 = 0.0f;
+    float l = length(swi2(p,x,z));
+    for(int i = 0; i < n; ++i)
+    {
+        r0 = (0.07f + _cosf((float)(i + n) + iTime / 2.0f) * 0.04f) * rs;
+        y += delta.y * r0;
+        r += delta.x * r0;
+        float td = length(to_float2(l - r, p.y - y)) - r0;
+        if((i & 1) == 0)
+          d = _fminf(d, td);
+        else
+          d = _fmaxf(d, -td);
+        y += delta.y * r0;
+        r += delta.x * r0;
+    }
+    return _fmaxf(d, p.y - y);
+}
+
+__DEVICE__ float4 piece(float3 p, float2 org, float th, int n, float r, float rs, float iTime)
+{
+    return to_float4(org.x, org.y, pieceDist(p - to_float3(org.x, 0, org.y), th, n, r, rs,iTime), r);
+}
+
+__DEVICE__ float4 u(float4 a, float4 b)
+{
+    return a.z < b.z ? a : b;
+}
+
+__DEVICE__ float4 scene(float3 p, float iTime)
+{
+    float4 res = to_float4(0, 0, 1e4, 0);
+    res = u(res, piece(p, to_float2_s(0), -0.2f, 13, 0.5f, 1.0f,iTime));
+    res = u(res, piece(p, to_float2(1.5f, 0), -0.0f,9, 0.2f, 1.0f,iTime));
+    res = u(res, piece(p, to_float2(-0.7f, -0.9f), -0.0f, 8, 0.3f, 1.3f,iTime));
+    res = u(res, piece(p, to_float2(-1.5f, 0.1f), -0.5f, 5, 0.8f, 2.0f,iTime));
+    res = u(res, piece(p, to_float2(0.5f, 0.7f), -0.05f, 12, 0.2f, 1.0f,iTime));
+    res.z = _fminf(res.z, p.y);
+    return res;
+}
+
+__DEVICE__ float map(float3 p, float iTime)
+{
+    return scene(p,iTime).z;
+}
+
+// Soft shadow for SDF, from IQ and Sebastian Aaltonen:
+// https://www.shadertoy.com/view/lsKcDD
+__DEVICE__ float calcSoftshadow( in float3 ro, in float3 rd, in float mint, in float tmax, int technique, float s, float iTime )
+{
+    float res = 1.0f;
+    float t = mint;
+    float ph = 1e10; // big, such that y = 0 on the first iteration
+
+    for( int i=0; i<55; i++ )
+    {
+        float h = map( ro + rd*t, iTime );
+
+        // traditional technique
+        if( technique==0 )
+        {
+            res = _fminf( res, s*h/t );
+        }
+        // improved technique
+        else
+        {
+            // use this if you are getting artifact on the first iteration, or unroll the
+            // first iteration out of the loop
+            //float y = (i==0) ? 0.0f : h*h/(2.0f*ph);
+
+            float y = h*h/(2.0f*ph);
+            float d = _sqrtf(h*h-y*y);
+            res = _fminf( res, s*d/_fmaxf(0.0f,t-y) );
+            ph = h;
+        }
+
+        t += h;
+
+        if( res<0.0001f || t>tmax ) break;
+
+    }
+    return clamp( res, 0.0f, 1.0f );
+}
+
+// Forward-difference SDF gradients.
+__DEVICE__ float3 distG(float3 p, float iTime)
+{
+    float2 e = to_float2(1e-4, 0);
+    return to_float3(map(p + swi3(e,x,y,y),iTime), map(p + swi3(e,y,x,y),iTime), map(p + swi3(e,y,y,x),iTime)) -
+        to_float3(map(p - swi3(e,x,y,y),iTime), map(p - swi3(e,y,x,y),iTime), map(p - swi3(e,y,y,x),iTime));
+}
+
+__DEVICE__ void render( out float4 *fragColor, in float2 fragCoord, float2 iResolution, float iTime, __TEXTURE2D__ iChannel0, float4 ColColor, float3 Look )
+{
+  float2 uv = fragCoord / iResolution * 2.0f - 1.0f;
+  uv.x *= iResolution.x / iResolution.y;
+
+  float3 ro = to_float3(-0.3f, 0.8f, 4.2f), rd = normalize(to_float3_aw(uv, -3.0f)+Look);
+
+    float t = 2.5f;
+    for(int i = 0; i < 110; ++i)
+    {
+        float d = map(ro + rd * t,iTime);
+        if(_fabs(d) < 1e-4)
+            break;
+        if(t > 10.0f)
+            break;
+        t += d;
+    }
+
+    float3 rp = ro + rd * t;
+
+    float3 n = normalize(distG(ro + rd * t,iTime));
+    float3 r = reflect(rd, n);
+    float3 ld = normalize(to_float3(-1, 1, 1));
+    float sh = calcSoftshadow(ro + rd * t, ld, 1e-2, 1e3, 0, 2.0f,iTime);
+    float sh2 = calcSoftshadow(ro + rd * t, r, 1e-2, 1e3, 0, 10.0f,iTime);
+
+    //float3 diff = 0.5f + 0.5f * cos_f3(rp.y * to_float3(3, 2, 5) * 0.5f + to_float3(0.6f, 0, 0.6f));
+    float3 diff = 0.5f + 0.5f * cos_f3(rp.y * swi3(ColColor,x,y,z) + to_float3(0.6f, 0, 0.6f));
+
+    float4 sp = scene(rp,iTime);
+    diff = _mix(to_float3_s(1), diff, smoothstep(0.1f, 0.12f,_fabs(fract(0.1f + _atan2f(rp.z - sp.y, rp.x - sp.x) / pi * 5.0f) - 0.5f)));
+
+    if(_fabs(rp.y) < 1e-2 || t > 9.0f)
+        diff = to_float3(0.5f, 0.75f, 1.0f) * smoothstep(-0.1f, 0.15f, distance_f2(swi2(rp,x,z), swi2(sp,x,y)) - sp.w);
+
+    //swi3(fragColor,x,y,z) = diff;
+//    (*fragColor).x=diff.x;
+//    (*fragColor).y=diff.y;
+//    (*fragColor).z=diff.z;
+
+    //swi3S(*fragColor,x,y,z, swi3(*fragColor,x,y,z) * _mix(0.5f, 1.0f, sh) * to_float3_s(_fmaxf(0.0f, 0.6f + 0.4f * dot(n, ld))));
+    diff *= _mix(0.5f, 1.0f, sh) * to_float3_s(_fmaxf(0.0f, 0.6f + 0.4f * dot(n, ld)));
+
+    float fr = _powf(clamp(1.0f - dot(n, -rd), 0.0f, 1.0f), 2.0f);
+
+//    swi3(*fragColor,x,y,z) += swi3(decube_f3(iChannel0, r),x,x,x) * fr * sh2;
+    diff += swi3(decube_f3(iChannel0, r),x,x,x) * fr * sh2;
+
+//    swi3(*fragColor,x,y,z) += smoothstep(0.4f, 0.5f, dot(ld, r)) * fr * sh2 * 1.6f;
+    diff += smoothstep(0.4f, 0.5f, dot(ld, r)) * fr * sh2 * 1.6f;
+
+    //swi3(*fragColor,x,y,z) *= 0.85f;
+
+    *fragColor = to_float4_aw(diff * 0.85f, (*fragColor).w);
+}
+
+__KERNEL__ void UndulatingFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 ColColor = to_float4(params->ColColor[0], params->ColColor[1], params->ColColor[2], params->ColColor[3]);
+  float2 Look = to_float2(params->Look[0], params->Look[1]);
+  float  LookZ = params->LookZ;
+
+  // --------
+
+
+
+
+    //fragColor.w = 1.0f;
+    //swi3(fragColor,x,y,z) = to_float3_s(0);
+    //fragColor = to_float4(0.0f,0.0f,0.0f,1.0f);
+
+    float3 Color = to_float3_s(0);
+
+    // Anti-aliasing loop
+    for(int y = 0; y < AA; ++y)
+        for(int x = 0; x < AA; ++x)
+        {
+            float4 rc;
+            render(&rc, fragCoord + to_float2(x, y) / (float)(AA), iResolution,iTime,iChannel0, ColColor, to_float3_aw(Look,LookZ) );
+            //swi3S(fragColor,x,y,z, swi3(fragColor,x,y,z) + clamp(swi3(rc,x,y,z), 0.0f, 1.0f));
+            Color += clamp(swi3(rc,x,y,z), 0.0f, 1.0f);
+        }
+
+    //swi3(fragColor,x,y,z) /= float(AA * AA);
+    Color /= (float)(AA * AA);
+    //swi3(fragColor,x,y,z) /= (swi3(fragColor,x,y,z) + 1.5f)*0.43f;
+    Color /= (swi3(fragColor,x,y,z) + 1.5f)*0.43f;
+    //swi3(fragColor,x,y,z) = _powf(clamp(swi3(fragColor,x,y,z), 0.0f, 1.0f), to_float3_aw(1.0f / 2.2f)) + swi3(texelFetch(iChannel1, to_int2(fragCoord) & 1023, 0),x,y,z) / 200.0f;
+    Color = pow_f3(clamp(Color, 0.0f, 1.0f), to_float3_s(1.0f / 2.2f)) + swi3(_tex2DVecN(iChannel1, ((float)((int)(fragCoord.x) & 1023)+0.5f)/iResolution.x ,((float)((int)(fragCoord.y) & 1023)+0.5f)/iResolution.y, 15),x,y,z) / 200.0f;
+
+  fragColor = to_float4_aw(Color,1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  self:BeginControlNest("ColColor", "ColColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColColorColorR = self:AddInput("Red",   "ColColorRed",   { INP_Default  = 1.5, IC_ControlID = 0, attrs})
+    InColColorColorG = self:AddInput("Green", "ColColorGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColColorColorB = self:AddInput("Blue",  "ColColorBlue",  { INP_Default  = 2.5, IC_ControlID = 2, attrs})
+    InColColorColorA = self:AddInput("Alpha", "ColColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InLookPoint = self:AddInput("Look", "Look", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InLookZSlider = self:AddInput("LookZ", "LookZ", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 0.0,
+  })
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "UndulatingFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.ColColor = {
+    InColColorColorR:GetValue(req).Value,
+    InColColorColorG:GetValue(req).Value,
+    InColColorColorB:GetValue(req).Value,InColColorColorA:GetValue(req).Value
+  }
+  params.Look = {InLookPoint:GetValue(req).X,InLookPoint:GetValue(req).Y}
+  params.LookZ = InLookZSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+

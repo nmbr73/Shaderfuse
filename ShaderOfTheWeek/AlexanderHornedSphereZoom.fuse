@@ -1,0 +1,1642 @@
+--[[--/*
+
+    AlexanderHornedSphereZoom.fuse
+
+    Based on https://www.shadertoy.com/view/ttyGzW Erstellt von tmst am 2020-01-24
+
+    V1 JiPi Shadertoy
+
+
+*/--]]--
+
+-- "LUA CODE..." /**
+
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  })
+
+-----------------------------------
+
+-- **/ "End of LUA CODE"
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel
+-- // ------------------------------------------------------------------------
+
+GlobalParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  int width;
+  int height;
+  float itime;
+  int iframe;
+
+	int draw;
+	float drawcoords[2];
+
+	float brightness;
+
+	bool Alpha_Apply;
+	float alpha;
+	float color[3];
+
+]]
+
+----------------BufferA---------------
+-- source of kernel
+BufferAKernel =
+    [[
+// Alexander horned sphere zoom https://www.shadertoy.com/view/ttyGzW
+
+//############### BufferA->Nix ######################
+
+//-----------------------
+//-------- mat3 ---------
+//-----------------------
+
+//**** mat3 ****
+typedef struct
+  {
+	float3 r0, r1, r2;
+  } mat3;
+
+__DEVICE__  inline mat3 make_mat3( float A1, float B1, float C1, float A2, float B2, float C2, float A3, float B3, float C3 )
+  {
+	mat3 D;
+	D.r0 = to_float3(A1,B1,C1);
+	D.r1 = to_float3(A2,B2,C2);
+	D.r2 = to_float3(A3,B3,C3);
+	return D;
+  }
+
+__DEVICE__ inline mat3 make_mat3_f( float A)
+  {
+	mat3 D;
+	D.r0.x = A;
+	D.r1.y = A;
+	D.r2.z = A;
+	return D;
+  }
+
+__DEVICE__ inline mat3 make_mat3_f3( float3 A, float3 B, float3 C)
+  {
+	mat3 D;
+	D.r0 = A;
+	D.r1 = B;
+	D.r2 = C;
+	return D;
+  }
+
+__DEVICE__ inline float3 mat3_multi_f3( mat3 B, float3 A) {
+	float3 C;
+
+	C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+	C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+	C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+	return C;
+  }
+
+__DEVICE__ inline float3 f3_multi_mat3( float3 A, mat3 B) {
+  float3 C;
+
+  C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+  C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+  C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+  return C;
+ }
+
+__DEVICE__ inline mat3 mat3_multi_f( mat3 A, float B)
+  {
+  return make_mat3_f3(A.r0 * B, A.r1 * B, A.r2 * B);
+  }
+__DEVICE__ inline mat3 f_multi_mat3( float B, mat3 A)
+  {
+  return make_mat3_f3(A.r0 * B, A.r1 * B, A.r2 * B);
+  }
+
+__DEVICE__ mat3 mat3_multi_mat3( mat3 A, mat3 B)   //  __DEVICE__ inline mat3 multi( mat3 A, mat3 B)
+{
+  float r[3][3];
+  float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                   {A.r1.x, A.r1.y, A.r1.z},
+                   {A.r2.x, A.r2.y, A.r2.z}};
+  float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                   {B.r1.x, B.r1.y, B.r1.z},
+                   {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+	  for( int j = 0; j < 3; ++j)
+	  {
+		  r[i][j] = 0.0f;
+		  for( int k = 0; k < 3; ++k)
+		  {
+			r[i][j] = r[i][j] + a[i][k] * b[k][j];
+		  }
+	  }
+  }
+  mat3 R = make_mat3(r[0][0], r[0][1], r[0][2],
+                     r[1][0], r[1][1], r[1][2],
+                     r[2][0], r[2][1], r[2][2]);
+
+  return R;
+}
+
+
+//-----------------------
+//-------- mat4 ---------
+//-----------------------
+//**** mat4 ****
+typedef struct
+  {
+  float4 r0, r1,r2, r3;
+  } mat4;
+
+__DEVICE__ inline mat4 make_mat4( float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13,
+  float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33)
+  {
+  mat4 M;
+  M.r0 = make_float4(m00, m01, m02, m03);
+  M.r1 = make_float4(m10, m11, m12, m13);
+  M.r2 = make_float4(m20, m21, m22, m23);
+  M.r3 = make_float4(m30, m31, m32, m33);
+  return M;
+  }
+
+__DEVICE__ inline float4 mat4_multi_f4( mat4 B, float4 A)
+  {
+  float4 C;
+  C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x + A.w * B.r3.x;
+  C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y + A.w * B.r3.y;
+  C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z + A.w * B.r3.z;
+  C.w = A.x * B.r0.w + A.y * B.r1.w + A.z * B.r2.w + A.w * B.r3.w;
+  return C;
+  }
+
+__DEVICE__ inline float4 f4_multi_mat4( float4 A, mat4 B)
+  {
+  float4 C;
+  C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z + A.w * B.r0.w;
+  C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z + A.w * B.r1.w;
+  C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z + A.w * B.r2.w;
+  C.w = A.x * B.r3.x + A.y * B.r3.y + A.z * B.r3.z + A.w * B.r3.w;
+  return C;
+  }
+
+
+__DEVICE__ inline mat4 mat4_multi_mat4( mat4 B, mat4 A)   //
+{
+  float r[4][4];
+  float a[4][4] = {{A.r0.x, A.r0.y, A.r0.z, A.r0.w},
+                   {A.r1.x, A.r1.y, A.r1.z, A.r1.w},
+                   {A.r2.x, A.r2.y, A.r2.z, A.r2.w},
+                   {A.r3.x, A.r3.y, A.r3.z, A.r3.w}};
+  float b[4][4] = {{B.r0.x, B.r0.y, B.r0.z, B.r0.w},
+                   {B.r1.x, B.r1.y, B.r1.z, B.r1.w},
+                   {B.r2.x, B.r2.y, B.r2.z, B.r2.w},
+                   {B.r3.x, B.r3.y, B.r3.z, B.r3.w}};
+
+  for( int i = 0; i < 4; ++i)
+  {
+	  for( int j = 0; j < 4; ++j)
+	  {
+		  r[i][j] = 0.0f;
+		  for( int k = 0; k < 4; ++k)
+		  {
+			r[i][j] = r[i][j] + a[i][k] * b[k][j];
+		  }
+	  }
+  }
+  mat4 R = make_mat4(r[0][0], r[0][1], r[0][2], r[0][3],
+                     r[1][0], r[1][1], r[1][2], r[1][3],
+  	               r[2][0], r[2][1], r[2][2], r[2][3],
+	               r[3][0], r[3][1], r[3][2], r[3][3]);
+  return R;
+}
+
+
+__DEVICE__ float fract_f(float A){return A - _floor(A);}
+__DEVICE__ float distance_f3(float3 pt1, float3 pt2){ float3 v = pt2 - pt1; return _sqrtf(dot(v,v));}
+
+#if defined(DEVICE_IS_OPENCL) || defined(DEVICE_IS_METAL)
+__DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+#endif
+
+#define swixy(V) to_float2((V).x,(V).y)
+#define swixyz(V) to_float3((V).x,(V).y,(V).z)
+
+
+#define HALF_PI 1.570796326794896f
+#define ONE_PI 3.141592653589793f
+#define TWO_PI 6.283185307179586f
+
+#define ID_3X3      make_mat3( 1.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 1.0f)
+#define ROT_X       make_mat3( 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f)
+#define ROT_X_INV   make_mat3( 1.0f, 0.0f, 0.0f,   0.0f, 0.0f,-1.0f,   0.0f, 1.0f, 0.0f)
+#define ROT_Y       make_mat3( 0.0f, 0.0f,-1.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f)
+#define ROT_Y_INV   make_mat3( 0.0f, 0.0f, 1.0f,   0.0f, 1.0f, 0.0f,  -1.0f, 0.0f, 0.0f)
+#define ROT_Z       make_mat3( 0.0f, 1.0f, 0.0f,  -1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f)
+#define ROT_Z_INV   make_mat3( 0.0f,-1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f)
+
+#define E1 make_float3(1.0f, 0.0f, 0.0f)
+#define E2 make_float3(0.0f, 1.0f, 0.0f)
+#define E3 make_float3(0.0f, 0.0f, 1.0f)
+
+#define TAN_HALF_FOVY 0.5773502691896257f
+#define CAM_Z_NEAR 0.1f
+#define CAM_Z_FAR 50.0f
+
+#define MIN_DIST 0.005f
+#define MAX_DIST 50.0f
+#define GRAD_EPS 0.01f
+
+#define MAX_BRANCH_DEPTH 18
+
+#define SPHERE_CENTER to_float3_s(0.0f)
+#define SPHERE_RADIUS 2.0f
+#define SPHERE_BUFFER 0.1f
+
+#define SUBSPHERE_ZOOM 2.75f
+#define SUBSPHERE_RADIUS (SPHERE_RADIUS/SUBSPHERE_ZOOM)
+#define SUBSPHERE_CENTER_L make_float3(-SUBSPHERE_RADIUS-0.001f, 0.0f, 0.0f)
+#define SUBSPHERE_CENTER_R make_float3( SUBSPHERE_RADIUS+0.001f, 0.0f, 0.0f)
+
+#define Q_RADIUS (0.5f*(SPHERE_RADIUS-SPHERE_BUFFER-2.0f*SUBSPHERE_RADIUS)-0.001f)
+
+// If we move to the "left" subsphere center infinitely many times, based on the
+// left subsphere transform (cf. makeTL) we end up at the following point:
+#define L_INF_X   ((SUBSPHERE_CENTER_L).x/(1.0f+1.0f/(SUBSPHERE_ZOOM*SUBSPHERE_ZOOM)))
+#define L_INF_POS make_float3(L_INF_X, L_INF_X/SUBSPHERE_ZOOM, 0.0f)
+
+#if defined(DEVICE_IS_METAL)
+  #define out thread
+  #define inout thread
+#else
+  #define out
+  #define inout
+#endif
+
+// =============================================
+// Some generic helpers
+// =============================================
+
+// Find t so that _mix(a,b,t) = x
+__DEVICE__ float un_mix(float a, float b, float x) {
+    return (x - a)/(b - a);
+}
+
+__DEVICE__ float distsq(float3 p, float3 q) {
+    float3 pq = q - p;
+    return dot(pq, pq);
+}
+
+__DEVICE__ mat4 getClipToWorld(float aspectWoverH, float3 nvCamFw, float3 nvCamFixedUp) {
+    mat4 clipToEye = make_mat4(
+				aspectWoverH * TAN_HALF_FOVY, 0.0f, 0.0f, 0.0f,
+				0.0f, TAN_HALF_FOVY, 0.0f, 0.0f,
+				0.0f, 0.0f,  0.0f, (CAM_Z_NEAR - CAM_Z_FAR)/(2.0f * CAM_Z_NEAR * CAM_Z_FAR),
+				0.0f, 0.0f, -1.0f, (CAM_Z_NEAR + CAM_Z_FAR)/(2.0f * CAM_Z_NEAR * CAM_Z_FAR)
+			);
+
+    float3 nvCamRt = normalize(cross(nvCamFw, nvCamFixedUp));
+    float3 nvCamUp = cross(nvCamRt, nvCamFw);
+    mat4 eyeToWorld = make_mat4(
+				 nvCamRt.x,nvCamRt.y,nvCamRt.z, 0.0f,
+				 nvCamUp.x,nvCamUp.y,nvCamUp.z, 0.0f,
+				-nvCamFw.x,-nvCamFw.y,-nvCamFw.z, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f
+			);
+
+    return mat4_multi_mat4(eyeToWorld , clipToEye);
+}
+
+__DEVICE__ void computeLighting(
+    float diffuseCoefficient,
+    float specularCoefficient,
+    float specularExponent,
+    float3 lightColor,
+    float3 texColor,
+    float3 nvNormal,
+    float3 nvFragToLight,
+    float3 nvFragToCam,
+    out float3 *litColor
+) {
+    float valDiffuse = _fmaxf(0.0f, dot(nvNormal, nvFragToLight));
+    valDiffuse *= diffuseCoefficient;
+
+    float3 blinnH = normalize(nvFragToLight + nvFragToCam);
+    float valSpecular = _powf(_fmaxf(0.0f, dot(nvNormal, blinnH)), specularExponent);
+    valSpecular *= specularCoefficient;
+
+    *litColor = valDiffuse*texColor*lightColor + valSpecular*lightColor;
+}
+
+__DEVICE__ void sphereClip(
+    float3 center, float radius,
+    float3 p, float3 v,
+    out float2 *tRange, out float *didHit
+) {
+    // Solve quadratic t: |p+tv - center|^2 = radius^2
+    // Or, |A+tB|^2 = 1, with A = (p-center)/radius, B = v/radius
+    // Solution: t = (-A.B +- _sqrtf(D))/|B|^2, D = (A.B)^2 + |B|^2 * (1-|A|^2).
+
+    float3 A = (p - center) / radius;
+    float3 B = v / radius;
+
+    float AA = dot(A,A);
+    float AB = dot(A,B);
+    float BB = dot(B,B);
+
+    float D = AB*AB + BB*(1.0f - AA);
+    float sqD = _sqrtf(_fabs(D));
+    *didHit = 1.0f - step(D, 0.0f);
+
+    float t0 = (-AB + sqD)/BB;
+    float t1 = (-AB - sqD)/BB;
+    *tRange = make_float2(_fminf(t0,t1), _fmaxf(t0,t1));
+}
+
+// =============================================
+// Recursive transform helpers
+// =============================================
+
+// Treats the bits of an integer as a stack, with
+// "0" meaning "left branch" and "1" meaning "right branch"
+__DEVICE__ void pushBranch(inout int *branch, inout int *branchDepth, int val) {
+    if (*branchDepth == 0) {
+        *branch = val;
+    } else {
+        *branch = 2 * (*branch) + val;
+    }
+    (*branchDepth)++;
+}
+
+__DEVICE__ int popBranch(inout int *branch, inout int *branchDepth) {
+    int b2 = (*branch) % 2;
+    *branch = (*branch - b2) / 2;
+    (*branchDepth)--;
+    return b2;
+}
+
+__DEVICE__ void makeTL(out mat3 *transM, out mat3 *transMInv, out float3 *transO) {
+    *transM = f_multi_mat3(SUBSPHERE_ZOOM , ROT_Z_INV);
+    *transMInv = f_multi_mat3((1.0f/SUBSPHERE_ZOOM) , ROT_Z);
+    *transO = SUBSPHERE_CENTER_L;
+}
+
+__DEVICE__ void makeTR(out mat3 *transM, out mat3 *transMInv, out float3 *transO) {
+    *transM = f_multi_mat3( SUBSPHERE_ZOOM , mat3_multi_mat3(ROT_X , ROT_Y));
+    *transMInv = f_multi_mat3((1.0f/SUBSPHERE_ZOOM), mat3_multi_mat3(ROT_Y_INV , ROT_X_INV));
+    *transO = SUBSPHERE_CENTER_R;
+}
+
+__DEVICE__ void makeT(
+    int branch, int branchDepth,
+    out mat3 *transM, out mat3 *transMInv, out float3 *transO
+) {
+    *transMInv = ID_3X3;
+    *transM = ID_3X3;
+    *transO = to_float3_s(0.0f);
+
+    int b = branch;
+    for (int i=0; i<branchDepth; i++) {
+        int b2 = b % 2;
+
+        mat3 curM;
+        mat3 curMInv;
+        float3 curO;
+
+        if (b2 == 0) {
+            makeTL(&curM, &curMInv, &curO);
+        } else {
+            makeTR(&curM, &curMInv, &curO);
+        }
+
+        *transM = mat3_multi_mat3(*transM , curM);
+        *transMInv = mat3_multi_mat3(curMInv , *transMInv);
+        *transO = curO + mat3_multi_f3(curMInv , *transO);
+
+        b = (b - b2) / 2;
+    }
+}
+
+// =============================================
+// "Object" helpers
+// =============================================
+
+// circT maps circle swixy(in) plane to desired circle:
+// i.e0.f, mat3("zero angle direction", "90 degrees direction", circ plane normal)
+// and circTInv is the transpose
+// uvAng is (theta,phi) where theta is 0 the "zero angle direction"
+__DEVICE__ void cpCirc(
+    float3 circCenter, float circRadius,
+    mat3 circT, mat3 circTInv, float3 p,
+    out float3 *cp, out float2 *uvAng
+) {
+    float3 v = mat3_multi_f3(circTInv , (p - circCenter));
+
+    float3 vProj = to_float3_aw(swixy(v), 0.0f);
+    float vProjLen = length(swixy(v));
+    float3 cpT = (circRadius/vProjLen)*vProj;
+
+    *uvAng = make_float2(
+        _atan2f(v.y, v.x),
+        _atan2f(v.z, vProjLen-circRadius)
+    );
+    *cp = mat3_multi_f3(circT , cpT) + circCenter;
+}
+
+__DEVICE__ float3 cpTuple2(float3 q0, float3 q1, float3 p) {
+    float3 q = q0;
+    return _mix(q, q1, step( distsq(p,q1), distsq(p,q) ));
+}
+
+__DEVICE__ float radiusMultiplier(float2 uvAng, float maxAngle) {
+    float rt = _fabs(uvAng.x)/maxAngle;
+    return _mix(1.0f, 1.0f/SUBSPHERE_ZOOM, smoothstep(0.4f, 0.9f, rt));
+}
+
+__DEVICE__ float2 uvAng_to_uv(float2 uvAng, float maxAngle) {
+    return make_float2(
+        un_mix(-maxAngle, maxAngle, uvAng.x),
+        un_mix(-ONE_PI, ONE_PI, uvAng.y)
+    );
+}
+
+__DEVICE__ void sdBaseUV(float3 p, out float3 *uv, out float *sd) {
+    // ---------------------------------------------------
+    // Basic geometry piece is a circle which hits 3 points:
+    // - (-x0,   0 ): Q_RADIUS from the left-most edge of main sphere
+    // - ( x1, +-y1): Top and bottom of right subsphere
+
+    const float x0 = SPHERE_RADIUS-SPHERE_BUFFER - Q_RADIUS;
+    const float x1 = (SUBSPHERE_CENTER_R).x;
+    const float y1 = x0/SUBSPHERE_ZOOM;
+    float linkCenter = (x1-x0)/2.0f + (y1/2.0f)*(1.0f/(x0+x1)) * y1;
+    float linkRadius = x0 + linkCenter;
+    float maxAngle = _atan2f(y1, -(x1 - linkCenter));
+    // ---------------------------------------------------
+    // "Left" link (swixz(in)-plane):
+    float3 cpL    = to_float3_s(0.0f);
+    float2 uvAngL = to_float2_s(0.0f);
+    cpCirc(
+        make_float3(linkCenter,0.0f,0.0f), linkRadius,
+        make_mat3_f3(-1.0f*E1,E3,E2), make_mat3_f3(-1.0f*E1,E3,E2), p, &cpL, &uvAngL
+    );
+    float dsqL = distsq(p, cpL);
+
+    // "Right" link (swixy(in)-plane):
+    float3 cpR    = to_float3_s(0.0f);
+    float2 uvAngR = to_float2_s(0.0f);
+    cpCirc(
+        make_float3(-linkCenter,0.0f,0.0f), linkRadius,
+        make_mat3_f3(E1,E2,E3), make_mat3_f3(E1,E2,E3), p, &cpR, &uvAngR
+    );
+    float dsqR = distsq(p, cpR);
+
+    // "Parent" link: right-link with inv. left-transform applied (or reverse!)
+    mat3 transLM    = make_mat3_f(0.0f);
+    mat3 transLMInv = make_mat3_f(0.0f);
+    float3 transLO  = to_float3_s(0.0f);
+    makeTL(&transLM, &transLMInv, &transLO);
+
+    float3 pT = mat3_multi_f3(transLMInv,p) + transLO;
+    float3 cpP = to_float3_s(0.0f);
+    float2 uvAngP = to_float2_s(0.0f);
+    cpCirc(
+        make_float3(-linkCenter,0.0f,0.0f), linkRadius,
+        make_mat3_f3(E1,E2,E3), make_mat3_f3(E1,E2,E3), pT, &cpP, &uvAngP
+    );
+    float cull = step( maxAngle, _fabs(uvAngP.x) );
+    cpP = _mix( cpP, cpTuple2(make_float3(-x1,-y1,0.0f), make_float3(-x1,y1,0.0f), pT), cull );
+    cpP = mat3_multi_f3(transLM , (cpP - transLO));
+    float dsqP = distsq(p, cpP);
+
+    float hitRadius = Q_RADIUS;
+    if (dsqP < dsqL && dsqP < dsqR) {
+        // NOTE: uv.p is used to correct the smoothBranchDepth elsewhere
+        *uv = to_float3_aw(uvAng_to_uv(uvAngP, maxAngle), 1.0f);
+        hitRadius *= SUBSPHERE_ZOOM;
+        *sd = distance_f3(p, cpP) - hitRadius * radiusMultiplier(uvAngP, maxAngle);
+    } else if (dsqL < dsqR) {
+        *uv = to_float3_aw(uvAng_to_uv(uvAngL, maxAngle), 0.0f);
+        *sd = distance_f3(p, cpL) - hitRadius * radiusMultiplier(uvAngL, maxAngle);
+    } else {
+        *uv = to_float3_aw(uvAng_to_uv(uvAngR, maxAngle), 0.0f);
+        *sd = distance_f3(p, cpR) - hitRadius * radiusMultiplier(uvAngR, maxAngle);
+    }
+}
+
+__DEVICE__ void objNormal(float3 p, out float3 *hitNormal) {
+    float fXA=(0.0f), fXB=(0.0f), fYA=(0.0f), fYB=(0.0f), fZA=(0.0f), fZB=(0.0f);
+    float3 uv = to_float3_s(0.0f);
+
+    sdBaseUV(p - make_float3(GRAD_EPS, 0.0f, 0.0f), &uv, &fXA);
+    sdBaseUV(p + make_float3(GRAD_EPS, 0.0f, 0.0f), &uv, &fXB);
+    sdBaseUV(p - make_float3(0.0f, GRAD_EPS, 0.0f), &uv, &fYA);
+    sdBaseUV(p + make_float3(0.0f, GRAD_EPS, 0.0f), &uv, &fYB);
+    sdBaseUV(p - make_float3(0.0f, 0.0f, GRAD_EPS), &uv, &fZA);
+    sdBaseUV(p + make_float3(0.0f, 0.0f, GRAD_EPS), &uv, &fZB);
+
+    *hitNormal = make_float3(fXB-fXA, fYB-fYA, fZB-fZA);
+}
+
+__DEVICE__ void hitObject(
+    float3 p, float3 nv, float2 tRange,
+    out float *didHit, out float *tHit, out float3 *uvHit
+) {
+    *didHit = 0.0f;
+    float3 curPos = p + tRange.x*nv;
+    *tHit = tRange.x;
+
+    for (int i=0; i<50; i++) {
+        float tAdd = 0.0f;
+        sdBaseUV(curPos, uvHit, &tAdd);
+
+        if (_fabs(tAdd) < MIN_DIST) {
+            *didHit = 1.0f;
+            break;
+        }
+
+        curPos += tAdd * nv;
+        *tHit += tAdd;
+
+        if (*tHit > tRange.y) {
+            break;
+        }
+    }
+}
+
+// =============================================
+// Recursive scene
+// =============================================
+
+__DEVICE__ float inInterval(float t, float2 tRange) {
+    return step(tRange.x, t) * (1.0f - step(tRange.y, t));
+}
+
+__DEVICE__ float2 minHitData(float t, float2 minData, float2 tRangeAllowed, float typeId) {
+    float doUse = inInterval(t, tRangeAllowed) * step(t, minData.x);
+    return _mix( minData, make_float2(t, typeId), doUse );
+}
+
+__DEVICE__ void march(
+    float3 p, float3 nv,
+    out float *didHit, out float3 *hitPos,
+    out float3 *nvHitNormal, out float3 *hitUV, out int *hitBranchDepth
+) {
+    // Update range for root sphere
+    float2 tRangeRoot = to_float2_s(0.0f);
+    float didHitSphere = 0.0f;
+    sphereClip(SPHERE_CENTER, SPHERE_RADIUS, p, nv, &tRangeRoot, &didHitSphere);
+    if (didHitSphere < 0.5f) {
+        *didHit = 0.0f;
+        return;
+    }
+
+    // transform is p \mapsto M(p - O)
+    mat3 transMInv = ID_3X3;
+    mat3 transM    = ID_3X3;
+    float3 transO  = to_float3_s(0.0f);
+
+    float3 pTransRay  = p;
+    float3 nvTransRay = nv;
+    float2 tRangeCur  = tRangeRoot;
+
+    int branchDepth   = 0;
+    int branch        = -1;
+
+    for (int i=0; i<100; i++) { // TODO
+
+        float2 hitData = make_float2(tRangeCur.y, 0.0f);
+
+        // Check object hit within sphere
+        float didHitObject = 0.0f;
+        float tHitObject   = 0.0f;
+        float3 uvHitObject = to_float3_s(0.0f);
+        hitObject(
+            pTransRay, nvTransRay, make_float2(_fmaxf(0.0f, tRangeCur.x), tRangeCur.y),
+            &didHitObject, &tHitObject, &uvHitObject);
+        if (didHitObject > 0.5f) {
+            hitData = minHitData(tHitObject, hitData, tRangeCur, 0.1f);
+        }
+
+        // Check "left" subsphere hit
+        float2 tRangeSubsphereL = to_float2_s(0.0f);
+        float didHitL = 0.0f;
+        sphereClip(
+            SUBSPHERE_CENTER_L, SUBSPHERE_RADIUS, pTransRay, nvTransRay,
+            &tRangeSubsphereL, &didHitL
+        );
+        if (branchDepth < MAX_BRANCH_DEPTH && didHitL > 0.5f) {
+            hitData = minHitData(tRangeSubsphereL.x, hitData, tRangeCur, 0.2f);
+        }
+
+        // Check "right" subsphere hit
+        float2 tRangeSubsphereR = to_float2_s(0.0f);
+        float didHitR = 0.0f;
+        sphereClip(
+            SUBSPHERE_CENTER_R, SUBSPHERE_RADIUS, pTransRay, nvTransRay,
+            &tRangeSubsphereR, &didHitR
+        );
+        if (branchDepth < MAX_BRANCH_DEPTH && didHitR > 0.5f) {
+            hitData = minHitData(tRangeSubsphereR.x, hitData, tRangeCur, 0.3f);
+        }
+
+        if (hitData.y < 0.05f) {
+
+            // Exiting sphere: "pop" transform to parent sphere
+
+            if (branchDepth == 0) {
+                break;
+            }
+            popBranch(&branch, &branchDepth);
+            makeT(branch, branchDepth, &transM, &transMInv, &transO);
+
+            pTransRay = mat3_multi_f3(transM , (p - transO));
+            nvTransRay = normalize( mat3_multi_f3(transM , nv) );
+
+            float2 tRangeParent = to_float2_s(0.0f);
+            float didHitSphereParent = 0.0f;
+            sphereClip(
+                SPHERE_CENTER, SPHERE_RADIUS, pTransRay, nvTransRay,
+                &tRangeParent, &didHitSphereParent
+            );
+            tRangeCur = make_float2(tRangeCur.y/SUBSPHERE_ZOOM, tRangeParent.y);
+
+        } else if (hitData.y < 0.15f) {
+
+            // Hit object--done!
+
+            *didHit = 1.0f;
+            float3 hitPosTrans = pTransRay + tHitObject*nvTransRay;
+            *hitPos = mat3_multi_f3(transMInv , hitPosTrans) + transO;
+
+            float3 hitNormal = to_float3_s(0.0f);
+            objNormal(hitPosTrans, &hitNormal);
+            *nvHitNormal = normalize(mat3_multi_f3(transMInv , hitNormal));
+
+            *hitUV = uvHitObject;
+            *hitBranchDepth = branchDepth;
+
+            break;
+
+        } else if (hitData.y < 0.25f) {
+
+            // Entered "left" subsphere; push transform and continue
+
+            pushBranch(&branch, &branchDepth, 0);
+            makeT(branch, branchDepth, &transM, &transMInv, &transO);
+
+            pTransRay = mat3_multi_f3(transM , (p - transO));
+            nvTransRay = normalize( mat3_multi_f3(transM , nv) );
+            tRangeCur = tRangeSubsphereL * SUBSPHERE_ZOOM;
+
+        } else if (hitData.y < 0.35f) {
+
+            // Entered "right" subsphere; push transform and continue
+
+            pushBranch(&branch, &branchDepth, 1);
+            makeT(branch, branchDepth, &transM, &transMInv, &transO);
+
+            pTransRay = mat3_multi_f3(transM , (p - transO));
+            nvTransRay = normalize( mat3_multi_f3(transM , nv) );
+            tRangeCur = tRangeSubsphereR * SUBSPHERE_ZOOM;
+
+        }
+    }
+
+}
+
+__DEVICE__ void camConfig(
+    out float *scfa,
+    out float3 *camPos,
+    out float3 *nvCamFw,
+    out float3 *nvCamFixedUp,
+	float3 iM,
+	float itime
+) {
+    float itAdj = itime/3.0f;
+    if (iM.z > 0.0f) {
+        itAdj = 12.0f*iM.y;// /iResolution.y;
+    }
+    float ft4 = fract_f(itAdj/4.0f)*4.0f;
+
+    // scfa is the scale factor at the current cam pos: how much things are
+    // scaled relative to the "base object" the root/parent sphere
+    *scfa = _powf(1.0f/SUBSPHERE_ZOOM, ft4+2.0f);
+
+    float ct = _cosf(itAdj*HALF_PI);
+    float st = _sinf(itAdj*HALF_PI);
+
+    float3 camOffset = normalize(make_float3(1.0f, 1.5f*ct, 1.0f));
+    *camPos = L_INF_POS + camOffset* (*scfa)*iM.x;
+
+    *nvCamFw = normalize(-camOffset);
+    *nvCamFixedUp = normalize(make_float3(_cosf(0.5f*ct), 0.0f, _sinf(0.5f*ct)));
+}
+
+__DEVICE__ float3 skybox(float3 nvDir) {
+    float sep = -0.15f;
+    float blend = 0.025f;
+    return _mix(
+        _mix(to_float3_s(1.0f), make_float3(0.8f, 0.45f, 0.25f), un_mix(-1.0f, sep, nvDir.x)),
+        _mix(to_float3_s(1.0f), make_float3(0.7f, 0.6f, 1.0f), un_mix(sep, 1.0f, nvDir.x)),
+        smoothstep(sep-blend, sep+blend, nvDir.x)
+    );
+}
+
+//############################################################################################################################
+__KERNEL__ void BufferAKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height)
+  {
+    //-----------------------
+     float2 fragCoord = to_float2(x, y);
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime*params->freq;
+     float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+
+    float2 uv = fragCoord / iResolution;
+
+    float scfa         = 0.0f;
+    float3 camPos      = to_float3_s(0.0f);
+    float3 nvCamFw     = to_float3_s(0.0f);
+    float3 nvCamFixedUp= to_float3_s(0.0f);
+    camConfig(&scfa, &camPos, &nvCamFw, &nvCamFixedUp, to_float3(params->drawcoords[0],params->drawcoords[1], params->draw), itime);
+
+    float aspectWoverH = ratio;//iResolution.x/iResolution.y;
+    mat4 clipToWorld   = getClipToWorld(aspectWoverH, nvCamFw, nvCamFixedUp);
+
+    float4 vWorld   = mat4_multi_f4(clipToWorld , make_float4(uv.x*2.0f - 1.0f,uv.y*2.0f - 1.0f, 1.0f, 1.0f));
+    float3 nvCamDir = normalize(swixyz(vWorld) / vWorld.w);
+
+    float4 color    = to_float4_s(1.0f);
+    float3 litColor;
+
+
+    float didHit      = 0.0f;
+    float3 hitPos     = to_float3_s(0.0f);
+    float3 nvHitNormal= to_float3_s(0.0f);;
+    float3 hitUV      = to_float3_s(0.0f);;
+    int hitBranchDepth = 0;
+    march(camPos, nvCamDir, &didHit, &hitPos, &nvHitNormal, &hitUV, &hitBranchDepth);
+    if (didHit > 0.5f) {
+
+        float3 nvCamRt = normalize(cross(nvCamFw, nvCamFixedUp));
+        float3 nvCamUp = normalize(cross(nvCamRt, nvCamFw));
+        float3 lightPos = _mix(camPos, L_INF_POS, 0.5f);
+
+        float smoothBranchDepth = ( (float)(hitBranchDepth) + 2.0f*_fabs(hitUV.x - 0.5f) - hitUV.z );
+        float ct = fract_f(smoothBranchDepth/4.0f);
+        float ctt = fract_f(-0.2f*itime + smoothBranchDepth/4.0f);
+        float3 matColor = 0.5f + 0.5f*make_float3(
+            _cosf(TWO_PI * ct),
+            _cosf(TWO_PI * (ct - 1.0f/3.0f)),
+            _cosf(TWO_PI * (ct - 2.0f/3.0f))
+        );
+
+		float pulse = 1.0f - step(0.25f+0.25f*_sinf(itime), _fabs(ctt-0.5f));
+        //matColor = _mix(matColor, to_float3_s(0.0f), pulse);
+		matColor = _mix(matColor, to_float3_v(params->color), pulse);
+
+        float3 nvFragToCam = normalize(camPos - hitPos);
+        float3 nvFragToLight = normalize(lightPos - hitPos);
+
+
+        computeLighting(
+            0.8f, 1.0f, 50.0f,
+            to_float3_s(1.0f), matColor, nvHitNormal,
+            nvFragToLight,
+            nvFragToCam,
+            &litColor
+        );
+
+        float3 nvRefl = normalize(reflect( hitPos-camPos, nvHitNormal ));
+        float3 skyColor = skybox(nvRefl);
+
+        float3 finalColor = litColor;
+        finalColor += 0.4f*skyColor; //reflective
+        finalColor += 0.25f*matColor; //emissive
+        finalColor = clamp(finalColor, 0.0f, 1.0f);
+
+        float dScale = length(hitPos-camPos)/length(L_INF_POS-camPos);
+        float dVal = clamp( un_mix(0.0f, 20.0f, dScale), 0.0f, 1.0f );
+        float dA = 100.0f; // higher gives more detail on nearer values
+        float finalDepth = _logf(dA*dVal+1.0f)/_logf(dA+1.0f);
+
+        color = to_float4_aw(finalColor, finalDepth);
+
+    }
+
+    fragColor = color;
+
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+
+
+
+----------------Image---------------
+-- source of kernel
+ImageKernel =
+    [[
+
+//############### Image->A ######################
+
+#define swixyz(V) to_float3((V).x,(V).y,(V).z)
+
+#define WO_0 (1.0f/8.0f)
+#define WO_1 (1.0f/8.0f)
+
+#define FOG_MIN 0.0f
+#define FOG_MAX 1.0f
+#define FOG_COLOR make_float3(0.325f, 0.3f, 0.375f)
+
+__DEVICE__ float isInInterval(float a, float b, float x) {
+    return step(a, x) * (1.0f - step(b, x));
+}
+
+#define inout
+__DEVICE__ void outlineCheck(float2 uv, float weight, float aBase, inout float *n, __TEXTURE2D__ iChannel0) {
+    float4 data = _tex2DVecN(iChannel0, uv.x,uv.y, 15);
+    float depth = data.w;
+
+    *n += weight * (1.0f - isInInterval(aBase-0.004f, aBase+0.004f, depth));
+}
+
+__DEVICE__ float outline(float2 uv, float aBase, float2 iR, __TEXTURE2D__ iChannel0) {
+    float2 uvPixel = 1.0f/iR;
+    float n = 0.0f;
+
+    outlineCheck(uv + make_float2( 1.0f, 0.0f)*uvPixel, WO_1, aBase, &n, iChannel0);
+    outlineCheck(uv + make_float2( 0.0f, 1.0f)*uvPixel, WO_1, aBase, &n, iChannel0);
+    outlineCheck(uv + make_float2( 0.0f,-1.0f)*uvPixel, WO_1, aBase, &n, iChannel0);
+    outlineCheck(uv + make_float2(-1.0f, 0.0f)*uvPixel, WO_1, aBase, &n, iChannel0);
+
+    outlineCheck(uv + make_float2( 1.0f, 1.0f)*uvPixel, WO_0, aBase, &n, iChannel0);
+    outlineCheck(uv + make_float2( 1.0f,-1.0f)*uvPixel, WO_0, aBase, &n, iChannel0);
+    outlineCheck(uv + make_float2(-1.0f, 1.0f)*uvPixel, WO_0, aBase, &n, iChannel0);
+    outlineCheck(uv + make_float2(-1.0f,-1.0f)*uvPixel, WO_0, aBase, &n, iChannel0);
+
+    return n;
+}
+
+//********** Standard Imageparameter: center,size, angle, pivot *************
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+  float C = _cosf(angle);
+  float S = _sinf(angle);
+
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+
+return uv;
+}
+
+//************************************************************************
+__KERNEL__ void ImageKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  if (x < params->width && y < params->height)
+  {
+    //-----------------------
+     float2 fragCoord = to_float2(x+0.5f, y+0.5f);
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime;
+     float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+
+	float2 uv = fragCoord / iResolution;
+
+	// Standardparameter
+    uv-=0.5f;
+    uv *= params->scale;
+    uv -=  to_float2( (params->center[0]-1.0f), (params->center[1]-1.0f));
+    float2 pivot = to_float2(((params->pivot[0]+0.0f)*ratio),(params->pivot[1]+0.0f));
+    uv = spin(to_float2(uv.x*ratio,uv.y), pivot*params->scale, params->angle, 1.0f);
+	uv.x/=ratio;
+
+    float4 data = _tex2DVecN(iChannel0, uv.x, uv.y, 15);
+    float depth = data.w;
+
+    float fogAmount = _powf(_mix(FOG_MIN, FOG_MAX, depth), 3.0f);
+    float3 finalColor = _mix(swixyz(data), FOG_COLOR, fogAmount);
+
+    float outlineAmount = outline(uv, depth,iResolution,iChannel0);
+    float3 outlineColor = to_float3_s(0.0f);
+    finalColor = _mix(finalColor, outlineColor, outlineAmount*0.8f);
+
+    float2 radv = uv - to_float2_s(0.5f);
+    float dCorner = length(radv);
+    float vignetteFactor = 1.0f - _mix(0.0f, 0.5f, smoothstep(0.2f, 0.707f, dCorner));
+    finalColor *= vignetteFactor;
+
+    fragColor = to_float4_aw(finalColor, params->alpha);
+
+
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+-- "LUA CODE..." /**
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+--self:BeginControlNest("Standard", "StandardParameter", true, {})
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+	IC_Visible         = false,
+  })
+
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+	IC_Visible         = true,
+  })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "true",
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+	IC_Visible         = true,
+  })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    INP_MinScale = 0.0,
+    INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",
+    IC_Visible         = false,
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+	IC_Visible         = true,
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+  })
+
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+	IC_Visible         = true,
+  })
+
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 1,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true,
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+	IC_Visible          = true,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	IC_Visible          = true,
+	INP_MinScale = 0.0,
+	INP_MaxScale = 2.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+  })
+
+    InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = false,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+
+
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	IC_Visible          = false,
+    INP_MinScale = -10.0,
+	INP_MaxScale = 10.0,
+	--INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+--self:EndControlNest()
+
+
+self:BeginControlNest("Look_Parameter", "Draw_Parameter", true, {})
+
+  InDraw = self:AddInput("", "Filters", {
+    { MBTNC_AddButton    = "Auto", MBTNCID_AddID = "Nothing", },
+    { MBTNC_AddButton    = "Manual", MBTNCID_AddID = "Draw", },
+    INPID_DefaultID      = "Nothing",
+    LINKID_DataType      = "FuID",
+    INPID_InputControl   = "MultiButtonIDControl",
+    ICD_Width            = 1.0,
+    MBTNC_StretchToFit   = true,
+    MBTNC_ForceButtons   = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible           = true,
+    --INP_External = false,
+  })
+
+  InNewCoords = self:AddInput("Coords","Drawcoords", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+	INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.5,
+    INP_DefaultY = 0.5,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+
+self:EndControlNest()
+
+
+self:BeginControlNest("Color_Parameter", "ColorParameter", true, {})
+
+	InBrightness = self:AddInput("Brightness", "Brightness", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1.5,
+		IC_Visible          = false,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InAlpha_Apply = self:AddInput("Apply Alpha", "Alpha_Apply", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "CheckboxControl",
+		INP_Integer = false,
+		INP_Default = 0,
+		IC_Visible           = false,
+		ICD_Width = 1,
+		--INP_DoNotifyChanged = true,
+	})
+	InAlpha = self:AddInput("Alpha", "Alpha", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+ InRedCH = self:AddInput("Red", "RedCH", {
+    ICS_Name            = "BaseColor",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.0,
+    INP_MaxScale        = 0.5,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 0,
+  })
+  InGreenCH = self:AddInput("Green", "GreenCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.0,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 1,
+  })
+  InBlueCH = self:AddInput("Blue", "BlueCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.0,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 2,
+  })
+
+
+self:EndControlNest()
+
+--self:BeginControlNest("Image "..dctlfuse_name, "ImageNest2", true, {ICS_ControlPage  = "Image",})
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+	{ CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	{ CCS_AddString  = "Image1", },
+    { CCS_AddString  = "1920x1080", },
+	{ CCS_AddString  = "1200x675", },
+	{ CCS_AddString  = "800x450", },
+	{ CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+
+  	InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+
+
+
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+
+    InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false })
+
+
+--self:EndControlNest()
+
+
+	self:AddControlPage("Image")
+	InGlobalIn = self:AddInput("Global In", "GlobalIn", {
+	  LINKID_DataType     = "Number",
+	})
+	InGlobalOut = self:AddInput("Global Out", "GlobalOut", {
+	  LINKID_DataType     = "Number",
+	})
+
+  ShaderFuse.end_create()
+
+
+------------------- In/Out -----------------
+
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+	LINK_Visible = false,
+    LINK_Main = 1,
+    INP_Required = false
+  })
+  InImage2 = self:AddInput("Image1", "Image1", {
+    LINKID_DataType = "Image",
+	LINK_Visible = false,
+    LINK_Main = 2,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  OutImage2 = self:AddOutput("Output2", "Output2", {
+    LINKID_DataType = "Image",
+	LINK_Visible = false,
+    LINK_Main = 2,
+  })
+
+
+end
+
+function NotifyChanged(inp, param, time)
+	if inp ~= nil and param ~= nil then
+
+		if inp == InCenter then
+			-- the center moved, reposition the axis according to the current offset
+			nCenterX = param.X
+			nCenterY = param.Y
+
+			InPivot:SetAttrs({
+			PCD_OffsetX = nCenterX - 0.5,
+			PCD_OffsetY = nCenterY - 0.5,
+			})
+
+			InAngle:SetAttrs({
+			PCD_OffsetX = (nCenterX - 0.5)/100,
+			PCD_OffsetY = (nCenterY - 0.5)/100,
+			})
+
+			InNewCoords:SetAttrs({
+			PCD_OffsetX = nCenterX - 0.5,
+			PCD_OffsetY = nCenterY - 0.5,
+			})
+
+		end
+		if inp == InWidgets then
+		  if param.Value == 1.0 then
+			 InCenter:SetAttrs({ PC_Visible = false })
+			 InAngle:SetAttrs({ PC_Visible = false })
+			 InPivot:SetAttrs({ PC_Visible = false })
+			 InScale:SetAttrs({ PC_Visible = false })
+		  else
+			 InCenter:SetAttrs({ PC_Visible = true })
+			 InAngle:SetAttrs({ PC_Visible = true })
+			 InPivot:SetAttrs({ PC_Visible = true })
+			 InScale:SetAttrs({ PC_Visible = true })
+		  end
+		end
+
+		if (inp == InDraw) then
+          if (param.Value == "Draw" or param.Value == "Erase") then
+			 InNewCoords:SetAttrs({ IC_Visible = true })
+		  else
+			 InNewCoords:SetAttrs({ IC_Visible = false })
+		  end
+		end
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			 InWidth:SetAttrs({ IC_Visible = true })
+			 InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			 InWidth:SetAttrs({ IC_Visible = false })
+			 InHeight:SetAttrs({ IC_Visible = false })
+		  end
+
+		  if param.Value == 3 then --1920x1080
+			 InWidth:SetSource(Number(1920),0,0)
+			 InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			 InWidth:SetSource(Number(1200),0,0)
+			 InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			 InWidth:SetSource(Number(800),0,0)
+			 InHeight:SetSource(Number(450),0,0)
+		  end
+ 	      if param.Value == 6 then --640x360
+		     InWidth:SetSource(Number(640),0,0)
+			 InHeight:SetSource(Number(360),0,0)
+		  end
+		end
+
+		if inp == InStop then
+		  if param.Value == 1 then
+			 InActtime:SetAttrs({IC_Visible = true})
+		  else
+			 InActtime:SetAttrs({IC_Visible = false})
+		  end
+		end
+
+		if inp == InLogoSw then
+		  if param.Value == 1 then
+			 --authorlogo:SetAttrs({IC_Visible = true})
+		  else
+			 --authorlogo:SetAttrs({IC_Visible = false})
+		  end
+		end
+
+	end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+	    IMG_DeferAlloc = false,
+        }
+
+Image_Buff_GlobalA = Image(ImgAttrs_Global)
+
+
+timestamp = 0
+--------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle  = -InAngle:GetValue(req).Value/360*3.1415*2
+    local scale  = InScale:GetValue(req).Value
+    local freq   = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+	-- Imagesize and Depth
+    if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InImage2:GetValue(req) ~= nil) then
+			   Width = InImage2:GetValue(req).Width
+			   Height = InImage2:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value
+		end
+	end
+	if InDepth:GetValue(req).Value == 0 then
+		SourceDepth = 7
+	else
+	    SourceDepth = 8
+	end
+
+
+
+    local draw   = 0
+
+    if InDraw:GetValue(req).Value == "Draw"   then draw = 1 end
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    src1 = Image(imgattrs)
+    src1:Fill(p)
+
+    tex = false
+	  if (InImage2:GetValue(req) ~= nil) then
+         src2 = InImage2:GetValue(req)
+		 tex = true
+      else
+         src2 = Image(imgattrs)
+         src2:Fill(p)
+      end
+
+
+    local dstA = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+	local dstI = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+	if req:IsPreCalc() then
+		 --print("\n######################### Precalc ##############################\n")
+		 local out = Image({IMG_Like = dstI, IMG_NoData = true})
+		 OutImage:Set(req, out)
+		 OutImage2:Set(req, out)
+		 return
+	end
+
+	    --StartStop
+    if InStop:GetValue(req).Value == 0 then
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   else
+	      _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	   end
+	end
+
+    acttime = _acttime / framerate
+
+
+
+    -------------------------- BufferA-Kernel----------------------------------------
+    local nodeName = self.Name
+    BufferAKernel = string.gsub(BufferAKernel, "BufferAKernel", nodeName.."A")
+    nodeA = DVIPComputeNode(req, nodeName.."A", BufferAKernel, "GlobalParams", GlobalParams)
+
+	--nodeA = DVIPComputeNode(req, "BufferAKernel", BufferAKernel, "GlobalParams", GlobalParams)
+
+	local params = {}
+	if not pcall(function ()
+
+		params.center = {center.X,center.Y}
+		params.scale = 1/scale
+		params.debug = InDebug:GetValue(req).Value
+		params.angle = angle
+		params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq = freq
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime = acttime --req.Time / framerate
+		params.iframe = req.Time
+
+		params.draw         = draw --InDraw:GetValue(req).Value
+		params.drawcoords   = {InNewCoords:GetValue(req).X,InNewCoords:GetValue(req).Y}
+
+		params.brightness   = InBrightness:GetValue(req).Value
+		params.Alpha_Apply 	= InAlpha_Apply:GetValue(req).Value
+		params.alpha    	= InAlpha:GetValue(req).Value
+		params.color        = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+
+		nodeA:SetParamBlock(params)
+    end) then
+
+		params = nodeA:GetParamBlock(GlobalParams)
+
+		params.center = {center.X,center.Y}
+		params.scale = 1/scale
+		params.debug = InDebug:GetValue(req).Value
+		params.angle = angle
+		params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq = freq
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime = acttime --req.Time / framerate
+		params.iframe = req.Time
+
+		params.draw         = draw --InDraw:GetValue(req).Value
+		params.drawcoords   = {InNewCoords:GetValue(req).X,InNewCoords:GetValue(req).Y}
+
+		params.brightness   = InBrightness:GetValue(req).Value
+		params.Alpha_Apply 	= InAlpha_Apply:GetValue(req).Value
+		params.alpha    	= InAlpha:GetValue(req).Value
+        params.color        = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+
+		nodeA:SetParamBlock(params)
+	end
+
+    nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+    nodeA:AddInput("iChannel0", src2)
+    nodeA:AddOutput("dst", dstA)
+
+
+    local success = nodeA:RunSession(req)
+    if not success then
+        dstA = nil
+        dump(nodeA:GetErrorLog())
+    end
+
+    Image_Buff_GlobalA = dstA --Recursiv Image
+
+
+
+  -------------------------- ImageKernel----------------------------------------
+  --node = DVIPComputeNode(req, "ImageKernel", ImageKernel, "GlobalParams", GlobalParams)
+
+  ImageKernel = string.gsub(ImageKernel, "ImageKernel", "IK"..nodeName)
+  node = DVIPComputeNode(req, "IK"..nodeName, ImageKernel, "GlobalParams", GlobalParams)
+
+  node:SetParamBlock(params)
+
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_CLAMP,  TEX_NORMALIZED_COORDS_TRUE)
+
+
+  node:AddInput("iChannel0", Image_Buff_GlobalA)
+  node:AddInput("iChannel1", src2)
+  node:AddInput("iChannel2", src2)
+  node:AddInput("iChannel3", src2)
+  node:AddOutput("dst", dstI)
+
+  local success = node:RunSession(req)
+  if not success then
+      dstI = nil
+      dump(node:GetErrorLog())
+  end
+
+  OutImage:Set(req, dstI)
+	collectgarbage();
+end
+
+
+-- **/ "End of LUA CODE"
+
