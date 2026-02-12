@@ -27,18 +27,16 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (28th of January 2026):
+#### Current Shader of the Week (12th of February 2026):
 
-[![Mandelbrot Pattern Decoration](ShaderOfTheWeek/MandelbrotPatternDecoration.gif)](ShaderOfTheWeek/MandelbrotPatternDecoration.md) <br>
-[Mandelbrot Pattern Decoration](ShaderOfTheWeek/MandelbrotPatternDecoration.md) by [Shane](https://www.shadertoy.com/user/Shane)
+[![Quanta half](ShaderOfTheWeek/QuantaHalf.gif)](ShaderOfTheWeek/QuantaHalf.md) <br>
+[Quanta half](ShaderOfTheWeek/QuantaHalf.md) by [liamegan](https://www.shadertoy.com/user/liamegan)
 
 
 
 #### My personal shader of the week:
-[![ Industrial Complex + FPS Control
-](Tunnel/IndustrialComplexFpsControl.gif)](Tunnel/IndustrialComplexFpsControl.md) <br>
-[ Industrial Complex + FPS Control
-](Tunnel/IndustrialComplexFpsControl.md) by [RedKef](https://www.shadertoy.com/user/RedKef)
+[![Spot approximation](Object/SpotApproximation.gif)](Object/SpotApproximation.md) <br>
+[Spot approximation](Object/SpotApproximation.md) by [kaiavintr](https://www.shadertoy.com/user/kaiavintr)
 
 <center>
 </center>
