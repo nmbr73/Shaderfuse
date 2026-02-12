@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 12th of February 2026
+#### [Quanta half](QuantaHalf.md) (Shadertoy ID [lffSRN](https://www.shadertoy.com/view/lffSRN))
+[![Quanta half](ShaderOfTheWeek/QuantaHalf.gif)](ShaderOfTheWeek/QuantaHalf.md)
+----
 ## 28th of January 2026
 #### [Mandelbrot Pattern Decoration](MandelbrotPatternDecoration.md) (Shadertoy ID [ttscWn](https://www.shadertoy.com/view/ttscWn))
 [![Mandelbrot Pattern Decoration](ShaderOfTheWeek/MandelbrotPatternDecoration.gif)](ShaderOfTheWeek/MandelbrotPatternDecoration.md)
