@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 26th of February 2026
+#### [UV Mapping Truchet Tiles](UvMappingTruchetTiles.md) (Shadertoy ID [NddGzH](https://www.shadertoy.com/view/NddGzH))
+[![UV Mapping Truchet Tiles](ShaderOfTheWeek/UvMappingTruchetTiles.gif)](ShaderOfTheWeek/UvMappingTruchetTiles.md)
+----
 ## 12th of February 2026
 #### [Quanta half](QuantaHalf.md) (Shadertoy ID [lffSRN](https://www.shadertoy.com/view/lffSRN))
 [![Quanta half](ShaderOfTheWeek/QuantaHalf.gif)](ShaderOfTheWeek/QuantaHalf.md)
