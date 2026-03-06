@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (26th of February 2026):
+#### Current Shader of the Week (6th of March 2026):
 
-[![UV Mapping Truchet Tiles](ShaderOfTheWeek/UvMappingTruchetTiles.gif)](ShaderOfTheWeek/UvMappingTruchetTiles.md) <br>
-[UV Mapping Truchet Tiles](ShaderOfTheWeek/UvMappingTruchetTiles.md) by [byt3_m3chanic](https://www.shadertoy.com/user/byt3_m3chanic)
+[![Disco Sun Vortex](ShaderOfTheWeek/DiscoSunVortex.gif)](ShaderOfTheWeek/DiscoSunVortex.md) <br>
+[Disco Sun Vortex](ShaderOfTheWeek/DiscoSunVortex.md) by [workingclasshacker](https://www.shadertoy.com/user/workingclasshacker)
 
 
 

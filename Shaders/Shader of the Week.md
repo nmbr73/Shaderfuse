@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 6th of March 2026
+#### [Disco Sun Vortex](DiscoSunVortex.md) (Shadertoy ID [7cfGzn](https://www.shadertoy.com/view/7cfGzn))
+[![Disco Sun Vortex](ShaderOfTheWeek/DiscoSunVortex.gif)](ShaderOfTheWeek/DiscoSunVortex.md)
+----
 ## 26th of February 2026
 #### [UV Mapping Truchet Tiles](UvMappingTruchetTiles.md) (Shadertoy ID [NddGzH](https://www.shadertoy.com/view/NddGzH))
 [![UV Mapping Truchet Tiles](ShaderOfTheWeek/UvMappingTruchetTiles.gif)](ShaderOfTheWeek/UvMappingTruchetTiles.md)
