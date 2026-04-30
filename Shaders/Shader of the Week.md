@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 30th of April 2026
+#### [Fractal Land](DiscoSunVortex.md) (Shadertoy ID [XsBXWt](https://www.shadertoy.com/view/XsBXWt))
+[![Fractal Land](ShaderOfTheWeek/FractalXLandX.gif)](ShaderOfTheWeek/FractalXLandX.md)
+----
 ## 6th of March 2026
 #### [Disco Sun Vortex](DiscoSunVortex.md) (Shadertoy ID [7cfGzn](https://www.shadertoy.com/view/7cfGzn))
 [![Disco Sun Vortex](ShaderOfTheWeek/DiscoSunVortex.gif)](ShaderOfTheWeek/DiscoSunVortex.md)
