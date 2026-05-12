@@ -27,14 +27,20 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (30th of April 2026):
+#### Current Shader of the Week (12th of May 2026):
 
-[![Fractal Land](ShaderOfTheWeek/FractalXLandX.gif)](ShaderOfTheWeek/FractalXLandX.md) <br>
-[Fractal Land](ShaderOfTheWeek/FractalXLandX.md) by [Kali](https://www.shadertoy.com/user/Kali)
+[![Reactor de Núcleo de Cristal](ShaderOfTheWeek/ReactorDeNCleoDeCristal.gif)](ShaderOfTheWeek/ReactorDeNCleoDeCristal.md) <br>
+[Reactor de Núcleo de Cristal](ShaderOfTheWeek/ReactorDeNCleoDeCristal.md) by [gus78](https://www.shadertoy.com/user/gus78)
 
 
 
 ### A new Category: Monster
+[![Magnemite](Monster/Magnemite.gif)](Monster/Magnemite.md) <br>
+[Magnemite](Monster/Magnemite.md) by [noztol](https://www.shadertoy.com/user/noztol)
+
+[![Staryu](Monster/Staryu.gif)](Monster/Staryu.md) <br>
+[Staryu](Monster/Staryu.md) by [noztol](https://www.shadertoy.com/user/noztol)
+
 [![Gastly](Monster/Gastly.gif)](Monster/Gastly.md) <br>
 [Gastly](Monster/Gastly.md) by [noztol](https://www.shadertoy.com/user/noztol)
 
