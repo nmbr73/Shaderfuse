@@ -27,14 +27,17 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (12th of May 2026):
+#### Current Shader of the Week (22th of May 2026):
 
-[![Reactor de Núcleo de Cristal](ShaderOfTheWeek/ReactorDeNCleoDeCristal.gif)](ShaderOfTheWeek/ReactorDeNCleoDeCristal.md) <br>
-[Reactor de Núcleo de Cristal](ShaderOfTheWeek/ReactorDeNCleoDeCristal.md) by [gus78](https://www.shadertoy.com/user/gus78)
+[![Unimagined](ShaderOfTheWeek/Unimagined.gif)](ShaderOfTheWeek/Unimagined.md) <br>
+[Unimagined](ShaderOfTheWeek/Unimagined.md) by [OldEclipse](https://www.shadertoy.com/user/OldEclipse)
 
 
 
 ### A new Category: Monster
+[![Goldeen](Monster/Goldeen.gif)](Monster/Goldeen.md) <br>
+[Goldeen](Monster/Goldeen.md) by [noztol](https://www.shadertoy.com/user/noztol)
+
 [![Magnemite](Monster/Magnemite.gif)](Monster/Magnemite.md) <br>
 [Magnemite](Monster/Magnemite.md) by [noztol](https://www.shadertoy.com/user/noztol)
 

@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 22th of May 2026
+#### [Unimagined](Unimagined.md) (Shadertoy ID [NflSD8](https://www.shadertoy.com/view/NflSD8))
+[![Unimagined](ShaderOfTheWeek/Unimagined.gif)](ShaderOfTheWeek/Unimagined.md)
+----
 ## 12th of May 2026
 #### [Reactor de Núcleo de Cristal](ReactorDeNCleoDeCristal.md) (Shadertoy ID [NXf3Rf](https://www.shadertoy.com/view/NXf3Rf))
 [![Reactor de Núcleo de Cristal](ShaderOfTheWeek/ReactorDeNCleoDeCristal.gif)](ShaderOfTheWeek/ReactorDeNCleoDeCristal.md)
