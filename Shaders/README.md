@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (22th of May 2026):
+#### Current Shader of the Week (27th of May 2026):
 
-[![Unimagined](ShaderOfTheWeek/Unimagined.gif)](ShaderOfTheWeek/Unimagined.md) <br>
-[Unimagined](ShaderOfTheWeek/Unimagined.md) by [OldEclipse](https://www.shadertoy.com/user/OldEclipse)
+[![More Fractal Ropes](ShaderOfTheWeek/MoreFractalRopes.gif)](ShaderOfTheWeek/MoreFractalRopes.md) <br>
+[More Fractal Ropes](ShaderOfTheWeek/MoreFractalRopes.md) by [SnoopethDuckDuck](https://www.shadertoy.com/user/SnoopethDuckDuck)
 
 
 
