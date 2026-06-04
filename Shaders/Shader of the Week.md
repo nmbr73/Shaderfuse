@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 4th of June 2026
+#### [Walk Like an Egyptian](WalkLikeAnEgyptian.md) (Shadertoy ID [msjGzw](https://www.shadertoy.com/view/msjGzw))
+[![Walk Like an Egyptian](ShaderOfTheWeek/WalkLikeAnEgyptian.gif)](ShaderOfTheWeek/WalkLikeAnEgyptian.md)
+----
 ## 27th of May 2026
 #### [More Fractal Ropes](MoreFractalRopes.md) (Shadertoy ID [7sscW4](https://www.shadertoy.com/view/7sscW4))
 [![More Fractal Ropes](ShaderOfTheWeek/MoreFractalRopes.gif)](ShaderOfTheWeek/MoreFractalRopes.md)
