@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 10th of July 2026
+#### [More "cubes" for the cube lovers](MoreCubesForTheCubeLovers.md) (Shadertoy ID [mslfR2](https://www.shadertoy.com/view/mslfR2))
+[![More "cubes" for the cube lovers](ShaderOfTheWeek/MoreCubesForTheCubeLovers.gif)](ShaderOfTheWeek/MoreCubesForTheCubeLovers.md)
+----
 ## 4th of June 2026
 #### [Walk Like an Egyptian](WalkLikeAnEgyptian.md) (Shadertoy ID [msjGzw](https://www.shadertoy.com/view/msjGzw))
 [![Walk Like an Egyptian](ShaderOfTheWeek/WalkLikeAnEgyptian.gif)](ShaderOfTheWeek/WalkLikeAnEgyptian.md)

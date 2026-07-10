@@ -27,10 +27,10 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
-#### Current Shader of the Week (4th of June 2026):
+#### Current Shader of the Week (10th of July 2026):
 
-[![Walk Like an Egyptian](ShaderOfTheWeek/WalkLikeAnEgyptian.gif)](ShaderOfTheWeek/WalkLikeAnEgyptian.md) <br>
-[Walk Like an Egyptian](ShaderOfTheWeek/WalkLikeAnEgyptian.md) by [XT95](https://www.shadertoy.com/user/XT95)
+[![More Cubes For The Cube Lovers](ShaderOfTheWeek/MoreCubesForTheCubeLovers.gif)](ShaderOfTheWeek/WalkLikeAnEgyptian.md) <br>
+[More "cubes" for the cube lovers](ShaderOfTheWeek/MoreCubesForTheCubeLovers.md) by [mrange](https://www.shadertoy.com/user/mrange)
 
 
 
