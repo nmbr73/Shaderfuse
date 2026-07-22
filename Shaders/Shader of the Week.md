@@ -3,6 +3,10 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 22th of July 2026
+#### [Cave Diving](CaveDiving.md) (Shadertoy ID [XcVyWD](https://www.shadertoy.com/view/XcVyWD))
+[![Cave Diving](ShaderOfTheWeek/CaveDiving.gif)](ShaderOfTheWeek/CaveDiving.md)
+----
 ## 10th of July 2026
 #### [More "cubes" for the cube lovers](MoreCubesForTheCubeLovers.md) (Shadertoy ID [mslfR2](https://www.shadertoy.com/view/mslfR2))
 [![More "cubes" for the cube lovers](ShaderOfTheWeek/MoreCubesForTheCubeLovers.gif)](ShaderOfTheWeek/MoreCubesForTheCubeLovers.md)

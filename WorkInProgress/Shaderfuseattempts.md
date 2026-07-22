@@ -13,6 +13,152 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[Cave Diving](https://www.shadertoy.com/view/XcVyWD)| fuse | ShaderOfTheWeek 29/26 |
+|[Retro TV Random Signal](https://www.shadertoy.com/view/Nfc3Rj)| incub | !!! |
+|[holographic foil card openPose](https://www.shadertoy.com/view/scd3zM)| incub | A Text defect |
+|[v12](https://www.shadertoy.com/view/scc3Dr)| incub | !! |
+|[MIDI Paint Streams](https://www.shadertoy.com/view/NXf3Dj)| defect |  |
+|[liquid smoke](https://www.shadertoy.com/view/wfSBDz)| defect |  |
+|[Gravity Terrain Formation](https://www.shadertoy.com/view/fXS3DV)| defect |  |
+|[More "cubes" for the cube lovers](https://www.shadertoy.com/view/mslfR2)| fuse | ShaderOfTheWeek28/26 |
+|[Foggy Piggy](https://www.shadertoy.com/view/NXBSRV)| incub | !! |
+|[Treadmill run](https://www.shadertoy.com/view/s3SSzc)| incub | !!! |
+|[Ammolite simple tunnel](https://www.shadertoy.com/view/sXlSzj)| incub |  |
+|[D & D - Cuonjavaggi ](https://www.shadertoy.com/view/7XsXR2)| incub | A ! |
+|[Ambient Being in Space](https://www.shadertoy.com/view/fXlSD7)| incub | !! |
+|[Cozy Cabin TV](https://www.shadertoy.com/view/N3fXD8)| incub | ! |
+|[Candy Lane Waves](https://www.shadertoy.com/view/7XfSDN)| incub | ! |
+|[Yoshi SDF Scene](https://www.shadertoy.com/view/sXsXDr)| incub | !! |
+|[Ink Mix](https://www.shadertoy.com/view/s3fSWn)| incub | A Blending ! |
+|[Taiji symbol 2](https://www.shadertoy.com/view/7XXSDn)| incub | A |
+|[Particules + Mouse](https://www.shadertoy.com/view/73f3zs)| incub | A Blending |
+|[It's Sparky!](https://www.shadertoy.com/view/f3lXzN)| incub |  |
+|[D & D-Carving - A Menger journey](https://www.shadertoy.com/view/NXlGRs)| incub | !! |
+|[Paint #5 y28](https://www.shadertoy.com/view/N3lXRH)| incub | AB !! |
+|[Singularidad Ruido Bio-Orgánico](https://www.shadertoy.com/view/73fSR4)| incub | ! |
+|[Walk Like an Egyptian](https://www.shadertoy.com/view/msjGzw)| fuse | ShaderOFTheWeek |
+|[depth reconstruction](https://www.shadertoy.com/view/7323Ww)| incub | ! |
+|[Bromine Clouds](https://www.shadertoy.com/view/f3sSzn)| incub |  |
+|[Cloud Buster](https://www.shadertoy.com/view/fX2GDV)| incub | A Blending! |
+|[Scorched Earf](https://www.shadertoy.com/view/f3SGRK)| incub | ! |
+|[More Fractal Ropes](https://www.shadertoy.com/view/7sscW4)| incub |  |
+|[Everyday 282 - Bouncing](https://www.shadertoy.com/view/N3j3zR)| incub | ABC ! |
+|[Unimagined](https://www.shadertoy.com/view/NflSD8)| incub | ShaderOfTheWeek |
+|[Paint streams](https://www.shadertoy.com/view/WtfyDj)| incub | !!!! |
+|[Nox Fire Vertex](https://www.shadertoy.com/view/3fGGWm)| incub | ! |
+|[Goldeen](https://www.shadertoy.com/view/sXfGWj)| fuse | !!! |
+|[School of Magickarp](https://www.shadertoy.com/view/f3fGW2)| fuse | !! |
+|[Reactor de Núcleo de Cristal](https://www.shadertoy.com/view/NXf3Rf)| incub | ! |
+|[Ekans](https://www.shadertoy.com/view/fXf3zs)| fuse | !! |
+|[Voxel Pillars Webcam #2 (Fixed)](https://www.shadertoy.com/view/f3s3Rs)| incub | ! |
+|[Magnemite](https://www.shadertoy.com/view/fXX3zX)| fuse | !! |
+|[Staryu](https://www.shadertoy.com/view/s3XGRX)| fuse | !! |
+|[RW_HWweek3 3D - Monster](https://www.shadertoy.com/view/MffcW2)| fuse | !! |
+|[ocean_with_boat](https://www.shadertoy.com/view/7XfGzN)| incub |  |
+|[Endless Puzzle](https://www.shadertoy.com/view/N3sGD4)| incub | !! |
+|[IC Marching](https://www.shadertoy.com/view/fXs3W7)| incub | !!! |
+|[Oddish](https://www.shadertoy.com/view/NXX3RB)| fuse | Monster |
+|[Geodude](https://www.shadertoy.com/view/fXfGW7)| fuse | Monster |
+|[Voxel Pillars webcam Y28](https://www.shadertoy.com/view/s3XGWH)| incub | !! |
+|[Voices In My Head - Anyma](https://www.shadertoy.com/view/sXf3Dn)| incub | !! |
+|[Four Season](https://www.shadertoy.com/view/NXX3z8)| incub | !!! |
+|[Label Contour GLSL Shader](https://www.shadertoy.com/view/N3X3DM)| incub | !! |
+|[Dragonair](https://www.shadertoy.com/view/sXf3DN)| fuse | Monster |
+|[Ditto](https://www.shadertoy.com/view/fXl3z4)| fuse | Monster |
+|[Gastly](https://www.shadertoy.com/view/N3l3RN)| fuse | Monster |
+|[Grimer](https://www.shadertoy.com/view/73l3zN)| fuse | Monster |
+|[Venonat](https://www.shadertoy.com/view/73s3z7)| fuse | Monster |
+|[Poliwag](https://www.shadertoy.com/view/fXl3Wn)| fuse | Monster |
+|[Sad Voltorb](https://www.shadertoy.com/view/N3s3RN)| fuse | Monster |
+|[Fork Mouse-Pain jassra 137](https://www.shadertoy.com/view/NXX3RH)| incub | ABC !!! |
+|[Fractal Land](https://www.shadertoy.com/view/XsBXWt)| fuse | ShaderOfTheWeek |
+|[Void Painter in Granular Medium](https://www.shadertoy.com/view/fc2XRd)| incub | ABCD !! Blending |
+|[Ovni II](https://www.shadertoy.com/view/7fBXRV)| incub | !! |
+|[Crumpled Paper Effect](https://www.shadertoy.com/view/fc2XRc)| incub | !! Blending |
+|[physarum](https://www.shadertoy.com/view/mlSSWW)| incub | AB ! |
+|[Immolation](https://www.shadertoy.com/view/WXsfzj)| defect |  |
+|[Apollo Fire](https://www.shadertoy.com/view/WXXfWH)| defect |  |
+|[PCGSPH (gas)](https://www.shadertoy.com/view/WftyR2)| defect |  |
+|[Wretched](https://www.shadertoy.com/view/tXsyR8)| defect |  |
+|[Multispecies PCCA SPH](https://www.shadertoy.com/view/tfyyWD)| defect | ABC nur weiss |
+|[KuKo #226](https://www.shadertoy.com/view/WfVcRK)| defect |  |
+|[BOIDS!!!!!](https://www.shadertoy.com/view/WcGyDy)| defect |  |
+|[Warped Offset Block Corridor](https://www.shadertoy.com/view/tXccDj)| defect |  |
+|[pseudo Poisson-disc - trace2](https://www.shadertoy.com/view/tXVyDG)| defect |  |
+|[My Torus Tile](https://www.shadertoy.com/view/W3KcWV)| defect |  |
+|[Neon Mitosis: Gray-Scott](https://www.shadertoy.com/view/sflXDs)| incub | A |
+|[robot I (Final)](https://www.shadertoy.com/view/7cjXRD)| incub | !! |
+|[Things (Audio + Shapes)](https://www.shadertoy.com/view/7cfSWs)| incub | !! |
+|[RainFX](https://www.shadertoy.com/view/7clXRl)| incub | ! |
+|[Rainbow Pearl Twisting Sphere](https://www.shadertoy.com/view/sffXRs)| incub | ! |
+|[House Fire](https://www.shadertoy.com/view/7clSzX)| incub | ! |
+|[Flocking Simulation](https://www.shadertoy.com/view/NflXzf)| incub | Ab !  |
+|[Cyberspace data warehouse](https://www.shadertoy.com/view/NlK3Wt)| incub | ! |
+|[Hyperkart](https://www.shadertoy.com/view/scS3Wm)| incub |  |
+|[Analysis_Lab8](https://www.shadertoy.com/view/7csGzN)| incub | ABC  |
+|[a spaceship](https://www.shadertoy.com/view/fcB3Ww)| fuse | !!! |
+|[Currents 2](https://www.shadertoy.com/view/ffjGDh)| incub | ABC ! |
+|[Colorful Particle Fluid 2](https://www.shadertoy.com/view/scSGDz)| incub | AB ! |
+|[Cosmic Pearl](https://www.shadertoy.com/view/NcS3Wz)| incub | A ! |
+|[Bouncy Julia 2](https://www.shadertoy.com/view/ff23DR)| incub | ABC ! |
+|[Vogue Merry](https://www.shadertoy.com/view/sf23Rw)| incub | !! |
+|[Colorful Particle Fluid](https://www.shadertoy.com/view/7fBGzm)| incub | Ab !! |
+|[Voronoi Directional Flow](https://www.shadertoy.com/view/ffSGRD)| incub | ABCD ! |
+|[Blue Red Shiny 2](https://www.shadertoy.com/view/7cjGRR)| incub |  |
+|[MaCE Lenia:Mass Conserving Lenia](https://www.shadertoy.com/view/7fSGz1)| incub | ABC |
+|[Particle Knot](https://www.shadertoy.com/view/7fX3WS)| incub | AB !! |
+|[Circle of Life / Phase Waves (O)](https://www.shadertoy.com/view/NfXGzj)| incub | ABD ! |
+|[DATT4950 lab 8](https://www.shadertoy.com/view/7fl3zH)| incub | ABC  |
+|[Disco Sun Vortex](https://www.shadertoy.com/view/7cfGzn)| fuse | ShaderOFTheWeek |
+|[UV Mapping Truchet Tiles](https://www.shadertoy.com/view/NddGzH)| fuse |  |
+|[DANCING IN THE SMOKE](https://www.shadertoy.com/view/W3yfDh)| incub |  AB !|
+|[sun with stars](https://www.shadertoy.com/view/tXKfz1)| incub | ! |
+|[Bubble W](https://www.shadertoy.com/view/t3GBDR)| incub | AB ! |
+|[Pressure Fluid SIM! (WIP)](https://www.shadertoy.com/view/wXcBWS)| incub | AB ! |
+|[Less Loopy no loop noise clouds](https://www.shadertoy.com/view/W3Kfzz)| incub | ! |
+|[Prototype 3 Jan 26 2025](https://www.shadertoy.com/view/3XKczc)| incub | A |
+|[Prototype 3-1_ Jan 27 2025](https://www.shadertoy.com/view/W3Vyzc)| incub | A ! |
+|[KuKo #295](https://www.shadertoy.com/view/W3cBDS)| incub | ! |
+|[KuKo #286](https://www.shadertoy.com/view/wXtfRH)| incub | ! |
+|[KuKo #294](https://www.shadertoy.com/view/WXcfzs)| incub | ! |
+|[Quanta half](https://www.shadertoy.com/view/lffSRN)| fuse | A ShaderOFTheWeek |
+|[Spot approximation](https://www.shadertoy.com/view/t3tfD4)| fuse | !!! |
+|[UNDERWATER CAUSTIC TUNNEL](https://www.shadertoy.com/view/w33BR7)| incub | !! |
+|[Growth 1](https://www.shadertoy.com/view/wX3Bz8)| incub | ADC |
+|[rain ripple](https://www.shadertoy.com/view/w3tfzN)| incub |  |
+|[Matrix Zoom Effect](https://www.shadertoy.com/view/w3KyWy)| incub |  |
+|[Simple SDF HUD Frame (line WIP)](https://www.shadertoy.com/view/t3Kyzc)| incub | ! |
+|[Mandelbrot Pattern Decoration](https://www.shadertoy.com/view/ttscWn)| incub |  |
+|[Rothko-esque](https://www.shadertoy.com/view/3XyyDm)| incub | ABCD  |
+|[ICE MAN (Experiment 2 )](https://www.shadertoy.com/view/33dczB)| incub | AB ! |
+|[Experiment Frostbloom 1](https://www.shadertoy.com/view/w3Kcz1)| incub | A |
+|[Fuckin Pissed](https://www.shadertoy.com/view/W3VcWm)| incub | A !! |
+|[Cellular Bubbles 2](https://www.shadertoy.com/view/WXVcWw)| incub | A ! |
+|[[phreax] genuary 2026#10](https://www.shadertoy.com/view/tXVcW1)| incub |  |
+|[texture deform Yoda678](https://www.shadertoy.com/view/3XVyDR)| incub |  |
+|[Julia Scheerer A1 attempt1](https://www.shadertoy.com/view/3XGcDh)| incub | A |
+|[yet another wave simulator](https://www.shadertoy.com/view/3XyyRm)| incub |  |
+|[Saturday cubism experiment](https://www.shadertoy.com/view/ftGfDK)| incub | ! |
+|[loop vison -z-](https://www.shadertoy.com/view/tX3cWj)| incub | ! |
+|[Optically Realistic Bubble](https://www.shadertoy.com/view/WX3yDl)| incub | ! |
+|[Burning Paper Reveal Vertical](https://www.shadertoy.com/view/W3yczR)| incub |  |
+|[DATT4950 lsing Model](https://www.shadertoy.com/view/tXtcz2)| incub | A ! |
+|[tm gyroid 2](https://www.shadertoy.com/view/tXtyW8)| incub |  |
+|[Gyroid Garden](https://www.shadertoy.com/view/w3tyW4)| incub | ! |
+|[[phreax] genuary#5+6](https://www.shadertoy.com/view/W33yz8)| incub | A !! |
+|[Industrial Complex + RRS](https://www.shadertoy.com/view/WXdcDr)| incub |  |
+|[Backr00ms](https://www.shadertoy.com/view/WX3yWH)| incub | ! |
+|[Everyday 156 - Flames](https://www.shadertoy.com/view/3Xdcz4)| incub | AB ! |
+|[more swirly stuff](https://www.shadertoy.com/view/333yWr)| incub | A ! |
+|[OBSNFX - Crystal Pyramid for ZGE](https://www.shadertoy.com/view/wcGBWV)| incub | ! |
+|[n-body gravity sim?](https://www.shadertoy.com/view/WXccRr)| incub | ABC !! |
+|[Everyday 155 - Curl Noise](https://www.shadertoy.com/view/3X3czH)| incub | AB ! |
+|[Wyatt's Cool Accident Asphalt](https://www.shadertoy.com/view/3cGfzt)| incub | A !! |
+|[Life 2.0](https://www.shadertoy.com/view/tcyBRG)| incub | AB ! |
+|[Automata X Showcase 3x2 (3x3)](https://www.shadertoy.com/view/ds2fD1)| incub | AB |
+|[Many Cookies](https://www.shadertoy.com/view/3fKBR1)| incub | AB |
+|[Fractured Orb](https://www.shadertoy.com/view/ttycWW)| incub | A |
+|[Megastructure Path Trace 5](https://www.shadertoy.com/view/WcGyzm)| incub | AB Cube |
 |[Industrial Complex + FPS Control](https://www.shadertoy.com/view/3cdBWl)| fuse | A !!! |
 |[BOIDS!!!!!](https://www.shadertoy.com/view/WcGyDy)| defect |  |
 |[KuKo #227](https://www.shadertoy.com/view/wfGczd)| incub | A !! |
