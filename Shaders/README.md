@@ -27,6 +27,13 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
 
 
+#### My Current Shader of the Week (7th of August 2026):
+
+[![Cartoon: La Linea Episode 10
+](Misc/CartoonLaLineaEpisode10.gif)](Misc/CartoonLaLineaEpisode10.md) <br>
+[Cartoon: La Linea Episode 10
+](Misc/CartoonLaLineaEpisode10.md) by [Espeset](https://www.shadertoy.com/user/Espeset)
+
 #### Current Shader of the Week (22th of July 2026):
 
 [![Cave Diving](ShaderOfTheWeek/CaveDiving.gif)](ShaderOfTheWeek/CaveDiving.md) <br>
