@@ -34,10 +34,10 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 [Cartoon: La Linea Episode 10
 ](Misc/CartoonLaLineaEpisode10.md) by [Espeset](https://www.shadertoy.com/user/Espeset)
 
-#### Current Shader of the Week (22th of July 2026):
+#### Current Shader of the Week (12th of August 2026):
 
-[![Cave Diving](ShaderOfTheWeek/CaveDiving.gif)](ShaderOfTheWeek/CaveDiving.md) <br>
-[Cave Diving](ShaderOfTheWeek/CaveDiving.md) by [Elsio](https://www.shadertoy.com/user/Elsio)
+[![Extruded Fibonacci Zoom](ShaderOfTheWeek/ExtrudedFibonacciZoom.gif)](ShaderOfTheWeek/ExtrudedFibonacciZoom.md) <br>
+[Extruded Fibonacci Zoom](ShaderOfTheWeek/ExtrudedFibonacciZoom.md) by [Shane](https://www.shadertoy.com/user/Shane)
 
 
 
