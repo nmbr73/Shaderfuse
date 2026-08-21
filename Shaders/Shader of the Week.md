@@ -1,11 +1,16 @@
+
 ---
 title: Shader of the Week
+---
+On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
+----
+## 21th of August 2026
+#### [Glass Origin](ShaderOfTheWeek/GlassOrigin.md) (Shadertoy ID [scS3Wy](https://www.shadertoy.com/view/scS3Wy))
+[![Glass Origin](ShaderOfTheWeek/GlassOrigin.gif)](ShaderOfTheWeek/GlassOrigin.md)
 ----
 ## 12th of August 2026
 #### [Extruded Fibonacci Zoom](ShaderOfTheWeek/ExtrudedFibonacciZoom.md) (Shadertoy ID [sfVGDG](https://www.shadertoy.com/view/sfVGDG))
 [![Extruded Fibonacci Zoom](ShaderOfTheWeek/ExtrudedFibonacciZoom.gif)](ShaderOfTheWeek/ExtrudedFibonacciZoom.md)
----
-On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
 ## 22th of July 2026
 #### [Cave Diving](CaveDiving.md) (Shadertoy ID [XcVyWD](https://www.shadertoy.com/view/XcVyWD))
