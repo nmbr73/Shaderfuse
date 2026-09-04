@@ -1,0 +1,1300 @@
+--[[--/*
+
+  AnisotropicBlurImage.fuse
+
+  Based on https://www.shadertoy.com/view/ldcSDB a WebGL shader created by cornusammonis.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+  V0.2 OpenCL & metal B/W Bug corrected
+  V0.3 GoldNoise as default Noise
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iMouse[4];
+  bool   Reset;
+  bool   OrgPar;
+  bool   tex;
+  float  MouseSize;
+  float  _K0;
+  float  _K1;
+  float  _K2;
+  float  cs;
+  float  ls;
+  float  ps;
+  float  ds;
+  float  dp;
+  float  pl;
+  float  ad;
+  float  pwr;
+  float  amp;
+  float  upd;
+  float  sq2;
+  bool   GAMMA_CORRECT;
+  float  Gamma;
+  bool   NORMALIZE_AB;
+  float  BLUR_RATIO;
+  float  SHARPNESS;
+  float  VECTOR_SHARPEN;
+  float  Alpha;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+ #define exp_f4(a) _expf((a))
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+    #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+
+ #define exp_f4(a) _expf((a))
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #define distance_f2( p1, p2) distance(p1, p2)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+    #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+
+ #define exp_f4(a) to_float4(_expf((a).x), _expf((a).y),_expf((a).z),_expf((a).w))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Texture: RGBA Noise Medium' to iChannel1
+// Connect Buffer A 'Preset: Keyboard' to iChannel3
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel0
+
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+/*
+    Generates a vector field using a dynamical system.
+  To see it in action on its own see this shadertoy:
+    https://www.shadertoy.com/view/XddSRX
+*/
+
+//__DEVICE__ bool reset() {
+//    return texture(iChannel3, to_float2(32.5f/256.0f, 0.5f) ).x > 0.5f;
+//}
+
+__DEVICE__ float2 normz(float2 x) {
+  //return x == to_float2(0.0f, 0.0f) ? to_float2(0.0f, 0.0f) : normalize(x);
+  return (x.x == 0.0f && x.y == 0.0f) ? to_float2(0.0f, 0.0f) : normalize(x);
+}
+
+// reverse advection
+__DEVICE__ float3 advect(float2 ab, float2 vUv, float2 step, float sc, __TEXTURE2D__ iChannel0) {
+
+    float2 aUv = vUv - ab * sc * step;
+
+    const float _G0 = 0.25f; // center weight
+    const float _G1 = 0.125f; // edge-neighbors
+    const float _G2 = 0.0625f; // vertex-neighbors
+
+    // 3x3 neighborhood coordinates
+    float step_x = step.x;
+    float step_y = step.y;
+    float2 n  = to_float2(0.0f, step_y);
+    float2 ne = to_float2(step_x, step_y);
+    float2 e  = to_float2(step_x, 0.0f);
+    float2 se = to_float2(step_x, -step_y);
+    float2 s  = to_float2(0.0f, -step_y);
+    float2 sw = to_float2(-step_x, -step_y);
+    float2 w  = to_float2(-step_x, 0.0f);
+    float2 nw = to_float2(-step_x, step_y);
+
+    float3 uv =    swi3(texture(iChannel0, fract_f2(aUv)),x,y,z);
+    float3 uv_n =  swi3(texture(iChannel0, fract_f2(aUv+n)),x,y,z);
+    float3 uv_e =  swi3(texture(iChannel0, fract_f2(aUv+e)),x,y,z);
+    float3 uv_s =  swi3(texture(iChannel0, fract_f2(aUv+s)),x,y,z);
+    float3 uv_w =  swi3(texture(iChannel0, fract_f2(aUv+w)),x,y,z);
+    float3 uv_nw = swi3(texture(iChannel0, fract_f2(aUv+nw)),x,y,z);
+    float3 uv_sw = swi3(texture(iChannel0, fract_f2(aUv+sw)),x,y,z);
+    float3 uv_ne = swi3(texture(iChannel0, fract_f2(aUv+ne)),x,y,z);
+    float3 uv_se = swi3(texture(iChannel0, fract_f2(aUv+se)),x,y,z);
+
+    return _G0*uv + _G1*(uv_n + uv_e + uv_w + uv_s) + _G2*(uv_nw + uv_sw + uv_ne + uv_se);
+}
+
+#define PHI  1.61803398874989484820459 // Φ = Golden Ratio
+
+__DEVICE__ float gold_noise( float2 xy, float seed)
+{
+  return fract(_tanf(distance_f2(xy*PHI, xy)*seed)*xy.x);
+}
+
+
+
+__KERNEL__ void AnisotropicBlurImageFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2,  __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   OrgPar = params->OrgPar;
+  float  MouseSize = params->MouseSize;
+  float  _K0 = params->_K0;
+  float  _K1 = params->_K1;
+  float  _K2 = params->_K2;
+  float  cs = params->cs;
+  float  ls = params->ls;
+  float  ps = params->ps;
+  float  ds = params->ds;
+  float  dp = params->dp;
+  float  pl = params->pl;
+  float  ad = params->ad;
+  float  pwr = params->pwr;
+  float  amp = params->amp;
+  float  upd = params->upd;
+  float  sq2 = params->sq2;
+  //bool   Reset = params->Reset;
+  bool   GAMMA_CORRECT = params->GAMMA_CORRECT;
+  float  Gamma = params->Gamma;
+  bool   NORMALIZE_AB = params->NORMALIZE_AB;
+  float  BLUR_RATIO = params->BLUR_RATIO;
+  float  SHARPNESS = params->SHARPNESS;
+  float  VECTOR_SHARPEN = params->VECTOR_SHARPEN;
+  float  Alpha = params->Alpha;
+
+  // --------
+
+    //CONNECT_SLIDER1(ampMul, -1.0f, 1.0f, 0.00051f);
+    fragCoord+=0.5f;
+
+    if(OrgPar)
+    {
+       _K0 = -20.0f/6.0f; // center weight
+       _K1 = 4.0f/6.0f;   // edge-neighbors
+       _K2 = 1.0f/6.0f;   // vertex-neighbors
+       cs = -0.6f;  // curl scale
+       ls = 0.05f;  // laplacian scale
+       ps = -0.8f;  // laplacian of divergence scale
+       ds = -0.05f; // divergence scale
+       dp = -0.04f; // divergence update scale
+       pl = 0.3f;   // divergence smoothing
+       ad = 6.0f;   // advection distance scale
+       pwr = 1.0f;  // power when deriving rotation angle from curl
+       amp = 1.0f;  // self-amplification
+       upd = 0.8f;  // update smoothing
+       sq2 = 0.6f;  // diagonal weight
+    }
+
+
+    float2 vUv = fragCoord / iResolution;
+    float2 texel = 1.0f / iResolution;
+
+    // 3x3 neighborhood coordinates
+    float step_x = texel.x;
+    float step_y = texel.y;
+    float2 n  = to_float2(0.0f, step_y);
+    float2 ne = to_float2(step_x, step_y);
+    float2 e  = to_float2(step_x, 0.0f);
+    float2 se = to_float2(step_x, -step_y);
+    float2 s  = to_float2(0.0f, -step_y);
+    float2 sw = to_float2(-step_x, -step_y);
+    float2 w  = to_float2(-step_x, 0.0f);
+    float2 nw = to_float2(-step_x, step_y);
+
+    float3 uv =    swi3(texture(iChannel0, fract_f2(vUv)),x,y,z);
+    float3 uv_n =  swi3(texture(iChannel0, fract_f2(vUv+n)),x,y,z);
+    float3 uv_e =  swi3(texture(iChannel0, fract_f2(vUv+e)),x,y,z);
+    float3 uv_s =  swi3(texture(iChannel0, fract_f2(vUv+s)),x,y,z);
+    float3 uv_w =  swi3(texture(iChannel0, fract_f2(vUv+w)),x,y,z);
+    float3 uv_nw = swi3(texture(iChannel0, fract_f2(vUv+nw)),x,y,z);
+    float3 uv_sw = swi3(texture(iChannel0, fract_f2(vUv+sw)),x,y,z);
+    float3 uv_ne = swi3(texture(iChannel0, fract_f2(vUv+ne)),x,y,z);
+    float3 uv_se = swi3(texture(iChannel0, fract_f2(vUv+se)),x,y,z);
+
+    // uv.x and uv.y are the x and y components, uv.z is divergence
+
+    // laplacian of all components
+    float3 lapl  = _K0*uv + _K1*(uv_n + uv_e + uv_w + uv_s) + _K2*(uv_nw + uv_sw + uv_ne + uv_se);
+    float sp = ps * lapl.z;
+
+    // calculate curl
+    // vectors point clockwise about the center point
+    float curl = uv_n.x - uv_s.x - uv_e.y + uv_w.y + sq2 * (uv_nw.x + uv_nw.y + uv_ne.x - uv_ne.y + uv_sw.y - uv_sw.x - uv_se.y - uv_se.x);
+
+    // compute angle of rotation from curl
+    float sc = cs * sign_f(curl) * _powf(_fabs(curl), pwr);
+
+    // calculate divergence
+    // vectors point inwards towards the center point
+    float div  = uv_s.y - uv_n.y - uv_e.x + uv_w.x + sq2 * (uv_nw.x - uv_nw.y - uv_ne.x - uv_ne.y + uv_sw.x + uv_sw.y + uv_se.y - uv_se.x);
+    float sd = uv.z + dp * div + pl * lapl.z;
+
+    float2 norm = normz(swi2(uv,x,y));
+
+    float3 ab = advect(to_float2(uv.x, uv.y), vUv, texel, ad, iChannel0);
+
+    // temp values for the update rule
+    float ta = amp * ab.x + ls * lapl.x + norm.x * sp + uv.x * ds * sd;
+    float tb = amp * ab.y + ls * lapl.y + norm.y * sp + uv.y * ds * sd;
+
+    // rotate
+    float a = ta * _cosf(sc) - tb * _sinf(sc);
+    float b = ta * _sinf(sc) + tb * _cosf(sc);
+
+    float3 abd = upd * uv + (1.0f - upd) * to_float3(a,b,sd);
+
+    if (iMouse.z > 0.0f) {
+      float2 d = fragCoord - swi2(iMouse,x,y);
+      float m = _expf(-length(d) / MouseSize);//20.0f);
+      swi2S(abd,x,y, swi2(abd,x,y) + m * normz(d));
+    }
+
+    float3 init;
+    if (params->tex) init = swi3(texture(iChannel1, fragCoord / iResolution),x,y,z);
+    else
+                     init = to_float3(gold_noise(fragCoord, fract(42.0)+1.0), // r
+                                      gold_noise(fragCoord, fract(56.0)+2.0), // g
+                                      gold_noise(fragCoord, fract(42.0)+3.0)); // b
+
+    // initialize with noise
+    //if((uv == to_float3_s(0.0f) && init != to_float3_s(0.0f)) || reset()) {
+    if((uv.x == 0.0f && uv.y == 0.0f && uv.z == 0.0f && (init.x != 0.0f || init.y != 0.0f || init.z != 0.0f)) || Reset) {
+        fragColor = to_float4_aw(init - 0.5f, 0.0f);
+    } else {
+        abd.z = clamp(abd.z, -1.0f, 1.0f);
+        swi2S(abd,x,y, clamp(length(swi2(abd,x,y)) > 1.0f ? normz(swi2(abd,x,y)) : swi2(abd,x,y), -1.0f, 1.0f));
+        fragColor = to_float4_aw(abd, 0.0f);
+    }
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer B                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer B 'Preset: Keyboard' to iChannel3
+// Connect Buffer B 'Texture: Abstract 3' to iChannel0
+// Connect Buffer B 'Previsualization: Buffer A' to iChannel2
+// Connect Buffer B 'Previsualization: Buffer B' to iChannel1
+
+
+/*
+  Blurs each pixel with its neighbors according to the underlying
+  vector field in Buffer A.
+*/
+
+__KERNEL__ void AnisotropicBlurImageFuse__Buffer_B(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2,  __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   OrgPar = params->OrgPar;
+  float  MouseSize = params->MouseSize;
+  float  _K0 = params->_K0;
+  float  _K1 = params->_K1;
+  float  _K2 = params->_K2;
+  float  cs = params->cs;
+  float  ls = params->ls;
+  float  ps = params->ps;
+  float  ds = params->ds;
+  float  dp = params->dp;
+  float  pl = params->pl;
+  float  ad = params->ad;
+  float  pwr = params->pwr;
+  float  amp = params->amp;
+  float  upd = params->upd;
+  float  sq2 = params->sq2;
+  //bool   Reset = params->Reset;
+  bool   GAMMA_CORRECT = params->GAMMA_CORRECT;
+  float  Gamma = params->Gamma;
+  bool   NORMALIZE_AB = params->NORMALIZE_AB;
+  float  BLUR_RATIO = params->BLUR_RATIO;
+  float  SHARPNESS = params->SHARPNESS;
+  float  VECTOR_SHARPEN = params->VECTOR_SHARPEN;
+  float  Alpha = params->Alpha;
+
+  // --------
+
+    //#define GAMMA_CORRECT    // use gamma-corrected blending
+    float3 GAMMA = to_float3_s(Gamma);
+    //#define GAMMA to_float3_s(2.2f)     // gamma
+
+    //#define NORMALIZE_AB    // normalize the vector value
+    //#define BLUR_RATIO 0.2f    // ratio of the original pixel value to the blurred value
+    //#define SHARPNESS 1.0f    // sharpness of the blur kernel, 0.0f gives a uniform distribution
+    //#define VECTOR_SHARPEN 12.0f // sharpens the vector field
+
+
+    fragCoord+=0.5f;
+
+    float2 vUv = fragCoord / iResolution;
+    float2 texel = 1.0f / iResolution;
+
+    // 3x3 neighborhood coordinates
+    float step_x = texel.x;
+    float step_y = texel.y;
+    float2 n  = to_float2(0.0f, step_y);
+    float2 ne = to_float2(step_x, step_y);
+    float2 e  = to_float2(step_x, 0.0f);
+    float2 se = to_float2(step_x, -step_y);
+    float2 s  = to_float2(0.0f, -step_y);
+    float2 sw = to_float2(-step_x, -step_y);
+    float2 w  = to_float2(-step_x, 0.0f);
+    float2 nw = to_float2(-step_x, step_y);
+
+    float2 ab =    swi2(texture(iChannel2, fract_f2(vUv)),x,y);
+    float2 ab_n =  swi2(texture(iChannel2, fract_f2(vUv+n)),x,y);
+    float2 ab_e =  swi2(texture(iChannel2, fract_f2(vUv+e)),x,y);
+    float2 ab_s =  swi2(texture(iChannel2, fract_f2(vUv+s)),x,y);
+    float2 ab_w =  swi2(texture(iChannel2, fract_f2(vUv+w)),x,y);
+    float2 ab_nw = swi2(texture(iChannel2, fract_f2(vUv+nw)),x,y);
+    float2 ab_sw = swi2(texture(iChannel2, fract_f2(vUv+sw)),x,y);
+    float2 ab_ne = swi2(texture(iChannel2, fract_f2(vUv+ne)),x,y);
+    float2 ab_se = swi2(texture(iChannel2, fract_f2(vUv+se)),x,y);
+
+    //const float _K0 = -20.0f/6.0f; // center weight
+    //const float _K1 = 4.0f/6.0f;   // edge-neighbors
+    //const float _K2 = 1.0f/6.0f;   // vertex-neighbors
+
+    // laplacian
+    float2 lapl  = _K0*ab + _K1*(ab_n + ab_e + ab_w + ab_s) + _K2*(ab_nw + ab_sw + ab_ne + ab_se);
+
+    ab += -VECTOR_SHARPEN * lapl;
+
+    //#ifdef NORMALIZE_AB
+    if(NORMALIZE_AB)
+      ab = normz(ab);
+    //#endif
+
+
+    float3 im,im_n,im_e,im_s,im_w,im_nw,im_sw,im_ne,im_se;
+
+    //#ifdef GAMMA_CORRECT
+    if(GAMMA_CORRECT)
+    {
+         im =    pow_f3(swi3(texture(iChannel1, fract_f2(vUv)),x,y,z), GAMMA);
+         im_n =  pow_f3(swi3(texture(iChannel1, fract_f2(vUv+n)),x,y,z), GAMMA);
+         im_e =  pow_f3(swi3(texture(iChannel1, fract_f2(vUv+e)),x,y,z), GAMMA);
+         im_s =  pow_f3(swi3(texture(iChannel1, fract_f2(vUv+s)),x,y,z), GAMMA);
+         im_w =  pow_f3(swi3(texture(iChannel1, fract_f2(vUv+w)),x,y,z), GAMMA);
+         im_nw = pow_f3(swi3(texture(iChannel1, fract_f2(vUv+nw)),x,y,z), GAMMA);
+         im_sw = pow_f3(swi3(texture(iChannel1, fract_f2(vUv+sw)),x,y,z), GAMMA);
+         im_ne = pow_f3(swi3(texture(iChannel1, fract_f2(vUv+ne)),x,y,z), GAMMA);
+         im_se = pow_f3(swi3(texture(iChannel1, fract_f2(vUv+se)),x,y,z), GAMMA);
+    }
+    else //#else
+    {
+         im =    swi3(texture(iChannel1, fract_f2(vUv)),x,y,z);
+         im_n =  swi3(texture(iChannel1, fract_f2(vUv+n)),x,y,z);
+         im_e =  swi3(texture(iChannel1, fract_f2(vUv+e)),x,y,z);
+         im_s =  swi3(texture(iChannel1, fract_f2(vUv+s)),x,y,z);
+         im_w =  swi3(texture(iChannel1, fract_f2(vUv+w)),x,y,z);
+         im_nw = swi3(texture(iChannel1, fract_f2(vUv+nw)),x,y,z);
+         im_sw = swi3(texture(iChannel1, fract_f2(vUv+sw)),x,y,z);
+         im_ne = swi3(texture(iChannel1, fract_f2(vUv+ne)),x,y,z);
+         im_se = swi3(texture(iChannel1, fract_f2(vUv+se)),x,y,z);
+    }
+    //#endif
+
+    // a gaussian centered around the point at 'ab'
+    #define e(x,y) _expf(-SHARPNESS * dot(to_float2(x,y) - ab, to_float2(x,y) - ab))
+
+    float D_c =  e( 0.0f, 0.0f);
+    float D_e =  e( 1.0f, 0.0f);
+    float D_w =  e(-1.0f, 0.0f);
+    float D_n =  e( 0.0f, 1.0f);
+    float D_s =  e( 0.0f,-1.0f);
+    float D_ne = e( 1.0f, 1.0f);
+    float D_nw = e(-1.0f, 1.0f);
+    float D_se = e( 1.0f,-1.0f);
+    float D_sw = e(-1.0f,-1.0f);
+
+    // normalize the blur kernel
+    float dn = D_c + D_e + D_w + D_n + D_s + D_ne + D_nw + D_se + D_sw;
+
+    float3 blur_im = (D_c*im
+        + im_n*D_n + im_ne*D_ne
+        + im_e*D_e + im_se*D_se
+        + im_s*D_s + im_sw*D_sw
+        + im_w*D_w + im_nw*D_nw) / dn;
+
+    //#ifdef GAMMA_CORRECT
+    if(GAMMA_CORRECT)
+    {
+      blur_im = pow_f3(blur_im, 1.0f / GAMMA);
+      im = pow_f3(im, 1.0f / GAMMA);
+    }
+    //#endif
+
+    // initialize with image
+    float4 init = texture(iChannel0, fragCoord / iResolution);
+    //if((im == to_float3_s(0.0f) && init != to_float4_s(0.0f)) || reset()) {
+      if((im.x == 0.0f && im.y == 0.0f && im.z == 0.0f && (init.x != 0.0f || init.y != 0.0f || init.z != 0.0f)) || Reset) {
+        fragColor = init;
+    } else {
+        fragColor = to_float4_aw(clamp(BLUR_RATIO * im + (1.0f - BLUR_RATIO) * blur_im, 0.0f, 1.0f), 0.0f);
+    }
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer B' to iChannel0
+
+
+#define SIGMOID_CONTRAST 12.0f
+
+__DEVICE__ float4 contrast(float4 x, float s) {
+  return 1.0f / (1.0f + exp_f4(-s * (x - 0.5f)));
+}
+
+__KERNEL__ void AnisotropicBlurImageFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   OrgPar = params->OrgPar;
+  float  MouseSize = params->MouseSize;
+  float  _K0 = params->_K0;
+  float  _K1 = params->_K1;
+  float  _K2 = params->_K2;
+  float  cs = params->cs;
+  float  ls = params->ls;
+  float  ps = params->ps;
+  float  ds = params->ds;
+  float  dp = params->dp;
+  float  pl = params->pl;
+  float  ad = params->ad;
+  float  pwr = params->pwr;
+  float  amp = params->amp;
+  float  upd = params->upd;
+  float  sq2 = params->sq2;
+  //bool   Reset = params->Reset;
+  bool   GAMMA_CORRECT = params->GAMMA_CORRECT;
+  float  Gamma = params->Gamma;
+  bool   NORMALIZE_AB = params->NORMALIZE_AB;
+  float  BLUR_RATIO = params->BLUR_RATIO;
+  float  SHARPNESS = params->SHARPNESS;
+  float  VECTOR_SHARPEN = params->VECTOR_SHARPEN;
+  float  Alpha = params->Alpha;
+
+  // --------
+    fragCoord+=0.5f;
+
+    float2 texel = 1.0f / iResolution;
+    float2 uv = fragCoord / iResolution;
+    fragColor = contrast(_tex2DVecN(iChannel0,uv.x,uv.y,15), SIGMOID_CONTRAST);
+
+    fragColor.w = Alpha;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+  InChannel2 = self:AddInput( "iChannel2",  "iChannel2",  { LINKID_DataType = "Image", LINK_Main = 3, INP_Required = false, LINK_Visible = false, })
+  InChannel3 = self:AddInput( "iChannel3",  "iChannel3",  { LINKID_DataType = "Image", LINK_Main = 4, INP_Required = false, LINK_Visible = false, })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  -- iMouse Controls
+  InMouseXY = self:AddInput("Mousecoords", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType      = "Point",
+    INPID_InputControl   = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    IC_Visible           = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled         = true,
+  })
+
+  InMouseDrag = self:AddInput("MouseClick", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+    IC_Visible  = true,
+  })
+
+  InMouseSizeSlider = self:AddInput("MouseSize", "MouseSize", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 50.0,
+      INP_Default        = 20.0,
+  })
+
+  InOrgParCheckbox = self:AddInput("OrgPar", "OrgPar", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+    INP_DoNotifyChanged = true,
+  })
+
+  In_K0Slider = self:AddInput("_K0", "_K0", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = -3.3333,
+  })
+
+  In_K1Slider = self:AddInput("_K1", "_K1", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.66667,
+  })
+
+  In_K2Slider = self:AddInput("_K2", "_K2", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.16667,
+  })
+
+  IncsSlider = self:AddInput("cs", "cs", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = -0.6,
+  })
+
+  InlsSlider = self:AddInput("ls", "ls", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.05,
+  })
+
+  InpsSlider = self:AddInput("ps", "ps", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = -0.8,
+  })
+
+  IndsSlider = self:AddInput("ds", "ds", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = -0.05,
+  })
+
+  IndpSlider = self:AddInput("dp", "dp", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = -0.04,
+  })
+
+  InplSlider = self:AddInput("pl", "pl", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.3,
+  })
+
+  InadSlider = self:AddInput("ad", "ad", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 6.0,
+  })
+
+  InpwrSlider = self:AddInput("pwr", "pwr", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 2.0,
+      INP_Default        = 1.0,
+  })
+
+  InampSlider = self:AddInput("amp", "amp", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 2.0,
+      INP_Default        = 1.0,
+  })
+
+  InupdSlider = self:AddInput("upd", "upd", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 2.0,
+      INP_Default        = 0.8,
+  })
+
+  Insq2Slider = self:AddInput("sq2", "sq2", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 2.0,
+      INP_Default        = 0.6,
+  })
+
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InGAMMA_CORRECTCheckbox = self:AddInput("GAMMA_CORRECT", "GAMMA_CORRECT", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InGammaSlider = self:AddInput("Gamma", "Gamma", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 2.2,
+  })
+
+  InNORMALIZE_ABCheckbox = self:AddInput("NORMALIZE_AB", "NORMALIZE_AB", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InBLUR_RATIOSlider = self:AddInput("BLUR_RATIO", "BLUR_RATIO", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 0.2,
+  })
+
+  InSHARPNESSSlider = self:AddInput("SHARPNESS", "SHARPNESS", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  InVECTOR_SHARPENSlider = self:AddInput("VECTOR_SHARPEN", "VECTOR_SHARPEN", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 30.0,
+      INP_Default        = 12.0,
+  })
+
+  InAlphaSlider = self:AddInput("Alpha", "Alpha", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 1.0,
+  })
+
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+  	{ CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image1", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+
+  	InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+
+
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 3,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+	  { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false })
+
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+	      IMG_DeferAlloc = false,
+        }
+
+Image_Buff_GlobalA = Image(ImgAttrs_Global)
+Image_Buff_GlobalB = Image(ImgAttrs_Global)
+
+
+
+function Process(req)
+
+
+
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InImage1:GetValue(req) ~= nil) then
+			   Width = InImage1:GetValue(req).Width
+			   Height = InImage1:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value
+		end
+	end
+	if (InDepth:GetValue(req).Value > 0) then
+    if InDepth:GetValue(req).Value == 1 then
+        SourceDepth = 5
+    else
+      if InDepth:GetValue(req).Value == 2 then
+          SourceDepth = 6
+      else
+        if InDepth:GetValue(req).Value == 3 then
+          SourceDepth = 7
+        else
+          SourceDepth = 8
+        end
+      end
+    end
+	end
+
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst    = Image(imgattrs)
+  local dstA   = Image(imgattrs)
+  local dstB   = Image(imgattrs)
+
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local nodeA = DVIPComputeNode(req,
+    "AnisotropicBlurImageFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  tex = true
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+    tex = false
+  end
+
+  iChannel2 = InChannel2:GetValue(req)
+
+  if iChannel2==nil then
+    iChannel2 = Image(imgattrs)
+    iChannel2:Fill(black)
+  end
+
+  iChannel3 = InChannel3:GetValue(req)
+
+  if iChannel3==nil then
+    iChannel3 = Image(imgattrs)
+    iChannel3:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  -------------- BufferA -----------------
+  params = nodeA:GetParamBlock(ShaderParameters)
+
+  params.tex = tex
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+
+    -- iMouse
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.OrgPar = InOrgParCheckbox:GetValue(req).Value
+  params.MouseSize = InMouseSizeSlider:GetValue(req).Value
+  params._K0 = In_K0Slider:GetValue(req).Value
+  params._K1 = In_K1Slider:GetValue(req).Value
+  params._K2 = In_K2Slider:GetValue(req).Value
+  params.cs = IncsSlider:GetValue(req).Value
+  params.ls = InlsSlider:GetValue(req).Value
+  params.ps = InpsSlider:GetValue(req).Value
+  params.ds = IndsSlider:GetValue(req).Value
+  params.dp = IndpSlider:GetValue(req).Value
+  params.pl = InplSlider:GetValue(req).Value
+  params.ad = InadSlider:GetValue(req).Value
+  params.pwr = InpwrSlider:GetValue(req).Value
+  params.amp = InampSlider:GetValue(req).Value
+  params.upd = InupdSlider:GetValue(req).Value
+  params.sq2 = Insq2Slider:GetValue(req).Value
+  --params.Reset = InResetCheckbox:GetValue(req).Value
+  params.GAMMA_CORRECT = InGAMMA_CORRECTCheckbox:GetValue(req).Value
+  params.Gamma = InGammaSlider:GetValue(req).Value
+  params.NORMALIZE_AB = InNORMALIZE_ABCheckbox:GetValue(req).Value
+  params.BLUR_RATIO = InBLUR_RATIOSlider:GetValue(req).Value
+  params.SHARPNESS = InSHARPNESSSlider:GetValue(req).Value
+  params.VECTOR_SHARPEN = InVECTOR_SHARPENSlider:GetValue(req).Value
+  params.Alpha = InAlphaSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  nodeA:SetParamBlock(params)
+  nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  nodeA:AddInput("iChannel0",Image_Buff_GlobalA) -- TODO: add a better channel name
+  nodeA:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  nodeA:AddInput("iChannel2",iChannel2) -- TODO: add a better channel name
+  nodeA:AddInput("iChannel3",iChannel3) -- TODO: add a better channel name
+  nodeA:AddOutput("dst", dstA)
+
+  local ok = nodeA:RunSession(req)
+
+	if (not ok) then
+		dstA = nil
+    dump(nodeA:GetErrorLog())
+	end
+
+  Image_Buff_GlobalA = dstA
+
+  -------------- BufferB -----------------
+  local nodeB = DVIPComputeNode(req,
+                                "AnisotropicBlurImageFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+                                "Params", ShaderParameters
+  )
+
+  nodeB:SetParamBlock(params)
+  nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  nodeB:AddInput("iChannel0", iChannel0)
+  nodeB:AddInput("iChannel1", Image_Buff_GlobalB)
+  nodeB:AddInput("iChannel2", Image_Buff_GlobalA)
+  nodeB:AddInput("iChannel3", iChannel1)
+  nodeB:AddOutput("dst", dstB)
+
+  local success = nodeB:RunSession(req)
+  if not success then
+    dstB = nil
+    dump(nodeB:GetErrorLog())
+  end
+
+  Image_Buff_GlobalB = dstB
+
+-------------- Image -----------------
+  local nodeI = DVIPComputeNode(req,
+                                "AnisotropicBlurImageFuse", ShaderCompatibilityCode..ShaderKernelCode,
+                                "Params", ShaderParameters
+  )
+
+  nodeI:SetParamBlock(params)
+  nodeI:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+  nodeI:AddInput("iChannel0", Image_Buff_GlobalB)
+  nodeI:AddOutput("dst", dst)
+
+  local success = nodeI:RunSession(req)
+  if not success then
+    dst = nil
+    dump(nodeI:GetErrorLog())
+  end
+
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+ function NotifyChanged(inp, param, time)
+  if inp ~= nil and param ~= nil then
+
+    if inp == InOrgParCheckbox then
+      if param.Value == 0.0 then
+         In_K0Slider:SetAttrs({ IC_Visible = true })
+         In_K1Slider:SetAttrs({ IC_Visible = true })
+         In_K2Slider:SetAttrs({ IC_Visible = true })
+         IncsSlider:SetAttrs({ IC_Visible = true })
+         InlsSlider:SetAttrs({ IC_Visible = true })
+         InpsSlider:SetAttrs({ IC_Visible = true })
+         IndsSlider:SetAttrs({ IC_Visible = true })
+         IndpSlider:SetAttrs({ IC_Visible = true })
+         InplSlider:SetAttrs({ IC_Visible = true })
+         InadSlider:SetAttrs({ IC_Visible = true })
+         InpwrSlider:SetAttrs({ IC_Visible = true })
+         InampSlider:SetAttrs({ IC_Visible = true })
+         InupdSlider:SetAttrs({ IC_Visible = true })
+         Insq2Slider:SetAttrs({ IC_Visible = true })
+      else
+         In_K0Slider:SetAttrs({ IC_Visible = false })
+         In_K1Slider:SetAttrs({ IC_Visible = false })
+         In_K2Slider:SetAttrs({ IC_Visible = false })
+         IncsSlider:SetAttrs({ IC_Visible = false })
+         InlsSlider:SetAttrs({ IC_Visible = false })
+         InpsSlider:SetAttrs({ IC_Visible = false })
+         IndsSlider:SetAttrs({ IC_Visible = false })
+         IndpSlider:SetAttrs({ IC_Visible = false })
+         InplSlider:SetAttrs({ IC_Visible = false })
+         InadSlider:SetAttrs({ IC_Visible = false })
+         InpwrSlider:SetAttrs({ IC_Visible = false })
+         InampSlider:SetAttrs({ IC_Visible = false })
+         InupdSlider:SetAttrs({ IC_Visible = false })
+         Insq2Slider:SetAttrs({ IC_Visible = false })
+      end
+    end
+
+    if inp == InSize then
+		  if param.Value == 1 then
+			 InWidth:SetAttrs({ IC_Visible = true })
+			 InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			 InWidth:SetAttrs({ IC_Visible = false })
+			 InHeight:SetAttrs({ IC_Visible = false })
+		  end
+
+		  if param.Value == 3 then --1920x1080
+			 InWidth:SetSource(Number(1920),0,0)
+			 InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			 InWidth:SetSource(Number(1200),0,0)
+			 InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			 InWidth:SetSource(Number(800),0,0)
+			 InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		   InWidth:SetSource(Number(640),0,0)
+	   	 InHeight:SetSource(Number(360),0,0)
+		  end
+		end
+
+
+  end
+ end
+
+
+-- */
+
+

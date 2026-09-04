@@ -1,0 +1,1032 @@
+--[[--/*
+
+  DullSpeedSkull.fuse
+
+  Based on https://www.shadertoy.com/view/lcdcDH a WebGL shader created by Spectraledge.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  ColorBKG[4];
+  float  ColorEyes[4];
+  float  ColorSkull[4];
+  float  Fresnel;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+  #define to_mat2_f(A)       mat2((A),(A),(A),(A))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+  __DEVICE__ inline mat2 to_mat2_f    ( float  a                            )  { mat2 t; t.r0.x = a; t.r0.y = a; t.r1.x = a; t.r1.y = a;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f3(a) _fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f3(a) fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+#define PI 3.141592f
+
+__DEVICE__ float2 pModPolar( float2 p, float repetitions) {
+
+    float angle = 2.0f*PI/repetitions,
+          a = _atan2f(p.y, p.x)+angle,
+          r = length(p),
+          c = _floor(a / angle);
+    a = mod_f(a, angle) - angle / 2.0f;
+    p = to_float2(_cosf(a), _sinf(a)) * r;
+    //if (_fabs(c) >= (repetitions / 2.0f)) c = _fabs(c);
+    //return c;
+    return p;
+}
+
+
+__DEVICE__ mat2 Rot(float a) {
+    float s=_sinf(a), c=_cosf(a);
+    return to_mat2(c, -s, s, c);
+}
+
+__DEVICE__ float sMin( float d1, float d2, float k ) {
+    float h = clamp( 0.5f + 0.5f*(d2-d1)/k, 0.0f, 1.0f );
+    return _mix( d2, d1, h ) - k*h*(1.0f-h); }
+
+__DEVICE__ float sMax( float d1, float d2, float k ) {
+    float h = clamp( 0.5f - 0.5f*(d2+d1)/k, 0.0f, 1.0f );
+    return _mix( d2, -d1, h ) + k*h*(1.0f-h); }
+
+__DEVICE__ float Sphere(float3 p,float s){
+    return length(p)-s;
+}
+
+__DEVICE__ float Ellipsoid( float3 p, float3 r )
+{
+  float k0 = length(p/r);
+  float k1 = length(p/(r*r));
+  return k0*(k0-1.0f)/k1;
+}
+
+__DEVICE__ float rBox( float3 p, float3 b, float r )
+{
+  float3 q = abs_f3(p) - b;
+  return length(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f) - r;
+}
+
+__DEVICE__ float Capsule( float3 p, float3 a, float3 b, float r )
+{
+  float3 pa = p - a, ba = b - a;
+  float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0f, 1.0f );
+  return length( pa - ba*h ) - r;
+}
+
+__DEVICE__ float HollowSphere( float3 p, float r, float h, float t )
+{
+  float w = _sqrtf(r*r-h*h);
+  float2 q = to_float2( length(swi2(p,x,z)), p.y );
+  return ((h*q.x<w*q.y) ? length(q-to_float2(w,h)) :
+                          _fabs(length(q)-r) ) - t;
+}
+
+
+__DEVICE__ float3 GetRayDir(float2 uv, float3 p, float3 l, float z) {
+    float3
+        f = normalize(l-p),
+        r = normalize(cross(to_float3(0,1,0), f)),
+        u = cross(f,r),
+        c = f*z,
+        i = c + uv.x*r + uv.y*u;
+    return normalize(i);
+}
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+#define MAX_STEPS 64 //64
+#define MAX_DIST 32.0f
+#define SURF_DIST 0.0001f
+
+#define HEAD_ELLIPSOID_RADII to_float3(0.9f,1.1f,1.2f)
+#define HEAD_HOLE_OFFSET1 to_float3(0,-0.3f,-0.2f)
+#define HEAD_HOLE_ELLIPSOID_RADII1 to_float3_s(0.7f)
+#define HEAD_HOLE_OFFSET2 to_float3(0,-0.24f,0.5f)
+#define HEAD_HOLE_ELLIPSOID_RADII2 to_float3_s(0.51f)
+
+__DEVICE__ float _t(float time){
+    float t = 3.0f+time*0.5f;
+    return t += _sinf(time*0.5f)*0.3f;
+}
+
+__DEVICE__ float3 Transform(float3 p, float t){
+    p.y -= 0.4f;
+    p.y += _sinf(t+1.6f)*0.3f;
+    p.z += _sinf(t*0.9f-1.6f)*0.6f-0.3f;
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , Rot(_sinf(-t+1.0f)*0.3f)));
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , Rot(_cosf(-t*0.7f+4.0f)*0.4f)));
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , Rot(_sinf(t*0.5f)*1.0f*_cosf(t*0.3f+1.0f))));
+
+    return p;
+}
+
+__DEVICE__ float createHead(float3 p_head) {
+    float d = Ellipsoid(p_head, HEAD_ELLIPSOID_RADII); //head ellispoid
+    float bottomCutPlane = p_head.y + 0.7f + _sinf(p_head.x + _sinf(_cosf(p_head.z*1.4f)) * 21.0f)*0.02f; //bottom cut plane
+    bottomCutPlane = sMin(bottomCutPlane, Ellipsoid(p_head - HEAD_HOLE_OFFSET1, HEAD_HOLE_ELLIPSOID_RADII1),0.05f);//head hole
+    bottomCutPlane = sMin(bottomCutPlane, Ellipsoid(p_head - HEAD_HOLE_OFFSET2, HEAD_HOLE_ELLIPSOID_RADII2),0.1f);//head hole front
+    d = sMax(bottomCutPlane, d,0.05f); //bottom cut
+    float p_cutf = -p_head.z+1.1f; //forehead plane
+    d = sMax(p_cutf, d,0.2f); //forehead cut
+    float cuts_temple = Capsule(to_float3(-_fabs(p_head.x),p_head.y,p_head.z), to_float3(-1.0f,-1,0.8f), to_float3(-1.8f,3,0.0f), 0.5f );//temple deepenings
+    d = sMax(cuts_temple, d,0.3f); //temple cuts
+    float bcut_temple = Capsule(p_head, to_float3(-2.0f,-1.1f,0.6f), to_float3(2,-1.1f,0.6f), 0.6f );//side cuts temple <-> head
+    d = sMax(bcut_temple, d,0.3f); //side cuts
+    return d;
+}
+
+__DEVICE__ float createUpperJaw(float3 p_skull, float t) {
+    float3 p_jaw = p_skull-to_float3(0,0.36f,0.1f);
+    swi2S(p_jaw,y,z, mul_f2_mat2(swi2(p_jaw,y,z) , Rot(PI)));
+    p_jaw.y -= _sinf(p_jaw.x*37.0f)*0.007f - _cosf(p_jaw.z*59.0f)*0.001f;//distortion
+    p_jaw.z *= 0.9f;
+    float ujaw = HollowSphere(p_jaw+to_float3(0,-0.95f,0.5f),0.38f,0.02f,0.05f );//jaw sdf
+    float p_cutB = p_skull.z-0.6f;//cutting plane back
+    ujaw = sMax(p_cutB, ujaw,0.05f); //jaw back cut
+    float3 p_jawsc = to_float3(_fabs(p_skull.x),p_skull.y,p_skull.z); //new point def for side cuts
+    swi2S(p_jawsc,x,y, mul_f2_mat2(swi2(p_jawsc,x,y) , Rot(-1.0f)));
+    swi2S(p_jawsc,y,z, mul_f2_mat2(swi2(p_jawsc,y,z) , Rot(-0.4f)));
+    p_jawsc.y += 0.3f;
+    ujaw = sMax(p_jawsc.y, ujaw,0.04f); //side cuts
+    return ujaw;
+}
+
+__DEVICE__ float createCheekbones(float3 p_skull) {
+    float3 p_eyesur = p_skull-to_float3(0,0.3f,0);
+    float eyesur = Ellipsoid(to_float3(_fabs(p_eyesur.x),p_eyesur.y,p_eyesur.z)+to_float3(-0.34f,0.5f,-0.87f),to_float3(0.25f,0.3f,0.2f));//cheekbones
+    eyesur += _sinf(12.0f*p_skull.x)*_sinf(11.0f*p_skull.y)*_sinf(13.0f*p_skull.z)*0.02f;//distortion
+    return eyesur;
+}
+
+__DEVICE__ float createZygomaticArch(float3 p_skull) {
+    float3 p_zyg = to_float3(_fabs(p_skull.x),p_skull.y,p_skull.z);
+    p_zyg.x += _sinf(p_zyg.z*4.0f+PI)*0.08f;
+    p_zyg.y += _cosf(p_zyg.z*9.0f)*0.03f;
+    float zyg = Capsule(p_zyg,to_float3(0.5f,-0.3f,0.8f),to_float3(0.75f,-0.3f,0.1f),(p_zyg.z)*0.1f);
+    return zyg;
+}
+
+__DEVICE__ float createNose(float3 p_skull, inout float d) { // Pass d as an inout argument
+    // NOSE BONE
+    float3 p_nbone = p_skull;
+    swi2S(p_nbone,y,z, mul_f2_mat2(swi2(p_nbone,y,z) , Rot(-2.2f)));
+    float nbone = HollowSphere(p_nbone+to_float3(0,-1.0f,0.4f),0.1f,0.08f,0.04f );
+    d = sMin(d,nbone,0.05f);
+
+    // NOSE HOLE
+    float3 p_nose = p_skull;//to_float3(_fabs(p_skull.x),swi2(p_skull,y,z));
+    swi2S(p_nose,x,y, mul_f2_mat2(swi2(p_nose,x,y) , Rot(0.25f)));
+    float nose = Ellipsoid(p_nose-to_float3(0.04f,-0.35f,1.0f),to_float3(0.03f,0.1f,0.8f));
+    swi2S(p_nose,x,y, mul_f2_mat2(swi2(p_nose,x,y) , Rot(-0.4f)));
+    nose = sMin(nose,Ellipsoid( p_nose-to_float3(0.02f,-0.36f,1.0f),to_float3(0.04f,0.1f,0.8f)),0.1f);
+
+    d = sMax(nose, d,0.06f); //nose subtraction
+    d = sMax(Ellipsoid(p_nose+to_float3(0.0f,0.3f,-0.4f),to_float3(0.1f,0.1f,0.6f)), d,0.1f); //nose subtraction
+    return d;
+}
+
+__DEVICE__ float createLowerJaw(float3 pN, mat2 ani) {
+    //CHIN
+    float3 p_ljaw = pN;
+    p_ljaw.y *= 0.8f;
+    p_ljaw.z -= _sinf(pN.y*26.0f)*0.008f;
+    p_ljaw.y -= _cosf(pN.x*15.0f+_sinf(pN.y*7.0f)*2.0f)*0.01f;
+    float ljaw = HollowSphere(p_ljaw+to_float3(0,0.77f,-0.74f),0.38f,0.03f,0.04f );//chin
+    ljaw = sMax(p_ljaw.z-0.65f,ljaw,0.1f);
+
+    // MANDIBLE BOTTOM & BACK
+    float3 p_maB = to_float3(_fabs(pN.x),pN.y,pN.z);
+    swi2S(p_maB,y,z, mul_f2_mat2(swi2(p_maB,y,z) , Rot(-1.3f)));
+    swi2S(p_maB,x,z, mul_f2_mat2(swi2(p_maB,x,z) , Rot(-0.34f)));
+    swi2S(p_maB,x,y, mul_f2_mat2(swi2(p_maB,x,y) , Rot(-0.39f)));
+    p_maB -= to_float3(0.85f,0.0f,0.63f);
+    ljaw = sMin(ljaw,rBox(p_maB,to_float3(0.0f,smoothstep(0.0f,6.0f,_fabs(-p_maB.z)+0.9f),0.45f),0.04f),0.17f);
+    ljaw = sMax(Ellipsoid(p_maB-to_float3(0.0f,0.0f,-0.55f),to_float3(0.5f,0.15f,0.26f)),ljaw,0.04f);
+    p_ljaw -= _sinf(p_ljaw.y*22.0f)*0.001f - _cosf(p_ljaw.z*19.0f)*0.006f;//distortion
+    ljaw = sMax(p_ljaw.y+0.93f,ljaw,0.02f);//bottom cut plane
+    return ljaw;
+}
+
+__DEVICE__ float createEyeHoles(float3 p_skull) {
+    float3 p_eyeH = p_skull;
+    p_eyeH += _sinf(p_eyeH.x*29.0f+_cosf(p_eyeH.y*32.0f))*0.005f; //eye distortion
+    float eyes = Ellipsoid(to_float3(_fabs(p_eyeH.x),p_eyeH.y-0.4f,p_eyeH.z)+to_float3(-0.29f,0.49f,-1.1f),to_float3(0.21f,0.25f,0.25f)); // eye balls
+    float eyeH = sMin(eyes,Sphere(to_float3(_fabs(p_skull.x),p_skull.y,p_skull.z)-to_float3(0.25f,0.0f,0.7f),0.35f),0.05f);// eye holes back
+    eyeH = sMax(-p_eyeH.y,eyeH,0.2f);
+    return eyeH;
+}
+
+__DEVICE__ float createEyeballs(float3 p_skull) {
+    float3 p_eye = p_skull;
+    p_eye.x = _fabs(p_eye.x);
+    p_eye.y -= 0.4f;
+    p_eye += to_float3(-0.29f,0.57f,-0.9f);
+    float eyes = Ellipsoid(p_eye,to_float3_s(0.2f));
+    return eyes;
+}
+
+__DEVICE__ float2 map(float3 p, float iTime){
+
+    float t = _t(iTime); // Calculate t only once
+    mat2 ani = to_mat2_f(0);
+    ani = Rot(_sinf(t-1.7f)*0.2f-0.1f);
+    float3 p_skull = p;
+
+    // Precompute transformations
+    float3 p_transformed = Transform(p_skull, t);
+    p_skull = p_transformed;
+
+   // float d = 1e10; // Initialize d with a large value
+
+     // HEAD
+    float3 p_head = p_skull;
+    float d = createHead(p_head);
+
+
+     // UPPER JAW
+    float ujaw = createUpperJaw(p_skull, t);
+
+    d = sMin(ujaw, d,0.1f);//upper jaw surrounding and d
+    d -= _sinf(10.0f*p_skull.x)*_sinf(8.0f*p_skull.y)*_sinf(6.0f*p_skull.z)*0.03f;//distortion
+
+
+    // CHEEKBONES
+    float eyesur = createCheekbones(p_skull);
+    d = sMin(eyesur, d,0.1f);//union cheekbones and d
+
+    // ZYGOMATIC ARCH
+    float zyg = createZygomaticArch(p_skull);
+    d = sMin(d,zyg,0.06f);
+
+    // NOSE
+    d = createNose(p_skull, d);
+
+    // LOWER JAW
+    float3 pN = p_skull;//null - parent rotation
+    pN.z -= 0.5f;
+    pN.y += 0.4f;
+    swi2S(pN,y,z, mul_f2_mat2(swi2(pN,y,z) , ani));
+    pN.z += 0.5f;
+    pN.y -= 0.4f;
+    pN -= _sinf(pN.y*15.0f)*0.01f - _cosf(pN.z*39.0f)*0.002f;//distortion
+
+    float ljaw = createLowerJaw(pN, ani); // Call the extracted function
+    d = sMin(ljaw, d,0.002f);
+
+
+    // EYE HOLES
+    float eyeH = createEyeHoles(p_skull);
+    d = sMax(eyeH, d,0.05f); //eye ball subtraction
+
+    // EYEBALLS
+    float eyes = createEyeballs(p_skull);
+
+
+    // UPPER TEETH
+    float3 p_tooth = p_skull;
+    p_tooth -= to_float3(0,-0.77f,0.7f);
+    p_tooth *= to_float3(1.2f,1,1);
+    swi2S(p_tooth,x,z, pModPolar(swi2(p_tooth,x,z), 32.0f));
+
+    float teeth = Ellipsoid(p_tooth - to_float3(0.43f, 0.0f, 0.0f), to_float3(0.03f, 0.15f, 0.045f));
+    teeth = _fmaxf(teeth, -p_skull.y-0.73f+_sinf(p_skull.x*32.0f)*0.006f);
+    teeth = _fmaxf(teeth, -p_skull.z+0.7f);
+    teeth = sMax(Sphere(p_skull-to_float3(0.02f,-0.88f,0.98f),0.23f),teeth,0.01f);// narrowing front teeth
+    d = _fminf(d,teeth);
+    // LOWER TEETH
+    float3 p_ltooth = pN;
+    p_ltooth -= to_float3(0,-0.77f,0.7f);
+    p_ltooth *= to_float3(1.2f,1,1);
+    swi2S(p_ltooth,x,z, pModPolar(swi2(p_ltooth,x,z), 32.0f));
+
+    float lteeth = Ellipsoid(p_ltooth - to_float3(0.42f, 0.0f, 0.0f), to_float3(0.03f, 0.15f, 0.045f));
+    lteeth = _fmaxf(lteeth, pN.y+0.79f+_sinf(p_skull.x*29.0f)*0.004f);
+    lteeth = _fmaxf(lteeth, -pN.z+0.7f);
+    lteeth = sMax(Sphere(pN-to_float3(0.005f,-0.87f,0.89f),0.24f),lteeth,0.02f);// narrowing front teeth
+    d = _fminf(d,lteeth);
+
+    // MATERIALS
+    float2 res = to_float2(d,0);
+    if(eyes<d) res = to_float2(eyes,1);
+
+    return res;
+}
+
+__DEVICE__ float2 RM(float3 ro, float3 rd, float iTime){
+    float t = 0.0f;
+    float mat = 0.0f; // Declare mat here
+    for(int i=0; i<MAX_STEPS; i++){
+        float3 p = ro + rd*t;
+        float2 mapResult = map(p, iTime); // Store the result of map(p)
+        float d = mapResult.x;
+        mat = mapResult.y;
+
+        if(t>MAX_DIST || _fabs(d)<SURF_DIST) break;
+
+        t += d * 0.5f; // Adaptive step size (adjust 0.5f as needed)
+    }
+    return to_float2(t,mat);
+}
+
+__DEVICE__ float3 calcNormal (float3 p, float iTime){
+    float3 e1 = 0.5773f*(2.0f*to_float3(1,1,1)-1.0f);
+    float3 e2 = 0.5773f*(2.0f*to_float3(1,-1,1)-1.0f);
+    float3 e3 = 0.5773f*(2.0f*to_float3(-1,1,1)-1.0f);
+    float3 e4 = 0.5773f*(2.0f*to_float3(-1,-1,1)-1.0f);
+
+    float3 n = e1*map(p+0.001f*e1, iTime).x +
+               e2*map(p+0.001f*e2, iTime).x +
+               e3*map(p+0.001f*e3, iTime).x +
+               e4*map(p+0.001f*e4, iTime).x;
+
+    return normalize(n);
+}
+
+__KERNEL__ void DullSpeedSkullFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 ColorBKG = to_float4(params->ColorBKG[0], params->ColorBKG[1], params->ColorBKG[2], params->ColorBKG[3]);
+  float4 ColorEyes = to_float4(params->ColorEyes[0], params->ColorEyes[1], params->ColorEyes[2], params->ColorEyes[3]);
+  float4 ColorSkull = to_float4(params->ColorSkull[0], params->ColorSkull[1], params->ColorSkull[2], params->ColorSkull[3]);
+  float  Fresnel = params->Fresnel;
+
+  // --------
+
+    float Alpha = ColorBKG.w;
+
+
+    float2 uv = (fragCoord-0.5f*iResolution)/iResolution.y;
+    float animationTime = _t(iTime); // Rename t to animationTime for clarity
+    float2 mouse = (swi2(iMouse,x,y)-0.5f*iResolution)/iResolution.y;
+
+    float3 rayOrigin = to_float3(0, 0, 4.0f);
+    swi2S(rayOrigin,x,z, mul_f2_mat2(swi2(rayOrigin,x,z) , Rot(-mouse.x*0.5f)));
+    swi2S(rayOrigin,y,z, mul_f2_mat2(swi2(rayOrigin,y,z) , Rot(mouse.y)));
+    float3 rayDirection = GetRayDir(uv, rayOrigin, to_float3(0,0.0f,0), 1.0f);
+
+    float3 color = swi3(ColorBKG,x,y,z);//to_float3_s(1);
+
+    // Calculate raymarching result only once
+    float2 raymarchResult = RM(rayOrigin, rayDirection, iTime);
+    float distance = raymarchResult.x;
+    float material = raymarchResult.y;
+
+    if(distance < MAX_DIST){
+        float3 point = rayOrigin + rayDirection * distance;
+        float3 normal = calcNormal(point, iTime);
+        float fresnel = _powf(1.0f+dot(rayDirection, normal), Fresnel);//2.0f);
+        color = swi3(ColorSkull,x,y,z) + fresnel;//to_float3(0.2f,0.3f,0.4f) + fresnel;
+
+        // COLOR EYES
+        if(material == 1.0f) color += swi3(ColorEyes,x,y,z);//0.7f;
+        Alpha = 1.0f;
+    }
+
+    color = _mix(color, swi3(ColorBKG,x,y,z), 1.0f-_expf(-0.0002f*_powf(distance,3.0f))); // Fog
+    color = pow_f3(color, to_float3_s(0.4545f)); // Gamma correction
+
+    fragColor = to_float4_aw(color, Alpha);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  
+  self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("ColorBKG", "ColorBKG", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBKG",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBKGColorR = self:AddInput("Red",   "ColorBKGRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorBKGColorG = self:AddInput("Green", "ColorBKGGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColorBKGColorB = self:AddInput("Blue",  "ColorBKGBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColorBKGColorA = self:AddInput("Alpha", "ColorBKGAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorEyes", "ColorEyes", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorEyes",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorEyesColorR = self:AddInput("Red",   "ColorEyesRed",   { INP_Default  = 0.7, IC_ControlID = 0, attrs})
+    InColorEyesColorG = self:AddInput("Green", "ColorEyesGreen", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InColorEyesColorB = self:AddInput("Blue",  "ColorEyesBlue",  { INP_Default  = 0.7, IC_ControlID = 2, attrs})
+    InColorEyesColorA = self:AddInput("Alpha", "ColorEyesAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorSkull", "ColorSkull", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorSkull",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorSkullColorR = self:AddInput("Red",   "ColorSkullRed",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InColorSkullColorG = self:AddInput("Green", "ColorSkullGreen", { INP_Default  = 0.3, IC_ControlID = 1, attrs})
+    InColorSkullColorB = self:AddInput("Blue",  "ColorSkullBlue",  { INP_Default  = 0.4, IC_ControlID = 2, attrs})
+    InColorSkullColorA = self:AddInput("Alpha", "ColorSkullAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InFresnelSlider = self:AddInput("Fresnel", "Fresnel", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  node = DVIPComputeNode(req,
+    "DullSpeedSkullFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.ColorBKG = {
+    InColorBKGColorR:GetValue(req).Value,
+    InColorBKGColorG:GetValue(req).Value,
+    InColorBKGColorB:GetValue(req).Value,InColorBKGColorA:GetValue(req).Value
+  }
+  params.ColorEyes = {
+    InColorEyesColorR:GetValue(req).Value,
+    InColorEyesColorG:GetValue(req).Value,
+    InColorEyesColorB:GetValue(req).Value,InColorEyesColorA:GetValue(req).Value
+  }
+  params.ColorSkull = {
+    InColorSkullColorR:GetValue(req).Value,
+    InColorSkullColorG:GetValue(req).Value,
+    InColorSkullColorB:GetValue(req).Value,InColorSkullColorA:GetValue(req).Value
+  }
+  params.Fresnel = InFresnelSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddOutput("dst", dst)
+ 
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

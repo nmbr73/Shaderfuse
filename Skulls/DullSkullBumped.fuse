@@ -1,0 +1,1192 @@
+--[[--/*
+
+  DullSkullBumped.fuse
+
+  Based on https://www.shadertoy.com/view/WXsXRf a WebGL shader created by JiPi.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   Reset;
+  float  Color1[4];
+  float  Color2[4];
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  Spe1;
+  float  Spe2;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f3(a) _fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f3(a) fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+__DEVICE__ float4 decube_f3(__TEXTURE2D__ t, float3 xyz)
+{
+  float ax=_fabs(xyz.x);
+  float ay=_fabs(xyz.y);
+  float az=_fabs(xyz.z);
+
+  if (xyz.x>0.0f && ax>=ay && ax>=az) // +X, Face 0, right
+    return _tex2DVecN(t,(-xyz.z/ax+1.0f)/8.0f + 0.5f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y>0.0f && ay>=ax && ay>=az) // +Y, Face 2, top
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(-xyz.z/ay+1.0f)/6.0f + (2.0f/3.0f),15);
+
+  if (xyz.z>0.0f && az>=ax && az>=ay) // +Z, Face 4, front
+    return _tex2DVecN(t,(xyz.x/az+1.0f)/8.0f + 0.25f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.x<0.0f && ax>=ay && ax>=az) // -X, Face 1, left
+    return _tex2DVecN(t,(xyz.z/ax+1.0f)/8.0f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y<0.0f && ay>=ax && ay>=az) // -Y, Face 3, bottom
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(xyz.z/ay+1.0f)/6.0f,15);
+
+  if (xyz.z<0.0f && az>=ax && az>=ay) // -Z, Face 5, back
+    return _tex2DVecN(t,(-xyz.x/az+1.0f)/8.0f + 0.75f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  return to_float4(1.0f,0.0f,0.0f,1.0f); // error
+}
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+
+#define MAX_STEPS 64
+#define MAX_DIST 20.0f
+#define SURF_DIST 0.01f
+#define PI 3.141592f
+
+// by https://mercury.sexy/hg_sdf/
+__DEVICE__ float2 pModPolar(float2 p, float repetitions) {
+    float angle = 2.0f*PI/repetitions,
+          a = _atan2f((p).y, (p).x)+angle,
+          r = length(p),
+          c = _floor(a / angle);
+    a = mod_f(a, angle) - angle / 2.0f;
+    p = to_float2(_cosf(a), _sinf(a)) * r;
+    //if (_fabs(c) >= (repetitions / 2.0f)) c = _fabs(c);
+    //return c;
+    return p;
+}
+
+//===================================================================//
+// below by https://iquilezles.org/articles/distfunctions/
+
+__DEVICE__ mat2 Rot(float a) {
+    float s=_sinf(a), c=_cosf(a);
+    return to_mat2(c, -s, s, c);
+}
+
+__DEVICE__ float2 sminMF( float a, float b, float k )
+{
+    float h = 1.0f - _fminf( _fabs(a-b)/(4.0f*k), 1.0f );
+    float w = h*h;
+    float m = w*0.5f;
+    float s = w*k;
+    return (a<b) ? to_float2(a-s,m) : to_float2(b-s,1.0f-m);
+}
+
+__DEVICE__ float sMin( float d1, float d2, float k ) {
+    float h = clamp( 0.5f + 0.5f*(d2-d1)/k, 0.0f, 1.0f );
+    return _mix( d2, d1, h ) - k*h*(1.0f-h); }
+
+__DEVICE__ float sMax( float d1, float d2, float k ) {
+    float h = clamp( 0.5f - 0.5f*(d2+d1)/k, 0.0f, 1.0f );
+    return _mix( d2, -d1, h ) + k*h*(1.0f-h); }
+
+__DEVICE__ float Sphere(float3 p,float s){
+    return length(p)-s;
+}
+
+__DEVICE__ float Ellipsoid( float3 p, float3 r )
+{
+  float k0 = length(p/r);
+  float k1 = length(p/(r*r));
+  return k0*(k0-1.0f)/k1;
+}
+
+__DEVICE__ float rBox( float3 p, float3 b, float r )
+{
+  float3 q = abs_f3(p) - b;
+  return length(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f) - r;
+}
+
+__DEVICE__ float Capsule( float3 p, float3 a, float3 b, float r )
+{
+  float3 pa = p - a, ba = b - a;
+  float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0f, 1.0f );
+  return length( pa - ba*h ) - r;
+}
+
+__DEVICE__ float HollowSphere( float3 p, float r, float h, float t )
+{
+  float w = _sqrtf(r*r-h*h);
+  float2 q = to_float2( length(swi2(p,x,z)), p.y );
+  return ((h*q.x<w*q.y) ? length(q-to_float2(w,h)) :
+                          _fabs(length(q)-r) ) - t;
+}
+
+// above by https://iquilezles.org/articles/distfunctions/
+//===================================================================//
+
+__DEVICE__ float3 GetRayDir(float2 uv, float3 p, float3 l, float z) {
+    float3
+        f = normalize(l-p),
+        r = normalize(cross(to_float3(0,1,0), f)),
+        u = cross(f,r),
+        c = f*z,
+        i = c + uv.x*r + uv.y*u;
+    return normalize(i);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Cubemap: Uffizi Gallery Blurred_0' to iChannel0
+// Connect Image 'Texture: Noise' to iChannel1
+
+
+// Fork of "DULL SKULL - Bumped" by Kris_Katur. https://shadertoy.com/view/3cl3WB
+// 2025-04-22 18:53:28
+
+// "Dull Skull"
+// Bumped
+// 2025
+// by KΛTUR
+
+/* license CC BY-NC 4.0f - https://creativecommons.org/licenses/by-nc/4.0f/
+ * Author: KΛTUR
+ * Original Shader: DULL SKULL - Bumped
+ * You may remix, adapt, and build upon this work for non-commercial
+ * purposes, but you must give appropriate credit and indicate
+ * changes were made.
+
+=======================================================================
+
+Implemented bump mapping and smooth color mixing in previous shaders.
+
+"DULL SKULL Prologue"
+https://www.shadertoy.com/view/4XsfDs
+"DULL SKULL Brained"
+https://www.shadertoy.com/view/lXSBzV
+
+This skull became the foundation for the rest of the skeleton.
+Building on that base, I explore the intricacies of the human skeleton
+through the lens of mathematics, focusing on the skull as a SDF mostly
+made of classic linear algebra and simple Boolean operations.
+"DULL SKULL"
+https://www.shadertoy.com/view/DlyyWR 💀
+
+=======================================================================
+*/
+
+__DEVICE__ float _t(float time){
+    float t = 8.0f+time*0.5f;
+    return t += _sinf(time*0.5f)*0.5f+0.2f;
+}
+
+__DEVICE__ float3 Transform(float3 p, float t){
+    p.x += _sinf(_sinf(t*0.56f))*1.5f;
+    p.y += _sinf(t)*0.4f-0.3f;
+    p.z += _sinf(t*0.9f)*0.6f;
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , Rot(_sinf(-t+1.0f)*0.3f)));
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , Rot(_cosf(-t*0.7f+4.0f)*0.4f)));
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , Rot(_sinf(t*0.5f)*1.0f*_cosf(t*0.3f+1.0f))));
+    return p;
+}
+
+__DEVICE__ float bumpMapping(float3 p, float d, float factor, float scale, __TEXTURE2D__ iChannel1) {
+    float bump = 0.0f;
+    if (d < 0.1f) {
+        float3 normal = normalize(p+0.01f);
+
+        float4 tmp1 = texture(iChannel1,swi2(p,x,y)*scale); // OpenCL as its best - unbelievable :-(
+        float4 tmp2 = texture(iChannel1,swi2(p,x,z)*scale); // OpenCL as its best - unbelievable :-(
+
+        bump += factor * tmp1.x;//(texture(iChannel1,swi2(p,x,y)*scale)).x;
+        bump += factor * tmp2.x;//(texture(iChannel1,swi2(p,x,z)*scale)).x;
+    }
+    return bump;
+}
+
+__DEVICE__ float3 map(float3 p, float iTime, __TEXTURE2D__ iChannel1){
+
+    float t = _t(iTime);
+
+///////////-----------------///////////
+///////////----- SKULL -----///////////
+///////////-----------------///////////
+
+    float3 p_skull = Transform(p,t);
+
+    // HEAD
+    float head = Ellipsoid(p_skull,to_float3(0.9f,1.1f,1.2f));//head ellispoid
+    float p_cutb = p_skull.y+0.7f; //bottom cut plane
+    p_cutb = sMin(p_cutb, Ellipsoid(p_skull-to_float3(0,-0.3f,-0.2f),to_float3_s(0.7f)),0.1f);//head hole
+    p_cutb = sMin(p_cutb, Ellipsoid(p_skull-to_float3(0,-0.24f,0.5f),to_float3_s(0.51f)),0.1f);//head hole front
+    head = sMax(p_cutb, head,0.2f); //bottom cut
+    float p_cutf = -p_skull.z+1.1f; //forehead plane
+    head = sMax(p_cutf, head,0.2f); //forehead cut
+    float cuts_temple = Capsule(to_float3(-_fabs(p_skull.x),p_skull.y,p_skull.z), to_float3(-1.0f,-1,0.8f), to_float3(-1.8f,3,0.0f), 0.5f );//temple deepenings
+    head = sMax(cuts_temple, head,0.3f); //temple cuts
+    float bcut_temple = Capsule(p_skull, to_float3(-2.0f,-1.1f,0.6f), to_float3(2,-1.1f,0.6f), 0.6f );//side cuts temple <-> head
+    head = sMax(bcut_temple, head,0.3f); //side cuts
+
+    // UPPER JAW
+    float3 p_jaw = p_skull-to_float3(0,0.36f,0.1f);
+    swi2S(p_jaw,y,z, mul_f2_mat2(swi2(p_jaw,y,z) , Rot(PI)));
+    p_jaw.z *= 0.9f;
+    float ujaw = HollowSphere(p_jaw+to_float3(0,-0.95f,0.5f),0.38f,0.02f,0.05f );//jaw sdf
+    float p_cutB = p_skull.z-0.6f;//cutting plane back
+    ujaw = sMax(p_cutB, ujaw,0.05f); //jaw back cut
+    float3 p_jawsc = to_float3(_fabs(_sqrtf(p_skull.x*p_skull.x+0.01f)),p_skull.y,p_skull.z); //new point def for side cuts
+    swi2S(p_jawsc,x,y, mul_f2_mat2(swi2(p_jawsc,x,y) , Rot(-1.0f)));
+    swi2S(p_jawsc,y,z, mul_f2_mat2(swi2(p_jawsc,y,z) , Rot(-0.4f)));
+    p_jawsc.y += 0.3f;
+    ujaw = sMax(p_jawsc.y, ujaw,0.04f); //side cuts
+
+    head = sMin(ujaw, head,0.1f);//union upper jaw and d
+    head -= _sinf(6.0f*p_skull.x)*_sinf(8.0f*p_skull.y)*_sinf(6.0f*p_skull.z)*0.03f;//distortion
+
+    // CHEEKS
+    // CHEEKBONES
+    float3 p_eyesur = p_skull-to_float3(0,0.3f,0);
+    float eyesur = Ellipsoid(to_float3(_fabs(p_eyesur.x),p_eyesur.y,p_eyesur.z)+to_float3(-0.34f,0.5f,-0.87f),to_float3(0.25f,0.3f,0.2f));//cheekbones
+    eyesur += _sinf(12.0f*p_skull.x)*_sinf(11.0f*p_skull.y)*_sinf(13.0f*p_skull.z)*0.02f;//distortion
+    head = sMin(eyesur, head,0.1f); //union cheekbones and d
+
+    // ZYGOMATIC ARCH
+    float3 p_zyg = to_float3(_fabs(p_skull.x),p_skull.y,p_skull.z);
+    p_zyg.x += _sinf(p_zyg.z*4.0f+PI)*0.08f;
+    p_zyg.y += _cosf(p_zyg.z*9.0f)*0.03f;
+    float zyg = Capsule(p_zyg,to_float3(0.5f,-0.3f,0.8f),to_float3(0.75f,-0.3f,0.1f),(p_zyg.z)*0.1f);
+    head = sMin(head,zyg,0.05f); //union zygomatic arch and d
+
+    // NOSE
+    // NOSE BONE
+    float3 p_nbone = p_skull;
+    swi2S(p_nbone,y,z, mul_f2_mat2(swi2(p_nbone,y,z) , Rot(-2.2f)));
+    float nbone = HollowSphere(p_nbone+to_float3(0,-1.0f,0.4f),0.1f,0.08f,0.04f );
+    head = sMin(head,nbone,0.05f); //union nose bone and d
+
+    // NOSE HOLE
+    float3 p_nose = to_float3(_fabs(_sqrtf(p_skull.x*p_skull.x+0.0012f)),p_skull.y,p_skull.z);
+    swi2S(p_nose,x,y, mul_f2_mat2(swi2(p_nose,x,y) , Rot(-0.25f)));
+    float nose = Ellipsoid(p_nose-to_float3(-0.03f,-0.35f,1.0f),to_float3(0.03f,0.08f,0.8f));
+    float3 p_bone = p_skull;
+    head = sMax(nose, head,0.06f); //ellipsoid subtraction
+
+    // LOWER JAW
+    float3 pN = p_skull; //null - parent rotation
+    pN.z -= 0.45f;
+    pN.y += 0.4f;
+    swi2S(pN,y,z, mul_f2_mat2(swi2(pN,y,z) , Rot((_sinf(_cosf(t*3.0f)*0.7f+0.3f)*0.3f-0.2f))));
+    pN.z += 0.5f;
+    pN.y -= 0.4f;
+    pN -= _sinf(pN.y*15.0f)*0.01f - _cosf(pN.z*39.0f)*0.002f; //distortion
+
+    //CHIN
+    float3 p_ljaw = pN;
+    p_ljaw.y *= 0.8f;
+    p_ljaw.z -= _sinf(pN.y*26.0f)*0.008f;
+    p_ljaw.y -= _cosf(pN.x*15.0f+_sinf(pN.y*7.0f)*2.0f)*0.01f;
+    float ljaw = HollowSphere(p_ljaw+to_float3(0,0.77f,-0.74f),0.38f,0.03f,0.04f );//chin
+    ljaw = sMax(p_ljaw.z-0.65f,ljaw,0.1f);
+
+    // MANDIBLE BOTTOM & BACK
+    float3 p_maB = to_float3(_fabs(_sqrtf(pN.x*pN.x+0.01f)),pN.y,pN.z);
+    swi2S(p_maB,y,z, mul_f2_mat2(swi2(p_maB,y,z) , Rot(-1.3f)));
+    swi2S(p_maB,x,z, mul_f2_mat2(swi2(p_maB,x,z) , Rot(-0.34f)));
+    swi2S(p_maB,x,y, mul_f2_mat2(swi2(p_maB,x,y) , Rot(-0.39f)));
+    p_maB -= to_float3(0.85f,0.0f,0.63f);
+    ljaw = sMin(ljaw,rBox(p_maB,to_float3(0.0f,smoothstep(0.0f,6.0f,_fabs(-_sqrtf(p_maB.z*p_maB.z+0.01f))+0.9f),0.45f),0.04f),0.17f);
+    ljaw = sMax(Ellipsoid(p_maB-to_float3(0.0f,0.0f,-0.55f),to_float3(0.5f,0.15f,0.26f)),ljaw,0.04f);
+    ljaw = sMax(p_ljaw.y+0.93f,ljaw,0.02f);//bottom cut plane
+
+    // EYE HOLES
+    float3 p_eyeH = p_skull;
+    float eyes = Ellipsoid(to_float3(_fabs(p_eyeH.x),p_eyeH.y-0.4f,p_eyeH.z)+to_float3(-0.29f,0.49f,-1.1f),to_float3(0.21f,0.25f,0.25f)); // eye balls
+    float eyeH = sMin(eyes,Sphere(to_float3(_fabs(p_skull.x),p_skull.y,p_skull.z)-to_float3(0.25f,0.0f,0.7f),0.35f),0.05f);// eye holes back
+    eyeH = sMax(-p_eyeH.y,eyeH,0.2f);
+    head = sMax(eyeH, head,0.05f); //eye ball subtraction
+
+    // UPPER TEETH
+    float3 p_tooth = p_skull;
+    p_tooth += to_float3(0,0.77f,-0.7f);
+    p_tooth *= to_float3(1.2f,1,1);
+    swi2S(p_tooth,x,z, pModPolar(swi2(p_tooth,x,z), 12.0f));
+
+    float teeth = Ellipsoid(p_tooth - to_float3(0.43f, 0.0f, 0.0f), to_float3(0.03f, 0.15f, 0.045f));
+    teeth = _fmaxf(teeth, -p_skull.y-0.73f+_sinf(p_skull.x*32.0f)*0.006f);
+    teeth = _fmaxf(teeth, -p_skull.z+0.7f);
+    teeth = sMax(Sphere(p_skull-to_float3(0.02f,-0.88f,0.98f),0.23f),teeth,0.01f);// narrowing front teeth
+
+    // LOWER TEETH
+    float3 p_ltooth = pN;
+    p_ltooth -= to_float3(0,-0.77f,0.7f);
+    p_ltooth *= to_float3(1.2f,1,1);
+    swi2S(p_ltooth,x,z, pModPolar(swi2(p_ltooth,x,z), 12.0f));
+
+    float lteeth = Ellipsoid(p_ltooth - to_float3(0.42f, 0.0f, 0.0f), to_float3(0.03f, 0.15f, 0.045f));
+    lteeth = _fmaxf(lteeth, pN.y+0.79f+_sinf(p_skull.x*29.0f)*0.004f);
+    lteeth = _fmaxf(lteeth, -pN.z+0.7f);
+    lteeth = sMax(Sphere(pN-to_float3(0.005f,-0.87f,0.89f),0.24f),lteeth,0.02f);// narrowing front teeth
+    teeth = _fminf(teeth,lteeth);
+
+    // EYEBALLS
+    float3 p_eye = p_skull;
+    p_eye.x = _fabs(_sqrtf(p_eye.x*p_eye.x+0.005f));
+    p_eye.y -= 0.4f;
+    p_eye += to_float3(-0.29f,0.57f,-0.9f);
+    eyes = Ellipsoid(p_eye,to_float3_s(0.2f));
+
+/////////////////////////////////////////////////////////////
+
+    // BACKGROUND
+    float3 pbg = p;
+    pbg.x += _cosf(pbg.y*3.0f+t*0.7f)*0.05f;
+    pbg.y += _sinf(pbg.x*3.0f+t*0.3f)*0.1f;
+    pbg.z += 8.0f+_sinf(_sinf(pbg.x+t*2.94f)+t*0.79f)*_sinf(t)*0.5f*_cosf(_sinf(pbg.y+t*1.85f)+t*0.69f)*-2.0f;
+    float bg = Sphere(pbg,8.0f);
+
+    // BLENDING AND BUMPING
+    float k = 0.3f;                // smoothing value
+    float kk= k/3.0f;              // smoothing value 2
+    float factor = 0.01f;          // bump factor
+    float scale = 1.7f;           // 3D texture scaling
+
+    float d = sminMF(bg,head,k).x;  // union background & head -> mix factor stored in y value
+    float dd = sminMF(bg,ljaw,kk).x;// union background & lower jaw -> mix factor stored in y value
+    d = sminMF(d,dd,0.01f).x;         // union head&bg & ljaw&bg -> mix factor stored in y value
+
+    float mf = sminMF(bg,head,k).y;     // mix factor bg - head
+    float mf2 = sminMF(head,ljaw,kk).y; // mix factor head - lower jaw
+
+    float d1 = bumpMapping(pbg,d,factor,scale, iChannel1);     // bump background
+    float d2 = bumpMapping(p_skull,d,factor,scale, iChannel1); // bump head
+    float d3 = bumpMapping(p_ljaw,d,factor,scale, iChannel1);  // bump lower jaw (seperate due to rotation)
+
+    d -= _mix(d1,_mix(d2,d3, mf2),mf)*(_sinf(t-p.x*p.y*0.7f)*0.5f+0.5f);
+
+    // MATERIALS
+    float2 res = to_float2(d,0);
+    if(eyes<d) res = to_float2(eyes,1);
+    if(teeth<d) res = to_float2(teeth,2);
+
+    return to_float3_aw(res,mf);
+}
+
+// RAYMARCHING
+__DEVICE__ float3 RM(float3 ro, float3 rd, float iTime, __TEXTURE2D__ iChannel1){
+    float mat = 0.0f;
+    float mf = 0.0f;
+    float t=0.0f;
+    for(int i=0;i<MAX_STEPS; i++){
+        float3 p = ro + rd*t;
+        float d = map(p,iTime,iChannel1).x;
+        mat = map(p,iTime,iChannel1).y;
+        mf = map(p,iTime,iChannel1).z;
+        t += d;
+        if(t>MAX_DIST||_fabs(d)<SURF_DIST) break;
+    }
+    return to_float3(t,mat,mf);
+}
+
+// https://iquilezles.org
+__DEVICE__ float3 calcNormal (float3 p, float iTime, __TEXTURE2D__ iChannel1){
+    // inspired by tdhooper and klems - a way to prevent the compiler from inlining map() 4 times
+    float3 n = to_float3_s(0.0f);
+    for( int i=0; i<4; i++ ){
+        float3 e = 0.5773f*(2.0f*to_float3((((i+3)>>1)&1),((i>>1)&1),(i&1))-1.0f);
+        n += e*map(p+0.001f*e,iTime,iChannel1).x;
+    }
+    return normalize(n);
+}
+
+// https://iquilezles.org
+__DEVICE__ float AO( in float3 pos, in float3 nor, float iTime, __TEXTURE2D__ iChannel1 ){
+    float occ = 0.0f;
+    float sca = 1.0f;
+    for( int i=0; i<8; i++ )
+    {
+        float h = 0.001f + 0.15f*(float)(i)/4.0f;
+        float d = map( pos + h*nor,iTime,iChannel1 ).x;
+        occ += (h-d)*sca;
+        sca *= 0.9f;
+    }
+    return clamp( 1.0f - 1.3f*occ, 0.0f, 1.0f );
+}
+
+__KERNEL__ void DullSkullBumpedFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  Spe1 = params->Spe1;
+  float  Spe2 = params->Spe2;
+
+  // --------
+
+
+    float2 uv = (fragCoord-0.5f*iResolution)/iResolution.y;
+    float t = _t(iTime*0.73f);
+    float3 ro = to_float3(_sinf(t*0.93f)*3.0f, _cosf(t*0.87f)*2.0f, 8.0f+_sinf(t*0.6f)) + to_float3_aw(ViewXY, ViewZ);
+
+    float2 m = (swi2(iMouse,x,y)-0.5f*iResolution)/iResolution.y;
+    swi2S(ro,x,z, mul_f2_mat2(swi2(ro,x,z) , Rot(-m.x*0.3f+_sinf(t*0.8f)*0.4f)));
+    swi2S(ro,y,z, mul_f2_mat2(swi2(ro,y,z) , Rot(m.y*0.3f+_cosf(t*0.6f)*0.4f)));
+
+    swi2S(ro,x,z, mul_f2_mat2(swi2(ro,x,z) , Rot(_sinf(t*0.7f)*0.4f)));
+    swi2S(ro,y,z, mul_f2_mat2(swi2(ro,y,z) , Rot(_cosf(t*0.5f)*0.4f)));
+    float3 rd = GetRayDir(uv, ro, to_float3(0,0,-1) + to_float3_aw(ViewDXY, ViewDZ), 2.0f);
+    float3 col = to_float3_s(1);
+    float d = RM(ro, rd, iTime,iChannel1).x;
+    float mate = RM(ro,rd, iTime,iChannel1).y;
+    float mf = RM(ro,rd, iTime,iChannel1).z;
+
+    if(d<MAX_DIST){
+
+        float3 p = ro + rd*d;
+        float3 n = calcNormal(p, iTime,iChannel1);
+
+        // LIGHT POSITIONS
+        float3 l = normalize(to_float3(6,2,1));
+        float3 l2 = normalize(to_float3(-4,-1,-1));
+
+        // LIGHTING
+        float3 r = reflect(rd,n);
+        float3 ref = swi3(decube_f3(iChannel0,r),x,y,z);
+        float dif = clamp(dot(l,n),0.0f,1.0f);
+        float amb = clamp(dot(normalize(l2),n),0.0f,1.0f);
+        float3 hal = normalize(l-rd);
+        float spe = _powf(clamp(dot(hal,n),0.0f,1.0f),64.0f);
+        float3 hal2 = normalize(l2-rd);
+        float spe2 = _powf(clamp(dot(hal2,n),0.0f,1.0f),8.0f);
+
+        // SKULL & BACKGROUND
+        col *= spe*Spe1;//6.0f;
+        col += spe2*Spe2;//12.0f;
+        col += amb;
+        //col *= _mix( to_float3(0.4f,0.7f,1.0f),to_float3(1.0f,0.7f,0.3f),mf);
+        col *= _mix( swi3(Color1,x,y,z),swi3(Color2,x,y,z),mf);
+        col *= ref;
+
+        // EYES
+        if(mate==1.0f){
+            col = to_float3_s(1.0f);
+            col *= dif;
+            col *= ref;
+            col += spe*2.0f;
+            col += spe2;
+        }
+
+        // TEETH
+        if(mate==2.0f){
+            col = to_float3(1.0f,0.7f,0.3f);
+            col *= spe*6.0f;
+            col += spe2*10.0f*to_float3(1.0f,0.7f,0.3f);
+            col += amb;
+            col *= ref;
+        }
+        col *= AO(p,n,iTime,iChannel1);
+    }
+
+    col = _mix( col, to_float3_s(0), 1.0f-_expf(-0.000002f*_powf(d,6.0f)));//fog
+    col = pow_f3(col, to_float3_s(0.4545f)); //gamma correction
+    float4 color = to_float4_aw(col,1.0f);
+
+    fragColor = color;
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  self:BeginControlNest("Color1", "Color1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor1ColorR = self:AddInput("Red",   "Color1Red",   { INP_Default  = 0.4, IC_ControlID = 0, attrs})
+    InColor1ColorG = self:AddInput("Green", "Color1Green", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InColor1ColorB = self:AddInput("Blue",  "Color1Blue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColor1ColorA = self:AddInput("Alpha", "Color1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color2", "Color2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor2ColorR = self:AddInput("Red",   "Color2Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColor2ColorG = self:AddInput("Green", "Color2Green", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InColor2ColorB = self:AddInput("Blue",  "Color2Blue",  { INP_Default  = 0.3, IC_ControlID = 2, attrs})
+    InColor2ColorA = self:AddInput("Alpha", "Color2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InSpe1Slider = self:AddInput("Spe1", "Spe1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 6.0,
+      })
+
+  InSpe2Slider = self:AddInput("Spe2", "Spe2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 12.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "DullSkullBumpedFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.Color1 = {
+    InColor1ColorR:GetValue(req).Value,
+    InColor1ColorG:GetValue(req).Value,
+    InColor1ColorB:GetValue(req).Value,InColor1ColorA:GetValue(req).Value
+  }
+  params.Color2 = {
+    InColor2ColorR:GetValue(req).Value,
+    InColor2ColorG:GetValue(req).Value,
+    InColor2ColorB:GetValue(req).Value,InColor2ColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.Spe1 = InSpe1Slider:GetValue(req).Value
+  params.Spe2 = InSpe2Slider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

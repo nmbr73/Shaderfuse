@@ -1,0 +1,678 @@
+--[[--/*
+
+    Seascape
+
+    Based on https://www.shadertoy.com/view/Ms2SD1 a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion.
+
+    Shader created by TDM
+
+    V0.2 Added "reflect"-Function for OpenCL
+	V0.3 Added Cuda-Functions
+
+
+*/--]]--
+
+
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+-- local dctlfuse_versionNo   = 3
+-- local dctlfuse_versionDate = "December 2021"
+-- local dctlfuse_authorurl   = "https://www.youtube.com/c/nmbr73"
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+  -- It's possible to email tools to other people.  You can select a group of tools in the flow view, ⌘C to copy them, and
+  -- then ⌘V to paste their Lua code into your email or any other text editor.  Conversely if you copy tools from your email
+  -- you can paste them back into Fusions flow view.
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+SeascapeParams =
+[[
+  float freq;
+  float SEA_CHOPPY;
+  float SEA_FREQ;
+  float x;
+  bool  AA;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+SeascapeKernel =
+    [[
+
+// -----
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+// 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+#if 1
+  #if defined(DEVICE_IS_METAL)
+    #define USE_NATIVE_METAL_IMPL   1
+  #elif defined(DEVICE_IS_CUDA)
+    #define USE_NATIVE_CUDA_IMPL    1
+  #elif defined(DEVICE_IS_OPENCL)
+    #define USE_NATIVE_OPENCL_IMPL  1
+  #endif
+#endif
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Macros to resolve Open GL szwizzling
+// ---------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  #define swixy(V) (V).xy
+  #define swixz(V) (V).xz
+
+#else
+
+  #define swixy(V) to_float2((V).x,(V).y)
+  #define swixz(V) to_float2((V).x,(V).z)
+
+#endif
+
+
+
+// ---------------------------------------------------------------------------
+// 2x2 matrix
+// ---------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  __DEVICE__ inline mat2 to_mat2    ( float  a, float  b, float c, float d) { return mat2(a,b,c,d);       }
+  __DEVICE__ inline float2  prod_float2_mat2( float2 v, mat2   m )  { return v*m; }
+
+#else
+
+  typedef struct
+  {
+    float2 r0;
+    float2 r1;
+
+  } mat2;
+
+  __DEVICE__ inline mat2 to_mat2    ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 prod_float2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+    //return float2(v.x*m.r0.x + v.y*m.r0.y, v.x*m.r1.x + v.y*m.r1.y);
+  }
+
+
+#endif // end of mat2 implementation
+
+
+
+// ---------------------------------------------------------------------------
+// 3x3 matrix
+// ---------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline float3  prod_float3_mat3( float3 v, mat3   m )  { return v*m; }
+
+#else
+
+  typedef struct
+  {
+    float3 r0;
+    float3 r1;
+    float3 r2;
+
+  } mat3;
+
+  __DEVICE__ inline float3 prod_float3_mat3( float3 v, mat3 m )
+  {
+    float3 t;
+    t.x = v.x*m.r0.x + v.y*m.r0.y + v.z*m.r0.z;
+    t.y = v.x*m.r1.x + v.y*m.r1.y + v.z*m.r1.z;
+    t.z = v.x*m.r2.x + v.y*m.r2.y + v.z*m.r2.z;
+    return t;
+  }
+
+#endif // end of mat3 implementation
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Fraction
+// ---------------------------------------------------------------------------
+
+// In Cuda the fract function is missing
+// Does fract exist in OpenCL? And if so, what's its name then?
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  __DEVICE__ inline float  fract1f(float f) {return fract(f);}
+  __DEVICE__ inline float2 fract_float2(float2 v) { return fract(v); }
+
+#else
+
+  __DEVICE__ float  fract1f(float f) {return f - _floor(f);}
+  __DEVICE__ float2 fract_float2(float2 v) { return to_float2(v.x - _floor(v.x), v.y - _floor(v.y)                                      ); }
+
+#endif
+
+#if defined(DEVICE_IS_OPENCL) || defined(DEVICE_IS_METAL)
+__DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+#endif
+
+
+#if defined(DEVICE_IS_CUDA)
+   __DEVICE__ float2 sin_f2(float2 i) {float2 r; r.x = _sinf(i.x); r.y = _sinf(i.y); return r;}
+   __DEVICE__ float2 cos_f2(float2 i) {float2 r; r.x = _cosf(i.x); r.y = _cosf(i.y); return r;}
+   __DEVICE__ float2 abs_f2(float2 a) {return (to_float2(_fabs(a.x), _fabs(a.y)));}
+   #define lpowf _powf
+   __DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
+   __DEVICE__ float2 mix_f2(float2 v, float2 i, float2 m) {return to_float2(_mix(v.x,i.x,m.x),_mix(v.y,i.y,m.y));}
+
+#else
+   #define sin_f2 sin
+   #define cos_f2 cos
+   #define abs_f2 _fabs
+   #define pow_f3 pow
+   #define mix_f2 _mix
+#endif
+
+
+/*
+ * "Seascape" by Alexander Alekseev aka TDM - 2014
+ * License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+ * Contact: tdmaav@gmail.com
+ */
+
+#define NUM_STEPS 8 // const int NUM_STEPS = 8;
+#define EPSILON_NRM (0.1f / iResolution.x)
+
+// #define AA
+
+// sea
+#define ITER_GEOMETRY 3 // const int ITER_GEOMETRY = 3;
+#define ITER_FRAGMENT 5 // const int ITER_FRAGMENT = 5;
+#define SEA_HEIGHT 0.6f // const float SEA_HEIGHT = 0.6f;
+// #define SEA_CHOPPY 4.0f // const float SEA_CHOPPY = 4.0f; !!!
+#define SEA_SPEED 0.8f  // const float SEA_SPEED = 0.8f;
+// #define SEA_FREQ 0.16f  // const float SEA_FREQ = 0.16f; !!!
+#define SEA_BASE to_float3(0.0f,0.09f,0.18f) // const float3 SEA_BASE = to_float3(0.0,0.09,0.18);
+#define SEA_WATER_COLOR to_float3(0.8f,0.9f,0.6f)*0.6f //const float3 SEA_WATER_COLOR = to_float3(0.8,0.9,0.6)*0.6;
+#define SEA_TIME (1.0f + iTime * SEA_SPEED)
+#define octave_m to_mat2(1.6f,1.2f,-1.2f,1.6f) //const mat2 octave_m = to_mat2(1.6f,1.2f,-1.2f,1.6f);
+
+// math
+__DEVICE__  mat3 fromEuler(float3 ang) {
+  float2 a1 = to_float2(_sinf(ang.x),_cosf(ang.x));
+  float2 a2 = to_float2(_sinf(ang.y),_cosf(ang.y));
+  float2 a3 = to_float2(_sinf(ang.z),_cosf(ang.z));
+  mat3 m;
+
+  #if defined(DEVICE_IS_METAL)
+  m[0] = to_float3(a1.y*a3.y+a1.x*a2.x*a3.x,a1.y*a2.x*a3.x+a3.y*a1.x,-a2.y*a3.x);
+  m[1] = to_float3(-a2.y*a1.x,a1.y*a2.y,a2.x);
+  m[2] = to_float3(a3.y*a1.x*a2.x+a1.y*a3.x,a1.x*a3.x-a1.y*a3.y*a2.x,a2.y*a3.y);
+  #else
+  /* m[0] */ m.r0 = to_float3(a1.y*a3.y+a1.x*a2.x*a3.x,a1.y*a2.x*a3.x+a3.y*a1.x,-a2.y*a3.x);
+  /* m[1] */ m.r1 = to_float3(-a2.y*a1.x,a1.y*a2.y,a2.x);
+  /* m[2] */ m.r2 = to_float3(a3.y*a1.x*a2.x+a1.y*a3.x,a1.x*a3.x-a1.y*a3.y*a2.x,a2.y*a3.y);
+  #endif
+
+	return m;
+}
+
+__DEVICE__ float hash( float2 p ) {
+	float h = dot(p,to_float2(127.1f,311.7f));
+  return fract1f(_sinf(h)*43758.5453123f);
+}
+
+__DEVICE__ float noise( float2 p ) {
+    float2 i = _floor( p );
+    float2 f = fract_float2( p );
+	float2 u = f*f*(3.0f-2.0f*f);
+    return -1.0f+2.0f*_mix( _mix( hash( i + to_float2(0.0f,0.0f) ),
+                                  hash( i + to_float2(1.0f,0.0f) ), u.x),
+                      _mix( hash( i + to_float2(0.0f,1.0f) ),
+                            hash( i + to_float2(1.0f,1.0f) ), u.x), u.y);
+}
+
+// lighting
+__DEVICE__ float diffuse(float3 n,float3 l,float p) {
+    return pow(dot(n,l) * 0.4f + 0.6f,p);
+}
+
+__DEVICE__ float specular(float3 n,float3 l,float3 e,float s) {
+    float nrm = (s + 8.0f) / (3.141592f * 8.0f);
+    return pow(_fmaxf(dot(reflect(e,n),l),0.0f),s) * nrm;
+}
+
+// sky
+__DEVICE__ float3 getSkyColor(float3 e) {
+    e.y = (_fmaxf(e.y,0.0f)*0.8f+0.2f)*0.8f;
+    return to_float3(pow(1.0f-e.y,2.0f), 1.0f-e.y, 0.6f+(1.0f-e.y)*0.4f) * 1.1f;
+}
+
+// sea
+__DEVICE__ float sea_octave(float2 uv, float choppy) {
+    uv += noise(uv);
+//    float2 wv = 1.0f-_fabs(_sinf(uv));
+//    float2 swv = _fabs(_cosf(uv));
+    float2 wv = 1.0f-abs_f2(sin_f2(uv));
+    float2 swv = abs_f2(cos_f2(uv));
+    wv = mix_f2(wv,swv,wv);
+    return pow(1.0f-pow(wv.x * wv.y,0.65f),choppy);
+}
+
+__DEVICE__ float map(float3 p, float iTime, float choppy, float freq) {
+    float amp = SEA_HEIGHT;
+    float2 uv = swixz(p); uv.x *= 0.75f;
+
+    float d, h = 0.0f;
+    for(int i = 0; i < ITER_GEOMETRY; i++) {
+    	d   = sea_octave((uv+SEA_TIME)*freq,choppy);
+    	d  += sea_octave((uv-SEA_TIME)*freq,choppy);
+        h  += d * amp;
+    	uv = prod_float2_mat2(uv,octave_m); freq *= 1.9f; amp *= 0.22f;
+        choppy = _mix(choppy,1.0f,0.2f);
+    }
+    return p.y - h;
+}
+
+__DEVICE__ float map_detailed(float3 p, float iTime, float choppy, float freq) {
+    float amp = SEA_HEIGHT;
+    float2 uv = swixz(p); uv.x *= 0.75;
+
+    float d, h = 0.0f;
+    for(int i = 0; i < ITER_FRAGMENT; i++) {
+    	d   = sea_octave((uv+SEA_TIME)*freq,choppy);
+    	d  += sea_octave((uv-SEA_TIME)*freq,choppy);
+      h  += d * amp;
+    	uv = prod_float2_mat2(uv,octave_m); freq *= 1.9f; amp *= 0.22f;
+      choppy = _mix(choppy,1.0f,0.2f);
+    }
+    return p.y - h;
+}
+
+__DEVICE__ float3 getSeaColor(float3 p, float3 n, float3 l, float3 eye, float3 dist) {
+    float fresnel = clamp(1.0f - dot(n,-eye), 0.0f, 1.0f);
+    fresnel = _powf(fresnel,3.0f) * 0.5f;
+
+    float3 reflected = getSkyColor(reflect(eye,n));
+    float3 refracted = SEA_BASE + diffuse(n,l,80.0f) * SEA_WATER_COLOR * 0.12f;
+
+    float3 color = _mix(refracted,reflected,fresnel);
+
+    float atten = _fmaxf(1.0f - dot(dist,dist) * 0.001f, 0.0f);
+    color += SEA_WATER_COLOR * (p.y - SEA_HEIGHT) * 0.18f * atten;
+
+    color += to_float3_s(specular(n,l,eye,60.0f));
+
+    return color;
+}
+
+// tracing
+__DEVICE__ float3 getNormal(float3 p, float eps, float iTime, float SEA_CHOPPY,float SEA_FREQ) {
+    float3 n;
+    n.y = map_detailed(p,iTime,SEA_CHOPPY,SEA_FREQ);
+    n.x = map_detailed(to_float3(p.x+eps,p.y,p.z),iTime,SEA_CHOPPY,SEA_FREQ) - n.y;
+    n.z = map_detailed(to_float3(p.x,p.y,p.z+eps),iTime,SEA_CHOPPY,SEA_FREQ) - n.y;
+    n.y = eps;
+    return normalize(n);
+}
+
+
+__DEVICE__ float3 getPixel(float2 coord, float time, float iTime, float2 iResolution, float SEA_CHOPPY, float SEA_FREQ) {
+    float2 uv = coord / swixy(iResolution);
+    uv = uv * 2.0f - 1.0f;
+    uv.x *= iResolution.x / iResolution.y;
+
+    // ray
+    float3 ang = to_float3(_sinf(time*3.0f)*0.1f,_sinf(time)*0.2f+0.3f,time);
+    float3 ori = to_float3(0.0f,3.5f,time*5.0f);
+    float3 dir = normalize(to_float3_aw(swixy(uv),-2.0f)); dir.z += length(uv) * 0.14f;
+    dir = prod_float3_mat3(normalize(dir),fromEuler(ang));
+
+    // tracing
+    float3 p;
+
+    // ///////
+    // heightMapTracing(ori,dir,p);
+    {
+      float tm = 0.0f;
+      float tx = 1000.0f;
+      float hx = map(ori + dir * tx, iTime,SEA_CHOPPY,SEA_FREQ);
+      if(hx > 0.0f) {
+          p = ori + dir * tx;
+          //return tx;
+      } else {
+        float hm = map(ori + dir * tm, iTime,SEA_CHOPPY,SEA_FREQ);
+        float tmid = 0.0f;
+        for(int i = 0; i < NUM_STEPS; i++) {
+          tmid = _mix(tm,tx, hm/(hm-hx));
+          p = ori + dir * tmid;
+          float hmid = map(p, iTime,SEA_CHOPPY,SEA_FREQ);
+          if(hmid < 0.0f) {
+            tx = tmid;
+            hx = hmid;
+          } else {
+            tm = tmid;
+            hm = hmid;
+          }
+        }
+        // return tmid;
+      }
+    }
+    // ///////
+
+    float3 dist = p - ori;
+    float3 n = getNormal(p, dot(dist,dist) * EPSILON_NRM,iTime,SEA_CHOPPY,SEA_FREQ);
+    float3 light = normalize(to_float3(0.0f,1.0f,0.8f));
+
+    // color
+    return _mix(
+                getSkyColor(dir),
+                getSeaColor(p,n,light,dir,dist),
+    	        pow(smoothstep(0.0f,-0.02f,dir.y),0.2f));
+}
+
+
+//############################################################################
+
+
+__KERNEL__ void SeascapeKernel(
+    __CONSTANTREF__ SeascapeParams*  params,
+    __TEXTURE2D__                       iChannel0,
+    __TEXTURE2D_WRITE__                 dst
+    )
+{
+
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  float2 fragCoord   = to_float2(x, y);
+  float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+//TODO:  float2 iMouse = to_float2(params->iMouse[0], params->iMouse[1]);
+  float4 fragColor   = to_float4_s(0.0f);
+
+  //##########################################################################
+
+//TODO:  float time = iTime * 0.3f + iMouse.x*0.01f;
+//  float time = iTime * 0.3f + 5000.0f*0.01f;
+
+float mouse_x=params->x;
+float time = iTime * 0.3f + mouse_x * 0.01f;
+
+  float SEA_CHOPPY=params->SEA_CHOPPY; //   4.0f;
+  float SEA_FREQ = params->SEA_FREQ; //0.16f;
+  float3 color;
+
+  if (params->AA) {
+      color = to_float3_s(0.0f);
+      for(int i = -1; i <= 1; i++) {
+          for(int j = -1; j <= 1; j++) {
+            float2 uv = fragCoord+to_float2(i,j)/3.0f;
+          color += getPixel(uv, time, iTime, iResolution,SEA_CHOPPY,SEA_FREQ);
+          }
+      }
+      color /= 9.0f;
+  } else {
+      color = getPixel(fragCoord, time, iTime, iResolution,SEA_CHOPPY,SEA_FREQ);
+  }
+
+  // post
+  fragColor = to_float4_aw(pow_f3(color,to_float3_s(0.65f)), 1.0f);
+
+  //fragColor   = to_float4(0.0f,1.0f,0.0f,0.0f);
+
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+
+}
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+  Inx = self:AddInput("x", "x", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 0,
+    INP_MinScale 	     = 0,
+    INP_MaxScale 	     = 800,
+    INP_Integer        = true,
+  })
+
+  InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "slow",
+    SLCS_HighName      = "fast",
+  })
+
+  InSEA_CHOPPY = self:AddInput("SEA_CHOPPY", "SEA_CHOPPY", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 4.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 60.0,
+    SLCS_LowName       = "even",
+    SLCS_HighName      = "choppy",
+  })
+
+  InSEA_FREQ = self:AddInput("SEA_FREQ", "SEA_FREQ", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 0.16,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 1.0,
+    SLCS_LowName       = "flat",
+    SLCS_HighName      = "crazy",
+  })
+
+
+
+  InAA = self:AddInput("AA (slow)", "AA", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+--    IC_NoLabel          = true,
+    INPS_StatusText     = "I guess this is for anti-aliasing ... at least it is damn slow on my expensive garbage MacBook Pro"
+  })
+
+
+  -- and your controlls here ...
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+
+    -- Extern Texture or create a new one
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+    else
+        src1 = Image(imgattrs)
+        local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+        src1:Fill(p)
+    end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+    -- Interface for running DCTL-Code
+
+    node = DVIPComputeNode(req, "SeascapeKernel", SeascapeKernel, "SeascapeParams", SeascapeParams)
+
+
+    if not pcall(function ()  -- necessary to avoid memory leakage
+        params.freq         = InFreq:GetValue(req).Value
+        params.SEA_CHOPPY   = InSEA_CHOPPY:GetValue(req).Value
+        params.SEA_FREQ     = InSEA_FREQ:GetValue(req).Value
+        params.x            = Inx:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        params.AA           = InAA:GetValue(req).Value
+        node:SetParamBlock(params)
+    end) then
+        params              = node:GetParamBlock(SeascapeParams)
+        params.freq         = InFreq:GetValue(req).Value
+        params.SEA_CHOPPY   = InSEA_CHOPPY:GetValue(req).Value
+        params.SEA_FREQ     = InSEA_FREQ:GetValue(req).Value
+        params.x            = Inx:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        params.AA           = InAA:GetValue(req).Value
+        node:SetParamBlock(params)
+    end
+
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst",      dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+    end
+    OutImage:Set(req, dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- **/
+

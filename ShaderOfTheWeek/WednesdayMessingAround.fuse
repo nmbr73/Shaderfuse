@@ -1,0 +1,1010 @@
+--[[--/*
+
+  WednesdayMessingAround.fuse
+
+  Based on https://www.shadertoy.com/view/NtcyDn a WebGL shader created by mrange.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  LightPosition[4];
+  float  LightColor[4];
+  float  OverColor[4];
+  float  ColorBurn[4];
+  float  Background[4];
+  int    bars;
+  float  twist;
+  float  dist;
+  float  rounding;
+  bool   AutoPeriod;
+  int    Period;
+  bool   ChangeBackground;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f2(a) sign(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f2(a) sign(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define sign_f2(a) to_float2((a).x==0.0f?0.0f:(a).x>0.0f?1.0f:-1.0f, (a).y==0.0f?0.0f:(a).y>0.0f?1.0f:-1.0f)
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+// CC0: Wednesday messing around
+// Tinkered a bit with an earlier shader
+// Thought while similar it turned out distinct enough to share
+
+#define COLORBURN
+#define SKYDOME
+#define PERIOD        10.0f
+
+#define PI            3.141592654f
+#define ROT(a)        to_mat2(_cosf(a), _sinf(a), -_sinf(a), _cosf(a))
+
+#define TAU         (2.0f*PI)
+#define TIME        iTime
+#define RESOLUTION  iResolution
+
+#define MAX_RAY_LENGTH  15.0f
+#define MAX_RAY_MARCHES 70
+
+
+// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
+__DEVICE__ float3 hsv2rgb(float3 c) {
+  const float4 hsv2rgb_K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+
+  float3 p = abs_f3(fract_f3(swi3(c,x,x,x) + swi3(hsv2rgb_K,x,y,z)) * 6.0f - swi3(hsv2rgb_K,w,w,w));
+  return c.z * _mix(swi3(hsv2rgb_K,x,x,x), clamp(p - swi3(hsv2rgb_K,x,x,x), 0.0f, 1.0f), c.y);
+}
+
+__DEVICE__ float3 band_color(float ny) {
+  float3 hsv = to_float3_s(0.0f);
+  float ramp = 1.0f/_fabs(ny);
+  if (_fabs(ny) < 4.0f) {
+    hsv = to_float3(0.0f, 0.0f, 0.0f);
+  } else if (ny > 0.0f) {
+    hsv = to_float3(0.88f, 2.5f*ramp,0.8f);
+  } else {
+    hsv = to_float3(0.53f, 4.0f*ramp, 0.8f);
+  }
+
+  return hsv2rgb(hsv);
+}
+
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
+__DEVICE__ float box(float2 p, float2 b, float4 r) {
+  swi2S(r,x,y, (p.x>0.0f)?swi2(r,x,y) : swi2(r,z,w));
+  r.x  = (p.y>0.0f)?r.x  : r.y;
+  float2 q = abs_f2(p)-b+r.x;
+  return _fminf(_fmaxf(q.x,q.y),0.0f) + length(_fmaxf(q,to_float2_s(0.0f))) - r.x;
+}
+
+__DEVICE__ float fadeIn(float x, float iTime) {
+  return _mix(-0.1f, 1.0f, smoothstep(-0.9f, -0.5f, -_cosf(-0.1f*x+TAU*TIME/PERIOD)));
+}
+
+__DEVICE__ float df_bars1(float3 p, float iTime, inout int *g_hit, float twist, float dist, int bars, float rounding) {
+  p.y += dist*_sinf(0.5f*p.x+0.5f*p.z+TIME);
+  float2 bp = swi2(p,z,y);
+
+  float d = 1E6;
+
+  float bs = 0.25f*fadeIn(p.x,iTime);
+  float2 bsz = to_float2_s(bs);
+  float4 brd = to_float4_s(bs*rounding);
+
+  for (int i = 0; i < bars; ++i) {
+    float ii = (float)(i);
+    float2 pp = bp;
+    float a = -TIME+0.5f*ii;
+    float b = ii+p.x-2.0f*TIME;
+    pp.y += _sinf(a);
+    mat2 rot = ROT(-PI/4.0f*_cosf(a+twist*b));
+    pp.x -= bsz.x*_sqrtf(2.0f)*ii;
+    pp = mul_f2_mat2(pp,rot);
+    float dd = box(pp, bsz, brd);
+    if (dd < d) {
+      *g_hit = i;
+      d = dd;
+    }
+  }
+
+  return d;
+}
+
+__DEVICE__ float df_bars2(float3 p, float iTime, inout int *g_hit, float rounding, float dist) {
+  p.y += 0.5f*dist*_sinf(-0.9f*p.x+TIME);
+  float2 p2 = swi2(p,y,z);
+  p2 = mul_f2_mat2(p2,ROT(TIME+p.x));
+  float2 s2 = sign_f2(p2);
+  p2 = abs_f2(p2);
+  p2 -= 0.3f;
+  *g_hit = 3+(int)(s2.y+2.0f*s2.x)-1;
+  float bs = 0.25f*fadeIn(p.x,iTime);
+  float2 bsz = to_float2_s(bs);
+  float4 brd = to_float4_s(bs*rounding);
+  return length(p2)-bs;
+}
+
+__DEVICE__ float df_bars3(float3 p, float iTime, inout int *g_hit, float rounding, float dist) {
+  const float r = 0.25f;
+  p.y += 0.5f*dist*_sinf(-0.9f*p.x+TIME);
+  mat2 rot = ROT(TIME+p.x);
+  float2 p2 = swi2(p,y,z);
+  float2 s2 = to_float2_s(0.0f);
+
+  p2 = mul_f2_mat2(p2,rot);
+  s2 += 2.0f*sign_f2(p2);
+  p2 = abs_f2(p2);
+  p2 -= 2.0f*r;
+
+  p2 = mul_f2_mat2(p2,rot);
+  s2 += 1.0f*sign_f2(p2);
+  p2 = abs_f2(p2);
+  p2 -= 1.0f*r;
+
+  *g_hit = 3+(int)(s2.y+2.0f*s2.x)-1;
+
+  float bs = (0.9f*r)*fadeIn(p.x,iTime);
+  float2 bsz = to_float2_s(bs);
+  float4 brd = to_float4_s(bs*rounding);
+  float d0 = length(p2)-bs;
+  float d1 = box(p2, bsz, brd);
+  float d = d0;
+  return d;
+}
+
+__DEVICE__ float df_bars4(float3 p, float iTime, inout int *g_hit, float rounding, float dist) {
+  p.y += 0.5f*dist*_sinf(-0.9f*p.x+TIME);
+  float2 p2 = swi2(p,y,z);
+  p2 = mul_f2_mat2(p2,ROT(TIME+p.x));
+  float2 s2 = sign_f2(p2);
+  p2 = abs_f2(p2);
+  p2 -= 0.3f;
+  *g_hit = 3+(int)(s2.y+2.0f*s2.x)-1;
+
+  float bs = 0.25f*fadeIn(p.x,iTime);
+
+  float2 bsz = to_float2_s(bs);
+  float4 brd = to_float4_s(bs*rounding);
+  return box(p2, bsz, brd);
+}
+
+__DEVICE__ float df(float3 p, float iTime, inout int *g_hit, float twist, int bars, float rounding, float dist, mat2 trans, int g_period) {
+  swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , trans));
+  switch(g_period) {
+  case 0:
+    return df_bars1(p,iTime,g_hit,twist,dist,bars,rounding);
+  case 1:
+    return df_bars2(p,iTime,g_hit,rounding,dist);
+  case 2:
+    return df_bars3(p,iTime,g_hit,rounding,dist);
+  case 3:
+    return df_bars4(p,iTime,g_hit,rounding,dist);
+  default:
+    return length(p) - 0.5f;
+  }
+}
+
+__DEVICE__ float rayMarch(float3 ro, float3 rd, float ti, float iTime, inout int *g_hit, float twist, int bars, float rounding, float dist, mat2 trans, int g_period, float TOLERANCE, float raymarchFactor) {
+  float t = ti;
+  int i = 0;
+  float2 dti = to_float2(1e10,0.0f);
+  for (i = 0; i < MAX_RAY_MARCHES; i++) {
+    float d = df(ro + rd*t,iTime,g_hit,twist,bars,rounding,dist,trans,g_period);
+    if (d < TOLERANCE || t > MAX_RAY_LENGTH) break;
+    if (d<dti.x) { dti=to_float2(d,t); }
+    t += raymarchFactor*d;
+  }
+  if(i==MAX_RAY_MARCHES) { t=dti.y; }
+  return t;
+}
+
+__DEVICE__ float3 normal(float3 pos, float iTime, inout int *g_hit, float twist, int bars, float rounding, float dist, mat2 trans, int g_period, float NORM_OFF) {
+  float2  eps = to_float2(NORM_OFF,0.0f);
+  float3 nor;
+  nor.x = df(pos+swi3(eps,x,y,y),iTime,g_hit,twist,bars,rounding,dist,trans,g_period) - df(pos-swi3(eps,x,y,y),iTime,g_hit,twist,bars,rounding,dist,trans,g_period);
+  nor.y = df(pos+swi3(eps,y,x,y),iTime,g_hit,twist,bars,rounding,dist,trans,g_period) - df(pos-swi3(eps,y,x,y),iTime,g_hit,twist,bars,rounding,dist,trans,g_period);
+  nor.z = df(pos+swi3(eps,y,y,x),iTime,g_hit,twist,bars,rounding,dist,trans,g_period) - df(pos-swi3(eps,y,y,x),iTime,g_hit,twist,bars,rounding,dist,trans,g_period);
+  return normalize(nor);
+}
+
+
+
+__DEVICE__ float3 skyColor(float3 ro, float3 rd, float3 lightPos, float3 lightCol, float3 overCol) {
+  float3  ld    = normalize(lightPos - ro);
+  float dif   = _fmaxf(dot(ld, rd), 0.0f);
+
+  float3  col   = to_float3_s(0.0f);
+
+  if ((rd.y > _fabs(rd.x)*1.0f) && (rd.y > _fabs(rd.z*0.25f))) {
+    col = 2.0f*overCol*rd.y;
+  }
+  float rb = length(_fmaxf(abs_f2(swi2(rd,x,z)/_fmaxf(0.0f,rd.y))-to_float2(0.9f, 4.0f),to_float2_s(0.0f)))-0.1f;
+
+  col += overCol*_powf(clamp(1.0f - rb*0.5f, 0.0f, 1.0f), 6.0f);
+  col += lightCol*_powf(dif, 8.0f);
+  col += 4.0f*lightCol*_powf(dif, 40.0f);
+  return col;
+}
+
+__DEVICE__ float3 effect(float2 p, float iTime, inout int *g_hit, float twist, int bars, float rounding, float dist, mat2 trans, int g_period, float TOLERANCE, float raymarchFactor, float NORM_OFF,
+                         float3 lightPos, float3 lightCol, float3 overCol, inout float *Hit) {
+  float3 ro = to_float3(0.0f, 0.0f, -5.0f);
+  float3 la = to_float3(0.0f, 0.0f, 0.0f);
+  float3 ww = normalize(la-ro);
+  float3 uu = normalize(cross(to_float3(0.0f,1.0f,0.0f), ww ));
+  float3 vv = normalize(cross(ww,uu));
+  const float fov = 3.0f;
+  float3 rd = normalize(-p.x*uu + p.y*vv + fov*ww );
+
+  *g_hit = -1;
+  float t = rayMarch(ro, rd, 3.0f, iTime, g_hit, twist, bars, rounding, dist, trans, g_period, TOLERANCE, raymarchFactor);
+  int hit = *g_hit;
+  *Hit = t;
+
+  float3 col = to_float3_s(1.0f);
+  float3 bcol = band_color(-4.0f*(float)(hit-(bars-1)/2));
+  bcol *= bcol;
+  if (t < MAX_RAY_LENGTH) {
+    float3 p = ro + rd*t;
+    float3 n = normal(p, iTime, g_hit, twist, bars, rounding, dist, trans, g_period, NORM_OFF);
+    float3 r = reflect(rd, n);
+    float3 ld= normalize(lightPos-p);
+
+    float dif = _fmaxf(dot(ld, n), 0.0f);
+    col = bcol*_mix(0.5f, 1.0f, dif);
+#ifdef SKYDOME
+    float3 rs= skyColor(p, r, lightPos, lightCol, overCol);
+    float fre = 1.0f+dot(rd, n);
+    fre *= fre;
+    float rf  = _mix(0.05f, 1.0f, fre);
+    col += rf*rs;
+    // Just some fine-tuning, don't judge me
+    col += smoothstep(0.5f, 1.0f, fre)*_fmaxf(n.y, 0.0f);
+#else
+    float spe = _powf(_fmaxf(dot(ld, r), 0.0f), 30.0f);
+    col += spe;
+#endif
+  }
+  return col;
+}
+
+
+__KERNEL__ void WednesdayMessingAroundFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 LightPosition = to_float4(params->LightPosition[0], params->LightPosition[1], params->LightPosition[2], params->LightPosition[3]);
+  float4 LightColor = to_float4(params->LightColor[0], params->LightColor[1], params->LightColor[2], params->LightColor[3]);
+  float4 OverColor = to_float4(params->OverColor[0], params->OverColor[1], params->OverColor[2], params->OverColor[3]);
+  float4 ColorBurn = to_float4(params->ColorBurn[0], params->ColorBurn[1], params->ColorBurn[2], params->ColorBurn[3]);
+  float4 Background = to_float4(params->Background[0], params->Background[1], params->Background[2], params->Background[3]);
+  int    bars = params->bars;
+  float  twist = params->twist;
+  float  dist = params->dist;
+  float  rounding = params->rounding;
+  bool   AutoPeriod = params->AutoPeriod;
+  int    Period = params->Period;
+  bool   ChangeBackground = params->ChangeBackground;
+
+  // --------
+  //CONNECT_SLIDER3(raymarchFactor, -1.0f, 2.0f, 0.8f);
+
+  //CONNECT_SLIDER4(TOLERANCE, -1.0f, 1.0f, 0.001f);
+  //CONNECT_SLIDER5(NORM_OFF, -1.0f, 1.0f, 0.005f);
+
+  //CONNECT_SLIDER6(Hit_Thres, -10.0f, 10.0f, 0.0f);
+
+
+  //const int   bars     = 7;
+  const mat2  trans    = ROT(PI/9.0f);
+  //const float twist    = 1.0f;
+  //const float dist     = 0.5f;
+  //const float rounding = 0.125f;
+
+  const float raymarchFactor = 0.8f;
+
+  const float4 hsv2rgb_K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+
+  //#define TOLERANCE       0.001f
+  float TOLERANCE = 0.001f;
+  //#define NORM_OFF        0.005f
+  float NORM_OFF = 0.005f;
+
+  int g_hit     = 0;
+  int g_period  = 0;
+  float Hit     = 0;
+
+  const float3 lightPos = swi3(LightPosition,x,y,z);//to_float3(2.0f, 3.0f, -5.0f);
+  const float3 lightCol = swi3(LightColor,x,y,z);//(hsv2rgb(to_float3(0.53f, 0.5f, 1.0f)));
+  const float3 overCol  = swi3(OverColor,x,y,z);//(hsv2rgb(to_float3(0.88f, 0.25f, 0.8f)));
+
+  float2 q = fragCoord/swi2(RESOLUTION,x,y);
+  float2 p  = -1.0f + 2.0f * q;
+  p.x     *= RESOLUTION.x/RESOLUTION.y;
+  g_period = (int)(mod_f(1.0f+_floor(TIME/PERIOD), 4.0f));
+
+  if(AutoPeriod == false)
+    g_period = Period;
+
+  float3 col  = effect(p,iTime, &g_hit,twist,bars,rounding,dist,trans,g_period,TOLERANCE,raymarchFactor,NORM_OFF,lightPos,lightCol,overCol, &Hit);
+#if defined(COLORBURN)
+  col -= swi3(ColorBurn,x,y,z);//to_float3(0.2f, 0.3f, 0.2f);
+#endif
+  col = clamp(col, 0.0f, 1.0f);
+  col = sqrt_f3(col);
+
+  fragColor = to_float4_aw(col, Background.w);
+
+  //if(ChangeBackground) fragColor = (col.x == col.z && col.x != 0.0f) ? Background : to_float4_aw(col,1.0f);
+  if(ChangeBackground) fragColor = (Hit < 10.0f) ? to_float4_aw(col,1.0f) : Background;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  self:BeginControlNest("LightPosition", "LightPosition", false, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "LightPosition",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InLightPositionColorR = self:AddInput("Red",   "LightPositionRed",   { INP_Default  = 2.0, IC_ControlID = 0, attrs})
+    InLightPositionColorG = self:AddInput("Green", "LightPositionGreen", { INP_Default  = 3.0, IC_ControlID = 1, attrs})
+    InLightPositionColorB = self:AddInput("Blue",  "LightPositionBlue",  { INP_Default  = -5.0, IC_ControlID = 2, attrs})
+    
+  self:EndControlNest()
+
+
+self:BeginControlNest("Colors", "Colors", false, {})
+
+  self:BeginControlNest("LightColor", "LightColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "LightColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InLightColorColorR = self:AddInput("Red",   "LightColorRed",   { INP_Default  = 0.53, IC_ControlID = 0, attrs})
+    InLightColorColorG = self:AddInput("Green", "LightColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InLightColorColorB = self:AddInput("Blue",  "LightColorBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    
+  self:EndControlNest()
+
+  self:BeginControlNest("OverColor", "OverColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "OverColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InOverColorColorR = self:AddInput("Red",   "OverColorRed",   { INP_Default  = 0.88, IC_ControlID = 0, attrs})
+    InOverColorColorG = self:AddInput("Green", "OverColorGreen", { INP_Default  = 0.25, IC_ControlID = 1, attrs})
+    InOverColorColorB = self:AddInput("Blue",  "OverColorBlue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorBurn", "ColorBurn", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBurn",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBurnColorR = self:AddInput("Red",   "ColorBurnRed",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InColorBurnColorG = self:AddInput("Green", "ColorBurnGreen", { INP_Default  = 0.3, IC_ControlID = 1, attrs})
+    InColorBurnColorB = self:AddInput("Blue",  "ColorBurnBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    
+
+  self:EndControlNest()
+
+self:EndControlNest()
+
+  InbarsSlider = self:AddInput("bars", "bars", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 1,
+      INP_MaxScale       = 12,
+      INP_Default        = 7,
+      INP_Integer        = true,
+  })
+
+  IntwistSlider = self:AddInput("twist", "twist", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  IndistSlider = self:AddInput("dist", "dist", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 2.0,
+      INP_Default        = 0.5,
+  })
+
+  InroundingSlider = self:AddInput("rounding", "rounding", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.125,
+  })
+
+  InAutoPeriodCheckbox = self:AddInput("AutoPeriod", "AutoPeriod", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_DoNotifyChanged = true,
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InPeriodSlider = self:AddInput("Period", "Period", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 4,
+      INP_Default        = 1,
+      IC_Visible         = false,
+      INP_Integer        = true,
+  })
+
+  InChangeBackgroundCheckbox = self:AddInput("ChangeBackground", "ChangeBackground", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_DoNotifyChanged = true,
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+
+  self:BeginControlNest("Background", "Background", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Background",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_Visible      = false,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBackgroundColorR = self:AddInput("Red",   "BackgroundRed",   { INP_Default  = 0.9, IC_ControlID = 0, attrs})
+    InBackgroundColorG = self:AddInput("Green", "BackgroundGreen", { INP_Default  = 0.84, IC_ControlID = 1, attrs})
+    InBackgroundColorB = self:AddInput("Blue",  "BackgroundBlue",  { INP_Default  = 0.9, IC_ControlID = 2, attrs})
+    InBackgroundColorA = self:AddInput("Alpha", "BackgroundAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+
+  Sep3 = self:AddInput(string.rep("_", 92), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	  IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "WednesdayMessingAroundFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters)
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+  params = node:GetParamBlock(ShaderParameters)
+
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.LightPosition = {
+    InLightPositionColorR:GetValue(req).Value,
+    InLightPositionColorG:GetValue(req).Value,
+    InLightPositionColorB:GetValue(req).Value,
+  }
+  params.LightColor = {
+    InLightColorColorR:GetValue(req).Value,
+    InLightColorColorG:GetValue(req).Value,
+    InLightColorColorB:GetValue(req).Value,
+  }
+  params.OverColor = {
+    InOverColorColorR:GetValue(req).Value,
+    InOverColorColorG:GetValue(req).Value,
+    InOverColorColorB:GetValue(req).Value,
+  }
+  params.ColorBurn = {
+    InColorBurnColorR:GetValue(req).Value,
+    InColorBurnColorG:GetValue(req).Value,
+    InColorBurnColorB:GetValue(req).Value,
+  }
+  params.Background = {
+    InBackgroundColorR:GetValue(req).Value,
+    InBackgroundColorG:GetValue(req).Value,
+    InBackgroundColorB:GetValue(req).Value,InBackgroundColorA:GetValue(req).Value
+  }
+  params.bars = InbarsSlider:GetValue(req).Value
+  params.twist = IntwistSlider:GetValue(req).Value
+  params.dist = IndistSlider:GetValue(req).Value
+  params.rounding = InroundingSlider:GetValue(req).Value
+  params.AutoPeriod = InAutoPeriodCheckbox:GetValue(req).Value
+  params.Period = InPeriodSlider:GetValue(req).Value
+  params.ChangeBackground = InChangeBackgroundCheckbox:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  
+  
+  node:AddOutput("dst", dst)
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+    
+    if inp == InAutoPeriodCheckbox then
+			if param.Value == 0 then
+				InPeriodSlider:SetAttrs({ IC_Visible = true, })
+			else
+				InPeriodSlider:SetAttrs({ IC_Visible = false, })
+			end
+		end
+    
+    if inp == InChangeBackgroundCheckbox then
+			if param.Value == 1 then
+				InBackgroundColorR:SetAttrs({ IC_Visible = true, })
+			else
+				InBackgroundColorR:SetAttrs({ IC_Visible = false, })
+			end
+		end
+    
+
+ 	end
+end
+
+
+-- */
+
+

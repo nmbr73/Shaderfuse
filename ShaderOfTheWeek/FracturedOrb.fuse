@@ -1,0 +1,1865 @@
+--[[--/*
+
+  FracturedOrb.fuse
+
+  Based on https://www.shadertoy.com/view/ttycWW a WebGL shader created by tdhooper.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iChannelResolution[4][2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   WOBBLE1;
+  bool   WOBBLE2;
+  bool   WOBBLE_DUR;
+  bool   DARK_MODE;
+  bool   HW_PERFORMANCE;
+  bool   DISABLE_DOF;
+  bool   Refract2;
+  bool   Invert;
+  float  BKGCOL[4];
+  float  Extriction[4];
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  scale;
+  float  OUTER;
+  float  INNER;
+  float  Duration;
+  float  MAX_DISPERSE;
+  float  MAX_BOUNCE;
+  float  uFar;
+  float  MAX_BLUR_SIZE;
+  float  RAD_SCALE;
+  float  Alpha;
+  float  refmul;
+  float  refoff;
+
+  float  Extric;
+  float  ColMul;
+  float  Col1;
+  float  Col2;
+  float  Col3;
+  float  ColOff;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) { return (A*B); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 B, mat3 A)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define cos_f3(i) cos(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sign_f(a) sign(a)
+ #define sign_f3(a) sign(a)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define cos_f3(i) cos(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sign_f(a) sign(a)
+ #define sign_f3(a) sign(a)
+ #define distance_f3( p1, p2) distance(p1, p2)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define cos_f3(i) to_float3( _cosf((i).x), _cosf((i).y), _cosf((i).z))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define sign_f3(a) to_float3((a).x==0.0f?0.0f:(a).x>0.0f?1.0f:-1.0f, (a).y==0.0f?0.0f:(a).y>0.0f?1.0f:-1.0f,(a).z==0.0f?0.0f:(a).z>0.0f?1.0f:-1.0f)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+__DEVICE__ mat3 transpose(mat3 m)
+{
+    return(to_mat3(m.r0.x,m.r1.x,m.r2.x, m.r0.y,m.r1.y,m.r2.y, m.r0.z,m.r1.z,m.r2.z));
+}
+
+__DEVICE__ float3 _refract_f3(float3 I, float3 N, float eta, float refmul, float refoff) {
+   float dotNI = dot(N, I);
+   float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+   if (k < 0.0f) {
+     return to_float3_s(0.0);
+   }
+   return eta * I - (eta * dotNI * _sqrtf(k)) * N * refmul + refoff; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+}
+
+// Alternative Version2 !! Glass and Gold Bubble !!
+__DEVICE__ float3 __refract_f3(float3 I, float3 N, float ior, float refmul, float refoff) {
+    //float cosi = clamp(dot(N,I), -1.0f,1.0f);  //clamp(-1, 1, I.dot(N));
+    float cosi = clamp( -1.0f,1.0f,dot(N,I));  //clamp(-1, 1, I.dot(N));
+    float etai = 01.0f, etat = ior*1.0f;
+    float3 n = N;
+    if (cosi < 0) {
+        cosi = -cosi;
+    } else {
+        float temp = etai;
+        etai = etat;
+        etat = temp;
+        n = -N;
+    }
+    float eta = etai / etat;
+    float k = 1.0f - (eta * eta) * (1.0f - (cosi * cosi));
+    if (k <= 0) {
+        return to_float3_s(0.0f);
+    } else {
+        //return I.multiply(eta).add(n.multiply(((eta * cosi) - Math.sqrt(k))));
+    return I*eta+n*((eta*cosi)-_sqrtf(k)) * refmul + refoff;  //!!
+    //return eta * I + (eta * cosi - _sqrtf(1.0f-k)) * N;
+    }
+}
+
+__DEVICE__ float _powcf(float x, float y) {
+    float ret = _powf(x,y);
+    if (isnan(ret)) {
+        ret = 0.0001f;
+    }
+    return ret;
+}
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Texture: Blue Noise' to iChannel0
+
+
+//#define WOBBLE
+//#define DARK_MODE
+
+
+//#if HW_PERFORMANCE==1
+//    const float MAX_DISPERSE = 5.0f;
+//    const float MAX_BOUNCE = 10.0f;
+//#else
+//    const float MAX_DISPERSE = 3.0f;
+//    const float MAX_BOUNCE = 4.0f;
+//#endif
+
+
+#define PI 3.14159265359f
+#define PHI 1.618033988749895f
+
+
+// HG_SDF
+// https://www.shadertoy.com/view/Xs3GRB
+
+//#define PI 3.14159265359f
+#define TAU 6.28318530718f
+
+#define _saturatef(x) clamp(x, 0.0f, 1.0f)
+
+__DEVICE__ float2 pR(in float2 p, float a) {
+    p = _cosf(a)*p + _sinf(a)*to_float2(p.y, -p.x);
+    return p;
+}
+
+__DEVICE__ float smax(float a, float b, float r) {
+    float2 u = _fmaxf(to_float2(r + a,r + b), to_float2_s(0));
+    return _fminf(-r, _fmaxf (a, b)) + length(u);
+}
+
+__DEVICE__ float vmax(float2 v) {
+  return _fmaxf(v.x, v.y);
+}
+
+__DEVICE__ float vmax_f3(float3 v) {
+  return _fmaxf(_fmaxf(v.x, v.y), v.z);
+}
+
+__DEVICE__ float fBox(float2 p, float2 b) {
+  float2 d = abs_f2(p) - b;
+  return length(_fmaxf(d, to_float2_s(0))) + vmax(_fminf(d, to_float2_s(0)));
+}
+
+__DEVICE__ float fBox_f3(float3 p, float3 b) {
+  float3 d = abs_f3(p) - b;
+  return length(_fmaxf(d, to_float3_s(0))) + vmax_f3(_fminf(d, to_float3_s(0)));
+}
+
+// Rotate on axis
+// blackle https://suricrasia.online/demoscene/functions/
+__DEVICE__ float3 erot(float3 p, float3 ax, float ro) {
+  return _mix(dot(ax,p)*ax, p, _cosf(ro))+_sinf(ro)*cross(ax,p);
+}
+
+__DEVICE__ float range(float vmin, float vmax, float value) {
+  return clamp((value - vmin) / (vmax - vmin), 0.0f, 1.0f);
+}
+
+__DEVICE__ mat3 rotX(float a) {
+  return to_mat3(1, 0, 0, 0, _cosf(a), -_sinf(a), 0, _sinf(a), _cosf(a));
+}
+
+__DEVICE__ mat3 rotY(float a) {
+  return to_mat3(_cosf(a), 0, _sinf(a), 0, 1, 0, -_sinf(a), 0, _cosf(a));
+}
+
+__DEVICE__ mat3 rotZ(float a) {
+  return to_mat3(_cosf(a), -_sinf(a), 0, _sinf(a), _cosf(a), 0, 0, 0, 1);
+}
+
+// Spectrum palette
+// IQ https://www.shadertoy.com/view/ll2GD3
+
+__DEVICE__ float3 pal( in float t, in float3 a, in float3 b, in float3 c, in float3 d ) {
+    return a + b*cos_f3( 6.28318f*(c*t+d) );
+}
+
+__DEVICE__ float3 spectrum(float n) {
+    return pal( n, to_float3(0.5f,0.5f,0.5f),to_float3(0.5f,0.5f,0.5f),to_float3(1.0f,1.0f,1.0f),to_float3(0.0f,0.33f,0.67f) );
+}
+
+// https://iquilezles.org/articles/functions
+__DEVICE__ float expImpulse( float x, float k )
+{
+    float h = k*x;
+    return h*_expf(1.0f-h);
+}
+
+
+//========================================================
+// Modelling
+//========================================================
+
+__DEVICE__ float boolSign(float v) {
+    return _fmaxf(0.0f, sign_f(v)) * 2.0f - 1.0f;
+}
+
+__DEVICE__ float3 boolSign_f3(float3 v) {
+    return _fmaxf(to_float3_s(0), sign_f3(v)) * 2.0f - 1.0f;
+}
+
+// Closest icosahedron vertex
+#if 0
+__DEVICE__ float3 icosahedronVertex(float3 p) {
+    float3 ap, v, v2, v3;
+    ap = _fabs(p);
+    v = to_float3(PHI, 1, 0);
+    v2 = swi3(v,y,z,x);
+    v3 = swi3(v2,y,z,x);
+    if (distance_f3(ap, v2) < distance_f3(ap, v)) v = v2;
+    if (distance_f3(ap, v3) < distance_f3(ap, v)) v = v3;
+    return normalize(v) * boolSign_f3(p);
+}
+#else
+// with removed roots from iq
+__DEVICE__ float3 icosahedronVertex(float3 p) {
+    float3 ap = abs_f3(p);
+    float3                         v = to_float3(PHI,1,0);
+    if (ap.x+ap.z*PHI > dot(ap,v)) v = to_float3(1,0,PHI);
+    if (ap.z+ap.y*PHI > dot(ap,v)) v = to_float3(0,PHI,1);
+    return v*0.52573111f*boolSign_f3(p);
+}
+#endif
+
+// Closest dodecahedron vertex
+#if 0
+__DEVICE__ float3 dodecahedronVertex(float3 p) {
+    float3 ap, v, v2, v3, v4;
+    ap = abs_f3(p);
+    v = to_float3_s(PHI);
+    v2 = to_float3(0, 1, PHI + 1.0f);
+    v3 = swi3(v2,y,z,x);
+    v4 = swi3(v3,y,z,x);
+    if (distance_f3(ap, v2) < distance_f3(ap, v)) v = v2;
+    if (distance_f3(ap, v3) < distance_f3(ap, v)) v = v3;
+    if (distance_f3(ap, v4) < distance_f3(ap, v)) v = v4;
+    return normalize(v) * boolSign_f3(p);
+}
+#else
+// with removed roots from iq
+__DEVICE__ float3 dodecahedronVertex(float3 p) {
+    float3 ap = abs_f3(p);
+    float3 v = to_float3_s(PHI);
+    float3 v2 = to_float3(0, 1, PHI + 1.0f);
+    float3 v3 = swi3(v2,y,z,x);
+    float3 v4 = swi3(v2,z,x,y);
+    if (dot(ap,v2) > dot(ap,v)) v = v2;
+    if (dot(ap,v3) > dot(ap,v)) v = v3;
+    if (dot(ap,v4) > dot(ap,v)) v = v4;
+    return v*0.35682209f*boolSign_f3(p);
+}
+#endif
+
+
+//float OUTER = 0.35f;
+//float INNER = 0.24f;
+
+__DEVICE__ float object(float3 p, float OUTER, float INNER) {
+    float d = length(p) - OUTER;
+    d = _fmaxf(d, -d - (OUTER - INNER));
+    return d;
+}
+
+//float animT;
+//float time;
+
+__DEVICE__ float2 map(float3 p, float OUTER, float INNER, float animT, float time, bool WOBBLE1, bool WOBBLE2, float scale) {
+    //float scale = 2.5f;
+    p /= scale;
+
+    float outerBound = length(p) - OUTER;
+
+    if (WOBBLE1)
+    {
+        float bound = outerBound - 0.05f;
+        bound *= scale;
+        if (bound > 0.002f) {
+            return to_float2(bound, 0.0f);
+        }
+    }
+
+    mat3 trs;
+
+    if (WOBBLE2)
+    {
+        float spin = time * (PI*2.0f) * (1.0f/5.0f);
+        trs = mul_mat3_mat3(rotX(_atan2f(1.0f/PHI, 1.0f)) , rotY(-spin));
+        p = mul_mat3_f3(trs , p);
+    }
+    else
+    {
+        float spin = time * (PI/2.0f) - 0.15f;
+        swi2S(p,x,z, pR(swi2(p,x,z), spin));
+    }
+
+    // Buckyball faces
+    // ---------------
+
+    // Four closest vertices of a spherical pentakis dodecahedron
+    // or, four closest faces of a buckyball
+
+    float3 va = icosahedronVertex(p);
+    float3 vb = dodecahedronVertex(p);
+
+    // Second closest dodecahedron vertex
+    float side = boolSign(dot(p, cross(va, vb)));
+    float r = PI * 2.0f / 5.0f * side;
+    float3 vc = erot(vb, va, r);
+
+    // Third closest dodecahedron vertex
+    float3 vd = erot(vb, va, -r);
+
+    float d = 1e12f;
+    float3 pp = p;
+
+    // Render the nearest four fragments to get
+    // a clean distance estimation
+
+    for (int i = 0; i < 4; i++) {
+        // Offset space
+        if (WOBBLE2)
+        {
+            float3 dir = normalize(to_float3(1,1,0));
+            dir = mul_f3_mat3(dir , transpose(trs));
+            float sp = 2.0f;
+            float t = mod_f((time - dot(va, dir) / (0.5f * sp)), 1.0f);
+            float anim = _sinf(t * PI * 1.0f * sp) * 0.5f + 0.5f;
+            anim = _mix(0.0f, 0.05f, anim);
+            p -= va * anim;
+        }
+        else
+        {
+            float t = mod_f(time * 2.0f/3.0f + 0.25f - dot(swi2(va,x,y), to_float2(1,-1)) / 30.0f, 1.0f);
+            float t2 = clamp(t * 5.0f - 1.7f, 0.0f, 1.0f);
+            float explode = 1.0f - _powcf(1.0f - t2, 10.0f); // expand
+            explode *= 1.0f - _powcf(t2, 5.0f); // contract
+            explode += (smoothstep(0.32f, 0.34f, t) - smoothstep(0.34f, 0.5f, t)) * 0.05f;
+            explode *= 1.4f;
+            t2 = _fmaxf(t - 0.53f, 0.0f) * 1.2f;
+            float wobble = _sinf(expImpulse(t2, 20.0f) * 2.2f + _powcf(3.0f * t2, 1.5f) * 2.0f * PI * 2.0f - PI) * smoothstep(0.4f, 0.0f, t2) * 0.2f;
+            float anim = wobble + explode;
+            p -= va * anim / 2.8f;
+        }
+
+        // Build boundary edge of face
+        float edgeA = dot(p, normalize(vb - va));
+        float edgeB = dot(p, normalize(vc - va));
+        float edgeC = dot(p, normalize(vd - va));
+        float edge = _fmaxf(max(edgeA, edgeB), edgeC);
+        if (!WOBBLE2)
+          edge -= 0.005f;
+
+
+        // Intersect with object
+        d = _fminf(d, smax(object(p, OUTER, INNER), edge, 0.002f));
+
+        // Reset space for next iteration
+        p = pp;
+
+        // Cycle faces for next iteration
+        float3 va2 = va;
+        va = vb;
+        vb = vc;
+        vc = vd;
+        vd = va2;
+    }
+
+    if (!WOBBLE2)
+    {
+        // Slow down ray as we approach non-exploded object
+        float bound = outerBound - 0.002f;
+        if (bound * scale > 0.002f) {
+            d = _fminf(d, bound);
+        }
+    }
+
+    return to_float2(d * scale, 1.0f);
+}
+
+
+//========================================================
+// Lighting
+//========================================================
+
+//float3 BGCOL = to_float3(0.9f,0.83f,1);
+
+__DEVICE__ float intersectPlane(float3 rOrigin, float3 rayDir, float3 origin, float3 normal, float3 up, out float2 *uv) {
+    float d = dot(normal, (origin - rOrigin)) / dot(rayDir, normal);
+    float3 point = rOrigin + d * rayDir;
+    float3 tangent = cross(normal, up);
+    float3 bitangent = cross(normal, tangent);
+    point -= origin;
+    *uv = to_float2(dot(tangent, point), dot(bitangent, point));
+    return _fmaxf(sign_f(d), 0.0f);
+}
+
+//mat3 envOrientation;
+
+__DEVICE__ float3 light(float3 origin, float3 rayDir, mat3 envOrientation) {
+    origin = -origin;
+    rayDir = -rayDir;
+
+    origin = mul_f3_mat3(origin, envOrientation);
+    rayDir = mul_f3_mat3(rayDir, envOrientation);
+
+    float2 uv;
+    float3 pos = to_float3_s(-6);
+    float hit = intersectPlane(origin, rayDir, pos, normalize(pos), normalize(to_float3(-1,1,0)), &uv);
+    float l = smoothstep(0.75f, 0.0f, fBox(uv, to_float2(0.5f,2)) - 1.0f);
+    l *= smoothstep(6.0f, 0.0f, length(uv));
+    return to_float3_s(l) * hit;
+}
+
+__DEVICE__ float3 env(float3 origin, float3 rayDir, mat3 envOrientation, float3 BGCOL) {
+    origin = -1.0f*swi3((to_float4_aw(origin, 1)),x,y,z); //??????????
+    rayDir = -1.0f*swi3((to_float4_aw(rayDir, 0)),x,y,z); //??????????
+
+    origin = mul_f3_mat3(origin, envOrientation);
+    rayDir = mul_f3_mat3(rayDir, envOrientation);
+
+    float l = smoothstep(0.0f, 1.7f, dot(rayDir, to_float3(0.5f,-0.3f,1))) * 0.4f;
+    return to_float3_s(l) * BGCOL;
+}
+
+//========================================================
+// Marching
+//========================================================
+
+#define ZERO 0 //(_fminf(iFrame,0))
+
+// https://iquilezles.org/articles/normalsSDF
+__DEVICE__ float3 normal( in float3 pos, float OUTER, float INNER, float animT, float time, bool WOBBLE1, bool WOBBLE2, float scale )
+{
+    float3 n = to_float3_s(0.0f);
+    for( int i=ZERO; i<4; i++ )
+    {
+        float3 e = 0.5773f*(2.0f*to_float3((((i+3)>>1)&1),((i>>1)&1),(i&1))-1.0f);
+        n += e*map(pos+0.001f*e, OUTER, INNER, animT, time, WOBBLE1, WOBBLE2, scale).x;
+    }
+    return normalize(n);
+}
+
+struct Hit {
+    float2 res;
+    float3 p;
+    float len;
+    float steps;
+};
+
+__DEVICE__ struct Hit march(float3 origin, float3 rayDir, float invert, float maxDist, float understep, float OUTER, float INNER, float animT, float time, bool WOBBLE1, bool WOBBLE2, float scale) {
+    float3 p;
+    float len = 0.0f;
+    float dist = 0.0f;
+    float2 res = to_float2_s(0.0f);
+    float2 candidate = to_float2_s(0.0f);
+    float steps = 0.0f;
+
+    for (float i = 0.0f; i < 300.0f; i++) {
+        len += dist * understep;
+        p = origin + len * rayDir;
+        candidate = map(p, OUTER, INNER, animT, time, WOBBLE1, WOBBLE2, scale);
+        dist = candidate.x * invert;
+        steps += 1.0f;
+        res = candidate;
+        if (dist < 0.001f) {
+            break;
+        }
+        if (len >= maxDist) {
+            len = maxDist;
+            res.y = 0.0f;
+            break;
+        }
+    }
+
+    struct Hit ret = {res, p, len, steps};
+    return ret;//Hit(res, p, len, steps);
+}
+
+__DEVICE__ mat3 sphericalMatrix(float2 tp) {
+    float theta = tp.x;
+    float phi = tp.y;
+    float cx = _cosf(theta);
+    float cy = _cosf(phi);
+    float sx = _sinf(theta);
+    float sy = _sinf(phi);
+    return to_mat3(
+                      cy, -sy * -sx, -sy * cx,
+                      0, cx, sx,
+                      sy, cy * -sx, cy * cx
+                  );
+}
+
+__DEVICE__ mat3 calcLookAtMatrix(float3 ro, float3 ta, float3 up) {
+    float3 ww = normalize(ta - ro);
+    float3 uu = normalize(cross(ww,up));
+    float3 vv = normalize(cross(uu,ww));
+    return to_mat3_f3(uu, vv, ww);
+}
+
+__KERNEL__ void FracturedOrbFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iChannelResolution[1];
+  iChannelResolution[0] = to_float2(params->iChannelResolution[0][0], params->iChannelResolution[0][1]);
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   WOBBLE1 = params->WOBBLE1;
+  bool   WOBBLE2 = params->WOBBLE2;
+  bool   WOBBLE_DUR = params->WOBBLE_DUR;
+  bool   DARK_MODE = params->DARK_MODE;
+  bool   HW_PERFORMANCE = params->HW_PERFORMANCE;
+  bool   DISABLE_DOF = params->DISABLE_DOF;
+  bool   Refract2 = params->Refract2;
+  bool   Invert = params->Invert;
+  float4 BKGCOL = to_float4(params->BKGCOL[0], params->BKGCOL[1], params->BKGCOL[2], params->BKGCOL[3]);
+  float4 Extriction = to_float4(params->Extriction[0], params->Extriction[1], params->Extriction[2], params->Extriction[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  scale = params->scale;
+  float  OUTER = params->OUTER;
+  float  INNER = params->INNER;
+  float  Duration = params->Duration;
+  float  MAX_DISPERSE = params->MAX_DISPERSE;
+  float  MAX_BOUNCE = params->MAX_BOUNCE;
+  float  uFar = params->uFar;
+  float  MAX_BLUR_SIZE = params->MAX_BLUR_SIZE;
+  float  RAD_SCALE = params->RAD_SCALE;
+  float  Alpha = params->Alpha;
+  float  refmul = params->refmul;
+  float  refoff = params->refoff;
+  float  Extric = params->Extric;
+
+  float  ColMul = params->ColMul;
+  float  Col1 = params->Col1;
+  float  Col2 = params->Col2;
+  float  Col3 = params->Col3;
+  float  ColOff = params->ColOff;
+
+  // --------
+    fragCoord += 0.5f;
+
+    if (HW_PERFORMANCE)
+    {
+       MAX_DISPERSE = 5.0f;
+       MAX_BOUNCE   = 10.0f;
+    }
+
+    //float scale = 2.5f;
+    float3 BGCOL = swi3(BKGCOL,x,y,z);//to_float3(0.9f,0.83f,1);
+    float animT;
+    //float OUTER = 0.35f;
+    //float INNER = 0.24f;
+
+    float duration = 10.0f/Duration;//3.0f;
+    if (WOBBLE_DUR)
+        duration = 2.0f;
+
+    float time = mod_f(iTime / duration, 1.0f);
+
+    mat3 envOrientation = sphericalMatrix(((to_float2(81.5f, 119) / to_float2_s(187)) * 2.0f - 1.0f) * 2.0f);
+    if (DARK_MODE)
+         envOrientation = sphericalMatrix((to_float2(0.7299465240641712f,0.3048128342245989f) * 2.0f - 1.0f) * 2.0f);
+
+    float2 uv = (2.0f * fragCoord - iResolution) / iResolution.y;
+
+    struct Hit hit, firstHit;
+    float2 res;
+    float3 p, rayDir, origin, sam, ref, raf, nor, camOrigin, camDir;
+    float invert, ior, offset, extinctionDist, maxDist, firstLen, bounceCount, wavelength;
+
+    float3 col = to_float3_s(0);
+    float focal = 3.8f;
+    bool refracted;
+
+    float3 bgCol = BGCOL * 0.22f;
+
+    invert = 1.0f;
+    maxDist = 15.0f;
+
+    camOrigin = to_float3(0,0,9.5f) + to_float3_aw(ViewXY,ViewZ);
+    camDir = normalize(to_float3_aw(uv * 0.168f, -1.0f) + to_float3_aw(ViewDXY, ViewDZ));
+
+    //############### 3D Mouse-Rotation des Objektes ##############
+    float crz = (iMouse.x - iResolution.x / 2.0f) / iResolution.x * PI;
+    float crx = (iMouse.y - iResolution.y / 2.0f) / iResolution.y * PI;
+
+    mat3 m = mul_mat3_mat3(to_mat3(_cosf(crz), 0.0f, _sinf(crz), 0.0f, 1.0f, 0.0f, -_sinf(crz), 0.0f, _cosf(crz)) ,
+                           to_mat3(1.0f, 0.0f, 0.0f, 0.0f, _cosf(crx), _sinf(crx), 0.0f, -_sinf(crx), _cosf(crx)));
+
+    if(iMouse.z > 0.0f)
+    {
+        camOrigin = mul_mat3_f3(m , camOrigin);
+        camDir    = mul_mat3_f3(m , camDir);
+    }
+    //#############################################################
+
+    firstHit = march(camOrigin, camDir, invert, maxDist, 0.8f, OUTER, INNER, animT, time, WOBBLE1, WOBBLE2, scale);
+    firstLen = firstHit.len;
+
+    float steps = 0.0f;
+
+    for (float disperse = 0.0f; disperse < MAX_DISPERSE; disperse++) {
+        invert = 1.0f;
+        sam = to_float3_s(0);
+
+        origin = camOrigin;
+        rayDir = camDir;
+
+        extinctionDist = 0.0f;
+        wavelength = disperse / MAX_DISPERSE;
+        float rand = texture(iChannel0, (fragCoord + _floor(iTime * 60.0f) * 10.0f) / iChannelResolution[0]).x;
+        wavelength += (rand * 2.0f - 1.0f) * (0.5f / MAX_DISPERSE);
+
+        bounceCount = 0.0f;
+
+        for (float bounce = 0.0f; bounce < MAX_BOUNCE; bounce++) {
+
+            if (bounce == 0.0f) {
+                hit = firstHit;
+            } else {
+                hit = march(origin, rayDir, invert, maxDist / 2.0f, 1.0f, OUTER, INNER, animT, time, WOBBLE1, WOBBLE2, scale);
+            }
+
+            steps += hit.steps;
+
+            res = hit.res;
+            p = hit.p;
+
+            if (invert < 0.0f) {
+              extinctionDist += hit.len;
+            }
+
+            // hit background
+            if ( res.y == 0.0f) {
+                break;
+            }
+
+            float3 nor = normal(p, OUTER, INNER, animT, time, WOBBLE1, WOBBLE2, scale) * invert;
+            ref = reflect(rayDir, nor);
+
+            // shade
+            sam += light(p, ref, envOrientation) * 0.5f;
+            sam += _powcf(_fmaxf(1.0f - _fabs(dot(rayDir, nor)), 0.0f), 5.0f) * 0.1f;
+            sam *= to_float3(0.85f,0.85f,0.98f);
+
+            // refract
+            float ior = _mix(1.2f, 1.8f, wavelength);
+            ior = invert < 0.0f ? ior : 1.0f / ior;
+            raf = _refract_f3(rayDir, nor, ior, refmul, refoff);
+            if(Refract2)
+              raf = __refract_f3(rayDir, nor, ior, refmul, refoff);
+            bool tif = raf.x==0.0f && raf.y==0.0f &&raf.z==0.0f ;//raf == to_float3_s(0); // total internal reflection
+            rayDir = tif ? ref : raf;
+            offset = 0.01f / _fabs(dot(rayDir, nor));
+            origin = p + offset * rayDir;
+            if(Invert)
+              invert = tif ? invert : invert * -1.0f;
+            else
+              invert *= -1.0f; // not correct but gives more interesting results
+
+            bounceCount = bounce;
+        }
+
+        if (!DARK_MODE)
+           sam += bounceCount == 0.0f ? bgCol : env(p, rayDir, envOrientation, BGCOL);
+
+        if (bounceCount == 0.0f) {
+            // didn't bounce, so don't bother calculating dispersion
+            col += sam * MAX_DISPERSE / 2.0f;
+            break;
+        } else {
+            float3 extinction = swi3(Extriction,x,y,z)*Extric;//to_float3(0.5f,0.5f,0.5f) * 0.0f;
+            extinction = 1.0f / (1.0f + (extinction * extinctionDist));
+            col += sam * extinction * spectrum(-wavelength+0.25f);
+        }
+    }
+
+    // debug
+    //fragColor = to_float4_aw(spectrum(steps / 2000.0f), 1); return;
+    //fragColor = to_float4_aw(to_float3(bounceCount / MAX_BOUNCE), 1); return;
+    //fragColor = to_float4_aw(to_float3(firstHit.steps / 100.0f), 1); return;
+
+    col /= MAX_DISPERSE;
+
+    fragColor = to_float4_aw(col, range(4.0f, 12.0f, firstLen));
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+
+/*
+
+    Fractured Orb
+    -------------
+
+    A mashup of 'Crystal Tetrahedron' https://www.shadertoy.com/view/WsBfWt
+    and 'Buckyball Fracture' https://www.shadertoy.com/view/WlKyzW
+
+*/
+
+
+// http://tuxedolabs.blogspot.com/2018/05/bokeh-depth-of-field-in-single-pass.html
+
+//float2 uPixelSize; //The size of a pixel: to_float2(1.0f/width, 1.0f/height)
+//float uFar = 1.0f; // Far plane
+
+#define GOLDEN_ANGLE 2.39996323f
+//const float MAX_BLUR_SIZE = 10.0f;
+//const float RAD_SCALE = 1.0f; // Smaller = nicer blur, larger = faster
+
+__DEVICE__ float getBlurSize(float depth, float focusPoint, float focusScale, float MAX_BLUR_SIZE) {
+    float coc = clamp((1.0f / focusPoint - 1.0f / depth)*focusScale, -1.0f, 1.0f);
+    return _fabs(coc) * MAX_BLUR_SIZE;
+}
+
+__DEVICE__ float3 depthOfField(float2 texCoord, float focusPoint, float focusScale, float MAX_BLUR_SIZE, float uFar, bool DISABLE_DOF, float RAD_SCALE, float2 uPixelSize, __TEXTURE2D__ iChannel0) {
+    float4 centerTex = _tex2DVecN(iChannel0,texCoord.x,texCoord.y,15);
+    float centerDepth = centerTex.w * uFar;
+    float centerSize = getBlurSize(centerDepth, focusPoint, focusScale, MAX_BLUR_SIZE);
+    float3 color = swi3(centerTex,x,y,z);
+
+    if (DISABLE_DOF)
+      return color;
+
+    float tot = 1.0f;
+
+    float radius = RAD_SCALE;
+    for (float ang = 0.0f; ang < 10000.0f; ang += GOLDEN_ANGLE) {
+        if (radius >= MAX_BLUR_SIZE) break;
+
+        float2 tc = texCoord + to_float2(_cosf(ang), _sinf(ang)) * uPixelSize * radius;
+        float4 sampleTex = _tex2DVecN(iChannel0,tc.x,tc.y,15);
+        float3 sampleColor = swi3(sampleTex,x,y,z);
+        float sampleDepth = sampleTex.w * uFar;
+        float sampleSize = getBlurSize(sampleDepth, focusPoint, focusScale, MAX_BLUR_SIZE);
+        //if (sampleSize < centerSize) break;
+        if (sampleDepth > centerDepth) {
+            sampleSize = clamp(sampleSize, 0.0f, centerSize*2.0f);
+        }
+        float m = smoothstep(radius-0.5f, radius+0.5f, sampleSize);
+        color += _mix(color/tot, sampleColor, m);
+        tot += 1.0f;
+        radius += RAD_SCALE/radius;
+
+        // modification: exit early when we're in focus
+       // if (centerDepth < uFar / 3.0f && m == 0.0f) break;
+    }
+    color /= tot;
+    return color;
+}
+
+
+// http://filmicworlds.com/blog/filmic-tonemapping-operators/
+__DEVICE__ float3 tonemap2(float3 texColor, float ColMul, float Col1, float Col2, float Col3, float ColOff) {
+     texColor /= 2.0f;
+     texColor *= ColMul;//16.0f;  // Hardcoded Exposure Adjustment
+     float3 x = _fmaxf(to_float3_s(0),texColor-0.004f);
+     //return (x*(6.2f*x+0.5f))/(x*(6.2f*x+1.7f)+0.06f);
+     return (x*(Col1*x+Col2))/(x*(Col1*x+Col3)+ColOff);
+}
+
+
+__KERNEL__ void FracturedOrbFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iChannelResolution[1];
+  iChannelResolution[0] = to_float2(params->iChannelResolution[0][0], params->iChannelResolution[0][1]);
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   WOBBLE1 = params->WOBBLE1;
+  bool   WOBBLE2 = params->WOBBLE2;
+  bool   WOBBLE_DUR = params->WOBBLE_DUR;
+  bool   DARK_MODE = params->DARK_MODE;
+  bool   HW_PERFORMANCE = params->HW_PERFORMANCE;
+  bool   DISABLE_DOF = params->DISABLE_DOF;
+  bool   Refract2 = params->Refract2;
+  bool   Invert = params->Invert;
+  float4 BKGCOL = to_float4(params->BKGCOL[0], params->BKGCOL[1], params->BKGCOL[2], params->BKGCOL[3]);
+  float4 Extriction = to_float4(params->Extriction[0], params->Extriction[1], params->Extriction[2], params->Extriction[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  scale = params->scale;
+  float  OUTER = params->OUTER;
+  float  INNER = params->INNER;
+  float  Duration = params->Duration;
+  float  MAX_DISPERSE = params->MAX_DISPERSE;
+  float  MAX_BOUNCE = params->MAX_BOUNCE;
+  float  uFar = params->uFar;
+  float  MAX_BLUR_SIZE = params->MAX_BLUR_SIZE;
+  float  RAD_SCALE = params->RAD_SCALE;
+  float  Alpha = params->Alpha;
+  float  refmul = params->refmul;
+  float  refoff = params->refoff;
+  float  Extric = params->Extric;
+  float  ColMul = params->ColMul;
+  float  Col1 = params->Col1;
+  float  Col2 = params->Col2;
+  float  Col3 = params->Col3;
+  float  ColOff = params->ColOff;
+
+  // --------
+    //float uFar = 1.0f; // Far plane
+    //const float MAX_BLUR_SIZE = 10.0f;
+    //const float RAD_SCALE = 1.0f; // Smaller = nicer blur, larger = faster
+
+    float2 uv = fragCoord / iResolution;
+    float2 uPixelSize = to_float2_s(0.002f) / (iResolution / iResolution.y);
+
+    //fragColor = to_float4(_tex2DVecN(iChannel0,uv.x,uv.y,15).rgb, 1); return;
+
+    float3 col = depthOfField(uv, 0.65f, 1.0f, MAX_BLUR_SIZE, uFar, DISABLE_DOF, RAD_SCALE, uPixelSize, iChannel0);
+
+    col = pow_f3(col, to_float3_s(1.25f)) * 2.5f;
+    col = tonemap2(col, ColMul, Col1, Col2, Col3, ColOff);
+
+    fragColor = to_float4_aw(col, 1);
+    if(texture(iChannel0,uv).w == 1.0f) fragColor.w = Alpha;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InWOBBLE1Checkbox = self:AddInput("WOBBLE1", "WOBBLE1", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InWOBBLE2Checkbox = self:AddInput("WOBBLE2", "WOBBLE2", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InWOBBLE_DURCheckbox = self:AddInput("WOBBLE_DUR", "WOBBLE_DUR", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InDARK_MODECheckbox = self:AddInput("DARK_MODE", "DARK_MODE", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InHW_PERFORMANCECheckbox = self:AddInput("HW_PERFORMANCE", "HW_PERFORMANCE", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InDISABLE_DOFCheckbox = self:AddInput("DISABLE_DOF", "DISABLE_DOF", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InRefract2Checkbox = self:AddInput("Refract2", "Refract2", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InInvertCheckbox = self:AddInput("Invert", "Invert", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  self:BeginControlNest("BKGCOL", "BKGCOL", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "BKGCOL",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBKGCOLColorR = self:AddInput("Red",   "BKGCOLRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InBKGCOLColorG = self:AddInput("Green", "BKGCOLGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InBKGCOLColorB = self:AddInput("Blue",  "BKGCOLBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InBKGCOLColorA = self:AddInput("Alpha", "BKGCOLAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Extriction", "Extriction", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Extriction",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InExtrictionColorR = self:AddInput("Red",   "ExtrictionRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InExtrictionColorG = self:AddInput("Green", "ExtrictionGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InExtrictionColorB = self:AddInput("Blue",  "ExtrictionBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InExtrictionColorA = self:AddInput("Alpha", "ExtrictionAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InscaleSlider = self:AddInput("scale", "scale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 2.5,
+      })
+
+  InOUTERSlider = self:AddInput("OUTER", "OUTER", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.35,
+      })
+
+  InINNERSlider = self:AddInput("INNER", "INNER", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.24,
+      })
+
+  InDurationSlider = self:AddInput("Duration", "Duration", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 3.0,
+      })
+
+  InMAX_DISPERSESlider = self:AddInput("MAX_DISPERSE", "MAX_DISPERSE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 3.0,
+      })
+
+  InMAX_BOUNCESlider = self:AddInput("MAX_BOUNCE", "MAX_BOUNCE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 4.0,
+      })
+
+  InuFarSlider = self:AddInput("uFar", "uFar", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 1.0,
+      })
+
+  InMAX_BLUR_SIZESlider = self:AddInput("MAX_BLUR_SIZE", "MAX_BLUR_SIZE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 10.0,
+      })
+
+  InRAD_SCALESlider = self:AddInput("RAD_SCALE", "RAD_SCALE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 1.0,
+      })
+
+  InAlphaSlider = self:AddInput("Alpha", "Alpha", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 1.0,
+      })
+
+  InrefmulSlider = self:AddInput("refmul", "refmul", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InrefoffSlider = self:AddInput("refoff", "refoff", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InExtricSlider = self:AddInput("Extric", "Extric", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+
+  InColMulSlider = self:AddInput("ColMul", "ColMul", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 25.0,
+          INP_Default        = 16.0,
+      })
+
+  InCol1Slider = self:AddInput("Col1", "Col1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 6.2,
+      })
+
+  InCol2Slider = self:AddInput("Col2", "Col2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.5,
+      })
+
+  InCol3Slider = self:AddInput("Col3", "Col3", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 1.7,
+      })
+
+  InColOffSlider = self:AddInput("ColOff", "ColOff", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -0.1,
+          INP_MaxScale       = 0.1,
+          INP_Default        = 0.06,
+      })
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ShaderFuse.end_create()
+
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "FracturedOrbFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "FracturedOrbFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.WOBBLE1 = InWOBBLE1Checkbox:GetValue(req).Value
+  params.WOBBLE2 = InWOBBLE2Checkbox:GetValue(req).Value
+  params.WOBBLE_DUR = InWOBBLE_DURCheckbox:GetValue(req).Value
+  params.DARK_MODE = InDARK_MODECheckbox:GetValue(req).Value
+  params.HW_PERFORMANCE = InHW_PERFORMANCECheckbox:GetValue(req).Value
+  params.DISABLE_DOF = InDISABLE_DOFCheckbox:GetValue(req).Value
+  params.Refract2 = InRefract2Checkbox:GetValue(req).Value
+  params.Invert = InInvertCheckbox:GetValue(req).Value
+  params.BKGCOL = {
+    InBKGCOLColorR:GetValue(req).Value,
+    InBKGCOLColorG:GetValue(req).Value,
+    InBKGCOLColorB:GetValue(req).Value,InBKGCOLColorA:GetValue(req).Value
+  }
+  params.Extriction = {
+    InExtrictionColorR:GetValue(req).Value,
+    InExtrictionColorG:GetValue(req).Value,
+    InExtrictionColorB:GetValue(req).Value,InExtrictionColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.scale = InscaleSlider:GetValue(req).Value
+  params.OUTER = InOUTERSlider:GetValue(req).Value
+  params.INNER = InINNERSlider:GetValue(req).Value
+  params.Duration = InDurationSlider:GetValue(req).Value
+  params.MAX_DISPERSE = InMAX_DISPERSESlider:GetValue(req).Value
+  params.MAX_BOUNCE = InMAX_BOUNCESlider:GetValue(req).Value
+  params.uFar = InuFarSlider:GetValue(req).Value
+  params.MAX_BLUR_SIZE = InMAX_BLUR_SIZESlider:GetValue(req).Value
+  params.RAD_SCALE = InRAD_SCALESlider:GetValue(req).Value
+  params.Alpha = InAlphaSlider:GetValue(req).Value
+  params.refmul = InrefmulSlider:GetValue(req).Value
+  params.refoff = InrefoffSlider:GetValue(req).Value
+  params.Extric = InExtricSlider:GetValue(req).Value
+
+  params.ColMul = InColMulSlider:GetValue(req).Value
+  params.Col1 = InCol1Slider:GetValue(req).Value
+  params.Col2 = InCol2Slider:GetValue(req).Value
+  params.Col3 = InCol3Slider:GetValue(req).Value
+  params.ColOff = InColOffSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  params.iChannelResolution[0][0] = iChannel0.DataWindow:Width()    
+  params.iChannelResolution[0][1] = iChannel0.DataWindow:Height()   
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0", iChannel0)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "FracturedOrbFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+-- */

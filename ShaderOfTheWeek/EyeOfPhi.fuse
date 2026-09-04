@@ -1,0 +1,765 @@
+--[[--/*
+
+  EyeOfPhi.fuse
+
+  Based on https://www.shadertoy.com/view/7stfzB a WebGL shader created by ChunderFPV.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  ColorBG[4];
+  float  Gold[4];
+  float  Blue[4];
+  float  SCALE;
+  float  LineWidth;
+  float  ShadowDepth;
+  float  Brightness;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f2(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define exp_f2(a) _expf((a))
+ #define sign_f(a) sign(a)
+ #define sign_f2(a) sign(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f2(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define exp_f2(a) _expf((a))
+ #define sign_f(a) sign(a)
+ #define sign_f2(a) sign(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_CUDA)
+   #define radians(a) a * M_PI/180.0f
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define exp_f2(a) to_float2(_expf((a).x), _expf((a).y))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define sign_f2(a) to_float2((a).x==0.0f?0.0f:(a).x>0.0f?1.0f:-1.0f, (a).y==0.0f?0.0f:(a).y>0.0f?1.0f:-1.0f)
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+
+
+//#define SCALE 8.0f
+#define R iResolution
+#define PI radians(180.0f)
+#define TAU (PI*2.0f)
+#define CS(a) to_float2(_cosf(a), _sinf(a))
+#define PT(u,r) smoothstep(0.0f, r, r-length(u))
+
+// gradient map ( color, equation, time, width, shadow, reciprocal )
+__DEVICE__ float3 gm(float3 c, float n, float t, float w, float d, bool i)
+{
+    float g = _fminf(_fabs(n), 1.0f/_fabs(n));
+    float s = _fabs(_sinf(n*PI-t));
+    if (i) s = _fminf(s, _fabs(_sinf(PI/n+t)));
+    return (1.0f-_powf(_fabs(s), w))*c*_powf(g, d)*6.0f;
+}
+
+// denominator spiral, use 1/n for numerator
+// ( screen xy, spiral exponent, decimal, line width, hardness, rotation )
+__DEVICE__ float ds(float2 u, float e, float n, float w, float h, float ro)
+{
+    float ur = length(u); // unit radius
+    float sr = _powf(ur, e); // spiral radius
+    float a = round(sr)*n*TAU; // arc
+    float2 xy = CS(a+ro)*ur; // xy coords
+    float l = PT(u-xy, w); // line
+    float s = mod_f(sr+0.5f, 1.0f); // gradient smooth
+    s = _fminf(s, 1.0f-s); // darken filter
+    return l*s*h;
+}
+
+#define log_f2(a) to_float2(_logf((a).x), _logf((a).y))
+
+__DEVICE__ float2 _fwidth(float2 inp, float2 iR){
+    //simulate fwidth
+    float uvx = inp.x + 1.0f/iR.x;
+    float ddx = uvx * uvx - inp.x * inp.x;
+
+    float uvy = inp.y + 1.0f/iR.y;
+    float ddy = uvy * uvy - inp.y * inp.y;
+
+    return to_float2(_fabs(ddx), _fabs(ddy));
+}
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+// contains a few field transforms for artistic purposes
+// the metallic ratio transform is the one that looks like a magnetic field
+// see this for a better explanation: https://www.shadertoy.com/view/ssGczz
+// phi is often used to refer to the golden ratio which is the first metallic ratio
+// hence the name of this shader
+
+__KERNEL__ void EyeOfPhiFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 RGBA   = to_float4_s(0.0f);
+  float2 XY   = to_float2(fusion_x,fusion_y);
+
+
+  float4 ColorBG = to_float4(params->ColorBG[0], params->ColorBG[1], params->ColorBG[2], params->ColorBG[3]);
+  float4 Gold = to_float4(params->Gold[0], params->Gold[1], params->Gold[2], params->Gold[3]);
+  float4 Blue = to_float4(params->Blue[0], params->Blue[1], params->Blue[2], params->Blue[3]);
+  float  SCALE = params->SCALE;
+  float  LineWidth = params->LineWidth;
+  float  ShadowDepth = params->ShadowDepth;
+  float  Brightness = params->Brightness;
+
+  // --------
+
+
+    float t = iTime/(PI)*2.0f;
+    float4 m = iMouse;
+    swi2S(m,x,y, swi2(m,x,y)*2.0f/R-1.0f); // ±1x, ±1y
+    if (m.z > 0.0f) t += m.y*SCALE; // move time with mouse y
+    float z = (m.z > 0.0f) ? _powf(1.0f-_fabs(m.y),  sign_f(m.y)): 1.0f; // zoom (+)
+    float e = (m.z > 0.0f) ? _powf(1.0f-_fabs(m.x), -sign_f(m.x)): 1.0f; // screen exponent (+)
+    float se = (m.z > 0.0f) ? e*-sign_f(m.y): 1.0f; // spiral exponent
+    float3 bg = swi3(ColorBG,x,y,z);//to_float3_s(0); // black background
+
+    float aa = 3.0f; // anti-aliasing
+    for (float j = 0.0f; j < aa; j++)
+    for (float k = 0.0f; k < aa; k++)
+    {
+        float3 c = to_float3_s(0);
+        float2 o = to_float2(j, k)/aa;
+        float2 uv = (XY-0.5f*R+o)/R.y*SCALE*z; // apply cartesian, scale and zoom
+        if (m.z > 0.0f) uv = exp_f2(log_f2(abs_f2(uv))*e)*sign_f2(uv); // warp screen space with exponent
+
+        float px = length(_fwidth(uv, iResolution)); // pixel width
+        float x = uv.x; // every pixel on x
+        float y = uv.y; // every pixel on y
+        float l = length(uv); // hypot of xy: _sqrtf(x*x+y*y)
+
+        float mc = (x*x+y*y-1.0f)/y; // metallic circle at xy
+        float g = _fminf(_fabs(mc), 1.0f/_fabs(mc)); // gradient
+        float3 gold = swi3(Gold,x,y,z)*g*l;
+        float3 blue = swi3(Blue,x,y,z)*(1.0f-g);
+        float3 rgb = _fmaxf(gold, blue);
+
+        float w = LineWidth;//0.1f; // line width
+        float d = ShadowDepth;//0.4f; // shadow depth
+        c = _fmaxf(c, gm(rgb, mc, -t, w, d, false)); // metallic
+        c = _fmaxf(c, gm(rgb, _fabs(y/x)*sign_f(y), -t, w, d, false)); // tangent
+        c = _fmaxf(c, gm(rgb, (x*x)/(y*y)*sign_f(y), -t, w, d, false)); // sqrt cotangent
+        c = _fmaxf(c, gm(rgb, (x*x)+(y*y), t, w, d, true)); // sqrt circles
+
+        c += rgb*ds(uv, se, t/TAU, px*2.0f, 2.0f, 0.0f); // spiral 1a
+        c += rgb*ds(uv, se, t/TAU, px*2.0f, 2.0f, PI); // spiral 1b
+        c += rgb*ds(uv, -se, t/TAU, px*2.0f, 2.0f, 0.0f); // spiral 2a
+        c += rgb*ds(uv, -se, t/TAU, px*2.0f, 2.0f, PI); // spiral 2b
+        c = _fmaxf(c, to_float3_s(0.0f)); // clear negative color
+
+        c += _powf(_fmaxf(1.0f-l, 0.0f), 3.0f/z); // center glow
+
+        if (m.z > 0.0f) // display grid on click
+        {
+            float2 xyg = abs_f2(fract_f2(uv+0.5f)-0.5f)/px; // xy grid
+            swi2S(c,y,z, swi2(c,y,z) + 0.2f*(1.0f-_fminf(_fminf(xyg.x, xyg.y), 1.0f)));
+        }
+        bg += c;
+    }
+    bg /= aa*aa;
+    bg *= sqrt_f3(bg)*Brightness;//1.5f;
+
+    RGBA = to_float4_aw(bg, 1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, RGBA);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  self:BeginControlNest("ColorBG", "ColorBG", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBG",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBGColorR = self:AddInput("Red",   "ColorBGRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InColorBGColorG = self:AddInput("Green", "ColorBGGreen", { INP_Default  = 0.0, IC_ControlID = 1, attrs})
+    InColorBGColorB = self:AddInput("Blue",  "ColorBGBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColorBGColorA = self:AddInput("Alpha", "ColorBGAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Gold", "Gold", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Gold",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InGoldColorR = self:AddInput("Red",   "GoldRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InGoldColorG = self:AddInput("Green", "GoldGreen", { INP_Default  = 0.6, IC_ControlID = 1, attrs})
+    InGoldColorB = self:AddInput("Blue",  "GoldBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InGoldColorA = self:AddInput("Alpha", "GoldAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Blue", "Blue", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Blue",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBlueColorR = self:AddInput("Red",   "BlueRed",   { INP_Default  = 0.3, IC_ControlID = 0, attrs})
+    InBlueColorG = self:AddInput("Green", "BlueGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InBlueColorB = self:AddInput("Blue",  "BlueBlue",  { INP_Default  = 0.9, IC_ControlID = 2, attrs})
+    InBlueColorA = self:AddInput("Alpha", "BlueAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InSCALESlider = self:AddInput("SCALE", "SCALE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 8.0,
+      })
+
+  InLineWidthSlider = self:AddInput("LineWidth", "LineWidth", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 0.2,
+          INP_Default        = 0.1,
+      })
+
+  InShadowDepthSlider = self:AddInput("ShadowDepth", "ShadowDepth", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.4,
+      })
+
+  InBrightnessSlider = self:AddInput("Brightness", "Brightness", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.5,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "EyeOfPhiFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.ColorBG = {
+    InColorBGColorR:GetValue(req).Value,
+    InColorBGColorG:GetValue(req).Value,
+    InColorBGColorB:GetValue(req).Value,InColorBGColorA:GetValue(req).Value
+  }
+  params.Gold = {
+    InGoldColorR:GetValue(req).Value,
+    InGoldColorG:GetValue(req).Value,
+    InGoldColorB:GetValue(req).Value,InGoldColorA:GetValue(req).Value
+  }
+  params.Blue = {
+    InBlueColorR:GetValue(req).Value,
+    InBlueColorG:GetValue(req).Value,
+    InBlueColorB:GetValue(req).Value,InBlueColorA:GetValue(req).Value
+  }
+  params.SCALE = InSCALESlider:GetValue(req).Value
+  params.LineWidth = InLineWidthSlider:GetValue(req).Value
+  params.ShadowDepth = InShadowDepthSlider:GetValue(req).Value
+  params.Brightness = InBrightnessSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+      
+  node:AddOutput("dst", dst)
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

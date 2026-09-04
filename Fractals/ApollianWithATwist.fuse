@@ -1,0 +1,526 @@
+--[[--/*
+
+  ApollianWithATwist.fuse
+
+  Based on https://www.shadertoy.com/view/Wl3fzM a WebGL shader created by mrange.
+  Converted to DCTL and embeddet into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  Alpha;
+  float  Scale;
+  float  Contrast;
+  float  Saturation;
+  float  Vigneting;
+
+  int    width,height;
+  int    compOrder;
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  #define fract_f3(A) fract(A)
+  #define abs_f3(a) _fabs(a)
+  #define sqrt_f3(a) _sqrtf(a)
+  #define pow_f3(a,b) pow(a,b)
+
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+    #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+    #define abs_f3(a) fabs(a)
+    #define sqrt_f3(a) _sqrtf(a)
+    #define pow_f3(a,b) pow(a,b)
+    
+ //-------refract--------
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+    #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+    #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+    #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+    #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+#endif
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+// License CC0: Apollian with a twist
+// Playing around with apollian fractal
+
+#define L2(x)           dot(x, x)
+#define ROT(a)          to_mat2(_cosf(a), _sinf(a), -_sinf(a), _cosf(a))
+#define PSIN(x)         (0.5f+0.5f*_sinf(x))
+
+// mat2 ... hack, otherwise it's not seen
+
+__DEVICE__ float3 hsv2rgb(float3 c) {
+  const float4 K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+  float3 p = abs_f3(fract_f3(swi3(c,x,x,x) + swi3(K,x,y,z)) * 6.0f - swi3(K,w,w,w));
+  return c.z * _mix(swi3(K,x,x,x), clamp(p - swi3(K,x,x,x), 0.0f, 1.0f), c.y);
+}
+
+__DEVICE__ float apollian(float4 p, float s, float scale) {
+  //float scale = 1.0f;
+
+  for(int i=0; i<7; ++i) {
+    p        = -1.0f + 2.0f*fract(0.5f*p+0.5f);
+
+    float r2 = dot(p,p);
+
+    float k  = s/r2;
+    p       *= k;
+    scale   *= k;
+  }
+
+  return _fabs(p.y)/scale;
+}
+
+__DEVICE__ float weird(float2 p, float iTime, float scale) {
+  float z = 4.0f;
+  p = mul_f2_mat2(p,ROT(iTime*0.1f));
+  float tm = 0.2f*iTime;
+  float r = 0.5f;
+  float4 off = to_float4(r*PSIN(tm*_sqrtf(3.0f)), r*PSIN(tm*_sqrtf(1.5f)), r*PSIN(tm*_sqrtf(2.0f)), 0.0f);
+  float4 pp = to_float4(p.x, p.y, 0.0f, 0.0f)+off;
+  pp.w = 0.125f*(1.0f-_tanhf(length(swi3(pp,x,y,z))));
+
+  float2 tmp;
+  tmp = mul_f2_mat2(swi2(pp,y,z), ROT(tm));               pp.y=tmp.x; pp.z=tmp.y; // swi2(pp,y,z) *= ROT(tm);
+  tmp = mul_f2_mat2(swi2(pp,x,z), ROT(tm*_sqrtf(0.5f)));  pp.x=tmp.x; pp.z=tmp.y; // swi2(pp,x,z) *= ROT(tm*_sqrtf(0.5f));
+
+  pp /= z;
+  float d = apollian(pp, 1.2f, scale);
+  return d*z;
+}
+
+__DEVICE__ float df(float2 p, float iTime, float scale) {
+  const float zoom = 0.5f;
+  p /= zoom;
+  float d0 = weird(p,iTime,scale);
+  return d0*zoom;
+}
+
+__DEVICE__ float3 color(float2 p, float iTime, float iResolution_y, float scale) {
+  float aa   = 2.0f/iResolution_y;
+  const float lw = 0.0235f;
+  const float lh = 1.25f;
+
+  const float3 lp1 = to_float3(0.5f, lh, 0.5f);
+  const float3 lp2 = to_float3(-0.5f, lh, 0.5f);
+
+  float d = df(p,iTime,scale);
+
+  float b = -0.125f;
+  float t = 10.0f;
+
+  float3 ro = to_float3(0.0f, t, 0.0f);
+  float3 pp = to_float3(p.x, 0.0f, p.y);
+
+  float3 rd = normalize(pp - ro);
+
+//float3 ld1 = normalize(lp1 - pp);
+//float3 ld2 = normalize(lp2 - pp);
+
+  float bt = -(t-b)/rd.y;
+
+  float3 bp   = ro + bt*rd;
+  float3 srd1 = normalize(lp1-bp);
+  float3 srd2 = normalize(lp2-bp);
+  float bl21= L2(lp1-bp);
+  float bl22= L2(lp2-bp);
+
+  float st1= (0.0f-b)/srd1.y;
+//float st2= (0.0f-b)/srd2.y;
+  float3 sp1 = bp + srd1*st1;
+  float3 sp2 = bp + srd2*st1;
+
+//float bd = df(swi2(bp,x,z),iTime,scale);
+  float sd1= df(swi2(sp1,x,z),iTime,scale);
+  float sd2= df(swi2(sp2,x,z),iTime,scale);
+
+  float3 col  = to_float3_s(0.0f);
+  const float ss =15.0f;
+
+  col       += to_float3(1.0f, 1.0f, 1.0f)*(1.0f-_expf(-ss*(_fmaxf((sd1+0.0f*lw), 0.0f))))/bl21;
+  col       += to_float3_s(0.5f)*(1.0f-_expf(-ss*(_fmaxf((sd2+0.0f*lw), 0.0f))))/bl22;
+  float l   = length(p);
+  float hue = fract(0.75f*l-0.3f*iTime)+0.3f+0.15f;
+  float sat = 0.75f*_tanhf(2.0f*l);
+  float3 hsv  = to_float3(hue, sat, 1.0f);
+  float3 bcol = hsv2rgb(hsv);
+  col       *= (1.0f-_tanhf(0.75f*l))*0.5f;
+  col       = _mix(col, bcol, smoothstep(-aa, aa, -d));
+  col       += 0.5f*sqrt_f3(swi3(bcol,z,x,y))*(_expf(-(10.0f+100.0f*_tanhf(l))*_fmaxf(d, 0.0f)));
+
+  return col;
+}
+
+
+__KERNEL__ void ApollianWithATwistFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float  Alpha = params->Alpha;
+  float  Scale = params->Scale;
+  float  Contrast = params->Contrast;
+  float  Saturation = params->Saturation;
+  float  Vigneting = params->Vigneting;
+
+  // --------
+
+
+
+  float2 q = fragCoord/swi2(iResolution,x,y);
+  float2 p = -1.0f + 2.0f * q;
+  p.x *= iResolution.x/iResolution.y;
+
+  float3 col = color(p,iTime,iResolution.y,Scale);
+
+  #if 0
+    col=pow_f3(clamp(col,0.0f,1.0f),to_float3_s(1.0f/2.2f));
+    col=col*0.6f+0.4f*col*col*(3.0f-2.0f*col);  // contrast
+    col=_mix(col, to_float3_s( dot(col, to_float3_s(0.33f)) ), -0.4f);  // saturation
+    col*=0.5f+0.5f*_powf(19.0f*q.x*q.y*(1.0f-q.x)*(1.0f-q.y),0.7f);  // vigneting
+    fragColor = to_float4_aw(col, 1.0f);
+  #else
+    col=pow_f3(clamp(col,0.0f,1.0f),to_float3_s(1.0f/2.2f));
+    col=col*Contrast+0.4f*col*col*(3.0f-2.0f*col);  // contrast
+    col=_mix(col, to_float3_s( dot(col, to_float3_s(Saturation)) ), -0.4f);  // saturation
+    col*=0.5f+0.5f*_powf(19.0f*q.x*q.y*(1.0f-q.x)*(1.0f-q.y),Vigneting);  // vigneting
+    fragColor = to_float4_aw(col, Alpha);
+  #endif
+
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+
+  InAlphaSlider = self:AddInput("Alpha", "Alpha", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 1.0,
+  })
+
+  InScaleSlider = self:AddInput("Scale", "Scale", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  InContrastSlider = self:AddInput("Contrast", "Contrast", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.6,
+  })
+
+  InSaturationSlider = self:AddInput("Saturation", "Saturation", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.33,
+  })
+
+  InVignetingSlider = self:AddInput("Vigneting", "Vigneting", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.7,
+  })
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "ApollianWithATwistFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.Alpha = InAlphaSlider:GetValue(req).Value
+  params.Scale = InScaleSlider:GetValue(req).Value
+  params.Contrast = InContrastSlider:GetValue(req).Value
+  params.Saturation = InSaturationSlider:GetValue(req).Value
+  params.Vigneting = InVignetingSlider:GetValue(req).Value
+
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+

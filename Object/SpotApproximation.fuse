@@ -1,0 +1,2583 @@
+--[[--/*
+
+  SpotApproximation.fuse
+
+  Based on https://www.shadertoy.com/view/t3tfD4 a WebGL shader created by kaiavintr.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   NoSpots;
+  bool   FORCE_TURNTABLE_MODE;
+  bool   SHOW_ITERATION_COUNT;
+  bool   Tex;
+  bool   SPOT_SDF_OPTIMIZED;
+  float  ColorBKG[4];
+  float  ColSpots[4];
+  float  ColNose[4];
+  float  ColHooves[4];
+  float  ColHorns[4];
+  float  ColEyes[4];
+  float  ColEyesHL[4];
+  float  ColEars[4];
+  float  ColNoStrils[4];
+  float  ColBase[4];
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  TURNTABLE_SPEED1;
+  float  TURNTABLE_SPEED2;
+  float  TURNTABLE_DEPTH;
+  float  CAMERA_SHIFT_Y;
+  float  CAMERA_Z_DISTANCE;
+  float  VIEW_ANGLE_FACTOR;
+  float  SPOT_SDF_OPTIMIZED_SCALE;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f( float a ) { return mat3(a,a,a,a,a,a,a,a,a); }
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) { return (A*B); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f( float  a )
+  {
+    mat3 t;
+    t.r0.x = t.r0.y = t.r0.z = t.r1.x = t.r1.y = t.r1.z = t.r2.x = t.r2.y = t.r2.z = a;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 B, mat3 A)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define abs_f4(a) _fabs(a)
+ #define mix_f3(v,i,m) mix(v,i,m)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define abs_f4(a) fabs(a)
+ #define mix_f3(v,i,m) mix(v,i,m)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define abs_f4(a) to_float4(_fabs((a).x), _fabs((a).y),_fabs((a).z),_fabs((a).w))
+ #define mix_f3(v,i,m) to_float3(_mix((v).x,(i).x,(m).x),_mix((v).y,(i).y,(m).y),_mix((v).z,(i).z,(m).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+#define to_float4_f2f2(A,B) to_float4((A).x,(A).y,(B).x,(B).y ) // or is there some to_float_..() for that?!? - No - that is missing in DCTL :-) but now we have "one"
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+__DEVICE__ inline mat3 mul_mat3_f( mat3 A, float B)
+  {
+  return to_mat3_f3(A.r0 * B, A.r1 * B, A.r2 * B);
+  }
+
+__DEVICE__ mat3 transpose(mat3 m)
+{
+    return(to_mat3(m.r0.x,m.r1.x,m.r2.x, m.r0.y,m.r1.y,m.r2.y, m.r0.z,m.r1.z,m.r2.z));
+}
+
+__DEVICE__ mat3 outerProduct( float3 u, float3 v)
+{
+  return to_mat3(u.x*v.x, u.y*v.x, u.z*v.x,  u.x*v.y, u.y*v.y, u.z*v.y, u.x*v.z, u.y*v.z, u.z*v.z);
+}
+
+__DEVICE__ inline mat3 mat3_add_mat3( mat3 A, mat3 B) {
+  mat3 C;
+
+  C.r0 = to_float3(A.r0.x + B.r0.x, A.r0.y + B.r0.y,A.r0.z + B.r0.z);
+  C.r1 = to_float3(A.r1.x + B.r1.x, A.r1.y + B.r1.y,A.r1.z + B.r1.z);
+  C.r2 = to_float3(A.r2.x + B.r2.x, A.r2.y + B.r2.y,A.r2.z + B.r2.z);
+
+  return C;
+  }
+
+// Tri-Planar blending function: Based on an old Nvidia writeup:
+// GPU Gems 3 - Ryan Geiss: http://http.developer.nvidia.com/GPUGems3/gpugems3_ch01.html
+__DEVICE__ float3 tex3D(__TEXTURE2D__ tex, in float3 p, in float3 n, float ratio){
+
+    // Ryan Geiss effectively multiplies the first line by 7.0f It took me a while to realize that
+    // it's largely redundant, due to the division process that follows. I'd never noticed on
+    // account of the fact that I'm not in the habit of questioning stuff written by Ryan Geiss. :)
+    n = _fmaxf(n*n - 0.2f, to_float3_s(0.001f)); // _fmaxf(_fabs(n), 0.001f), etc.
+    n /= dot(n, to_float3_s(1));
+    //n /= length(n);
+
+    // Texure samples. One for each plane.
+    float3 tx = swi3(texture(tex, swi2(p,y,z)*to_float2(ratio, 1.0f)),x,y,z);
+    float3 ty = swi3(texture(tex, swi2(p,z,x)*to_float2(ratio, 1.0f)),x,y,z);
+    float3 tz = swi3(texture(tex, swi2(p,x,y)*to_float2(ratio, 1.0f)),x,y,z);
+
+    // Multiply each texture plane by its normal dominance factor.... or however you wish
+    // to describe it. For instance, if the normal faces up or down, the "ty" texture sample,
+    // represnting the XZ plane, will be used, which makes sense.
+
+    // Textures are stored in sRGB (I think), so you hto_ave _f3to convert them to linear space
+    // (squaring is a rough approximation) prior to workingto_ wit_f3h them... or something like that. :)
+    // Once the final color value is gamma corrected, you should see correct looking colors.
+    return mul_mat3_f3(to_mat3_f3(tx*tx, ty*ty, tz*tz),n); // Equivalent to: tx*tx*n.x + ty*ty*n.y + tz*tz*n.z;
+}
+
+
+/*
+License for source code (see below for information about output):
+
+Copyright (c) 2026 Kaia Vintr
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------
+
+The above license and copyright applies to the source code only, not to the
+output of the code. The code defines a 3D "virtual object" (mathematical
+implicit surface, with color defined at each point on the surface). The intent
+is that this virtual object should be closely similar to the "Spot" model,
+which was created by Keenan Crane and released into the public domain (defined
+by Catmull-Clark control points and an SVG file). The virtual object defined by
+the code is a modification of that original creative work and is also hereby
+released into the public domain. This virtual object (whether rendered as a
+static or moving image, or output as data such as a mesh, point cloud, or
+texture) may be incorporated into new creative works (including works with a
+different license or copyright) without restriction.
+
+The original Spot model can be found here:
+https://www.cs.cmu.edu/~kmcrane/Projects/ModelRepository/
+Keenan Crane has stated that acknowledgement is appreciated but not required.
+
+Github repository for this code:
+https://github.com/kaiavintr/spot_approximation
+
+Please contact Kaia Vintr with questions regarding the code via:
+- comment on the Shadertoy shader here: https://www.shadertoy.com/view/t3tfD4
+- GitHub issue
+- Bluesky: https://bsky.app/profile/kaiavintr.bsky.social
+- Mastodon: https://mastodon.social/@kaiavintr
+
+*/
+
+/*
+    This file contains the Spot approximation functions and related definitions.
+
+    Raymarching and rendering demo code is in "shadertoy_image_shader.glsl"
+
+*/
+
+
+// Define this to enable an optimized version of the signed distance function
+// May be less efficient for incoherent rays in path tracing
+//#define SPOT_SDF_OPTIMIZED
+
+// The optimized version may slightly overestimate distances.
+// If this is an issue, change the constant below to (e.g.) 0.99
+//const float SPOT_SDF_OPTIMIZED_SCALE = 1.0f;
+
+// Define this to make the spot_get_color_index function return a signed value and gradient as well as the color index
+// Value and gradient can be used for antialiasing.
+// For path tracing, you would probably not use this
+// When defined, spot_get_eye_highlight_grad must be called to test the eye highlight shape.
+#define SPOT_TEXTURE_EDGE_GRADIENT
+
+// Coordinates of AABB of the Spot approximation shape
+// (slightly larger than bound taken from a large number of samples)
+// TODO: Find actual bound using gradient descent at extreme points
+
+
+
+// Values used to represent colors
+#define SPOT_COLOR_BASE    0
+#define SPOT_COLOR_SPOTS   1
+#define SPOT_COLOR_NOSE    2
+#define SPOT_COLOR_UDDER   3 // same color as nose
+#define SPOT_COLOR_HOOVES  4
+#define SPOT_COLOR_HORNS   5
+#define SPOT_COLOR_EYES    6
+#define SPOT_COLOR_EYE_HIGHLIGHT  7
+#define SPOT_COLOR_EARS    8
+#define SPOT_COLOR_NOSTRILS  9
+
+// Map a color index to a diffuse color
+// Colors are taken from the original Spot texture SVG file, converted from sRGB to linear
+__DEVICE__ float3 spot_color_index_to_rgb(int color_index, float3 Colors[9], float3 P, float3 N, float ratio, bool Tex, __TEXTURE2D__ iChannel0) {
+
+    switch (color_index) {
+
+    case SPOT_COLOR_SPOTS:
+        return Colors[0];//to_float3_s(0.051f);
+        //return swi3(texture(iChannel0, swi2(P,x,y)),x,y,z);
+
+    case SPOT_COLOR_NOSE:
+    case SPOT_COLOR_UDDER:
+        return Colors[1];//to_float3(1.0f, 0.564f, 0.387f);
+
+    case SPOT_COLOR_HOOVES:
+        return Colors[2];//to_float3_s(0.138f);
+
+    case SPOT_COLOR_HORNS:
+        return Colors[3];//to_float3(0.337f, 0.102f, 0.036f);
+
+    case SPOT_COLOR_EYES:
+        return Colors[4];//to_float3_s(0.03f);
+
+    case SPOT_COLOR_EYE_HIGHLIGHT:
+        return Colors[5];//to_float3_s(1);
+
+    case SPOT_COLOR_EARS:
+        return Colors[6];//to_float3_s(0.337f);
+
+    case SPOT_COLOR_NOSTRILS:
+        return Colors[7];//to_float3(0.234f, 0.068f, 0.023f);
+
+    //case SPOT_COLOR_BASE:
+    default:
+        //return to_float3(1.0f, 0.855f, 0.792f);
+        //return swi3(texture(iChannel0, swi2(P,x,y)),x,y,z);
+        if(Tex) return tex3D(iChannel0, P, N, ratio);
+        else    return Colors[8];
+        //return Tex == true ? tex3D(iChannel0, P, N, ratio) : Colors[8];
+    }
+}
+
+// Quartic "smooth minimum" blending function for 2D SDF blending
+// Blends two vec3s which have 2D gradient in xy and signed distance in z
+// "dist" is a blending distance parameter
+//      (if difference between the values is greater than this, then the minimum will be used)
+// "q" controls the shape of the blending. Valid range is 0.125...0.59
+//      q values outside of this range will cause the blended SDF to be invalid (no longer a bound of the true SDF)
+//      values > 0.23f will cause a bulge between the two shapes.
+//      Value of 1/6 sets the quartic coefficient to 0 (equivalent to cubic smooth min)
+// If dist and q are constants then most of the calculations should occur at compile time, and it should be relatively cheap
+//      (this is not the case for the texture function evaluation though).
+__DEVICE__ float3 blend_smin(float3 f1, float3 f2, float dist, float q) {
+    float x = f1.z;
+    float y = f2.z;
+
+    float s = 1.0f / dist;
+    float s2 = s*s;
+
+    float A = (3.0f*q - 0.5f) * s2 * s;
+    float B = (-4.0f*q + 0.5f) * s2;
+
+    float a = _fmaxf(dist - _fabs(x-y), 0.0f);
+
+    A *= a;
+
+    float t = (-4.0f*A - 3.0f*B) * a*a;
+
+    return to_float3_aw(_mix(swi2(f1,x,y), swi2(f2,x,y), x < y ? t : 1.0f - t), _fminf(x, y) + (A + B) * a*a*a);
+}
+
+// Quartic "smooth minimum" or "smooth maximum" blending function for 3D SDF blending (see above)
+// Blends two vec4s which have 3D gradient in xyz and signed distance in w
+// If dist and q are constants then most of the calculations should occur at compile time, and it should be relatively cheap.
+__DEVICE__ float4 blend_sminmax(float4 f1, float4 f2, float dist, float q, bool use_min) {
+    float x = f1.w;
+    float y = f2.w;
+
+    float s = 1.0f / dist;
+    float s2 = s*s;
+
+    float A = (3.0f*q - 0.5f) * s2 * s;
+    float B = (-4.0f*q + 0.5f) * s2;
+
+    float a = _fmaxf(dist - _fabs(x-y), 0.0f);
+
+    A *= a;
+
+    float t = (-4.0f*A - 3.0f*B) * a*a;
+
+    if (use_min) {
+        return to_float4_aw(_mix(swi3(f1,x,y,z), swi3(f2,x,y,z), x < y ? t : 1.0f - t), _fminf(x, y) + (A + B) * a*a*a);
+    } else {
+        return to_float4_aw(_mix(swi3(f1,x,y,z), swi3(f2,x,y,z), x > y ? t : 1.0f - t), _fmaxf(x, y) - (A + B) * a*a*a);
+    }
+}
+
+// Quartic "smooth minimum" blending function for 3D SDF blending (see above)
+__DEVICE__ float4 blend_smin_f4(float4 f1, float4 f2, float dist, float q) {
+    return blend_sminmax(f1, f2, dist, q, true);
+}
+
+// Quartic "smooth maximum" blending function for 3D SDF blending (see above)
+__DEVICE__ float4 blend_smax(float4 f1, float4 f2, float dist, float q) {
+    return blend_sminmax(f1, f2, dist, q, false);
+}
+
+// Signed distance function for sphere
+__DEVICE__ float4 sdf_sphere(float3 P, float3 C, float r) {
+    P = P - C;
+    return to_float4_aw(normalize(P), length(P)-r);
+}
+
+// Signed distance function for half-space defined by a plane (normal vector and distance)
+// Everything on one side of the plane is inside the shape.
+__DEVICE__ float4 sdf_halfspace(float3 P, float3 V, float d) {
+    return to_float4_aw(V, dot(P, V) - d);
+}
+
+// Signed distance function for a cylinder that extends infinitely in the x direction
+__DEVICE__ float4 sdf_xcylinder(float3 P, float2 C, float r) {
+    float2 Q = swi2(P,y,z) - C;
+
+    float2 _Q = normalize(Q);
+
+    return to_float4_aw(to_float3(0, _Q.x, _Q.y), length(Q)-r);
+}
+
+// Convenience function for cumulative SDF blending.
+// Takes an SDF value and gradient and blends it with a sphere.
+__DEVICE__ float4 blend_sphere(float4 f, float3 P, float3 C, float r, float dist, float q) {
+    return blend_smin_f4(f, sdf_sphere(P, C, r), dist, q);
+}
+
+// Convenience function for blending a pair of spheres, mirrored across the x=0 plane
+__DEVICE__ float4 sphere_pair(float3 P, float3 C, float r, float dist_pair, float q_pair) {
+    return blend_smin_f4(sdf_sphere(P, C, r), sdf_sphere(P, C*to_float3(-1,1,1), r), dist_pair, q_pair);
+}
+
+// Convenience function for cumulative SDF blending.
+// Takes an SDF value and gradient and blends it with a pair of spheres, mirrored across the x=0 plane
+__DEVICE__ float4 blend_sphere_pair(float4 f, float3 P, float3 C, float r, float dist_pair, float q_pair, float dist, float q) {
+    return blend_smin_f4(f, sphere_pair(P, C, r, dist_pair, q_pair), dist, q);
+}
+
+// Ellipse function that is not an SDF (or bound) but will be treated like an SDF for blending.
+// Used for making blobbly 2D shapes, not for ray marching.
+// Returns 2d gradient in xy, signed "distance" value in z.
+__DEVICE__ float3 ellipse_function(float2 P, float3 M, float r) {
+    float2 E = mul_mat2_f2(to_mat2(M.x, M.y, M.y, M.z) , P);
+
+    float d = _sqrtf(dot(P, E));
+
+    return to_float3_aw(1.0f/d * E, d - r);
+}
+
+
+//#ifndef SPOT_SDF_OPTIMIZED // use straightforward version of signed distance function
+
+// "SDF" function (bound) for the Spot approximation.
+// Returns gradient in xyz and distance (lower bound) in w
+// IMPORTANT: Since this is not a true SDF, you need to normalize the gradient before using it as a normal vector.
+__DEVICE__ float4 spot_sdf_and_gradient(float3 P) {
+    float x_sign = P.x < 0.0f ? -1.0f : 1.0f;
+
+    float4 f = sphere_pair(P, to_float3(0.09054f, -0.06191f, 0.7222f), 0.1924f, 0.2536f, 0.2769f); // body rear
+    f = blend_sphere_pair(f, P, to_float3(0.2373f, -0.3205f, 0.3429f), -0.00176f, 0.1056f, 0.4102f, 0.6691f, 0.2359f); // body mid lower
+    f = blend_sphere_pair(f, P, to_float3(-0.05041f, 0.1178f, 0.1419f), 0.167f, 0.05f, 0.125f, 0.7952f, 0.1992f); // body mid upper
+    f = blend_sphere(f, P, to_float3(0, 0.00405f, 0.04695f), 0.1007f, 0.1422f, 0.59f); // chest
+    f = blend_sphere(f, P, to_float3(0, 0.4546f, -0.2041f), 0.2553f, 0.1301f, 0.23f); // head mid
+    f = blend_sphere_pair(f, P, to_float3(0.09402f, 0.651f, -0.408f), 0.1293f, 0.1836f, 0.23f, 0.15f, 0.22f); // head top front
+    f = blend_sphere(f, P, to_float3(0, 0.7061f, -0.1507f), 0.01744f, 0.2003f, 0.2578f); // head top back
+    f = blend_smax(f, sdf_halfspace(P, to_float3(0, 0.1445f, -0.9895f), 0.5541f), 0.1367f, 0.2176f); // plane that flattens the face
+    f = blend_sphere_pair(f, P, to_float3(0.1866f, 0.274f, -0.5157f), 0.08283f, 0.4182f, 0.1252f, 0.7553f, 0.1632f); // head front
+    f = blend_sphere(f, P, to_float3(0, 0.2919f, -0.49f), 0.08861f, 0.2059f, 0.2794f); // nose middle
+    f = blend_sphere(f, P, to_float3(0, -0.2878f, 0.4162f), 0.221f, 0.05f, 0.125f); // udder
+    f = blend_sphere_pair(f, P, to_float3(0.2352f, -0.454f, 0.8239f), 0.01743f, 0.1009f, 0.18f, 0.8526f, 0.1563f); // back leg top
+    f = blend_sphere(f, P, to_float3(0.2f * x_sign, -0.6063f, 0.791f), 0.1235f, 0.1626f, 0.22f); // back leg bottom
+    f = blend_sphere_pair(f, P, to_float3(0.212f, -0.221f, 0.004702f), 0.003749f, 0.3448f, 0.29f, 0.6583f, 0.2142f); // front leg top
+    f = blend_sphere_pair(f, P, to_float3(0.2792f, -0.4758f, -0.009692f), 0.07521f, 0.2497f, 0.29f, 0.3503f, 0.22f); // front leg mid
+    f = blend_sphere(f, P, to_float3(0.2354f * x_sign, -0.5914f, 0.03336f), 0.1362f, 0.1222f, 0.22f); // front leg bottom
+    f = blend_sphere_pair(f, P, to_float3(0.1695f, 0.8511f, -0.2575f), -0.02274f, 0.3244f, 0.29f, 0.2488f, 0.2932f); // horn bottom
+    f = blend_sphere(f, P, to_float3(0.1819f * x_sign, 0.9089f, -0.2723f), 0.03964f, 0.1145f, 0.23f); // horn top
+
+    // tail
+    {
+        float4 f2 = sdf_sphere(P, to_float3(0, 0.05389f, 0.8271f), 0.2886f);
+        f2 = blend_sphere(f2, P, to_float3(0, -0.06683f, 1.023f), 0.02922f, 0.2081f, 0.1647f);
+        f2 = blend_smax(f2, sdf_halfspace(P, to_float3(0, -0.8901f, -0.4557f), -0.3423f), 0.03333f, 0.23f);
+        f2 = blend_smax(f2, sdf_halfspace(P, to_float3(0, 0.9783f, 0.2073f), 0.2804f), 0.4062f, 0.2252f);
+        f = blend_smin_f4(f, f2, 0.03f, 0.1662f);
+    }
+
+    // ears
+    {
+        float4 f2 = sdf_xcylinder(P, to_float2(0.6402f, -0.246f), 0.1085f);
+        f2 = blend_smax(f2, sdf_sphere(P, to_float3(0.242f * x_sign, 0.8241f, -0.133f), 0.2649f), 0.09f, 0.2078f);
+        f = blend_smin_f4(f, f2, 0.1105f, 0.179f);
+    }
+
+    // add some roundness to the ears
+    f = blend_sphere(f, P, to_float3(0.336f * x_sign, 0.6661f, -0.2359f), 0.01172f, 0.134f, 0.2554f);
+
+    return f;
+}
+
+//#else // use optimized version of Spot signed distance function
+
+// "SDF" function (bound) for the Spot approximation.
+// Returns gradient in xyz and distance (lower bound) in w
+// IMPORTANT: You need to normalize the gradient before using it as a normal vector.
+__DEVICE__ float4 spot_sdf_and_gradient_Optimize(float3 P, float SPOT_SDF_OPTIMIZED_SCALE) {
+    float x_sign = P.x < 0.0f ? -1.0f : 1.0f;
+
+    float4 f = sphere_pair(P, to_float3(0.09054f, -0.06191f, 0.7222f), 0.1924f, 0.2536f, 0.2769f); // body rear
+    f = blend_sphere_pair(f, P, to_float3(0.2373f, -0.3205f, 0.3429f), -0.00176f, 0.1056f, 0.4102f, 0.6691f, 0.2359f); // body mid lower
+    f = blend_sphere_pair(f, P, to_float3(-0.05041f, 0.1178f, 0.1419f), 0.167f, 0.05f, 0.125f, 0.7952f, 0.1992f); // body mid upper
+
+    if (P.y > -0.63f && P.y < 0.32f && P.z < 0.02f) {
+        f = blend_sphere(f, P, to_float3(0, 0.00405f, 0.04695f), 0.1007f, 0.1422f, 0.59f); // chest
+    }
+
+    if (P.y > -0.34f && P.z < 0.59f) {
+        f = blend_sphere(f, P, to_float3(0, 0.4546f, -0.2041f), 0.2553f, 0.1301f, 0.23f); // head mid
+    }
+
+    if (P.y > 0.13f && P.z < 0.05f) {
+        f = blend_sphere_pair(f, P, to_float3(0.09402f, 0.651f, -0.408f), 0.1293f, 0.1836f, 0.23f, 0.15f, 0.22f); // head top front
+    }
+
+    if (P.y > 0.57f && P.z < 0.6f && P.z > -0.37f) {
+        f = blend_sphere(f, P, to_float3(0, 0.7061f, -0.1507f), 0.01744f, 0.2003f, 0.2578f); // head top back
+    }
+
+    if (_fabs(P.x) < 0.41f && P.y > 0.20f && P.z < -0.33f) {
+        // plane that flattens the face
+        f = blend_smax(f, sdf_halfspace(P, to_float3(0, 0.1445f, -0.9895f), 0.5541f), 0.1367f, 0.2176f);
+    }
+
+    if (P.z < 0.6f) {
+        f = blend_sphere_pair(f, P, to_float3(0.1866f, 0.274f, -0.5157f), 0.08283f, 0.4182f, 0.1252f, 0.7553f, 0.1632f); // head front
+    }
+
+    if (_fabs(P.x) < 0.28f && P.y > -0.31f && P.y < 0.61f && P.z < -0.24f) {
+        f = blend_sphere(f, P, to_float3(0, 0.2919f, -0.49f), 0.08861f, 0.2059f, 0.2794f); // nose middle
+    }
+
+    if (_fabs(P.x) < 0.33f && P.y < -0.38f && P.z > -0.1f && P.z < 0.84f) {
+        f = blend_sphere(f, P, to_float3(0, -0.2878f, 0.4162f), 0.221f, 0.05f, 0.125f); // udder
+    }
+
+    if (P.y < 0.8f && P.z > -0.16f) {
+        f = blend_sphere_pair(f, P, to_float3(0.2352f, -0.454f, 0.8239f), 0.01743f, 0.1009f, 0.18f, 0.8526f, 0.1563f); // back leg top
+    }
+
+    if (P.y < -0.35f && P.z > 0.35f) {
+        f = blend_sphere(f, P, to_float3(0.2f * x_sign, -0.6063f, 0.791f), 0.1235f, 0.1626f, 0.22f); // back leg bottom
+    }
+
+    if (P.y < 0.54f && P.z < 0.75f) {
+        f = blend_sphere_pair(f, P, to_float3(0.212f, -0.221f, 0.004702f), 0.003749f, 0.3448f, 0.29f, 0.6583f, 0.2142f); // front leg top
+    }
+
+    if (P.y < -0.05f && P.z < 0.48f) {
+        f = blend_sphere_pair(f, P, to_float3(0.2792f, -0.4758f, -0.009692f), 0.07521f, 0.2497f, 0.29f, 0.3503f, 0.22f); // front leg mid
+    }
+
+    if (P.y < -0.38f && P.z < 0.43f) {
+        f = blend_sphere(f, P, to_float3(0.2354f * x_sign, -0.5914f, 0.03336f), 0.1362f, 0.1222f, 0.22f); // front leg bottom
+    }
+
+    if (P.y > 0.57f && P.z < 0.55f) {
+        f = blend_sphere_pair(f, P, to_float3(0.1695f, 0.8511f, -0.2575f), -0.02274f, 0.3244f, 0.29f, 0.2488f, 0.2932f); // horn bottom
+    }
+
+    if (P.y > 0.71f && P.z < 0.25f) {
+        f = blend_sphere(f, P, to_float3(0.1819f * x_sign, 0.9089f, -0.2723f), 0.03964f, 0.1145f, 0.23f); // horn top
+    }
+
+    // tail
+    if (P.y > -0.28f && P.y < 0.55f && P.z > 0.85f) {
+        float4 f2 = sdf_sphere(P, to_float3(0, 0.05389f, 0.8271f), 0.2886f);
+        f2 = blend_sphere(f2, P, to_float3(0, -0.06683f, 1.023f), 0.02922f, 0.2081f, 0.1647f);
+        f2 = blend_smax(f2, sdf_halfspace(P, to_float3(0, -0.8901f, -0.4557f), -0.3423f), 0.03333f, 0.23f);
+        f2 = blend_smax(f2, sdf_halfspace(P, to_float3(0, 0.9783f, 0.2073f), 0.2804f), 0.4062f, 0.2252f);
+        f = blend_smin_f4(f, f2, 0.03f, 0.1662f);
+    }
+
+    // ears
+    if (P.y > 0.37f && P.z < 0.51f) {
+        float4 f2 = sdf_xcylinder(P, to_float2(0.6402f, -0.246f), 0.1085f);
+        f2 = blend_smax(f2, sdf_sphere(P, to_float3(0.242f * x_sign, 0.8241f, -0.133f), 0.2649f), 0.09f, 0.2078f);
+        f = blend_smin_f4(f, f2, 0.1105f, 0.179f);
+
+        if (_fabs(P.x) > 0.2f && P.z < 0.1f && P.z > -0.46f) {
+            // add some roundness to the ears
+            f = blend_sphere(f, P, to_float3(0.336f * x_sign, 0.6661f, -0.2359f), 0.01172f, 0.134f, 0.2554f);
+        }
+    }
+
+    return SPOT_SDF_OPTIMIZED_SCALE * f;
+}
+//#endif // end of optimized version of Spot SDF
+
+
+// "texture" function for getting the color index at a particular point on the surface
+// If SPOT_TEXTURE_EDGE_GRADIENT is defined, this returns a signed distance and a gradient, and the returned index
+//      is the color for the interior of the shape
+// Otherwise, it returns the color index for the point
+
+__DEVICE__ int spot_get_color_index(float3 P, bool NoSpots
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT
+        , out float4 *f_grad
+#endif
+        ) {
+
+#ifndef SPOT_TEXTURE_EDGE_GRADIENT
+    float4 f_grad;
+#endif
+
+    *f_grad = to_float4(1, 1, 1, -1e20f);
+
+    bool need_test_spots = false;
+
+    if (P.y < -0.42f) { // udder and hooves
+        if (P.y > -0.49f) { // udder
+            // Using a simple ellipse here, because using the correct projected shape would require a
+            //    closer fit for the 3D surface (and it isn't very visible)
+            float2 q = swi2(P,x,z) - to_float2(0, 0.41f);
+
+            (*f_grad).w = dot(q,q*to_float2(24,18)) - 1.0f;
+
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT
+            swi3S(*f_grad,x,y,z, 2.0f*24.0f*q.x*to_float3(1,0,0) - 2.0f*18.0f*q.y*to_float3(0,0,1));
+            return SPOT_COLOR_UDDER;
+#else
+            return (*f_grad).w < 0.0f ? SPOT_COLOR_UDDER : SPOT_COLOR_BASE;
+#endif
+
+        } else if (P.z < 0.2f || P.z > 0.625f) { // hooves
+            if (P.y > -0.61f) {
+                // Y coordinate of the edge is a function of angle
+                // Equivalent to using circular harmonics, but expressed as polynomial in _sinf(angle) and _cosf(angle)
+
+                float4 param1 = to_float4_s(0.0f), param2 = to_float4_s(0.0f);
+                float3 param3  = to_float3_s(0.0f);
+                float2 offset = to_float2_s(0.0f);
+
+                if (P.z < 0.2f) {
+                    offset = to_float2(0.241f, 0.031f);
+
+                    if (P.x > 0.0f) { // front left
+                        param1 = to_float4(-0.5329f, 0.00237f, 0.00374f, -0.0132f);
+                        param2 = to_float4(-0.0189f, 0.0319f, 0.000537f, 0.00892f);
+                        param3 = to_float3(0.0145f, -0.0247f, 0.00303f);
+                    } else { // front right
+                        param1 = to_float4(-0.5489f, 0.0064f, -0.00334f, 0.00312f);
+                        param2 = to_float4(-0.0234f, -0.00934f, 0.0256f, 0.00612f);
+                        param3 = to_float3(0.0252f, -0.00074f, -0.0294f);
+                    }
+                } else {
+                    offset = to_float2(0.2014f, 0.7855f);
+
+                    if (P.x > 0.0f) { // back left
+                        param1 = to_float4(-0.5519f, -0.005f, -0.00348f, 0.000603f);
+                        param2 = to_float4(0.0129f, -0.00268f, 0.00723f, 0.0105f);
+                        param3 = to_float3(0.00688f, -0.00489f, -0.0136f);
+                    } else { // back right
+                        param1 = to_float4(-0.5499f, -0.0236f, -0.0044f, 0.0104f);
+                        param2 = to_float4(-0.0051f,  0.0343f, 0.00274f, -0.0112f);
+                        param3 = to_float3(0.0151f, -0.0178f, 0.00958f);
+                    }
+                }
+
+                float2 q = to_float2(_fabs(P.x) - offset.x, offset.y - P.z);
+
+                float s = 1.0f / length(q);
+
+                float x = s*q.x, y = s*q.y;
+
+                float A = param1.z + (param2.x + (param2.z + (param3.x + param3.z*x)*x)*x)*x; // factor out common expression
+
+                (*f_grad).w = (P.y - param1.x - A*y - (param1.y + (param1.w + (param2.y + (param2.w + param3.y*x)*x)*x)*x)*x);
+
+                float3 basis1 = to_float3(P.x < 0.0f ? -1.0f : 1.0f, 0.0f, 0.0f);
+                const float3 basis2 = to_float3(0, 0, 1);
+
+                float3 grad_d = s * (q.x*basis1 + q.y*basis2);
+                float3 grad_s = -s*s * grad_d;
+
+                float3 grad_x = q.x*grad_s + s*basis1;
+                float3 grad_y = q.y*grad_s + s*basis2;
+
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT
+                swi3S(*f_grad,x,y,z, (to_float3(0,1,0) - A*grad_y
+                      - (y*(param2.x + (2.0f*param2.z + (3.0f*param3.x + 4.0f*param3.z*x)*x)*x)
+                         + param1.y + (2.0f*param1.w + (3.0f*param2.y + (4.0f*param2.w + 5.0f*param3.y*x)*x)*x)*x)*grad_x));
+
+                return SPOT_COLOR_HOOVES;
+#else
+                return (*f_grad).w < 0.0f ? SPOT_COLOR_HOOVES : SPOT_COLOR_BASE;
+#endif
+            } else {
+                return SPOT_COLOR_HOOVES;
+            }
+        } else {
+            return SPOT_COLOR_UDDER;
+        }
+    } else if (P.z > -0.175f) {
+        need_test_spots = true;
+    } else if (P.y > 0.09f) { // head area
+        float k = P.y + P.z;
+
+        if (k < -0.055f) { // nose area
+            if (k < -0.2f) { // safe nose area
+                if (P.z < -0.62f) { // test if point is inside nostril shape
+                    // Use the same SDF-like code as is used for the spots, to reduce code size
+                    //      (even though it's overkill for these shapes)
+                    need_test_spots = true;
+                } else {
+                    return SPOT_COLOR_NOSE;
+                }
+            } else { // test edge of nose
+                // Rotate coordinate to new basis, then distance along one of the axes is a
+                //      function of angle around that axis
+                // Equivalent to using circular harmonics, but expressed as polynomial in _sinf(angle) and _cosf(angle)
+
+                const float3 basis1 = to_float3(1, 0, 0);
+                const float3 basis2 = to_float3(0, -0.7805f, 0.6251f);
+                const float3 basis3 = to_float3(0, 0.6251f, 0.7805f);
+
+                float2 q0 = to_float2(dot(P, basis1), dot(P, basis2) + 0.5194f);
+
+                float d = length(q0);
+                float s = 1.0f / d;
+
+                float y = s * q0.y;
+
+                (*f_grad).w = 0.1213f + dot(P, basis3) + y*(-0.0372f + y*(0.09249f
+                        + y*(0.1033f + y*(-0.007562f + y*(-0.1298f + y*(-0.217f + y*(0.07828f + y* 0.1697f)))))));
+
+                float3 grad_d = s * (q0.x*basis1 + q0.y*basis2);
+                float3 grad_s = -s*s * grad_d;
+                float3 grad_y = q0.y*grad_s + s*basis2;
+
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT
+                swi3S(*f_grad,x,y,z, (basis3 + (-0.0372f + (2.0f*0.09249f + (3.0f*0.1033f + (-4.0f*0.007562f
+                        + (-5.0f*0.1298f + (-6.0f*0.217f + (7.0f*0.07828f + 8.0f*0.1697f*y)*y)*y)*y)*y)*y)*y)*grad_y));
+
+                return SPOT_COLOR_NOSE;
+#else
+                return (*f_grad).w < 0.0f ? SPOT_COLOR_NOSE : SPOT_COLOR_BASE;
+#endif
+            }
+        } else {
+            if (k < 0.27f) {
+                // Eyes and eye highlights are ellipses projected onto surface
+                // Using arbitrary direction vectors for the major and minor axes of the ellipses.
+                // (i.e. the shape is the intersection of an arbitrary elliptical cylinder and the surface)
+                float3 coeff1, coeff2;
+                float2 offset;
+
+                if (P.x > 0.0f) {
+                    coeff1 = to_float3(0.506f, -9.169f, -3.82f);
+                    coeff2 = to_float3(22.4f, 0.82f, 1.003f);
+                    offset = to_float2(3.712f, -2.104f);
+                } else {
+                    coeff1 = to_float3(-0.662f, -9.22f, -3.813f);
+                    coeff2 = to_float3(22.8f, -0.939f, -1.684f);
+                    offset = to_float2(3.7407f, 2.217f);
+                }
+
+                float2 q = to_float2(dot(P, coeff1), dot(P, coeff2)) + offset;
+
+                (*f_grad).w = dot(q, q) - 1.0f;
+
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT
+                swi3S(*f_grad,x,y,z, 2.0f*(q.x*coeff1 + q.y*coeff2));
+
+                // (eye highlight is tested by a separate function)
+
+                return SPOT_COLOR_EYES;
+#else
+
+                if ((*f_grad).w > 0.0f) {
+                    return SPOT_COLOR_BASE;
+                } else {
+                    // Test if point is inside eye highlight (another ellipse)
+
+                    if (P.x > 0.0f) {
+                        coeff1 = to_float3(1.922f, -27.251f, -10.984f);
+                        coeff2 = to_float3(64.291f, 2.989f, 3.835f);
+                        offset = to_float2(12.3613f, -6.992f);
+                    } else {
+                        coeff1 = to_float3(-1.73f, -27.289f, -10.995f);
+                        coeff2 = to_float3(63.893f, -3.172f, -2.179f);
+                        offset = to_float2(12.3966f,  6.8743f);
+                    }
+
+                    q = to_float2(dot(P, coeff1), dot(P, coeff2)) + offset;
+
+                    return dot(q, q) < 1.0f ? SPOT_COLOR_EYE_HIGHLIGHT : SPOT_COLOR_EYES;
+                }
+#endif
+
+            } else if (k < 0.431f) { // shapes for underside of the ears
+                // Use the same SDF-like code as is used for the spots
+                need_test_spots = true;
+            } else { // horns
+                float3 bound_low = to_float3(0.07f, 0.76f, -0.34f);
+                float3 bound_high = to_float3(0.23f, 1.27f, -0.21f);
+
+                if (_fabs(P.x) > bound_low.x && _fabs(P.x) < bound_high.x && P.y > bound_low.y && P.y < bound_high.y && P.z > bound_low.z && P.z < bound_high.z) {
+                    // Rotate coordinate to new basis, then distance along one of the axes is a
+                    //      function of angle around that axis
+                    // Equivalent to using circular harmonics, but expressed as polynomial in _sinf(angle) and _cosf(angle)
+
+                    float4 param1;
+                    float3 param2;
+
+                    if (P.x > 0.0f) { // left
+                        param1 = to_float4(0.81487859f, -0.00204274f, -0.0014182f, 0.00378644f);
+                        param2 = to_float3(-0.00747133f, 0.00363717f, 0.00332907f);
+                    } else { // right
+                        param1 = to_float4(8.14601653e-01, -3.32745045e-03, -2.74123036e-04, 4.47013305e-03);
+                        param2 = to_float3(-8.06562515e-03, 3.30476957e-03, 3.64574427e-03);
+                    }
+
+                    float3 basis1 = to_float3(P.x < 0.0f ? 0.01294f : -0.01294f, -0.03464f, -0.9993f);
+                    float3 basis2 = to_float3(P.x < 0.0f ? -0.9368f : 0.9368f, -0.3499f, 0.0f);
+                    float3 basis3 = to_float3(P.x < 0.0f ? -0.3496f : 0.3496f, 0.9362f, -0.03697f);
+
+                    float3 q0 = to_float3(dot(basis1, P) - 0.244f, dot(basis2, P) + 0.14715f, dot(basis3, P));
+
+                    float s = 1.0f / length(swi2(q0,x,y));
+
+                    float x = s*q0.x, y = s*q0.y;
+
+                    float A = param1.z + (param2.x + param2.z*x)*x; // factor out shared expression
+
+                    (*f_grad).w = param1.x + (param1.y + (param1.w + param2.y*x)*x)*x + y*A - q0.z;
+
+                    // Removing brackets around s*s*s causes shader compilation time to jump by 8 or 9 seconds
+                    //      in WebGL on Windows (presumably due to a quirk in the fxc compiler)
+                    // Thanks to @Nguyen2007 on Shadertoy for suggesting I try the brackets!
+                    float3 grad_s = -(s*s*s)*(q0.x*basis1 + q0.y*basis2);
+
+                    float3 grad_x = q0.x*grad_s + s*basis1;
+                    float3 grad_y = q0.y*grad_s + s*basis2;
+
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT
+                    swi3S(*f_grad,x,y,z, ((param1.y + (2.0f*param1.w + 3.0f*param2.y*x)*x) * grad_x
+                                + grad_y*A
+                                + grad_x*y*(param2.x + 2.0f*param2.z*x)
+                                - basis3));
+
+                    return SPOT_COLOR_HORNS;
+#else
+                    return (*f_grad).w < 0.0f ? SPOT_COLOR_HORNS : SPOT_COLOR_BASE;
+#endif
+                }
+            }
+        }
+    }
+
+    if ( ! need_test_spots) {
+        return SPOT_COLOR_BASE;
+    } else {
+        int spotnum = 0;
+
+        if (P.z < -0.175f) { // ears or nostrils
+            if (P.z < -0.5f) { // nostrils
+                if (P.x > 0.0f) {
+                    spotnum = 11; // left side
+                } else {
+                    spotnum = 12; // right side
+                }
+            } else { // shapes for underside of ears
+                if (P.x > 0.0f) {
+                    spotnum = 9; // left side
+                } else {
+                    spotnum = 10; // right side
+                }
+            }
+        } else if (P.y + 0.5f*P.x > 0.51f) { // spot on back of head (spot10)
+            spotnum = 13;
+        } else if (P.x > 0.04f) { // left side
+            if (P.z < 0.42f) { // large spot on left side at front (spot1)
+                spotnum = 14;
+            } else { // four smaller spots
+                if (P.y < -0.01f) { // lower spots
+                    if (P.z < 0.75f) { // small spot on left side, lower down (spot9)
+                        spotnum = 1;
+                    } else { // medium-sized spot above left leg, at back (spot8)
+                        spotnum = 2;
+                    }
+                } else { // upper spots
+                    if (P.z < 0.625f) { // small spot on top of back, left side (spot7)
+                        spotnum = 3;
+                    } else { // medium-sized spot on rump, left side (spot2)
+                        spotnum = 4;
+                    }
+                }
+            }
+        } else { // right side
+            if (P.z < 0.15f) {
+                if (P.y > 0.22f) { // spot on back of head, lower down (spot11)
+                    spotnum = 5;
+                } else { // small spot on right side at front (spot4)
+                    spotnum = 6;
+                }
+            } else {
+                if (P.z < 0.72f) {
+                    // (The P.y > 0.225f cutoff is a bit iffy - may break if the surface gets distorted slightly)
+                    if (P.y > 0.225f) { // small spot on top near front, right side (spot5)
+                        spotnum = 7;
+                    } else { // large spot on right side (spot3)
+                        spotnum = 15;
+                    }
+                } else { // medium sized spot on rump, right side (spot6)
+                    spotnum = 8;
+                }
+            }
+        }
+
+        float3 planeN  = to_float3_s(0.0f); // normal for plane that we're projecting onto
+        float4 coeff1  = to_float4_s(0.0f), coeff2 = to_float4_s(0.0f); // coefficients for two ellipses
+        float2 center1 = to_float2_s(0.0f), center2 = to_float2_s(0.0f), mix1 = to_float2_s(0.0f); // centers for two ellipses, and blending parameters
+
+        switch (spotnum) {
+        case 1: // small spot on left side, lower down (spot9)
+            planeN = to_float3(0.98218f, 0.18135f, 0.04944f);
+            center1 = to_float2(-0.5091f, -0.1256f);
+            coeff1 = to_float4(0.1366f, -0.0554f, 0.2765f, 0);
+            center2 = to_float2(-0.6079f, -0.1809f);
+            coeff2 = to_float4(0.1101f, 0.0782f, 0.1274f, 0.000392f);
+            mix1 = to_float2(0.1385f, 0.23f);
+            break;
+        case 2: // medium-sized spot above left leg, at back (spot8)
+            planeN = to_float3(0.49251f, -0.02653f, 0.8699f);
+            center1 = to_float2(-0.2795f, -0.2912f);
+            coeff1 = to_float4(0.1927f, 0.0549f, 0.2137f, 0.0132f);
+            center2 = to_float2(-0.2137f, -0.1526f);
+            coeff2 = to_float4(0.0166f, 0.0376f, 0.135f, 0);
+            mix1 = to_float2(0.1597f, 0.23f);
+            break;
+        case 3: // small spot on top of back, left side (spot7)
+            planeN = to_float3(0.34075f, 0.92455f, 0.1706f);
+            center1 = to_float2(-0.4377f, -0.021f);
+            coeff1 = to_float4(0.1177f, 0.0134f, 0.0717f, 0.00951f);
+            center2 = to_float2(-0.5001f, -0.0418f);
+            coeff2 = to_float4(0.1044f, 0.00905f, 0.0619f, 0.00893f);
+            mix1 = to_float2(0.031f, 0.1399f);
+            break;
+        case 4: // medium-sized spot on rump, left side (spot2)
+            planeN = to_float3(0.58299f, 0.67175f, 0.45702f);
+            center1 = to_float2(-0.6881f, -0.0719f);
+            coeff1 = to_float4(0.1068f, -0.00287f, 0.0939f, 0.0304f);
+            center2 = to_float2(-0.5679f, -0.0973f);
+            coeff2 = to_float4(0.177f, 0.0107f, 0.1122f, 0.0362f);
+            mix1 = to_float2(0.0272f, 0.23f);
+            break;
+        case 5: // spot on back of head, lower down (spot11)
+            planeN = to_float3(-0.34182f, -0.02999f, 0.93929f);
+            center1 = to_float2(-0.0333f, -0.4003f);
+            coeff1 = to_float4(0.1088f, -0.00894f, 0.0596f, 0);
+            center2 = to_float2(0.1086f, -0.431f);
+            coeff2 = to_float4(0.0636f, -0.0315f, 0.0875f, 0.00565f);
+            mix1 = to_float2(0.1062f, 0.23f);
+            break;
+        case 6: // small spot on right side at front (spot4)
+            planeN = to_float3(-0.79750f, 0.34981f, -0.49156f);
+            center1 = to_float2(-0.1655f, 0.1492f);
+            coeff1 = to_float4(0.1504f, -0.0393f, 0.1478f, 0.00295f);
+            center2 = to_float2(-0.0621f, 0.0698f);
+            coeff2 = to_float4(0.0846f, -0.0602f, 0.0765f, 0.00239f);
+            mix1 = to_float2(0.1216f, 0.23f);
+            break;
+        case 7: // small spot on top near front, right side (spot5)
+            planeN = to_float3(-0.18690f, 0.91381f, 0.36059f);
+            center1 = to_float2(-0.2437f, 0.0116f);
+            coeff1 = to_float4(0.1528f, -0.0222f, 0.1654f, 0.0117f);
+            center2 = to_float2(-0.3009f, 0.0382f);
+            coeff2 = to_float4(0.1839f, 0.0582f, 0.1253f, 0.00967f);
+            mix1 = to_float2(0.0174f, 0.23f);
+            break;
+        case 8: // medium sized spot on rump, right side (spot6)
+            planeN = to_float3(-0.48805f, 0.7036f, 0.51649f);
+            center1 = to_float2(-0.5997f, 0.1152f);
+            coeff1 = to_float4(0.0874f, 0.0317f, 0.1675f, 0.0174f);
+            center2 = to_float2(-0.6598f, 0.0174f);
+            coeff2 = to_float4(0.0295f, 0.0411f, 0.1506f, 0);
+            mix1 = to_float2(0.0783f, 0.23f);
+            break;
+        case 9: // left ear
+            planeN = to_float3(0.40919f, -0.76636f, -0.49523f);
+            center1 = to_float2(0.3761f, 0.5658f);
+            coeff1 = to_float4(0.0511f, -0.0299f, 0.0297f, 0);
+            center2 = to_float2(0.4791f, 0.5732f);
+            coeff2 = to_float4(0.0414f, 0.0223f, 0.0595f, 0);
+            mix1 = to_float2(0.0574f, 0.28f);
+            break;
+        case 10: // right ear
+            planeN = to_float3(-0.40919f, -0.76636f, -0.49523f);
+            center1 = to_float2(0.4539f, -0.6041f);
+            coeff1 = to_float4(0.0624f, -0.0443f, 0.0659f, 0.00144f);
+            center2 = to_float2(0.372f, -0.5548f);
+            coeff2 = to_float4(0.1054f, 0.0375f, 0.1181f, 0);
+            mix1 = to_float2(0.0815f, 0.2735f);
+            break;
+        case 11: // left nostril
+            planeN = to_float3(0.12487f, 0.19492f, -0.97284f);
+            center1 = to_float2(-0.1959f, 0.0567f);
+            coeff1 = to_float4(0.0891f, -0.00184f, 0.0739f, 0.00699f);
+            center2 = to_float2(-0.2156f, 0.0443f);
+            coeff2 = to_float4(0.0574f, 0.00654f, 0.0429f, 0.00594f);
+            mix1 = to_float2(0.0145f, 0.2265f);
+            break;
+        case 12: // right nostril
+            planeN = to_float3(0.12487f, -0.19492f, 0.97284f);
+            center1 = to_float2(-0.2199f, 0.0413f);
+            coeff1 = to_float4(0.0908f, 0.0152f, 0.0779f, 0.00808f);
+            center2 = to_float2(-0.2005f, 0.0534f);
+            coeff2 = to_float4(0.1348f, 0.00514f, 0.1301f, 0.00916f);
+            mix1 = to_float2(0.0169f, 0.2296f);
+            break;
+        case 13: // spot on back of head (spot10)
+            planeN = to_float3(0.13503f, 0.54333f, 0.82859f);
+            center1 = to_float2(0.5555f, 0.2104f);
+            coeff1 = to_float4(0.00243f, 0.000921f, 0.00377f, 0);
+            center2 = to_float2(0.4877f, 0.0684f);
+            coeff2 = to_float4(0.1182f, 0.0541f, 0.1076f, 0.0126f);
+            mix1 = to_float2(0.01f, 0.1618f);
+            break;
+        case 14: // large spot on left side at front (spot1)
+            planeN = to_float3(0.88268f, 0.42832f, -0.19346f);
+            center1 = to_float2(-0.1894f, 0.1312f);
+            coeff1 = to_float4(0.3596f, -0.0157f, 0.4675f, 0.0626f);
+            center2 = to_float2(-0.0924f, -0.1426f);
+            coeff2 = to_float4(0.1051f, -0.00376f, 0.1909f, 0.0394f);
+            mix1 = to_float2(0.0511f, 0.2459f);
+            break;
+        case 15: // large spot on right side (spot3)
+            planeN = to_float3(-0.92778f, 0.36424f, 0.08099f);
+            center1 = to_float2(-0.322f, 0.2731f);
+            coeff1 = to_float4(0.5084f, 0.0655f, 0.567f, 0.0364f);
+            center2 = to_float2(-0.3653f, -0.0556f);
+            coeff2 = to_float4(0.2083f, 0.0297f, 0.1228f, 0.0205f);
+            mix1 = to_float2(0.0665f, 0.3003f);
+            break;
+        }
+
+        /*
+            Construct a tangent basis from the given normal vector and project P into that basis.
+            Simplification of this (assuming planeN is normalized):
+                T = -normalize(to_float3(0,0,1) - planeN.z*planeN); // orthonormalization of (0,0,-1) and planeN
+                B = cross(planeN, T);
+
+            putting T and B in a matrix for convenience
+        */
+        mat3 M = mul_mat3_f(transpose(to_mat3_f3(planeN.z*planeN - to_float3(0,0,1), to_float3(-planeN.y, planeN.x, 0), to_float3_s(0.0f))) , 1.0f/_sqrtf(1.0f - planeN.z*planeN.z));
+
+        float2 q = swi2(mul_mat3_f3(M , P),x,y);
+
+        float3 f_pd = blend_smin(ellipse_function(q - center1, swi3(coeff1,x,y,z), coeff1.w),
+                                 ellipse_function(q - center2, swi3(coeff2,x,y,z), coeff2.w), mix1.x, mix1.y);
+
+
+        // Blend with more ellipses if needed
+        if (spotnum >= 13) {
+            if (spotnum == 13) { // spot on back of head (spot10)
+                center1 = to_float2(0.4555f, 0.071f);
+                coeff1  = to_float4(0.036f, -0.00225f, 0.0288f, 0.00132f);
+                mix1    = to_float2(0.0657f, 0.1502f);
+            } else if (spotnum == 14) { // large spot on left side at front (spot1)
+                center1 = to_float2(-0.2102f, -0.00911f);
+                coeff1  = to_float4(0.0108f, 0.0135f, 0.0224f, 0);
+                mix1    = to_float2(0.0866f, 0.2428f);
+            } else if (spotnum == 15) { // large spot on right side (spot3)
+                center1 = to_float2(-0.2824f, 0.0226f);
+                coeff1  = to_float4(0.1228f, 0.072f, 0.1511f, 0.0216f);
+                mix1    = to_float2(0.0583f, 0.2272f);
+            }
+
+            float3 f_pd2 = ellipse_function(q - center1, swi3(coeff1,x,y,z), coeff1.w);
+
+            if (spotnum >= 14) {
+                float2 mix2;
+
+                if (spotnum == 14) { // large spot on left side at front (spot1)
+                    center1 = to_float2(-0.3441f, -0.2393f);
+                    coeff1  = to_float4(0.0392f, 0.0036f, 0.0383f, 0.0153f);
+                    mix2    = to_float2(0.0315f, 0.125f);
+                } else if (spotnum == 15) { // large spot on right side (spot3)
+                    center1 = to_float2(-0.4797f, 0.1786f);
+                    coeff1  = to_float4(0.1872f, 0.0276f, 0.5069f, 0.0762f);
+                    mix2    = to_float2(0.0651f, 0.2821f);
+                }
+
+                float3 f = ellipse_function(q - center1, swi3(coeff1,x,y,z), coeff1.w);
+
+                f_pd2 = blend_smin(f_pd2, f, mix2.x, mix2.y);
+            }
+
+            f_pd = blend_smin(f_pd, f_pd2, mix1.x, mix1.y);
+        }
+
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT
+
+        //f_grad = to_float4(swi2(swi2(f_pd,x,y) * M, f_pd.z); //??????????????????
+//        *f_grad = to_float4_f2f2(swi2(mul_f3_mat3(f_pd , M),x,y), to_float2(f_pd.z, 1.0f) );
+
+          *f_grad = to_float4_aw(mul_f3_mat3(f_pd , M), f_pd.z );
+#else
+        if (f_pd.z > 0.0f) { // point is not inside shape
+            return spotnum == 11 || spotnum == 12 ? SPOT_COLOR_NOSE : SPOT_COLOR_BASE;
+        }
+#endif
+
+        return spotnum == 9 || spotnum == 10 ? SPOT_COLOR_EARS : spotnum == 11 || spotnum == 12 ? SPOT_COLOR_NOSTRILS : NoSpots ? SPOT_COLOR_BASE : SPOT_COLOR_SPOTS;
+    }
+}
+
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT
+
+// Separate function for testing high highlight shape, so it can be antialiased when edge is close to eye edge
+__DEVICE__ float4 spot_get_eye_highlight_grad(float3 P) {
+    float3 coeff1 = to_float3_s(0.0f), coeff2 = to_float3_s(0.0f);
+    float2 offset = to_float2_s(0.0f);
+
+    if (P.x > 0.0f) {
+        coeff1 = to_float3(1.922f, -27.251f, -10.984f);
+        coeff2 = to_float3(64.291f, 2.989f, 3.835f);
+        offset = to_float2(12.3613f, -6.992f);
+    } else {
+        coeff1 = to_float3(-1.73f, -27.289f, -10.995f);
+        coeff2 = to_float3(63.893f, -3.172f, -2.179f);
+        offset = to_float2(12.3966f,  6.8743f);
+    }
+
+    float2 q = to_float2(dot(P, coeff1), dot(P, coeff2)) + offset;
+
+    return to_float4_aw(2.0f*(q.x*coeff1 + q.y*coeff2), dot(q, q) - 1.0f);
+}
+
+#endif
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Picture' to iChannel0
+
+/*
+License for source code (see below for information about output):
+
+Copyright (c) 2026 Kaia Vintr
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------
+
+The above license and copyright applies to the source code only, not to the
+output of the code. The code defines a 3D "virtual object" (mathematical
+implicit surface, with color defined at each point on the surface). The intent
+is that this virtual object should be closely similar to the "Spot" model,
+which was created by Keenan Crane and released into the public domain (defined
+by Catmull-Clark control points and an SVG file). The virtual object defined by
+the code is a modification of that original creative work and is also hereby
+released into the public domain. This virtual object (whether rendered as a
+static or moving image, or output as data such as a mesh, point cloud, or
+texture) may be incorporated into new creative works (including works with a
+different license or copyright) without restriction.
+
+The original Spot model can be found here:
+https://www.cs.cmu.edu/~kmcrane/Projects/ModelRepository/
+Keenan Crane has stated that acknowledgement is appreciated but not required.
+
+Github repository for this code:
+https://github.com/kaiavintr/spot_approximation
+
+Please contact Kaia Vintr with questions regarding the code via:
+- comment on the Shadertoy shader here: https://www.shadertoy.com/view/t3tfD4
+- GitHub issue
+- Bluesky: https://bsky.app/profile/kaiavintr.bsky.social
+- Mastodon: https://mastodon.social/@kaiavintr
+
+*/
+
+/*
+    See Common for the shape approximation functions and related definitions.
+
+    This file contains the raymarching and rendering demo code only.
+
+*/
+
+
+// Uncomment one of these lines:
+//#define ray_march ray_march_simple
+#define ray_march ray_march_bisect
+
+// ray_march_simple may need many sphere tracing steps to remove visible artifacts near edges
+//const int RAY_MARCH_SIMPLE_MAX_ITERATIONS = 500;
+#define RAY_MARCH_SIMPLE_MAX_ITERATIONS  500
+
+// ray_march_bisect uses fewer iterations, but may step past some surface intersections near edges
+//   causing apparent shape to shrink slightly (depending on value of RAY_MARCH_BISECT_MIN_STEP).
+//const int RAY_MARCH_BISECT_MAX_ITERATIONS = 100;
+#define RAY_MARCH_BISECT_MAX_ITERATIONS  100
+
+// For simple ray marcher: stop ray marching if absolute value is less than this
+//const float RAY_MARCH_SIMPLE_SDF_THRESHOLD = 0.0001f;
+#define RAY_MARCH_SIMPLE_SDF_THRESHOLD  0.0001f
+
+// For simple ray marcher: if absolute value is less than this when iteration max is reached, treat as an intersection
+//const float RAY_MARCH_SIMPLE_SDF_THRESHOLD2 = 0.001f;
+#define RAY_MARCH_SIMPLE_SDF_THRESHOLD2 0.001f
+
+// For bisecting ray marcher: stop ray marching if absolute value is less than this (during initial phase before bisection)
+//const float RAY_MARCH_BISECT_SDF_THRESHOLD = 0.00005f;
+#define RAY_MARCH_BISECT_SDF_THRESHOLD  0.00005f
+
+// For bisecting ray marcher: stop bisecting if difference between upper and lower distance bounds is less than this
+//const float RAY_MARCH_BISECT_DISTANCE_THRESHOLD = 0.00002f;
+#define RAY_MARCH_BISECT_DISTANCE_THRESHOLD  0.00002f
+
+// For bisecting ray marcher: minimum step size when not yet bisecting
+// (larger value may cause it to skip over fine details or edges)
+//const float RAY_MARCH_BISECT_MIN_STEP = 0.01f;
+#define RAY_MARCH_BISECT_MIN_STEP  0.01f
+
+// For bisecting ray marcher: take this many steps before applying RAY_MARCH_BISECT_MIN_STEP
+//const int RAY_MARCH_BISECT_INITIAL_STEP_COUNT = 8;
+#define RAY_MARCH_BISECT_INITIAL_STEP_COUNT  8
+
+// Define this to scale up the step size in increments after RAY_MARCH_BISECT_INITIAL_STEP_COUNT reached
+// May be slightly slower, but gives more precise outline for nearest edge
+//  (will not help for later edges, if ray passes close to multiple edges)
+#define RAY_MARCH_BISECT_RAMP_UP_STEP
+
+// Multiplier to use if RAY_MARCH_BISECT_RAMP_UP_STEP is defined
+//const float RAY_MARCH_BISECT_RAMP_UP_MULT = 1.25f;
+#define RAY_MARCH_BISECT_RAMP_UP_MULT  1.25f
+
+
+
+// Set this to non-zero to show the approximate number of iterations used for each pixel
+//     red: 100 iterations or more
+//     yellow: 50 iterations or more
+//     green: 20 iterations or more
+//     cyan: 10 iterations or more
+//     blue: 5 iterations or more
+//     cow color: fewer than 5 iterations
+//#define SHOW_ITERATION_COUNT 0
+
+// If set to false, the model will initially be revolving, but will stop as soon as you click on the image.
+// If set to true, you will not be able to rotate manually.
+//const bool FORCE_TURNTABLE_MODE = false;
+//
+//const float TURNTABLE_SPEED1  = 1.0f/5.0f; // rotation speed
+//const float TURNTABLE_SPEED2  = 1.0f/15.0f; // speed of oscillation in secondary direction
+//const float TURNTABLE_DEPTH   = 0.3f; // how much the angle changes in the secondary direction
+//
+//const float CAMERA_SHIFT_Y    = 0.0f;
+//const float CAMERA_Z_DISTANCE = 4.5f;
+//const float VIEW_ANGLE_FACTOR = 2.0f;
+//
+//const float3 BACKGROUND_COLOR = {0.1f, 0.1f, 0.2f};
+
+// NOTE: If SPOT_TEXTURE_EDGE_GRADIENT is defined (in Common), the edges of the shapes in the texture will be antialiased
+
+#define PI  3.14159265f
+
+
+// AABB intersection implementation
+__DEVICE__ float2 vec2_sort(float2 v) {
+    return to_float2(_fminf(v.x, v.y), _fmaxf(v.x, v.y));
+}
+
+__DEVICE__ float2 slab_nearfar(float a, float b, float rV) {
+    return vec2_sort(rV * to_float2(a, b));
+}
+
+__DEVICE__ float2 intersect_box(float3 P1, float3 P2, float3 rV, float3 ray_O) {
+    P1 -= ray_O;
+    P2 -= ray_O;
+
+    float2 tx = slab_nearfar(P1.x, P2.x, rV.x);
+    float2 ty = slab_nearfar(P1.y, P2.y, rV.y);
+    float2 tz = slab_nearfar(P1.z, P2.z, rV.z);
+
+    return to_float2(_fmaxf(tx.x, _fmaxf(ty.x, tz.x)), _fminf(tx.y, _fminf(ty.y, tz.y)));
+}
+
+__DEVICE__ float2 spot_ray_bound_intersection(float3 ray_O, float3 V) {
+    const float3 SPOT_BOUNDING_BOX_LOW  = to_float3(-0.458f, -0.73f, -0.664f);
+    const float3 SPOT_BOUNDING_BOX_HIGH = to_float3(0.458f, 0.95f,  1.047f);
+    return intersect_box(SPOT_BOUNDING_BOX_LOW, SPOT_BOUNDING_BOX_HIGH, 1.0f/V, ray_O);
+}
+
+// Simple sphere tracing ray marcher
+__DEVICE__ float ray_march_simple(float3 ray_O, float3 V, out int *itr_count, bool SPOT_SDF_OPTIMIZED, float SPOT_SDF_OPTIMIZED_SCALE) {
+    float t=0.0f, t_max=0.0f;
+
+    {
+        float2 nearfar = spot_ray_bound_intersection(ray_O, V);
+
+        t = _fmaxf(nearfar.x, 0.0f);
+        t_max = nearfar.y;
+
+        if (t >= t_max) {
+            *itr_count = 0;
+            return 1e20f;
+        }
+    }
+
+    // "_fminf(0, iFrame)" is just to prevent loop unrolling by the compiler
+    int itr_max = 0 + RAY_MARCH_SIMPLE_MAX_ITERATIONS;
+
+    for (int itr=0; itr < itr_max; itr++) {
+        if (t > t_max) {
+            *itr_count = itr;
+            return 1e20f;
+        }
+
+        float d = SPOT_SDF_OPTIMIZED ? spot_sdf_and_gradient_Optimize(ray_O + t*V, SPOT_SDF_OPTIMIZED_SCALE).w : spot_sdf_and_gradient(ray_O + t*V).w;
+
+        if (d < RAY_MARCH_SIMPLE_SDF_THRESHOLD || (d < RAY_MARCH_SIMPLE_SDF_THRESHOLD2 && itr == itr_max - 1)) {
+            *itr_count = itr;
+            return t;
+        }
+        t += d;
+    }
+
+    *itr_count = itr_max;
+
+    return 1e20f;
+}
+
+// Ray marcher that overshoots and then uses bisection to find intersection
+__DEVICE__ float ray_march_bisect(float3 ray_O, float3 V, out int *itr_count, bool SPOT_SDF_OPTIMIZED, float SPOT_SDF_OPTIMIZED_SCALE) {
+    float t = 0.0f, t_max = 0.0f;
+
+    {
+        float2 nearfar = spot_ray_bound_intersection(ray_O, V);
+
+        t = _fmaxf(nearfar.x, 0.0f);
+        t_max = nearfar.y;
+
+        if (t >= t_max) {
+            *itr_count = 0;
+            return 1e20f;
+        }
+    }
+
+    float t_bound_near = 0.0f;
+    float t_bound_far = 1e20f;
+
+    float f_near = 1e20f;
+    float f_far = -1e20f;
+
+#ifdef RAY_MARCH_BISECT_RAMP_UP_STEP
+    float step_multipler = RAY_MARCH_BISECT_RAMP_UP_MULT;
+#endif
+
+    // "_fminf(0, iFrame)" is just to prevent loop unrolling by the compiler
+    int itr_max = 0 + RAY_MARCH_BISECT_MAX_ITERATIONS;
+
+    for (int itr=0; itr < itr_max; itr++) {
+        float d = SPOT_SDF_OPTIMIZED ? spot_sdf_and_gradient_Optimize(ray_O + t*V, SPOT_SDF_OPTIMIZED_SCALE).w : spot_sdf_and_gradient(ray_O + t*V).w;
+
+        if (d > 0.0f) {
+            t_bound_near = t + d;
+            f_near = d;
+        } else {
+            t_bound_far = t + d;
+            f_far = d;
+        }
+
+        if (t_bound_far > 1e18f) {
+            if (_fabs(d) < RAY_MARCH_BISECT_SDF_THRESHOLD) {
+                *itr_count = itr;
+                return t;
+            }
+
+            if (itr > RAY_MARCH_BISECT_INITIAL_STEP_COUNT) {
+
+#ifndef RAY_MARCH_BISECT_RAMP_UP_STEP
+                d = _fmaxf(d, RAY_MARCH_BISECT_MIN_STEP);
+#else
+                d = _fmaxf(d,  _fminf(d*step_multipler, RAY_MARCH_BISECT_MIN_STEP));
+                step_multipler *= RAY_MARCH_BISECT_RAMP_UP_MULT;
+#endif
+            }
+
+            t += d;
+
+            if (t > t_max) {
+                *itr_count = itr;
+                return 1e20f;
+            }
+        } else {
+            t = 0.5f*(t_bound_near + t_bound_far);
+
+            if (t_bound_far - t_bound_near < RAY_MARCH_BISECT_DISTANCE_THRESHOLD
+
+                    // Not necessary, but seems to help:
+                    || (f_near - f_far) < RAY_MARCH_BISECT_DISTANCE_THRESHOLD
+
+                    ) {
+                *itr_count = itr;
+                return t;
+            }
+        }
+    }
+
+    *itr_count = itr_max;
+
+    if (t_bound_far < 1e18f) {
+        return t = 0.5f*(t_bound_near + t_bound_far);
+    } else {
+        return 1e20f;
+    }
+}
+
+// Note: this is a direct translation of the sRGB definition into branch-less GLSL (other people's code likely looks similar)
+__DEVICE__ float3 linear_to_srgb(float3 C) {
+    return mix_f3(12.92f*C, 1.055f*pow_f3(C, to_float3_s(1.0f/2.4f)) - 0.055f, step(to_float3_s(0.0031308f), C));
+}
+
+__DEVICE__ float rgb_to_luminance(float3 c) {
+    return dot(c, to_float3(0.2126f, 0.7152f, 0.0722f));
+}
+
+// Clip linear RGB colors, trying to preserve brightness and color
+// (not sure if this counts as "tone mapping")
+__DEVICE__ float3 gamut_clip(float3 rgb) {
+    float target_luminance = clamp(rgb_to_luminance(rgb), 0.0f, 1.0f);
+
+    rgb = _fmaxf(rgb, to_float3_s(0));
+
+    rgb /= _fmaxf(_fmaxf(_fmaxf(rgb.x, rgb.y), rgb.z), 1e-12f);
+
+    float L = _fminf(rgb_to_luminance(rgb), 0.9999f);
+
+    float a = target_luminance <= L ? target_luminance / L : (1.0f - target_luminance) / (1.0f - L);
+
+    return a*rgb + (target_luminance - a*L);
+}
+
+__DEVICE__ mat3 make_camera_rotation_matrix(float4 mouse4, float2 resolution, float iTime, bool FORCE_TURNTABLE_MODE, float TURNTABLE_SPEED1, float TURNTABLE_SPEED2, float TURNTABLE_DEPTH) {
+    float xz=0.0f, yz=0.0f;
+
+    if (FORCE_TURNTABLE_MODE || dot(abs_f4(mouse4), to_float4_s(1)) == 0.0f) {
+        xz = PI * 2.0f * fract(TURNTABLE_SPEED1 * iTime);
+        yz = -0.5f*PI * TURNTABLE_DEPTH * _sinf(PI * 2.0f * fract(TURNTABLE_SPEED2 * iTime));
+    } else {
+        float2 m = 2.0f * (swi2(mouse4,x,y) / resolution - 0.5f);
+
+        xz = PI * m.x + PI;
+        yz = 0.5f*PI * clamp(m.y, -0.999f, 0.999f);
+    }
+
+    float sin_xz = _sinf(xz);
+    float cos_xz = _cosf(xz);
+    float cos_yz = _cosf(yz);
+    float sin_yz = _sinf(yz);
+
+    // (normalize is for precision loss only)
+    return to_mat3_f3(
+                      normalize(to_float3(cos_xz, 0, -sin_xz)),
+                      normalize(to_float3(-sin_yz*sin_xz, cos_yz, -sin_yz*cos_xz)),
+                      normalize(to_float3(sin_xz*cos_yz, sin_yz, cos_xz*cos_yz)));
+}
+
+
+// Daylight lighting approximation for Lambertian surfaces
+// Loosely based on the "Autumn Park" HDRI environment map from Poly Haven
+__DEVICE__ float3 lighting_approx(float3 N) {
+
+    // sun should really be 34 degrees above horizon for this lighting approximation to make sense
+    float3 LIGHT_DIR = normalize(to_float3(_cosf(PI/180.0f*34.0f)*_cosf(PI/4.0f), _sinf(PI/180.0f*34.0f), _cosf(PI/180.0f*34.0f)*_sinf(PI/4.0f)));
+
+
+    float d = dot(N, LIGHT_DIR);
+
+    float3 c;
+
+    c.z = 0.5013f + (0.288f - 0.1489f*N.y)*N.y + (0.1818f + 0.1376f*d)*d;
+    c.y = -0.1509f + 0.8631f*c.z + (0.02822f*N.y - 0.1239f)*N.y;
+    c.x = -0.3396f*c.z + 1.0746f*c.y;
+
+    return c + _fmaxf(d, 0.0f) * to_float3(1.968f, 1.889f, 1.523f);
+}
+
+__DEVICE__ mat3 projection_Jacobian(float x, float y, float image_z) {
+    float s = 1.0f / _sqrtf(x*x + y*y + image_z*image_z);
+    float s3 = s*s*s;
+
+    return to_mat3(s - s3*x*x, -s3*x*y, -s3*x*image_z,
+                  -s3*x*y, s - s3*y*y, -s3*y*image_z,
+                   0.0f,0.0f,0.0f);
+}
+
+__KERNEL__ void SpotApproximationFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   NoSpots = params->NoSpots;
+  bool   FORCE_TURNTABLE_MODE = params->FORCE_TURNTABLE_MODE;
+  bool   SHOW_ITERATION_COUNT = params->SHOW_ITERATION_COUNT;
+  bool   Tex = params->Tex;
+  bool   SPOT_SDF_OPTIMIZED = params->SPOT_SDF_OPTIMIZED;
+  float4 ColorBKG = to_float4(params->ColorBKG[0], params->ColorBKG[1], params->ColorBKG[2], params->ColorBKG[3]);
+  float4 ColSpots = to_float4(params->ColSpots[0], params->ColSpots[1], params->ColSpots[2], params->ColSpots[3]);
+  float4 ColNose = to_float4(params->ColNose[0], params->ColNose[1], params->ColNose[2], params->ColNose[3]);
+  float4 ColHooves = to_float4(params->ColHooves[0], params->ColHooves[1], params->ColHooves[2], params->ColHooves[3]);
+  float4 ColHorns = to_float4(params->ColHorns[0], params->ColHorns[1], params->ColHorns[2], params->ColHorns[3]);
+  float4 ColEyes = to_float4(params->ColEyes[0], params->ColEyes[1], params->ColEyes[2], params->ColEyes[3]);
+  float4 ColEyesHL = to_float4(params->ColEyesHL[0], params->ColEyesHL[1], params->ColEyesHL[2], params->ColEyesHL[3]);
+  float4 ColEars = to_float4(params->ColEars[0], params->ColEars[1], params->ColEars[2], params->ColEars[3]);
+  float4 ColNoStrils = to_float4(params->ColNoStrils[0], params->ColNoStrils[1], params->ColNoStrils[2], params->ColNoStrils[3]);
+  float4 ColBase = to_float4(params->ColBase[0], params->ColBase[1], params->ColBase[2], params->ColBase[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  TURNTABLE_SPEED1 = params->TURNTABLE_SPEED1;
+  float  TURNTABLE_SPEED2 = params->TURNTABLE_SPEED2;
+  float  TURNTABLE_DEPTH = params->TURNTABLE_DEPTH;
+  float  CAMERA_SHIFT_Y = params->CAMERA_SHIFT_Y;
+  float  CAMERA_Z_DISTANCE = params->CAMERA_Z_DISTANCE;
+  float  VIEW_ANGLE_FACTOR = params->VIEW_ANGLE_FACTOR;
+  float  SPOT_SDF_OPTIMIZED_SCALE = params->SPOT_SDF_OPTIMIZED_SCALE;
+
+  // --------
+
+    float3 Colors[9] = {swi3(ColSpots,x,y,z), swi3(ColNose,x,y,z),swi3(ColHooves,x,y,z),swi3(ColHorns,x,y,z),swi3(ColEyes,x,y,z),swi3(ColEyesHL,x,y,z),swi3(ColEars,x,y,z),swi3(ColNoStrils,x,y,z),swi3(ColBase,x,y,z)};
+
+    float ratio = iResolution.y/iResolution.x;
+
+    fragCoord -= 0.5f*iResolution;
+
+    mat3 rotation_matrix = make_camera_rotation_matrix(iMouse, iResolution, iTime, FORCE_TURNTABLE_MODE, TURNTABLE_SPEED1, TURNTABLE_SPEED2, TURNTABLE_DEPTH);
+
+    float3 V = mul_mat3_f3(rotation_matrix , normalize(to_float3_aw(fragCoord, VIEW_ANGLE_FACTOR*iResolution.y)+to_float3_aw(ViewDXY*iResolution, ViewDZ*iResolution.y)));
+
+    float3 ray_O = mul_mat3_f3(rotation_matrix , (to_float3(0.5f, 0.5f, -CAMERA_Z_DISTANCE) - to_float3(0.5f, 0.5f, 0.25f)) + to_float3(0, CAMERA_SHIFT_Y, 0)+to_float3_aw(ViewXY, ViewZ));
+
+    mat3 J_proj = mul_mat3_mat3(rotation_matrix , projection_Jacobian(fragCoord.x, fragCoord.y, VIEW_ANGLE_FACTOR*iResolution.y));
+
+    float3 color = swi3(ColorBKG,x,y,z);//BACKGROUND_COLOR;
+
+    float Alpha = ColorBKG.w;
+
+    int itr_count = 0;
+    float t = ray_march_bisect(ray_O, V, &itr_count, SPOT_SDF_OPTIMIZED, SPOT_SDF_OPTIMIZED_SCALE); //!!!
+
+    if (t < 1e18f) {
+        float3 P = ray_O + t*V;
+
+#ifdef SPOT_TEXTURE_EDGE_GRADIENT // antialias the texture
+
+        float4 f_grad = to_float4_s(0.0f);
+
+        int color_index = spot_get_color_index(P, NoSpots, &f_grad);
+
+        float3 N;// = normalize(swi3(spot_sdf_and_gradient(P),x,y,z));
+        if (SPOT_SDF_OPTIMIZED) N = normalize(swi3(spot_sdf_and_gradient_Optimize(ray_O + t*V, SPOT_SDF_OPTIMIZED_SCALE),x,y,z));
+        else                    N = normalize(swi3(spot_sdf_and_gradient(P),x,y,z));
+
+
+        float3 light = 0.5f * lighting_approx(N) + 0.1f;
+
+        color = gamut_clip(light * spot_color_index_to_rgb(color_index, Colors, P, N, ratio, Tex, iChannel0));
+
+        if (f_grad.w > -1e18f) {
+            // Get combined Jacobian matrix (partial derivatives) for turning pixel coordinate into a camera ray,
+            //      then intersecting that ray with the plane that locally approximates the surface.
+            // This matrix allows computing the gradient of a function that defines the edge of the nearby shape
+            //      (like an SDF, but does not give the distance to the edge, and the magnitude of the gradient is arbitrary).
+            // The gradient will be used to estimate distance to edge, for anti-aliasing.
+            J_proj = mul_mat3_mat3((mat3_add_mat3(outerProduct(-t / dot(V, N) * V, N) , to_mat3_f(t))) , J_proj);
+
+            // At edges, where dot(V, N) > -1e-2, antialiasing is skipped
+            //  (could skip a lot of calculations, but it probably wouldn't help performance because it only affects a small number of pixels)
+
+            // Antialiasing is applied to clipped RGB values (but before conversion to sRGB)
+            //      otherwise there would likely still be aliasing in brightly lit areas
+
+            {
+                // not using the built-in GLSL function "sign" because it seems to cause weird problems in Windows
+                float d = dot(V, N) > -1e-2f ? (f_grad.w < 0.0f ? -1.0f : 1.0f) : f_grad.w / _fmaxf(1e-12f, length(mul_f3_mat3(swi3(f_grad,x,y,z) , J_proj)));
+
+                if (d > -0.7f) {
+                    color = _mix(color, gamut_clip(light * spot_color_index_to_rgb(color_index == SPOT_COLOR_NOSTRILS ? SPOT_COLOR_NOSE : SPOT_COLOR_BASE, Colors, P, N, ratio, Tex, iChannel0)),
+                                        smoothstep(-0.7f, 0.7f, d));
+                }
+            }
+
+            if (color_index == SPOT_COLOR_EYES) {
+                f_grad = spot_get_eye_highlight_grad(P);
+
+                float d = dot(V, N) > -1e-2f ? (f_grad.w < 0.0f ? -1.0f : 1.0f) : f_grad.w / _fmaxf(1e-12f, length(mul_f3_mat3(swi3(f_grad,x,y,z) , J_proj)));
+
+                if (d < 0.7f) {
+                    color = _mix(gamut_clip(light * spot_color_index_to_rgb(SPOT_COLOR_EYE_HIGHLIGHT, Colors, P, N, ratio, (bool)Tex, iChannel0)),
+                                      color,
+                                      smoothstep(-0.7f, 0.7f, d));
+                }
+            }
+
+        }
+
+#else // spot_get_color_index does not return distance and gradient, so don't antialias
+
+        int color_index = spot_get_color_index(P, NoSpots);
+
+        float3 N;// = normalize(swi3(spot_sdf_and_gradient(P),x,y,z));
+        if (SPOT_SDF_OPTIMIZED) N = normalize(swi3(spot_sdf_and_gradient_Optimize(ray_O + t*V, SPOT_SDF_OPTIMIZED_SCALE),x,y,z));
+        else                    N = normalize(swi3(spot_sdf_and_gradient(P),x,y,z));
+
+        color = gamut_clip((0.5f * lighting_approx(N) + 0.1f) * spot_color_index_to_rgb(color_index, Colors, P, N, ratio, (bool)Tex, iChannel0));
+
+#endif
+    Alpha = 1.0f;
+    }
+
+    if (SHOW_ITERATION_COUNT)
+    {
+        if (itr_count >= 100)     color = to_float3(1,0,0);
+        else if (itr_count >= 50) color = to_float3(1,1,0);
+        else if (itr_count >= 20) color = to_float3(0,1,0);
+        else if (itr_count >= 10) color = to_float3(0,1,1);
+        else if (itr_count >= 5)  color = to_float3(0,0,1);
+    }
+
+    fragColor = to_float4_aw(linear_to_srgb(color), Alpha);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InNoSpotsCheckbox = self:AddInput("NoSpots", "NoSpots", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InFORCE_TURNTABLE_MODECheckbox = self:AddInput("FORCE_TURNTABLE_MODE", "FORCE_TURNTABLE_MODE", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InSHOW_ITERATION_COUNTCheckbox = self:AddInput("SHOW_ITERATION_COUNT", "SHOW_ITERATION_COUNT", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTexCheckbox = self:AddInput("Tex", "Tex", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InSPOT_SDF_OPTIMIZEDCheckbox = self:AddInput("SPOT_SDF_OPTIMIZED", "SPOT_SDF_OPTIMIZED", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("ColorBKG", "ColorBKG", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBKG",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBKGColorR = self:AddInput("Red",   "ColorBKGRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColorBKGColorG = self:AddInput("Green", "ColorBKGGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InColorBKGColorB = self:AddInput("Blue",  "ColorBKGBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColorBKGColorA = self:AddInput("Alpha", "ColorBKGAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColSpots", "ColSpots", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColSpots",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColSpotsColorR = self:AddInput("Red",   "ColSpotsRed",   { INP_Default  = 0.051, IC_ControlID = 0, attrs})
+    InColSpotsColorG = self:AddInput("Green", "ColSpotsGreen", { INP_Default  = 0.051, IC_ControlID = 1, attrs})
+    InColSpotsColorB = self:AddInput("Blue",  "ColSpotsBlue",  { INP_Default  = 0.051, IC_ControlID = 2, attrs})
+    InColSpotsColorA = self:AddInput("Alpha", "ColSpotsAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColNose", "ColNose", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColNose",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColNoseColorR = self:AddInput("Red",   "ColNoseRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InColNoseColorG = self:AddInput("Green", "ColNoseGreen", { INP_Default  = 0.564, IC_ControlID = 1, attrs})
+    InColNoseColorB = self:AddInput("Blue",  "ColNoseBlue",  { INP_Default  = 0.387, IC_ControlID = 2, attrs})
+    InColNoseColorA = self:AddInput("Alpha", "ColNoseAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColHooves", "ColHooves", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColHooves",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColHoovesColorR = self:AddInput("Red",   "ColHoovesRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColHoovesColorG = self:AddInput("Green", "ColHoovesGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InColHoovesColorB = self:AddInput("Blue",  "ColHoovesBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColHoovesColorA = self:AddInput("Alpha", "ColHoovesAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColHorns", "ColHorns", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColHorns",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColHornsColorR = self:AddInput("Red",   "ColHornsRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColHornsColorG = self:AddInput("Green", "ColHornsGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InColHornsColorB = self:AddInput("Blue",  "ColHornsBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColHornsColorA = self:AddInput("Alpha", "ColHornsAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColEyes", "ColEyes", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColEyes",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColEyesColorR = self:AddInput("Red",   "ColEyesRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColEyesColorG = self:AddInput("Green", "ColEyesGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InColEyesColorB = self:AddInput("Blue",  "ColEyesBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColEyesColorA = self:AddInput("Alpha", "ColEyesAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColEyesHL", "ColEyesHL", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColEyesHL",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColEyesHLColorR = self:AddInput("Red",   "ColEyesHLRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColEyesHLColorG = self:AddInput("Green", "ColEyesHLGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InColEyesHLColorB = self:AddInput("Blue",  "ColEyesHLBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColEyesHLColorA = self:AddInput("Alpha", "ColEyesHLAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColEars", "ColEars", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColEars",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColEarsColorR = self:AddInput("Red",   "ColEarsRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColEarsColorG = self:AddInput("Green", "ColEarsGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InColEarsColorB = self:AddInput("Blue",  "ColEarsBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColEarsColorA = self:AddInput("Alpha", "ColEarsAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColNoStrils", "ColNoStrils", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColNoStrils",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColNoStrilsColorR = self:AddInput("Red",   "ColNoStrilsRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColNoStrilsColorG = self:AddInput("Green", "ColNoStrilsGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InColNoStrilsColorB = self:AddInput("Blue",  "ColNoStrilsBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColNoStrilsColorA = self:AddInput("Alpha", "ColNoStrilsAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBase", "ColBase", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBase",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBaseColorR = self:AddInput("Red",   "ColBaseRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColBaseColorG = self:AddInput("Green", "ColBaseGreen", { INP_Default  = 0.855, IC_ControlID = 1, attrs})
+    InColBaseColorB = self:AddInput("Blue",  "ColBaseBlue",  { INP_Default  = 0.792, IC_ControlID = 2, attrs})
+    InColBaseColorA = self:AddInput("Alpha", "ColBaseAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InTURNTABLE_SPEED1Slider = self:AddInput("TURNTABLE_SPEED1", "TURNTABLE_SPEED1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.2,
+      })
+
+  InTURNTABLE_SPEED2Slider = self:AddInput("TURNTABLE_SPEED2", "TURNTABLE_SPEED2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.0667,
+      })
+
+  InTURNTABLE_DEPTHSlider = self:AddInput("TURNTABLE_DEPTH", "TURNTABLE_DEPTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.3,
+      })
+
+  InCAMERA_SHIFT_YSlider = self:AddInput("CAMERA_SHIFT_Y", "CAMERA_SHIFT_Y", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -2.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.0,
+      })
+
+  InCAMERA_Z_DISTANCESlider = self:AddInput("CAMERA_Z_DISTANCE", "CAMERA_Z_DISTANCE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 4.5,
+      })
+
+  InVIEW_ANGLE_FACTORSlider = self:AddInput("VIEW_ANGLE_FACTOR", "VIEW_ANGLE_FACTOR", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 2.0,
+      })
+
+  InSPOT_SDF_OPTIMIZED_SCALESlider = self:AddInput("SPOT_SDF_OPTIMIZED_SCALE", "SPOT_SDF_OPTIMIZED_SCALE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 1.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "SpotApproximationFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.NoSpots = InNoSpotsCheckbox:GetValue(req).Value
+  params.FORCE_TURNTABLE_MODE = InFORCE_TURNTABLE_MODECheckbox:GetValue(req).Value
+  params.SHOW_ITERATION_COUNT = InSHOW_ITERATION_COUNTCheckbox:GetValue(req).Value
+  params.Tex = InTexCheckbox:GetValue(req).Value
+  params.SPOT_SDF_OPTIMIZED = InSPOT_SDF_OPTIMIZEDCheckbox:GetValue(req).Value
+  params.ColorBKG = {
+    InColorBKGColorR:GetValue(req).Value,
+    InColorBKGColorG:GetValue(req).Value,
+    InColorBKGColorB:GetValue(req).Value,InColorBKGColorA:GetValue(req).Value
+  }
+  params.ColSpots = {
+    InColSpotsColorR:GetValue(req).Value,
+    InColSpotsColorG:GetValue(req).Value,
+    InColSpotsColorB:GetValue(req).Value,InColSpotsColorA:GetValue(req).Value
+  }
+  params.ColNose = {
+    InColNoseColorR:GetValue(req).Value,
+    InColNoseColorG:GetValue(req).Value,
+    InColNoseColorB:GetValue(req).Value,InColNoseColorA:GetValue(req).Value
+  }
+  params.ColHooves = {
+    InColHoovesColorR:GetValue(req).Value,
+    InColHoovesColorG:GetValue(req).Value,
+    InColHoovesColorB:GetValue(req).Value,InColHoovesColorA:GetValue(req).Value
+  }
+  params.ColHorns = {
+    InColHornsColorR:GetValue(req).Value,
+    InColHornsColorG:GetValue(req).Value,
+    InColHornsColorB:GetValue(req).Value,InColHornsColorA:GetValue(req).Value
+  }
+  params.ColEyes = {
+    InColEyesColorR:GetValue(req).Value,
+    InColEyesColorG:GetValue(req).Value,
+    InColEyesColorB:GetValue(req).Value,InColEyesColorA:GetValue(req).Value
+  }
+  params.ColEyesHL = {
+    InColEyesHLColorR:GetValue(req).Value,
+    InColEyesHLColorG:GetValue(req).Value,
+    InColEyesHLColorB:GetValue(req).Value,InColEyesHLColorA:GetValue(req).Value
+  }
+  params.ColEars = {
+    InColEarsColorR:GetValue(req).Value,
+    InColEarsColorG:GetValue(req).Value,
+    InColEarsColorB:GetValue(req).Value,InColEarsColorA:GetValue(req).Value
+  }
+  params.ColNoStrils = {
+    InColNoStrilsColorR:GetValue(req).Value,
+    InColNoStrilsColorG:GetValue(req).Value,
+    InColNoStrilsColorB:GetValue(req).Value,InColNoStrilsColorA:GetValue(req).Value
+  }
+  params.ColBase = {
+    InColBaseColorR:GetValue(req).Value,
+    InColBaseColorG:GetValue(req).Value,
+    InColBaseColorB:GetValue(req).Value,InColBaseColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.TURNTABLE_SPEED1 = InTURNTABLE_SPEED1Slider:GetValue(req).Value
+  params.TURNTABLE_SPEED2 = InTURNTABLE_SPEED2Slider:GetValue(req).Value
+  params.TURNTABLE_DEPTH = InTURNTABLE_DEPTHSlider:GetValue(req).Value
+  params.CAMERA_SHIFT_Y = InCAMERA_SHIFT_YSlider:GetValue(req).Value
+  params.CAMERA_Z_DISTANCE = InCAMERA_Z_DISTANCESlider:GetValue(req).Value
+  params.VIEW_ANGLE_FACTOR = InVIEW_ANGLE_FACTORSlider:GetValue(req).Value
+  params.SPOT_SDF_OPTIMIZED_SCALE = InSPOT_SDF_OPTIMIZED_SCALESlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+-- */
