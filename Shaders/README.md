@@ -34,10 +34,10 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 [Cartoon: La Linea Episode 10
 ](Misc/CartoonLaLineaEpisode10.md) by [Espeset](https://www.shadertoy.com/user/Espeset)
 
-#### Current Shader of the Week (21th of August 2026):
+#### Current Shader of the Week (3th of September 2026):
 
-[![Glass Origin](ShaderOfTheWeek/GlassOrigin.gif)](ShaderOfTheWeek/GlassOrigin.md) <br>
-[Glass Origin](ShaderOfTheWeek/GlassOrigin.md) by [Frostbyte_](https://www.shadertoy.com/user/Frostbyte_)
+[![Graphic Design Experiment 17](ShaderOfTheWeek/GraphicDesignExperiment17.gif)](ShaderOfTheWeek/GraphicDesignExperiment17.md) <br>
+[Graphic Design Experiment 17](ShaderOfTheWeek/GraphicDesignExperiment17.md) by [yasuo](https://www.shadertoy.com/user/yasuo)
 
 
 
