@@ -1,0 +1,772 @@
+--[[--/*
+
+  RainbowSpaghetti.fuse
+
+  Based on https://www.shadertoy.com/view/lsjGRV a WebGL shader created by mattz.
+  Converted to DCTL and embeddet into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  bool   Cell_Grid;
+  float  Axis_X;
+  float  Axis_Y;
+  float  Axis_Z;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+// 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+#if 1
+  #if defined(DEVICE_IS_METAL)
+    #define USE_NATIVE_METAL_IMPL   1
+  #elif defined(DEVICE_IS_CUDA)
+    #define USE_NATIVE_CUDA_IMPL    1
+  #elif defined(DEVICE_IS_OPENCL)
+    #define USE_NATIVE_OPENCL_IMPL  1
+  #endif
+#endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+  #define swi3(A,a,b,c)   (A).a##b##c
+#else
+  #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+#endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+  
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f( float a ) { return mat3(a,a,a,a,a,a,a,a,a); }
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f( float  a )
+  {
+    mat3 t;
+    t.r0.x = t.r0.y = t.r0.z = t.r1.x = t.r1.y = t.r1.z = t.r2.x = t.r2.y = t.r2.z = a;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+
+#endif // end of mat3 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat4 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float4x4 mat4;
+  
+  __DEVICE__ inline mat4 to_mat4_f4( float4 a, float4 b, float4 c, float4 d ) { return mat4(a,b,c,d); }
+
+#else
+
+  typedef struct { float4 r0; float4 r1; float4 r2; float4 r3; } mat4;
+  
+  __DEVICE__ inline mat4 to_mat4_f4( float4 A, float4 B, float4 C, float4 D)
+  {
+    mat4 _ret;
+    _ret.r0 = A;
+    _ret.r1 = B;
+    _ret.r2 = C;
+    _ret.r3 = D;
+    return _ret;
+  }
+
+
+#endif // end of mat3 implementation
+
+
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+
+
+  #define mod_f(a,b)  fmod((a),(b))
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+    #define mod_f(a,b) _fmod(a,b)
+
+  #else // Generic
+
+
+
+
+    #define fract(a) ((a)-_floor(a))
+    #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+    #define distance(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+  #endif
+
+#endif
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect 'Preset: Keyboard' to iChannel0
+
+
+// rainbow spaghetti by mattz
+//
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0f Unported License.
+// Some code from iq's raymarching primer: https://www.shadertoy.com/view/Xds3zN
+
+// const float i3 = 0.5773502691896258f;
+
+
+//const float trad = 0.06f;
+#define trad 0.06f
+
+#define VEL 0.2f*to_float3(1.0f, 1.0f, 0.0f)
+
+
+
+
+
+__DEVICE__ float hash(in float3 x) {
+  return fract(87.3f*dot(x, to_float3(0.1f, 0.9f, 0.7f)));
+}
+
+__DEVICE__ float line(in float3 p0, in float3 p1, in float3 p) {
+
+  const float lrad = 0.015f;
+
+  float3 dp0 = p-p0;
+  float3 d10 = p1-p0;
+
+  float u = clamp(dot(dp0, d10)/dot(d10, d10), -5.0f, 5.0f);
+  return distance(_mix(p0, p1, u), p)-0.5f*lrad;
+
+}
+
+__DEVICE__ float2 opU(float2 a, float2 b) {
+  return a.x < b.x ? a : b;
+}
+
+__DEVICE__ float hueOf(float3 pos) {
+  return _cosf( 2.0f*dot(2.0f*pos, to_float3(0.3f, 0.7f, 0.4f)) ) * 0.49f + 0.5f;
+}
+
+__DEVICE__ float3 round2(in float3 x, in float3 a) {
+  return 2.0f * _floor( 0.5f * (x + 1.0f - a) ) + a;
+}
+
+__DEVICE__ float4 pdist(float3 p, float3 q) {
+  float3 pq = p-q;
+  return to_float4_aw(q, dot(pq,pq));
+}
+
+__DEVICE__ float4 pselect(float4 a, float4 b) {
+  return a.w < b.w ? a : b;
+}
+
+__DEVICE__ float torus(in float3 a, in float3 b, in float3 pos) {
+  const float r = 0.40824829046386302f;
+
+  pos -= 0.5f*(a+b);
+  float3 n = normalize(b-a);
+  return distance(pos, r*normalize(pos - n*dot(n, pos))) - trad;
+}
+
+__DEVICE__ mat4 permute(float3 e, float3 f, float3 g, float3 h, float p) {
+  const float i = 0.3333333333333333f;
+  const float j = 0.6666666666666666f;
+
+  return (p < i ? to_mat4_f4(to_float4_aw(e,1.0f), to_float4_aw(f,1.0f), to_float4_aw(g, 1.0f), to_float4_aw(h, 1.0f)) :
+         (p < j ? to_mat4_f4(to_float4_aw(e,1.0f), to_float4_aw(g,1.0f), to_float4_aw(f, 1.0f), to_float4_aw(h, 1.0f)) :
+                  to_mat4_f4(to_float4_aw(e,1.0f), to_float4_aw(h,1.0f), to_float4_aw(f, 1.0f), to_float4_aw(g, 1.0f))));
+}
+
+__DEVICE__ float3 randomBasis(float p) {
+  const float i = 0.3333333333333333f;
+  const float j = 0.6666666666666666f;
+  return (p < i ? to_float3(1.0f, 0.0f, 0.0f) :
+      p < j ? to_float3(0.0f, 1.0f, 0.0f) :
+      to_float3(0.0f, 0.0f, 1.0f));
+}
+
+__DEVICE__ float3 randomPerp(float3 v, float p) {
+  return (v.x>0.0f ? (p < 0.5f ? to_float3(0.0f, 1.0f, 0.0f) : to_float3(0.0f, 0.0f, 1.0f)) :
+      v.y>0.0f ? (p < 0.5f ? to_float3(1.0f, 0.0f, 0.0f) : to_float3(0.0f, 0.0f, 1.0f)) :
+      (p < 0.5f ? to_float3(1.0f, 0.0f, 0.0f) : to_float3(0.0f, 1.0f, 0.0f)));
+}
+
+
+__DEVICE__ float2 map(in float3 pos,float iTime, bool showCellGrid) {
+
+  const float wrap = 64.0f;
+  const float i3 = 0.5773502691896258f;
+
+
+  float3 orig = pos;
+
+  pos = mod_f(pos + mod_f(iTime*VEL, wrap), wrap);
+
+  // a, b, c, d are octahedron centers
+  // d, e, f, g are tetrahedron vertices
+  float3 a = round2(pos, to_float3_s(1.0f));
+  float3 h = round2(pos, to_float3_s(0.0f));
+
+  float3 b = to_float3(a.x, h.y, h.z);
+  float3 c = to_float3(h.x, a.y, h.z);
+  float3 d = to_float3(h.x, h.y, a.z);
+
+  float3 e = to_float3(h.x, a.y, a.z);
+  float3 f = to_float3(a.x, h.y, a.z);
+  float3 g = to_float3(a.x, a.y, h.z);
+
+  // o is the closest octahedron center
+  float3 o = swi3(pselect(pselect(pdist(pos, a), pdist(pos, b)),
+             pselect(pdist(pos, c), pdist(pos, d))),x,y,z);
+
+  // t is the closest tetrahedron center
+  float3 t = _floor(pos) + 0.5f;
+
+  // normal points towards o
+  // so bd is positive inside octahedron, negative inside tetrahedron
+  float bd = dot(pos - swi3(o,x,y,z), (swi3(o,x,y,z)-swi3(t,x,y,z))*2.0f*i3) + i3;
+
+  mat4 m = permute(e,f,g,h,hash(mod_f(t, wrap)));
+
+  
+#if defined(USE_NATIVE_METAL_IMPL)
+  float t1 = torus(m[0].xyz, m[1].xyz, pos);
+  float t2 = torus(m[2].xyz, m[3].xyz, pos);
+#else  
+  float t1 = torus(swi3(m.r0,x,y,z), swi3(m.r1,x,y,z), pos);
+  float t2 = torus(swi3(m.r2,x,y,z), swi3(m.r3,x,y,z), pos);
+#endif
+
+  float p = hash(mod_f(o, wrap));
+  float3 b1 = randomBasis(fract(85.17f*p));
+  float3 b2 = randomPerp(b1, fract(63.61f*p+4.2f));
+  float3 b3 = randomPerp(b1, fract(43.79f*p+8.3f));
+
+  float3 po = pos-o;
+
+  float o1 = torus( b1,  b2, po);
+  float o2 = torus( b1, -b2, po);
+  float o3 = torus(-b1,  b3, po);
+  float o4 = torus(-b1, -b3, po);
+
+  float2 noodle = to_float2(_fminf(_fmaxf(bd, _fminf(t1,t2)),
+                            _fmaxf(-bd, _fminf(_fminf(o1, o2), _fminf(o3, o4)))),
+                            hueOf(orig+0.5f*VEL*iTime));
+
+  if (showCellGrid) {
+
+    float dline = line(e, f, pos);
+    dline = _fminf(dline, line(e, g, pos));
+    dline = _fminf(dline, line(e, h, pos));
+    dline = _fminf(dline, line(f, g, pos));
+    dline = _fminf(dline, line(f, h, pos));
+    dline = _fminf(dline, line(g, h, pos));
+
+    float2 grid = to_float2(dline, 2.0f);
+
+    noodle.x += 0.1f*trad;
+    noodle.y = hash(mod_f(bd < 0.0f ? t : o, wrap));
+    return opU(grid, noodle);
+
+  } else {
+
+    return noodle;
+
+  }
+
+}
+
+__DEVICE__ float3 hue(float h) {
+
+  float3 c = mod_f(h*6.0f + to_float3(2, 0, 4), 6.0f);
+  return h > 1.0f ? to_float3_s(0.5f) : clamp(_fminf(c, -c+4.0f), 0.0f, 1.0f);
+}
+
+__DEVICE__ float2 castRay( in float3 ro, in float3 rd, in float maxd, float iTime, bool showCellGrid )
+{
+  const int rayiter = 60;
+
+  float precis = 0.0001f;
+  float h=precis*2.0f;
+  float t = 0.0f;
+  float m = -1.0f;
+  for( int i=0; i<rayiter; i++ )
+  {
+      if( _fabs(h)<precis||t>maxd ) continue;//break;
+      t += h;
+      float2 res = map( ro+rd*t ,iTime,showCellGrid);
+      h = res.x;
+      m = res.y;
+  }
+
+  return to_float2( t, m );
+}
+
+__DEVICE__ float3 calcNormal( in float3 pos, float iTime, bool showCellGrid )
+{
+  float3 eps = to_float3( 0.0001f, 0.0f, 0.0f );
+  float3 nor = to_float3(
+      map(pos+swi3(eps,x,y,y),iTime,showCellGrid).x - map(pos-swi3(eps,x,y,y),iTime,showCellGrid).x,
+      map(pos+swi3(eps,y,x,y),iTime,showCellGrid).x - map(pos-swi3(eps,y,x,y),iTime,showCellGrid).x,
+      map(pos+swi3(eps,y,y,x),iTime,showCellGrid).x - map(pos-swi3(eps,y,y,x),iTime,showCellGrid).x );
+  return normalize(nor);
+}
+
+__DEVICE__ float3 shade( in float3 ro, in float3 rd, float iTime,bool showCellGrid ) {
+  const float fogv = 0.025f;
+  const float dmax = 20.0f;
+  float3 L = normalize(to_float3(0.1f, 1.0f, 0.5f));
+
+  float2 tm = castRay(ro, rd, dmax,iTime,showCellGrid);
+  if (tm.y >= 0.0f) {
+    float3 n = calcNormal(ro + tm.x * rd,iTime,showCellGrid);
+    float fog = _expf(-tm.x*tm.x*fogv);
+    float3 color = hue(tm.y) * 0.55f + 0.45f;
+    float3 diffamb = (0.5f*dot(n,L)+0.5f) * color;
+    float3 R = 2.0f*n*dot(n,L)-L;
+    float spec = 0.2f*_powf(clamp(-dot(R, rd), 0.0f, 1.0f), 6.0f);
+    return fog * (diffamb + spec);
+  } else {
+    return to_float3_s(1.0f);
+  }
+}
+
+__KERNEL__ void RainbowSpaghettiFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Cell_Grid = params->Cell_Grid;
+  float  Axis_X = params->Axis_X;
+  float  Axis_Y = params->Axis_Y;
+  float  Axis_Z = params->Axis_Z;
+
+  // --------
+
+  const float3 axis = to_float3(Axis_X, Axis_Y, Axis_Z);//to_float3(1.0f, 1.0f, 1.0f);
+  const float3 tgt = to_float3(1.0f, 1.7f, 1.1f); // orignal
+  //const float3 tgt = to_float3(-0.0f, 0.3f, -0.15f); // variant
+  const float3 cpos = tgt + axis;
+
+  // const float3 vel = 0.2f*axis;
+
+  //const float KEY_G = 71.5f/256.0f;
+  //float showCellGrid = _tex2DVecN(iChannel0, KEY_G, 0.75f, 15).x;
+
+
+
+  const float yscl = 720.0f;
+  const float f = 900.0f;
+
+  float2 uv = (fragCoord - 0.5f*iResolution) * yscl / iResolution.y;
+
+  float3 up = to_float3(0.0f, 1.0f, 0.0f);
+
+  float3 rz = normalize(tgt - cpos);
+  float3 rx = normalize(cross(rz,up));
+  float3 ry = cross(rx,rz);
+
+  float thetax = 0.0f;
+  float thetay = 0.0f;
+
+  if (_fmaxf(iMouse.x, iMouse.y) > 20.0f) {
+    thetax = (iMouse.y - 0.5f*iResolution.y) * 3.14f/iResolution.y;
+    thetay = (iMouse.x - 0.5f*iResolution.x) * -6.28f/iResolution.x;
+  }
+
+  float cx = _cosf(thetax);
+  float sx = _sinf(thetax);
+  float cy = _cosf(thetay);
+  float sy = _sinf(thetay);
+
+  mat3 Rx = to_mat3(1.0f, 0.0f, 0.0f,
+                    0.0f, cx, sx,
+                    0.0f, -sx, cx);
+
+  mat3 Ry = to_mat3(cy, 0.0f, -sy,
+                    0.0f, 1.0f, 0.0f,
+                    sy, 0.0f, cy);
+
+  mat3 R  = to_mat3_f3(rx,ry,rz);
+  mat3 Rt = to_mat3(rx.x, ry.x, rz.x,
+                    rx.y, ry.y, rz.y,
+                    rx.z, ry.z, rz.z);
+
+  float3 rd = mul_mat3_f3(R,mul_mat3_f3(Rx, mul_mat3_f3(Ry,normalize(to_float3_aw(uv, f)))));
+
+  float3 ro = tgt + mul_mat3_f3(R,mul_mat3_f3(Rx,mul_mat3_f3(Ry,mul_mat3_f3(Rt,(cpos-tgt)))));
+
+  fragColor = to_float4_aw(shade(ro, rd,iTime,Cell_Grid), 1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false, LINK_Visible = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+
+  -- iMouse Controls
+
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InCell_GridCheckbox = self:AddInput("Cell_Grid", "Cell_Grid", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAxis_XSlider = self:AddInput("Axis_X", "Axis_X", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 3.0,
+      INP_Default        = 1.0,
+  })
+
+  InAxis_YSlider = self:AddInput("Axis_Y", "Axis_Y", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 3.0,
+      INP_Default        = 1.0,
+  })
+
+  InAxis_ZSlider = self:AddInput("Axis_Z", "Axis_Z", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 3.0,
+      INP_Default        = 1.0,
+  })
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "RainbowSpaghettiFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  -- iMouse
+
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.Cell_Grid = InCell_GridCheckbox:GetValue(req).Value
+  params.Axis_X = InAxis_XSlider:GetValue(req).Value
+  params.Axis_Y = InAxis_YSlider:GetValue(req).Value
+  params.Axis_Z = InAxis_ZSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddInput("iChannel0",iChannel0)
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+-- */
+
+

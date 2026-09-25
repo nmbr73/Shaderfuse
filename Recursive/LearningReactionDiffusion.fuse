@@ -1,0 +1,1081 @@
+--[[--/*
+
+    LearningReactionDiffusion.fuse
+
+    Based on https://www.shadertoy.com/view/WlSGzy Erstellt von TekF am 2019-06-09
+
+    V1 JiPi Recursiv BufferA Shadertoy
+	
+
+*/--]]--
+
+-- "LUA CODE..." /**
+
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+-- local dctlfuse_infourl     = 'https://www.steakunderwater.com/wesuckless/viewtopic.php?f=45&t=4597'
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  })
+
+-----------------------------------
+
+-- **/ "End of LUA CODE"
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel
+-- // ------------------------------------------------------------------------
+
+GlobalParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float scale;
+  float freq;
+  int width;
+  int height;
+  float itime;
+  int iframe;
+  bool startpicture;
+  bool noise;
+  bool reset;
+
+  bool tex;
+  bool randomcells;
+  float rc_freq;
+
+  float newcells[2];
+  bool drawcell;
+
+	int fead_kill;
+	float self;
+	float adjacent;
+	float diagonal;
+	float deltaT;
+	float diffusionrate[2];
+
+	float cmix[6];
+
+	float Blend01;
+	float Blend02;
+	float Blend03;
+	float gamma[3];
+
+]]
+
+----------------BufferA---------------
+-- source of kernel
+BufferAKernel =
+    [[
+// FragmentShader mit Zufallspunkten jede Sekunde
+//Buffer A
+__DEVICE__ float mod_f(float value, float divisor) {  return value - divisor * _floor(value / divisor);}
+__DEVICE__ float2 mix_f2(float2 v, float2 i, float2 m) {return to_float2(_mix(v.x,i.x,m.x),_mix(v.y,i.y,m.y));}	
+__DEVICE__ float fract_f(float A){return A - _floor(A);}
+__DEVICE__ float2 fract_f2(float2 A){return make_float2(A.x - _floor(A.x), A.y - _floor(A.y));}
+__DEVICE__ float3 fract_f3(float3 A){return make_float3(A.x - _floor(A.x), A.y - _floor(A.y), A.z - _floor(A.z));}
+
+#define swixy(V) to_float2((V).x,(V).y)
+#define swiyx(V) to_float2((V).y,(V).x)
+#define swixyx(V) to_float3((V).x,(V).y,(V).x)
+
+__DEVICE__ float rand(float2 n) {
+    return fract_f(_sinf(dot(n, make_float2(12.9898f,12.1414f))) * 83758.5453f);
+}
+
+//random value
+__DEVICE__ float2 N22(float2 p){
+    float3 a = fract_f3(swixyx(p)*make_float3(123.34f, 234.34f, 345.65f));
+    a += dot(a, a+34.45f);
+    return fract_f2(make_float2(a.x*a.y, a.y*a.z));
+}
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+  float C = cos(angle);
+  float S = sin(angle);
+
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+
+return uv;
+}
+
+//############################################################################################################################
+__KERNEL__ void BufferAKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height)
+  {
+
+    //-----------------------
+     float2 fragCoord = to_float2(x+0.5f, y+0.5f);
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime*params->freq;
+     float4 fragColour = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+    //ifloat2 coord = imake_float2(fragCoord);
+    float2 coord = fragCoord/iResolution;
+
+    //coord.x/=ratio;
+
+    //ifloat2 res = imake_float2(swixy(iResolution));
+    float2 res = iResolution;
+
+    #define Wrap(c) (mod_f(c+res.x,res.x))
+	#define WrapX(c) (mod_f(c+res.x,res.x))
+	#define WrapY(c) (mod_f(c+res.y,res.y))
+
+    fragColour = _tex2DVecN(iChannel0,coord.x,coord.y,15);
+
+    // reaction diffusion
+    // all of these params can vary with position/time/whatever to get nice effects
+    float laplaceSelf     = params->self;    //-1.0f; // -0.995;//
+    float laplaceAdjacent = params->adjacent;//0.2f;
+    float laplaceDiagonal = params->diagonal;//0.05f;
+    float deltaT          = params->deltaT;  //1.0f; // could use frame duration but I'm pretty sure the maths isn't really linear
+//    float2 diffusionRate = make_float2(1,0.5f);
+    float2 diffusionRate  = to_float2_v(params->diffusionrate);
+
+
+    float2 uv = fragCoord/iResolution;
+
+    // fead & kill rates
+	//if (params->fead_kill == 0)
+	float2 feedKill = mix_f2( make_float2(0,0.04f), make_float2(0.1f,0.07f), make_float2(0.23f,0.5f) ); // terminating worms
+
+// some pretty looking alternatives:
+    if  (params->fead_kill == 1)   feedKill = make_float2(0.033f,0.063f);// dividing bacteria (needs sharp shapes)
+	else if  (params->fead_kill == 2) feedKill = make_float2(0.023f,0.053f) + swiyx(uv)*make_float2(0,0.01f); // spots! (variations by adjusting kill)
+	else if  (params->fead_kill == 3) feedKill = make_float2(0.031f,0.058f); // fungal
+	else if  (params->fead_kill == 4) feedKill = make_float2(0.025f,0.055f); // angle sprouts
+	else if  (params->fead_kill == 5) feedKill = mix_f2( make_float2(0.02f,0.04f), make_float2(0.0f,0.05f), uv ); // weirdsmoke
+	else if  (params->fead_kill == 6) feedKill = mix_f2( make_float2(0.03f,0.03f), make_float2(0.0f,0.06f), swiyx(uv) ); // weirdsmoke
+	else if  (params->fead_kill == 7) feedKill = make_float2(uv.x*uv.y,uv.y)*make_float2(0.02f,0.06f); // smoke waves
+	else if  (params->fead_kill == 8) feedKill = make_float2(0.4f*0.6f,0.6f)*make_float2(0.02f,0.06f); // smooth arcs
+	else if  (params->fead_kill == 9) feedKill = make_float2(0.8f*0.6f,0.6f)*make_float2(0.02f,0.06f); // more spirally
+	else if  (params->fead_kill == 10) feedKill = make_float2(0.6f,0.65f)*make_float2(0.02f,0.06f); // cycling spirals
+	else if  (params->fead_kill == 11) feedKill = make_float2(0.75f,0.8f)*make_float2(0.02f,0.06f); // spiral puffs
+	else if  (params->fead_kill == 12) feedKill = make_float2(0.02f,0.055f); // plankton
+	else if  (params->fead_kill == 13) feedKill = mix_f2( make_float2(0,0.04f), make_float2(0.1f,0.07f), make_float2(0.21f,0.37f) );// constant growth, different features
+	else if  (params->fead_kill == 14) feedKill = mix_f2( make_float2(0,0.04f), make_float2(0.1f,0.07f), make_float2(0.2f,0.33f) ); // very active
+	else if  (params->fead_kill == 15) feedKill = mix_f2( make_float2(0,0.04f), make_float2(0.1f,0.07f), uv ); // map
+
+    float2 AB = swixy(fragColour);
+
+    // sample neighbouring pixels and apply weights to them
+	float3 d = make_float3(-1,0,1);
+
+    float2 laplace = laplaceSelf * AB;
+    laplace +=
+        (
+            swixy(_tex2DVecN(iChannel0,WrapX(coord.x+d.x/res.x),WrapY(coord.y+d.y/res.y),15)) +
+            swixy(_tex2DVecN(iChannel0,WrapX(coord.x+d.z/res.x),WrapY(coord.y+d.y/res.y),15)) +
+            swixy(_tex2DVecN(iChannel0,WrapX(coord.x+d.y/res.x),WrapY(coord.y+d.x/res.y),15)) +
+            swixy(_tex2DVecN(iChannel0,WrapX(coord.x+d.y/res.x),WrapY(coord.y+d.z/res.y),15))
+        )*laplaceAdjacent;
+    laplace +=
+        (
+            swixy(_tex2DVecN(iChannel0,WrapX(coord.x+d.x/res.x),WrapY(coord.y+d.x/res.y),15)) +
+            swixy(_tex2DVecN(iChannel0,WrapX(coord.x+d.x/res.x),WrapY(coord.y+d.z/res.y),15)) +
+            swixy(_tex2DVecN(iChannel0,WrapX(coord.x+d.z/res.x),WrapY(coord.y+d.x/res.y),15)) +
+            swixy(_tex2DVecN(iChannel0,WrapX(coord.x+d.z/res.x),WrapY(coord.y+d.z/res.y),15))
+        )*laplaceDiagonal;
+
+    float2 deltaAB = diffusionRate*laplace;
+    deltaAB += make_float2(-1,1)*AB.x*AB.y*AB.y;
+    deltaAB.x += feedKill.x*(1.0f-AB.x);
+    deltaAB.y -= (feedKill.y+feedKill.x)*AB.y;
+
+    AB += deltaT * deltaAB;
+
+    AB = clamp(AB,0.0f,1.0f);
+
+    //swixy(fragColour) = AB;
+	fragColour.x = AB.x;
+	fragColour.y = AB.y;
+	
+
+    if ( itime == 0 || (params->reset))
+    {
+        fragColour   = make_float4(1,0,0,1);
+        
+		if (params->tex)
+		{
+			fragColour.y = _powf(_tex2DVecN(iChannel1,uv.x,uv.y,15).x,params->gamma[0]);
+			fragColour.x = 1.0f-fragColour.y;
+		}
+		else		
+		{
+			fragColour.y = smoothstep(4.0f,3.0f,_fminf(_fminf(length(fragCoord-swixy(iResolution)*0.5f),length(fragCoord-swixy(iResolution)*make_float2(0.6f,0.3f))),length(fragCoord-swixy(iResolution)*0.45f) ));
+			fragColour.x = 1.0f-fragColour.y;
+
+			// fragColour.y += smoothstep(4.0f,3.0f, length(fragCoord-iResolution*make_float2(0.2f,0.2f)));
+
+			fragColour.x = 1.0f-fragColour.y;
+        }
+    }
+
+
+	if ( params->randomcells && fract_f(itime*params->rc_freq) == 0)
+	{
+//		float2 randpoint = N22(to_float2(itime,itime));
+		float2 randpoint = N22(to_float2(1.0,2.0*itime));
+//       	ragColour.y += smoothstep(4.0f,3.0f, length(fragCoord-iResolution*randpoint));
+       		//fragColour.y += smoothstep(4.0f,3.0f, length(fragCoord-iResolution*to_float2(0.3f,0.4f)));
+            // fragColour.y += smoothstep(4.0f,3.0f, length(fragCoord-iResolution*make_float2(0.2f,0.2f)));
+//	        fragColour.x = 1.0f-fragColour.y;
+
+      float2 col = _mix( swixy(fragColour), make_float2(0,1), smoothstep(4.0f,3.0f,length(fragCoord-iResolution*randpoint)) );
+	  fragColour = to_float4(col.x,col.y,fragColour.z,fragColour.w);
+		
+	}
+
+
+    // let mouse add more
+    if ( params->drawcell )
+    {
+      float2 col = _mix( swixy(fragColour), make_float2(0,1), smoothstep(4.0f,3.0f,length(to_float2_v(params->newcells)*iResolution-(fragCoord))) );
+	  fragColour = to_float4(col.x,col.y,fragColour.z,fragColour.w);
+    }
+
+
+    // Texturen einblenden
+    if (params->Blend01 > 0.0f) 
+	{
+		fragColour.y = _mix(fragColour.y,_powf(_tex2DVecN(iChannel1,uv.x,uv.y,15).x,params->gamma[0]),params->Blend01);
+		fragColour.x = 1.0f-fragColour.y;
+		
+	}
+	if (params->Blend02 > 0.0f) 
+	{
+		fragColour.y = _mix(fragColour.y,_powf(_tex2DVecN(iChannel2,uv.x,uv.y,15).x,params->gamma[1]),params->Blend02);
+		fragColour.x = 1.0f-fragColour.y;
+	}
+	if (params->Blend03 > 0.0f) 
+	{
+		fragColour.y = _mix(fragColour.y,_powf(_tex2DVecN(iChannel3,uv.x,uv.y,15).x,params->gamma[2]),params->Blend03);
+		fragColour.x = 1.0f-fragColour.y;
+	}
+
+    _tex2DVec4Write(dst, x, y, fragColour);
+  }
+}
+]]
+
+----------------Image---------------
+-- source of kernel
+ImageKernel =
+    [[
+	#define lpowf _powf
+	__DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
+	__DEVICE__ float fract_f(float A){return A - _floor(A);}	
+
+	#define swixyz(V) to_float3((V).x,(V).y,(V).z)
+	#define swixzy(V) to_float3((V).x,(V).z,(V).y)
+	#define swiyxz(V) to_float3((V).y,(V).x,(V).z)
+	#define swiyzx(V) to_float3((V).y,(V).z,(V).x)
+	#define swizxy(V) to_float3((V).z,(V).x,(V).y)
+	#define swizyx(V) to_float3((V).z,(V).y,(V).x)
+
+	__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect) {
+		float C = _cosf(angle);
+		float S = _sinf(angle);
+
+		uv -= center;
+		float x = uv.x;
+		uv.x = (x*aspect * C - uv.y * S);
+		uv.y = (x*aspect * S + uv.y * C);
+		uv += center;
+		return uv;
+	}
+
+
+//************************************************************************
+__KERNEL__ void ImageKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  if (x < params->width && y < params->height)
+  {
+
+    //-----------------------
+    float2 fragCoord = to_float2(x+0.5f, y+0.5f);
+    float2 iResolution = to_float2(params->width, params->height);
+    float ratio = (float)params->width/(float)params->height;
+    float itime=params->itime*params->freq;
+    float4 fragColor = to_float4_s(0.0f);
+    //-----------------------
+
+    // Standardparameter
+    float2 uv = fragCoord/iResolution;
+
+    uv-=0.5f;
+    uv *= params->scale;
+    uv -=  to_float2( (params->center[0]-1.0f), (params->center[1]-1.0f)); //*2.0f*ratio
+    
+    float2 pivot = to_float2(((params->pivot[0]+0.0f)*ratio),(params->pivot[1]+0.0f));
+	
+	float2 tmp = to_float2(pivot.x*params->scale*ratio,pivot.y*params->scale); //+params->debug
+	
+    uv = spin(to_float2(uv.x*ratio,uv.y), pivot*params->scale, params->angle, 1.0f);
+	uv.x/=ratio;
+
+	fragColor = _tex2DVecN(iChannel0,uv.x,uv.y,15);
+    fragColor.z = fract_f( 1.0001f-fragColor.x-fragColor.y );
+
+    // map to firey colours
+    fragColor = to_float4_aw(_mix( _mix( to_float3_s(0), make_float3(1,0,0), 1.0f-fragColor.x ), make_float3(1,1,0), fragColor.y ),1.0f);
+
+#define Variante1
+#ifdef Variante1
+    fragColor = to_float4_aw(_mix(_mix(_mix(_mix(_mix(swixyz(fragColor),swixzy(fragColor),params->cmix[0]),
+                                                  	  swiyxz(fragColor),params->cmix[1]),
+													  swiyzx(fragColor),params->cmix[2]),
+													  swizxy(fragColor),params->cmix[3]),
+	                                                  swizyx(fragColor),params->cmix[4]),
+							                          1.0f);
+#else
+
+    float3 col1 = _mix(swixyz(fragColor),swixzy(fragColor),params->cmix[0]);
+    float3 col2 = _mix(swiyxz(fragColor),swiyzx(fragColor),params->cmix[1]);
+	float3 col3 = _mix(swizxy(fragColor),swizyx(fragColor),params->cmix[2]);
+
+    //float3 col4 = _mix(col1,col2,params->cmix[3]);
+	//float3 col5 = _mix(col1,col3,params->cmix[4]);
+	//float3 col6 = _mix(col2,col3,params->cmix[5]);
+	float3 col4 = _mix(col1,col2,params->cmix[3]);
+	
+	fragColor   = to_float4_aw(_mix(col4,col3,params->cmix[4]),1.0f);
+#endif
+
+    fragColor = to_float4_aw(pow_f3( swixyz(fragColor), to_float3_s(1.0f/2.2f) ),1.0f);
+	
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+-- "LUA CODE..." /**
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+	IC_Visible          = true,
+  })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "true",
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+	IC_Visible          = true,
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+	IC_Visible          = true,
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+  })
+
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+	IC_Visible          = true,
+  })
+
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true,
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+	--IC_Visible          = false,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+	IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+  })
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+	IC_Visible          = false,
+    INP_External       = false,
+    INP_Passive        = true,
+	IC_Visible         = true,
+  })
+
+
+  Reset = self:AddInput("Reset", "_Reset", {
+    INPID_InputControl  = "ButtonControl",
+	INP_DoNotifyChanged = true,
+    INP_External        = false,
+    IC_Visible          = true,
+    BTNCS_Execute       = "fusion.CacheManager:Purge()",
+  })
+
+  InResetclick = self:AddInput("Resetclick", "Resetclick", {
+    LINKID_DataType     = "Number",
+	--INPID_InputControl = "SliderControl",
+    INPID_InputControl  = "CheckboxControl",
+	INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = false,
+    INP_External        = false,
+  })
+
+  self:BeginControlNest("Parameter", "Parameter", true, {})
+
+  InStartpicture = self:AddInput("Startpicture (Image1)", "Startpicture", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = false,
+    INP_External        = false,
+  })
+
+  InNoise = self:AddInput("Noise", "Noise", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = false,
+    INP_External        = false,
+  })
+
+  --------------------------------------------
+  InRandomCells = self:AddInput("Random Cells", "RandomCells", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "CheckboxControl",
+		INP_Integer = false,
+		INP_Default = 0,
+		ICD_Width = 1,
+		INP_DoNotifyChanged = true,
+	}) 
+  InRC_Frequency = self:AddInput("Random Cells Frequency", "RC_Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 10.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+  })
+
+
+  InDrawCell = self:AddInput("Draw Cell", "DrawCell", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "CheckboxControl",
+		INP_Integer = false,
+		INP_Default = 0,
+		ICD_Width = 1,
+  })
+  
+  InNewCells = self:AddInput("New Cells","NewCells", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+	INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.5,
+    INP_DefaultY = 0.5,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+
+
+  InFead_Kill = self:AddInput("Fead & Kill", "Fead_Kill", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Original", },
+    { CCS_AddString = "Dividing", },
+    { CCS_AddString = "Spots", },
+    { CCS_AddString = "Fungal", },
+	{ CCS_AddString = "Angle Sprouts", },
+	{ CCS_AddString = "Weirdsmoke1", },
+	{ CCS_AddString = "Weirdsmoke2", },
+	{ CCS_AddString = "Smoke Waves", },
+	{ CCS_AddString = "Smooth Arcs", },
+	{ CCS_AddString = "More Spirally", },
+	{ CCS_AddString = "Cycling Spirals", },
+	{ CCS_AddString = "Spiral Puffs", },
+	{ CCS_AddString = "Plankton", },
+	{ CCS_AddString = "Constant Growth", },
+	{ CCS_AddString = "Very Active", },
+	{ CCS_AddString = "Map", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  Sep5 = self:AddInput("___________Laplace Parameter___________", "Separator5", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+	InSelf = self:AddInput("Self", "Self", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= -1.0,
+		INP_MinScale 		= -1.1,
+		INP_MaxScale 		= -0.9,
+	})
+
+	InAdjacent = self:AddInput("Adjacent", "Adjacent", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.2;
+		INP_MinScale 		= 0.1,
+		INP_MaxScale 		= 0.3,
+	})
+
+	InDiagonal = self:AddInput("Diagonal", "Diagonal", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.05,
+		INP_MinScale 		= 0.03,
+		INP_MaxScale 		= 0.08,
+	})
+
+	InDeltaT = self:AddInput("DeltaT", "DeltaT", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.3,
+	})
+
+	InDiffusionRate = self:AddInput("Diffusion Rate","DiffusionRate", {
+		LINKID_DataType = "Point",
+		INPID_InputControl = "OffsetControl",
+		INP_DoNotifyChanged = false,
+		INP_DefaultX = 1.0,
+		INP_DefaultY = 0.5,
+		XF_XAxis = -1,
+		XF_YAxis = -1,
+		XF_XSize = 1,
+		XF_YSize = 1,
+		XF_Angle = 0,
+		XF_EdgeMode = "Black"
+    })
+
+  Sep3 = self:AddInput("______________Colormixing______________", "Separator3", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+	InColormix1 = self:AddInput("Colormix 1", "Colormix1", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+	InColormix2 = self:AddInput("Colormix 2", "Colormix2", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+	InColormix3 = self:AddInput("Colormix 3", "Colormix3", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+	InColormix4 = self:AddInput("Colormix 4", "Colormix4", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+	InColormix5 = self:AddInput("Colormix 5", "Colormix5", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+                       
+  Sep6 = self:AddInput("_____________Texturblending____________", "Separator6", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+	InBlend01 = self:AddInput("Blend01", "Blend01", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+	InGamma1 = self:AddInput("Gamma1", "Gamma1", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 2.2,
+		--IC_Visible          = false,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+		INP_Integer = false,
+	})
+	
+
+	InBlend02 = self:AddInput("Blend02", "Blend02", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+	InGamma2 = self:AddInput("Gamma2", "Gamma2", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 2.2,
+		--IC_Visible          = false,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+		INP_Integer = false,
+	})
+
+
+	InBlend03 = self:AddInput("Blend03", "Blend03", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+	InGamma3 = self:AddInput("Gamma3", "Gamma3", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 2.2,
+		--IC_Visible          = false,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+		INP_Integer = false,
+	})
+
+
+
+  Sep4 = self:AddInput(string.rep("_", 100), "Separator4", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+	
+
+
+  self:EndControlNest()
+
+  ShaderFuse.end_create()
+
+
+------------------- In/Out -----------------
+
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+	  LINK_Visible = false,
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  InImage2 = self:AddInput("Image1", "Image1", {
+    LINKID_DataType = "Image",
+    LINK_Main = 2,
+    INP_Required = false
+  })
+
+  InImage3 = self:AddInput("Image2", "Image2", {
+    LINKID_DataType = "Image",
+    LINK_Main = 3,
+    INP_Required = false
+  })
+
+  InImage4 = self:AddInput("Image3", "Image3", {
+    LINKID_DataType = "Image",
+    LINK_Main = 4,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+end
+
+function NotifyChanged(inp, param, time)
+	if inp ~= nil and param ~= nil then
+
+		if inp == InCenter then
+			-- the center moved, reposition the axis according to the current offset
+			nCenterX = param.X
+			nCenterY = param.Y
+
+			InPivot:SetAttrs({
+			PCD_OffsetX = nCenterX - 0.5,
+			PCD_OffsetY = nCenterY - 0.5,
+			})
+
+			InAngle:SetAttrs({
+			PCD_OffsetX = (nCenterX - 0.5)/100,
+			PCD_OffsetY = (nCenterY - 0.5)/100,
+			
+			InNewCells:SetAttrs({
+			PCD_OffsetX = nCenterX - 0.5,
+			PCD_OffsetY = nCenterY - 0.5,
+			})
+			
+			
+		    })
+		end
+		if inp == InWidgets then
+		  if param.Value == 1.0 then
+			 InCenter:SetAttrs({ PC_Visible = false })
+			 InAngle:SetAttrs({ PC_Visible = false })
+			 InPivot:SetAttrs({ PC_Visible = false })
+			 InScale:SetAttrs({ PC_Visible = false })
+		  else
+			 InCenter:SetAttrs({ PC_Visible = true })
+			 InAngle:SetAttrs({ PC_Visible = true })
+			 InPivot:SetAttrs({ PC_Visible = true })
+			 InScale:SetAttrs({ PC_Visible = true })
+		  end
+		end
+
+
+
+		if inp == Reset then
+		  if param.Value == 1 then
+			InResetclick:SetSource(Number(1),0,0)
+		  end
+			end
+
+		if inp == InLogoSw then  
+		  if param.Value == 1 then
+			 --authorlogo:SetAttrs({IC_Visible = true})
+		  else
+			 --authorlogo:SetAttrs({IC_Visible = false})
+		  end
+		end  
+
+	end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+	    IMG_DeferAlloc = false,
+        }
+
+Image_Buff_Global = Image(ImgAttrs_Global)
+
+
+timestamp = 0
+--------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle  = -InAngle:GetValue(req).Value/360*3.1415*2
+    local scale  = InScale:GetValue(req).Value
+    local freq   = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    src1 = Image(imgattrs)
+    src1:Fill(p)
+
+    tex = false
+	  if (InImage2:GetValue(req) ~= nil) then
+         src2 = InImage2:GetValue(req)
+		 tex = true
+      else
+         src2 = Image(imgattrs)
+         src2:Fill(p)
+      end
+      if (InImage3:GetValue(req) ~= nil) then
+         src3 = InImage3:GetValue(req)
+      else
+         src3 = Image(imgattrs)
+         src3:Fill(p)
+      end
+      if (InImage4:GetValue(req) ~= nil) then
+         src4 = InImage4:GetValue(req)
+      else
+         src4 = Image(imgattrs)
+         src4:Fill(p)
+      end
+
+
+    local dstA = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+	local dstI = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+	if req:IsPreCalc() then
+		 --print("\n######################### Precalc ##############################\n")
+		 local out = Image({IMG_Like = dstI, IMG_NoData = true})
+		 OutImage:Set(req, out)
+		 return
+	end
+
+
+
+    -------------------------- BufferA-Kernel----------------------------------------
+    local nodeName = self.Name
+    BufferAKernel = string.gsub(BufferAKernel, "BufferAKernel", nodeName)
+    nodeA = DVIPComputeNode(req, nodeName, BufferAKernel, "GlobalParams", GlobalParams)
+
+	--nodeA = DVIPComputeNode(req, "BufferAKernel", BufferAKernel, "GlobalParams", GlobalParams)
+
+	local params = {}
+	if not pcall(function ()
+
+		params.center = {center.X,center.Y}
+		params.scale = 1/scale
+		params.angle = angle
+		params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq = freq
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime = req.Time / framerate
+		params.iframe = req.Time
+		params.startpicture = InStartpicture:GetValue(req).Value
+		params.noise = InNoise:GetValue(req).Value
+		params.reset = InResetclick:GetValue(req).Value
+
+		params.tex 	        = tex
+		params.randomcells 	= InRandomCells:GetValue(req).Value
+		params.rc_freq  	= InRC_Frequency:GetValue(req).Value
+		params.drawcell 	= InDrawCell:GetValue(req).Value
+		params.newcells     = {InNewCells:GetValue(req).X,InNewCells:GetValue(req).Y}
+
+		params.fead_kill    = InFead_Kill:GetValue(req).Value
+		params.self         = InSelf:GetValue(req).Value
+		params.adjacent     = InAdjacent:GetValue(req).Value
+		params.diagonal  	= InDiagonal:GetValue(req).Value
+		params.deltaT  	    = InDeltaT:GetValue(req).Value
+		params.diffusionrate = {InDiffusionRate:GetValue(req).X,InDiffusionRate:GetValue(req).Y}
+
+		params.cmix         = {InColormix1:GetValue(req).Value,InColormix2:GetValue(req).Value,InColormix3:GetValue(req).Value,InColormix4:GetValue(req).Value,InColormix5:GetValue(req).Value}
+
+		params.Blend01  	= InBlend01:GetValue(req).Value
+		params.Blend02  	= InBlend02:GetValue(req).Value
+		params.Blend03  	= InBlend03:GetValue(req).Value
+		params.gamma  	    = {InGamma1:GetValue(req).Value,InGamma2:GetValue(req).Value,InGamma3:GetValue(req).Value}
+
+
+		nodeA:SetParamBlock(params)
+    end) then
+
+		params = nodeA:GetParamBlock(GlobalParams)
+
+		params.center = {center.X,center.Y}
+		params.scale = 1/scale
+		params.angle = angle
+		params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq = freq
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime = req.Time / framerate
+		params.iframe = req.Time
+		params.startpicture = InStartpicture:GetValue(req).Value
+		params.noise = InNoise:GetValue(req).Value
+		params.reset = InResetclick:GetValue(req).Value
+		
+		params.tex 	        = tex
+		params.randomcells 	= InRandomCells:GetValue(req).Value
+		params.rc_freq 	    = InRC_Frequency:GetValue(req).Value
+		params.drawcell 	= InDrawCell:GetValue(req).Value
+		params.newcells     = {InNewCells:GetValue(req).X,InNewCells:GetValue(req).Y}
+
+		params.fead_kill    = InFead_Kill:GetValue(req).Value
+		params.self         = InSelf:GetValue(req).Value
+		params.adjacent     = InAdjacent:GetValue(req).Value
+		params.diagonal  	= InDiagonal:GetValue(req).Value
+		params.deltaT  	    = InDeltaT:GetValue(req).Value
+		params.diffusionrate = {InDiffusionRate:GetValue(req).X,InDiffusionRate:GetValue(req).Y}
+
+		params.cmix         = {InColormix1:GetValue(req).Value,InColormix2:GetValue(req).Value,InColormix3:GetValue(req).Value,InColormix4:GetValue(req).Value,InColormix5:GetValue(req).Value}
+
+		params.Blend01  	= InBlend01:GetValue(req).Value
+		params.Blend02  	= InBlend02:GetValue(req).Value
+		params.Blend03  	= InBlend03:GetValue(req).Value
+		params.gamma  	    = {InGamma1:GetValue(req).Value,InGamma2:GetValue(req).Value,InGamma3:GetValue(req).Value}
+
+
+		nodeA:SetParamBlock(params)
+	end
+
+    nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+    nodeA:AddInput("iChannel0", Image_Buff_Global)
+	nodeA:AddInput("iChannel1", src2)
+	nodeA:AddInput("iChannel2", src3)
+	nodeA:AddInput("iChannel3", src4)
+    nodeA:AddOutput("dst", dstA)
+
+
+    local success = nodeA:RunSession(req)
+    if not success then
+        dstA = nil
+        dump(nodeA:GetErrorLog())
+    end
+
+    Image_Buff_Global = dstA
+
+
+    if (InResetclick:GetValue(req).Value == 1) then
+       InResetclick:SetSource(Number(0),0,0)
+    end
+
+  -------------------------- ImageKernel----------------------------------------
+  --node = DVIPComputeNode(req, "ImageKernel", ImageKernel, "GlobalParams", GlobalParams)
+
+  ImageKernel = string.gsub(ImageKernel, "ImageKernel", "IK"..nodeName)
+  node = DVIPComputeNode(req, "IK"..nodeName, ImageKernel, "GlobalParams", GlobalParams)
+
+
+  node:SetParamBlock(params)
+
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+  node:AddInput("iChannel0", Image_Buff_Global)
+  node:AddInput("iChannel1", src2)
+  node:AddInput("iChannel2", src3)
+  node:AddInput("iChannel3", src4)
+  node:AddOutput("dst", dstI)
+
+  local success = node:RunSession(req)
+  if not success then
+      dstI = nil
+      dump(node:GetErrorLog())
+  end
+
+  OutImage:Set(req, dstI)
+	collectgarbage();
+end
+
+
+-- **/ "End of LUA CODE"
+

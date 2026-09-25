@@ -1,0 +1,1545 @@
+--[[--/*
+
+  Goldeen.fuse
+
+  Based on https://www.shadertoy.com/view/sXfGWj a WebGL shader created by noztol.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  BasisColor[4];
+  float  BodyColor[4];
+  float  MouthColor[4];
+  float  HornColor[4];
+  float  Fin1Color[4];
+  float  Fin2Color[4];
+  float  Tail1Color[4];
+  float  Tail2Color[4];
+  float  OpenGapColor[4];
+  float  PupilColor[4];
+  float  IrisColor[4];
+  float  ScleraColor[4];
+  float  Background[4];
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  BubbleXY[2];
+  float  BubbleZ;
+  float  EyeXY[2];
+  float  EyeZ;
+  float  zoomFactor;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 B, mat3 A)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+ #define mod_f2(value,divisor) fmod(value,divisor)
+
+ #define sin_f2(i) sin(i)
+ #define sin_f3(i) sin(i)
+ #define sin_f4(i) sin(i)
+ #define cos_f2(i) cos(i)
+ #define abs_f3(a) _fabs(a)
+ #define sign_f(a) sign(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) _fmod(a,b)
+ #define mod_f2(value,divisor) _fmod(value,divisor)
+ #define sin_f2(i) sin(i)
+ #define sin_f3(i) sin(i)
+ #define sin_f4(i) sin(i)
+ #define cos_f2(i) cos(i)
+ #define abs_f3(a) fabs(a)
+ #define sign_f(a) sign(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define mod_f2(value,divisor) to_float2(mod_f((value).x, (divisor)),mod_f((value).y, (divisor)))
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define sin_f3(i) to_float3( _sinf((i).x), _sinf((i).y), _sinf((i).z))
+ #define sin_f4(i) to_float4( _sinf((i).x), _sinf((i).y), _sinf((i).z), _sinf((i).w))
+ #define cos_f2(i) to_float2( _cosf((i).x), _cosf((i).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+
+  #endif
+
+#endif
+
+#define to_float4_f2f2(A,B) to_float4((A).x,(A).y,(B).x,(B).y ) // or is there some to_float_..() for that?!? - No - that is missing in DCTL :-) but now we have "one"
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+
+#define idBody         1
+#define idVerticalFin  2
+#define idSideFin      3
+#define idTail         4
+#define idMouth        5
+#define idEye          6
+#define idBubble       7
+#define idHorn         8
+
+#define pi   3.14159f
+#define phi  1.618034f
+
+
+// Goldeen Shader
+// By Noztol
+
+__DEVICE__ float DistanceToSphere(float3 p, float r)
+{
+  return length(p) - r;
+}
+
+__DEVICE__ float DistanceToCylinder(float3 p, float r, float h)
+{
+  return _fmaxf(length(swi2(p,x,y)) - r, _fabs(p.z) - h);
+}
+
+__DEVICE__ float DistanceToTube(float3 p, float r, float w, float h)
+{
+  return _fmaxf(_fabs(length(swi2(p,x,y)) - r) - w, _fabs(p.z) - h);
+}
+
+__DEVICE__ float SmoothUnion(float a, float b, float r)
+{
+  float h = clamp(0.5f + 0.5f * (b - a) / r, 0.0f, 1.0f);
+  return _mix(b, a, h) - r * h * (1.0f - h);
+}
+
+__DEVICE__ float SmoothBump(float lo, float hi, float w, float x)
+{
+  return (1.0f - smoothstep(hi - w, hi + w, x)) * smoothstep(lo - w, lo + w, x);
+}
+
+__DEVICE__ float3 RotateToDirectionLimited(float3 v1, float3 v2, float3 p, float aMax)
+{
+  float3 n = normalize(cross(v1, v2));
+  float c = _fmaxf(dot(v1, v2), _cosf(aMax));
+  return c * p + _sqrtf(1.0f - c * c) * cross(n, p) + (1.0f - c) * dot(n, p) * n;
+}
+
+__DEVICE__ float2 Rotate2D(float2 q, float a)
+{
+  float2 cs = sin_f2(a + to_float2(0.5f * pi, 0.0f));
+  return to_float2(dot(q, to_float2(cs.x, -cs.y)), dot(swi2(q,y,x), cs));
+}
+
+__DEVICE__ float MinimumComponent(float3 p)
+{
+  return _fminf(p.x, _fminf(p.y, p.z));
+}
+
+__DEVICE__ float3 Hash3D(float p)
+{
+  const float hashMultiplier = 43758.54f;
+  return fract_f3(sin_f3(p + to_float3(37.0f, 39.0f, 41.0f)) * hashMultiplier);
+}
+
+
+__DEVICE__ float BubbleShapeSDF(float3 p, float3 pw, float3 vr, float currentTime)
+{
+  float3 b;
+  float s, t, r, d, a;
+  t = currentTime;
+  vr -= 0.5f;
+  s = _powf(fract(dot(vr, to_float3_s(1.0f)) * 100.0f), 4.0f);
+  pw.y += t;
+  pw = 7.0f * pw + 2.0f * pi * vr + to_float3(t, 0.0f, t);
+  d = _sinf((t + vr.y) * 3.0f * pi * (1.0f - s)) * 0.3f * vr.x * (1.0f - s);
+  a = vr.z * t;
+  b = d * to_float3(_cosf(a), 0.0f, _sinf(a));
+  r = 0.1f + s * (0.02f * dot(sin_f3(pw), to_float3_s(1.0f)) - 0.05f);
+  return 0.9f * DistanceToSphere(p - 0.1f * b, 0.1f * r);
+}
+
+__DEVICE__ float DistanceToBubbles(float3 p, float3 cellId, float currentTime, float3 bubbleGrid, float maxDistance)
+{
+  float3 vr = Hash3D(dot(cellId, to_float3(31.0f, 33.0f, 35.0f)));
+  return (vr.x * smoothstep(2.0f, 5.0f, length(cellId)) > 0.9f) ?
+          BubbleShapeSDF(p - bubbleGrid * (cellId + 0.5f), p, vr, currentTime) : maxDistance;
+}
+
+__DEVICE__ float RaycastBubbles(float3 ro, float3 rd, float currentTime, float3 bubbleGrid, float maxDistance)
+{
+  float3 p, cellId, s;
+  float hitDistance=0.0f, d=0.0f, eps=0.0f;
+  eps = 0.0005f;
+  if (rd.x == 0.0f) rd.x = 0.001f;
+  if (rd.y == 0.0f) rd.y = 0.001f;
+  if (rd.z == 0.0f) rd.z = 0.001f;
+
+  hitDistance = eps;
+  for (int j = 0; j < 120; j++) {
+    p = ro + hitDistance * rd;
+    p.y -= 0.4f * currentTime + 40.0f;
+    cellId = _floor(p / bubbleGrid);
+    d = DistanceToBubbles(p, cellId, currentTime, bubbleGrid, maxDistance);
+    s = (bubbleGrid * (cellId + step(to_float3_s(0.0f), rd)) - p) / rd;
+    d = _fminf(d, MinimumComponent(s) + eps);
+    if (d < eps || hitDistance > maxDistance) break;
+    hitDistance += d;
+  }
+  if (d >= eps) hitDistance = maxDistance;
+  return hitDistance;
+}
+
+__DEVICE__ float BubbleGridSDF(float3 p, float currentTime, float3 bubbleGrid, float maxDistance)
+{
+  return DistanceToBubbles(p, _floor(p / bubbleGrid), currentTime, bubbleGrid, maxDistance);
+}
+
+__DEVICE__ float3 CalculateBubbleNormal(float3 p, float currentTime, float3 bubbleGrid, float maxDistance)
+{
+  float4 v;
+  float2 e = to_float2(0.0001f, -0.0001f);
+  p.y -= 0.4f * currentTime + 40.0f;
+  v = to_float4(BubbleGridSDF(p + swi3(e,x,x,x), currentTime, bubbleGrid, maxDistance), BubbleGridSDF(p + swi3(e,x,y,y), currentTime, bubbleGrid, maxDistance), BubbleGridSDF(p + swi3(e,y,x,y), currentTime, bubbleGrid, maxDistance), BubbleGridSDF(p + swi3(e,y,y,x), currentTime, bubbleGrid, maxDistance));
+  return normalize(to_float3_s(v.x - v.y - v.z - v.w) + 2.0f * swi3(v,y,z,w));
+}
+
+__DEVICE__ float GoldeenBodySDF(float3 p, inout float3 *bodyDomain, float mouthShape)
+{
+  float3 q;
+  float db, dt;
+  *bodyDomain = p;
+  p.x *= 1.0f + 1.5f * (p.y + 0.2f) * (p.y + 0.2f);
+  swi2S(p,x,y, swi2(p,x,y) * (1.0f + 0.5f * smoothstep(0.0f, 0.5f, -p.z)));//!
+
+  q = (p - to_float3(0.0f, 0.2f, 0.5f * (p.y - 0.2f) - 0.14f)) * to_float3(1.4f, 1.7f, 0.6f);
+  dt = DistanceToSphere(q, 0.4f - 0.2f * smoothstep(0.0f, 1.5f, 1.3f - p.z));
+
+  q = p * to_float3(1.2f, 1.2f, 1.0f + 0.5f * smoothstep(0.0f, 0.5f, -p.y - p.z));
+  db = DistanceToSphere(q, 0.37f + smoothstep(0.0f, 1.7f, -p.z));
+
+  q = *bodyDomain;
+  swi2S(q,y,z, swi2(q,y,z) - to_float2(0.1f, 0.1f));
+  swi2S(q,x,y, swi2(q,x,y) * to_float2(0.5f, 1.0f) + to_float2(0.1f, -0.4f) * mouthShape);
+  db = _fmaxf(db, -DistanceToCylinder(q, 0.02f, 0.3f));
+
+  return SmoothUnion(db, dt, 0.05f);
+}
+
+__DEVICE__ float GoldeenMouthSDF(float3 p, float mouthShape)
+{
+  swi2S(p,y,z, swi2(p,y,z) - to_float2(0.1f, 0.34f - 2.0f * p.x * p.x));
+  swi2S(p,x,y, swi2(p,x,y) * to_float2(0.5f + 0.1f * mouthShape, 1.0f - 0.5f * mouthShape));
+  return DistanceToTube(p, 0.015f, 0.0015f, 0.03f);
+}
+
+__DEVICE__ float GoldeenHornSDF(float3 p)
+{
+  float3 q = p;
+  // Push the base deep into the forehead so it fully touches the head all the way around
+  swi2S(q,y,z, swi2(q,y,z) - to_float2(0.24f, 0.20f));
+  swi2S(q,y,z, Rotate2D(swi2(q,y,z), -0.7f)); // Tilt forward
+
+  float height = 0.35f;
+  float y = clamp(q.y, 0.0f, height);
+  // Base is wide, top is perfectly sharp (0.0f)
+  float radius = _mix(0.07f, 0.0f, y / height);
+
+  // Create a sharp cone segment without subtraction rounding
+  return _fmaxf(length(swi2(q,x,z)) - radius, _fmaxf(-q.y, q.y - height));
+}
+
+__DEVICE__ float GoldeenTailSDF(float3 p, float currentTime)
+{
+  float d, r, a;
+  swi2S(p,y,z, swi2(p,y,z) - to_float2(0.11f, -0.45f));
+  swi2S(p,x,z, Rotate2D(swi2(p,x,z), 0.5f * _cosf(2.0f * currentTime - 3.0f * p.y + 5.0f * p.z)));
+  a = 0.003f * _sinf(32.0f * _atan2f(p.y, p.z));
+  r = length(swi2(p,y,z));
+  d = _fminf(0.01f - 0.008f * smoothstep(0.15f, 0.25f, r) - _fabs(p.x - a * smoothstep(0.04f, 0.08f, r)),
+             0.6f - 0.05f * p.y - 0.01f * _cosf(a * 1024.0f) - r);
+  d = -SmoothUnion(_fabs(p.y) + 0.3f * p.z, SmoothUnion(-0.3f * _fabs(p.y) - p.z, d, 0.02f), 0.02f);
+  return d;
+}
+
+__DEVICE__ float GoldeenSideFinSDF(float3 p, float currentTime)
+{
+  float d, r, a, t, w;
+  t = 5.0f * currentTime + 0.2f * sign_f(p.x);
+  p.x = _fabs(p.x) - 0.26f;
+  swi2S(p,x,z, Rotate2D(swi2(p,x,z), 0.4f * pi));
+  w = 0.15f * (1.0f + 5.0f * length(p));
+  swi2S(p,y,z, Rotate2D(swi2(p,y,z), 0.2f + 0.5f * w * _cosf(t + 2.0f * _atan2f(p.x, -p.y)) - 0.5f * pi));
+  swi2S(p,x,z, Rotate2D(swi2(p,x,z), 1.2f + w * _sinf(t - w) - 0.5f * pi));
+  a = _atan2f(p.x, -p.y);
+  r = length(swi2(p,x,y));
+  d = _fminf(0.01f - 0.008f * smoothstep(0.2f, 0.3f, r) - _fabs(p.z + 0.002f * _sinf(32.0f * a) * smoothstep(0.05f, 0.08f, r)),
+             0.8f - 0.15f * smoothstep(1.0f, 3.0f, _fabs(a)) - 0.01f * _cosf(32.0f * a) - r);
+  d = -0.9f * SmoothUnion(-0.2f * p.x + p.y, SmoothUnion(p.x - 0.7f * p.y, d, 0.02f), 0.02f);
+  return d;
+}
+
+__DEVICE__ float GoldeenVerticalFinSDF(float3 p, float currentTime)
+{
+  float d, r, a, y;
+  p.y = _fabs(p.y) - 0.26f - 0.02f * sign_f(p.y);
+  p.z -= -0.1f;
+  y = smoothstep(0.0f, 0.2f, p.y);
+  p.z *= 1.0f - 0.3f * y * y;
+  a = -_cosf(4.0f * currentTime + 5.0f * (-p.y + p.z)) * (0.1f - 0.3f * p.z);
+  swi2S(p,x,z, Rotate2D(swi2(p,x,z), a));
+  swi2S(p,x,y, Rotate2D(swi2(p,x,y), a));
+  a = 0.0025f * _sinf(32.0f * _atan2f(p.y, p.z));
+  r = length(swi2(p,y,z));
+  d = _fminf(0.01f - 0.009f * smoothstep(0.1f, 0.2f, r) - _fabs(p.x + a * smoothstep(0.04f, 0.1f, r)),
+             0.22f - 0.015f * _cosf(512.0f * a) - r);
+  d = -SmoothUnion(p.y + 0.4f * p.z, SmoothUnion(-0.4f * p.y - p.z, d, 0.02f), 0.02f);
+  return d;
+}
+
+__DEVICE__ float GoldeenSDF(float3 p, float currentTime, inout int *currentObjectId, inout float3 *bodyDomain, float mouthShape, float3 eyePosition)
+{
+  float dMin, d, a, c;
+  c = _cosf(2.0f * currentTime);
+  a = -0.5f * smoothstep(-0.2f, 1.1f, -p.z) * c;
+  swi2S(p,x,z, Rotate2D(swi2(p,x,z), 0.1f * c + a));
+  swi2S(p,x,y, Rotate2D(swi2(p,x,y), 0.5f * a));
+
+  dMin = 0.3f * GoldeenBodySDF(p, bodyDomain, mouthShape);
+  *currentObjectId = idBody;
+
+  d = GoldeenMouthSDF(p, mouthShape);
+  if (_fabs(d) < dMin) *currentObjectId = idMouth;
+  dMin = SmoothUnion(dMin, d, 0.01f);
+
+  d = GoldeenHornSDF(p);
+  if (d < dMin) *currentObjectId = idHorn;
+  dMin = SmoothUnion(dMin, d, 0.04f); // Blends the base of the horn smoothly into the head
+
+  // 3-Tails implementation
+  float3 pT1 = p;
+  float3 pT2 = p; swi2S(pT2,x,y, Rotate2D(swi2(pT2,x,y), 0.3f));  swi2S(pT2,y,z, Rotate2D(swi2(pT2,y,z), -0.05f));
+  float3 pT3 = p; swi2S(pT3,x,y, Rotate2D(swi2(pT3,x,y), -0.3f)); swi2S(pT3,y,z, Rotate2D(swi2(pT3,y,z), -0.05f));
+  float dt0 = GoldeenTailSDF(pT1, currentTime);
+  float dt1 = GoldeenTailSDF(pT2, currentTime);
+  float dt2 = GoldeenTailSDF(pT3, currentTime);
+  d = 0.6f * SmoothUnion(dt0, SmoothUnion(dt1, dt2, 0.03f), 0.03f);
+
+  if (d < dMin) *currentObjectId = idTail;
+  dMin = SmoothUnion(dMin, d, 0.01f);
+
+  d = 0.7f * GoldeenSideFinSDF(p, currentTime);
+  if (d < dMin) *currentObjectId = idSideFin;
+  dMin = SmoothUnion(dMin, d, 0.01f);
+
+  d = 0.7f * GoldeenVerticalFinSDF(p, currentTime);
+  if (d < dMin) *currentObjectId = idVerticalFin;
+  dMin = SmoothUnion(dMin, d, 0.01f);
+
+  p.x = _fabs(p.x);
+  d = DistanceToSphere(p - eyePosition, 0.13f);
+  if (d < dMin) *currentObjectId = idEye;
+  dMin = SmoothUnion(dMin, d, 0.02f);
+
+  return dMin;
+}
+
+__DEVICE__ float RaycastGoldeen(float3 ro, float3 rd, float currentTime, inout int *currentObjectId, inout float3 *bodyDomain, float mouthShape, float maxDistance, float3 eyePosition)
+{
+  float d, h;
+  d = 0.0f;
+  for (int j = 0; j < 120; j++) {
+    h = GoldeenSDF(ro + d * rd, currentTime, currentObjectId, bodyDomain, mouthShape, eyePosition);
+    d += h;
+    if (h < 0.0005f || d > maxDistance) break;
+  }
+  return d;
+}
+
+__DEVICE__ float3 CalculateGoldeenNormal(float3 p, float currentTime, inout int *currentObjectId, inout float3 *bodyDomain, float mouthShape, float3 eyePosition)
+{
+  float4 v;
+  float2 e = to_float2(0.0001f, -0.0001f);
+  v = to_float4(GoldeenSDF(p + swi3(e,x,x,x), currentTime, currentObjectId, bodyDomain, mouthShape, eyePosition), GoldeenSDF(p + swi3(e,x,y,y), currentTime, currentObjectId, bodyDomain, mouthShape, eyePosition), GoldeenSDF(p + swi3(e,y,x,y), currentTime, currentObjectId, bodyDomain, mouthShape, eyePosition), GoldeenSDF(p + swi3(e,y,y,x), currentTime, currentObjectId, bodyDomain, mouthShape, eyePosition));
+  return normalize(to_float3_s(v.x - v.y - v.z - v.w) + 2.0f * swi3(v,y,z,w));
+}
+
+__DEVICE__ float CalculateGoldeenShadow(float3 ro, float3 rd, float currentTime, inout int *currentObjectId, inout float3 *bodyDomain, float mouthShape, float3 eyePosition)
+{
+  float sh, d, h;
+  sh = 1.0f;
+  d = 0.01f;
+  for (int j = 0; j < 30; j++) {
+    h = GoldeenSDF(ro + d * rd, currentTime, currentObjectId, bodyDomain, mouthShape, eyePosition);
+    sh = _fminf(sh, smoothstep(0.0f, 0.05f * d, h));
+    d += h;
+    if (sh < 0.05f) break;
+  }
+  return 0.7f + 0.3f * sh;
+}
+
+__DEVICE__ float GetTurbulentLight(float3 p, float3 n, float t)
+{
+  float4 b;
+  float2 q, qq;
+  float c, tt;
+  q = 2.0f * pi * mod_f2(to_float2(dot(swi3(p,y,z,x), n), dot(swi3(p,z,x,y), n)), 1.0f) - 256.0f;
+  t += 11.0f;
+  c = 0.0f;
+  qq = q;
+  for (float j = 1.0f; j <= 7.0f; j++) {
+    tt = t * (1.0f + 1.0f / j);
+    b = sin_f4(tt + to_float4_f2f2(-qq + to_float2(0.5f * pi, 0.0f), qq + to_float2(0.0f, 0.5f * pi)));
+    qq = q + tt + swi2(b,x,y) + swi2(b,z,w);
+    c += 1.0f / length(q / sin_f2(qq));
+  }
+  return clamp(_powf(_fabs(1.25f - _fabs(0.167f + 40.0f * c)), 8.0f), 0.0f, 1.0f);
+}
+
+__DEVICE__ float GetWaterShadow(float3 rd, float currentTime)
+{
+  float2 p;
+  float t, h;
+  p = 20.0f * swi2(rd,x,z) / rd.y;
+  t = currentTime * 2.0f;
+  h = _sinf(p.x * 2.0f + t * 0.77f + _sinf(p.y * 0.73f - t)) +
+      _sinf(p.y * 0.81f - t * 0.89f + _sinf(p.x * 0.33f + t * 0.34f)) +
+      (_sinf(p.x * 1.43f - t) + _sinf(p.y * 0.63f + t)) * 0.5f;
+  h *= smoothstep(0.5f, 1.0f, rd.y) * 0.04f;
+  return h;
+}
+
+__DEVICE__ float3 GetBackgroundColor(float3 rd, float currentTime, float3 Color)
+{
+  float t, gd, b;
+  t = 4.0f * currentTime;
+  b = dot(to_float2(_atan2f(rd.x, rd.z), 0.5f * pi - _acosf(rd.y)), to_float2(2.0f, _sinf(rd.x)));
+  gd = clamp(_sinf(5.0f * b + t), 0.0f, 1.0f) * clamp(_sinf(3.5f * b - t), 0.0f, 1.0f) +
+       clamp(_sinf(21.0f * b - t), 0.0f, 1.0f) * clamp(_sinf(17.0f * b + t), 0.0f, 1.0f);
+  //return to_float3(0.2f, 0.5f, 1.0f) * (0.24f + 0.44f * (rd.y + 1.0f) * (rd.y + 1.0f)) * (1.0f + gd * 0.05f);
+  return Color * (0.24f + 0.44f * (rd.y + 1.0f) * (rd.y + 1.0f)) * (1.0f + gd * 0.05f);
+}
+
+__DEVICE__ float4 GetGoldeenColor(float3 p, int currentObjectId, float3 bodyDomain, float currentTime, float3 eyePosition, float3 viewPosition, float4 Colors[12])
+{
+  float4 colorProperties;
+  float3 eyeVec;
+  float s;
+  colorProperties = Colors[0];//to_float4(1.0f, 0.98f, 0.95f, 0.05f);
+
+  if (currentObjectId == idBody) {
+    swi3S(colorProperties,x,y,z, swi3(colorProperties,x,y,z) * 0.85f + 0.15f * smoothstep(-0.1f, 0.1f, bodyDomain.y));
+    float orangePatch = smoothstep(0.4f, 0.5f, _sinf(8.0f * bodyDomain.x) * _cosf(6.0f * bodyDomain.z));
+    swi3S(colorProperties,x,y,z, _mix(swi3(colorProperties,x,y,z), swi3(Colors[1],x,y,z), orangePatch * 0.4f * smoothstep(0.0f, 0.3f, bodyDomain.y))); //to_float3(1.0f, 0.45f, 0.0f)
+  } else if (currentObjectId == idMouth) {
+    colorProperties = Colors[2];//to_float4(1.0f, 0.3f, 0.6f, 0.1f);
+  } else if (currentObjectId == idHorn) {
+    colorProperties = Colors[3];//to_float4(1.0f, 0.98f, 0.95f, 0.1f);
+  } else if (currentObjectId == idSideFin || currentObjectId == idVerticalFin) {
+    float radialDist = length(swi2(p,x,y));
+    //swi3S(colorProperties,x,y,z, _mix(to_float3(1.0f, 0.4f, 0.0f), to_float3(1.0f, 0.95f, 0.9f), smoothstep(0.2f, 0.7f, radialDist)));
+    swi3S(colorProperties,x,y,z, _mix(swi3(Colors[4],x,y,z), swi3(Colors[5],x,y,z), smoothstep(0.2f, 0.7f, radialDist)));
+  } else if (currentObjectId == idTail) {
+    float radialDist = length(swi3(p,x,y,z));
+    //swi3S(colorProperties,x,y,z, _mix(to_float3(1.0f, 0.4f, 0.0f), to_float3(1.0f, 0.95f, 0.9f), smoothstep(0.4f, 0.9f, radialDist)));
+    swi3S(colorProperties,x,y,z, _mix(swi3(Colors[6],x,y,z), swi3(Colors[7],x,y,z), smoothstep(0.4f, 0.9f, radialDist)));
+  } else if (currentObjectId == idEye) {
+    float eyeOpen = SmoothBump(0.05f, 0.95f, 0.05f, mod_f(0.5f * currentTime, 1.0f));
+    float openGapY = _mix(-0.01f, 0.1f, eyeOpen);
+
+    if (_fabs(p.y - eyePosition.y) > openGapY) {
+      swi3S(colorProperties,x,y,z, swi3(Colors[8],x,y,z));//to_float3(1.0f, 0.4f, 0.0f));
+      colorProperties.w = 0.05f;
+    } else {
+      eyeVec = eyePosition * to_float3(sign_f(p.x), 1.0f, 1.0f);
+
+      // Bounded the rotation to 0.15f * pi (approx 27 degrees) so it cannot track past the eye socket constraints
+      eyeVec = RotateToDirectionLimited(normalize(viewPosition - eyeVec), to_float3(sign_f(p.x), 0.0f, 0.0f), p - eyeVec, 0.15f * pi);
+      s = length(swi2(eyeVec,y,z));
+
+      if (s < 0.025f) {
+        swi3S(colorProperties,x,y,z, swi3(Colors[9],x,y,z));//to_float3_s(0.05f)); // Black Pupil
+      } else if (s < 0.06f) {
+        swi3S(colorProperties,x,y,z, swi3(Colors[10],x,y,z));//to_float3(0.2f, 0.8f, 0.3f)); // Green Iris
+      } else {
+        swi3S(colorProperties,x,y,z, swi3(Colors[11],x,y,z));//to_float3_s(1.0f)); // White Sclera
+      }
+      colorProperties.w = 0.4f;
+    }
+  }
+  return colorProperties;
+}
+
+__DEVICE__ float3 RenderScene(float3 ro, float3 rd, float currentTime, inout int *currentObjectId, inout float3 *bodyDomain, float mouthShape, float maxDistance, float3 bubbleGrid, float3 eyePosition, float3 viewPosition, float3 lightDirection, float3 Color, float4 Colors[12], inout float *Alpha)
+{
+  float4 colorData;
+  float3 normal, finalColor, bgColor;
+  float distFish, distBubbles, specularity, shadow;
+
+  bgColor = GetBackgroundColor(rd, currentTime, Color);
+  distFish = RaycastGoldeen(ro, rd, currentTime, currentObjectId, bodyDomain, mouthShape, maxDistance, eyePosition);
+  distBubbles = RaycastBubbles(ro, rd, currentTime, bubbleGrid, maxDistance);
+
+  if (_fminf(distBubbles, distFish) < maxDistance) {
+    if (distFish < distBubbles) {
+      ro += distFish * rd;
+      normal = CalculateGoldeenNormal(ro, currentTime, currentObjectId, bodyDomain, mouthShape, eyePosition);
+      colorData = GetGoldeenColor(ro, *currentObjectId, *bodyDomain, currentTime, eyePosition, viewPosition, Colors);
+      finalColor = swi3(colorData,x,y,z);
+      specularity = colorData.w;
+      shadow = CalculateGoldeenShadow(ro, lightDirection, currentTime, currentObjectId, bodyDomain, mouthShape, eyePosition);
+      if (specularity >= 0.0f) finalColor = _mix(finalColor, GetBackgroundColor(reflect(rd, normal), currentTime, Color), 0.2f);
+    } else if (distBubbles < maxDistance) {
+      ro += distBubbles * rd;
+      normal = CalculateBubbleNormal(ro, currentTime, bubbleGrid, maxDistance);
+      finalColor = _mix(to_float3_s(1.0f), GetBackgroundColor(reflect(rd, normal), currentTime, Color), 0.7f);
+      specularity = 0.5f;
+      shadow = 1.0f;
+      *currentObjectId = idBubble;
+    }
+
+    if (specularity >= 0.0f) {
+      finalColor = finalColor * (0.3f + 0.2f * bgColor + 0.6f * shadow * _fmaxf(dot(normal, lightDirection), 0.0f)) +
+                   specularity * shadow * _powf(_fmaxf(dot(normalize(lightDirection - rd), normal), 0.0f), 32.0f);
+      finalColor += 0.3f * GetTurbulentLight(0.5f * ro, abs_f3(normal), 0.5f * currentTime) * smoothstep(-0.3f, -0.1f, normal.y);
+      if (*currentObjectId == idBubble) finalColor *= 0.5f + 0.5f * clamp(rd.y + 1.0f, 0.0f, 1.5f);
+    } else {
+      rd = reflect(rd, normal);
+      finalColor = 0.5f * (GetBackgroundColor(rd, currentTime, Color) + GetWaterShadow(rd, currentTime));
+    }
+    finalColor = _mix(finalColor, bgColor, smoothstep(0.3f, 0.95f, _fminf(distBubbles, distFish) / maxDistance));
+    *Alpha = 1.0f;
+  } else {
+    finalColor = bgColor + GetWaterShadow(rd, currentTime);
+  }
+
+  return finalColor;
+}
+
+__KERNEL__ void GoldeenFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 BasisColor = to_float4(params->BasisColor[0], params->BasisColor[1], params->BasisColor[2], params->BasisColor[3]);
+  float4 BodyColor = to_float4(params->BodyColor[0], params->BodyColor[1], params->BodyColor[2], params->BodyColor[3]);
+  float4 MouthColor = to_float4(params->MouthColor[0], params->MouthColor[1], params->MouthColor[2], params->MouthColor[3]);
+  float4 HornColor = to_float4(params->HornColor[0], params->HornColor[1], params->HornColor[2], params->HornColor[3]);
+  float4 Fin1Color = to_float4(params->Fin1Color[0], params->Fin1Color[1], params->Fin1Color[2], params->Fin1Color[3]);
+  float4 Fin2Color = to_float4(params->Fin2Color[0], params->Fin2Color[1], params->Fin2Color[2], params->Fin2Color[3]);
+  float4 Tail1Color = to_float4(params->Tail1Color[0], params->Tail1Color[1], params->Tail1Color[2], params->Tail1Color[3]);
+  float4 Tail2Color = to_float4(params->Tail2Color[0], params->Tail2Color[1], params->Tail2Color[2], params->Tail2Color[3]);
+  float4 OpenGapColor = to_float4(params->OpenGapColor[0], params->OpenGapColor[1], params->OpenGapColor[2], params->OpenGapColor[3]);
+  float4 PupilColor = to_float4(params->PupilColor[0], params->PupilColor[1], params->PupilColor[2], params->PupilColor[3]);
+  float4 IrisColor = to_float4(params->IrisColor[0], params->IrisColor[1], params->IrisColor[2], params->IrisColor[3]);
+  float4 ScleraColor = to_float4(params->ScleraColor[0], params->ScleraColor[1], params->ScleraColor[2], params->ScleraColor[3]);
+  float4 Background = to_float4(params->Background[0], params->Background[1], params->Background[2], params->Background[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float2 BubbleXY = to_float2(params->BubbleXY[0], params->BubbleXY[1]);
+  float  BubbleZ = params->BubbleZ;
+  float2 EyeXY = to_float2(params->EyeXY[0], params->EyeXY[1]);
+  float  EyeZ = params->EyeZ;
+  float  zoomFactor = params->zoomFactor;
+
+  // --------
+
+  float4 Colors[12] = {BasisColor, BodyColor, MouthColor, HornColor, Fin1Color, Fin2Color, Tail1Color, Tail2Color, OpenGapColor, PupilColor, IrisColor, ScleraColor};
+
+  float Alpha = 0.0f;
+
+  float3 bodyDomain, lightDirection, bubbleGrid, eyePosition, viewPosition;
+  float maxDistance, currentTime, mouthShape;
+  int currentObjectId;
+
+  mat3 viewMatrix;
+  float4 mousePointer;
+  float3 ro, rd, finalColor;
+  float2 canvas, uv, orientation, cosAngles, sinAngles;
+  float elevation, azimuth;//, zoomFactor;
+
+  canvas = iResolution;
+  uv = 2.0f * fragCoord / canvas - 1.0f;
+  uv.x *= canvas.x / canvas.y;
+  currentTime = iTime;
+  mousePointer = iMouse;
+  swi2S(mousePointer,x,y, swi2(mousePointer,x,y) / canvas - 0.5f);
+
+  azimuth = -pi;
+  elevation = 0.0f;
+  if (mousePointer.z > 0.0f) {
+    azimuth += 2.0f * pi * mousePointer.x;
+    elevation += 0.7f * pi * mousePointer.y;
+  } else {
+    azimuth += 2.0f * pi * _sinf(0.01f * pi * currentTime);
+    elevation -= 0.1f + 0.3f * pi * _sinf(0.016f * pi * currentTime);
+  }
+
+  orientation = to_float2(elevation, azimuth);
+  cosAngles = cos_f2(orientation);
+  sinAngles = sin_f2(orientation);
+  viewMatrix = mul_mat3_mat3(to_mat3(cosAngles.y, 0.0f, -sinAngles.y, 0.0f, 1.0f, 0.0f, sinAngles.y, 0.0f, cosAngles.y),
+                             to_mat3(1.0f, 0.0f, 0.0f, 0.0f, cosAngles.x, -sinAngles.x, 0.0f, sinAngles.x, cosAngles.x));
+
+  //zoomFactor = 3.0f;
+  ro = mul_mat3_f3(viewMatrix , to_float3(0.0f, 0.0f, -2.0f - 0.5f * _sinf(0.35f * currentTime)));
+  rd = mul_mat3_f3(viewMatrix , normalize(to_float3_aw(uv, zoomFactor)+to_float3_aw(ViewXY, ViewZ)));
+  lightDirection = normalize(to_float3(0.5f, 2.0f, 1.0f));
+  bubbleGrid     = to_float3_s(0.5f) + to_float3_aw(BubbleXY, BubbleZ);
+  mouthShape     = _sinf(6.0f * currentTime);
+
+  eyePosition    = to_float3_s(0.13f) + to_float3_aw(EyeXY, EyeZ);
+  viewPosition   = ro+to_float3_aw(ViewDXY, ViewDZ);
+  maxDistance    = 10.0f;
+
+  finalColor = RenderScene(ro, rd, currentTime, &currentObjectId, &bodyDomain, mouthShape, maxDistance, bubbleGrid, eyePosition, viewPosition, lightDirection, swi3(Background,x,y,z), Colors, &Alpha);
+  fragColor = to_float4_aw(clamp(finalColor, 0.0f, 1.0f), Alpha == 1.0f ? 1.0f : Background.w);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("BasisColor", "BasisColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "BasisColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBasisColorColorR = self:AddInput("Red",   "BasisColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InBasisColorColorG = self:AddInput("Green", "BasisColorGreen", { INP_Default  = 0.98, IC_ControlID = 1, attrs})
+    InBasisColorColorB = self:AddInput("Blue",  "BasisColorBlue",  { INP_Default  = 0.95, IC_ControlID = 2, attrs})
+    InBasisColorColorA = self:AddInput("Alpha", "BasisColorAlpha", { INP_Default  = 0.05, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("BodyColor", "BodyColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "BodyColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBodyColorColorR = self:AddInput("Red",   "BodyColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InBodyColorColorG = self:AddInput("Green", "BodyColorGreen", { INP_Default  = 0.45, IC_ControlID = 1, attrs})
+    InBodyColorColorB = self:AddInput("Blue",  "BodyColorBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InBodyColorColorA = self:AddInput("Alpha", "BodyColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MouthColor", "MouthColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MouthColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMouthColorColorR = self:AddInput("Red",   "MouthColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InMouthColorColorG = self:AddInput("Green", "MouthColorGreen", { INP_Default  = 0.3, IC_ControlID = 1, attrs})
+    InMouthColorColorB = self:AddInput("Blue",  "MouthColorBlue",  { INP_Default  = 0.6, IC_ControlID = 2, attrs})
+    InMouthColorColorA = self:AddInput("Alpha", "MouthColorAlpha", { INP_Default  = 0.1, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("HornColor", "HornColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "HornColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHornColorColorR = self:AddInput("Red",   "HornColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InHornColorColorG = self:AddInput("Green", "HornColorGreen", { INP_Default  = 0.98, IC_ControlID = 1, attrs})
+    InHornColorColorB = self:AddInput("Blue",  "HornColorBlue",  { INP_Default  = 0.95, IC_ControlID = 2, attrs})
+    InHornColorColorA = self:AddInput("Alpha", "HornColorAlpha", { INP_Default  = 0.1, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Fin1Color", "Fin1Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Fin1Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFin1ColorColorR = self:AddInput("Red",   "Fin1ColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InFin1ColorColorG = self:AddInput("Green", "Fin1ColorGreen", { INP_Default  = 0.4, IC_ControlID = 1, attrs})
+    InFin1ColorColorB = self:AddInput("Blue",  "Fin1ColorBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InFin1ColorColorA = self:AddInput("Alpha", "Fin1ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Fin2Color", "Fin2Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Fin2Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFin2ColorColorR = self:AddInput("Red",   "Fin2ColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InFin2ColorColorG = self:AddInput("Green", "Fin2ColorGreen", { INP_Default  = 0.95, IC_ControlID = 1, attrs})
+    InFin2ColorColorB = self:AddInput("Blue",  "Fin2ColorBlue",  { INP_Default  = 0.9, IC_ControlID = 2, attrs})
+    InFin2ColorColorA = self:AddInput("Alpha", "Fin2ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Tail1Color", "Tail1Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Tail1Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InTail1ColorColorR = self:AddInput("Red",   "Tail1ColorRed",   { INP_Default  = 0.95, IC_ControlID = 0, attrs})
+    InTail1ColorColorG = self:AddInput("Green", "Tail1ColorGreen", { INP_Default  = 0.95, IC_ControlID = 1, attrs})
+    InTail1ColorColorB = self:AddInput("Blue",  "Tail1ColorBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InTail1ColorColorA = self:AddInput("Alpha", "Tail1ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Tail2Color", "Tail2Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Tail2Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InTail2ColorColorR = self:AddInput("Red",   "Tail2ColorRed",   { INP_Default  = 0.9, IC_ControlID = 0, attrs})
+    InTail2ColorColorG = self:AddInput("Green", "Tail2ColorGreen", { INP_Default  = 0.25, IC_ControlID = 1, attrs})
+    InTail2ColorColorB = self:AddInput("Blue",  "Tail2ColorBlue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InTail2ColorColorA = self:AddInput("Alpha", "Tail2ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("OpenGapColor", "OpenGapColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "OpenGapColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InOpenGapColorColorR = self:AddInput("Red",   "OpenGapColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InOpenGapColorColorG = self:AddInput("Green", "OpenGapColorGreen", { INP_Default  = 0.4, IC_ControlID = 1, attrs})
+    InOpenGapColorColorB = self:AddInput("Blue",  "OpenGapColorBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InOpenGapColorColorA = self:AddInput("Alpha", "OpenGapColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("PupilColor", "PupilColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "PupilColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InPupilColorColorR = self:AddInput("Red",   "PupilColorRed",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InPupilColorColorG = self:AddInput("Green", "PupilColorGreen", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InPupilColorColorB = self:AddInput("Blue",  "PupilColorBlue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InPupilColorColorA = self:AddInput("Alpha", "PupilColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("IrisColor", "IrisColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "IrisColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InIrisColorColorR = self:AddInput("Red",   "IrisColorRed",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InIrisColorColorG = self:AddInput("Green", "IrisColorGreen", { INP_Default  = 0.8, IC_ControlID = 1, attrs})
+    InIrisColorColorB = self:AddInput("Blue",  "IrisColorBlue",  { INP_Default  = 0.3, IC_ControlID = 2, attrs})
+    InIrisColorColorA = self:AddInput("Alpha", "IrisColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ScleraColor", "ScleraColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ScleraColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InScleraColorColorR = self:AddInput("Red",   "ScleraColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InScleraColorColorG = self:AddInput("Green", "ScleraColorGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InScleraColorColorB = self:AddInput("Blue",  "ScleraColorBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InScleraColorColorA = self:AddInput("Alpha", "ScleraColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Background", "Background", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Background",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBackgroundColorR = self:AddInput("Red",   "BackgroundRed",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InBackgroundColorG = self:AddInput("Green", "BackgroundGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InBackgroundColorB = self:AddInput("Blue",  "BackgroundBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InBackgroundColorA = self:AddInput("Alpha", "BackgroundAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InBubbleXYPoint = self:AddInput("BubbleXY", "BubbleXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InBubbleZSlider = self:AddInput("BubbleZ", "BubbleZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InEyeXYPoint = self:AddInput("EyeXY", "EyeXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InEyeZSlider = self:AddInput("EyeZ", "EyeZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InzoomFactorSlider = self:AddInput("zoomFactor", "zoomFactor", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+   ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "GoldeenFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.BasisColor = {
+    InBasisColorColorR:GetValue(req).Value,
+    InBasisColorColorG:GetValue(req).Value,
+    InBasisColorColorB:GetValue(req).Value,InBasisColorColorA:GetValue(req).Value
+  }
+  params.BodyColor = {
+    InBodyColorColorR:GetValue(req).Value,
+    InBodyColorColorG:GetValue(req).Value,
+    InBodyColorColorB:GetValue(req).Value,InBodyColorColorA:GetValue(req).Value
+  }
+  params.MouthColor = {
+    InMouthColorColorR:GetValue(req).Value,
+    InMouthColorColorG:GetValue(req).Value,
+    InMouthColorColorB:GetValue(req).Value,InMouthColorColorA:GetValue(req).Value
+  }
+  params.HornColor = {
+    InHornColorColorR:GetValue(req).Value,
+    InHornColorColorG:GetValue(req).Value,
+    InHornColorColorB:GetValue(req).Value,InHornColorColorA:GetValue(req).Value
+  }
+  params.Fin1Color = {
+    InFin1ColorColorR:GetValue(req).Value,
+    InFin1ColorColorG:GetValue(req).Value,
+    InFin1ColorColorB:GetValue(req).Value,InFin1ColorColorA:GetValue(req).Value
+  }
+  params.Fin2Color = {
+    InFin2ColorColorR:GetValue(req).Value,
+    InFin2ColorColorG:GetValue(req).Value,
+    InFin2ColorColorB:GetValue(req).Value,InFin2ColorColorA:GetValue(req).Value
+  }
+  params.Tail1Color = {
+    InTail1ColorColorR:GetValue(req).Value,
+    InTail1ColorColorG:GetValue(req).Value,
+    InTail1ColorColorB:GetValue(req).Value,InTail1ColorColorA:GetValue(req).Value
+  }
+  params.Tail2Color = {
+    InTail2ColorColorR:GetValue(req).Value,
+    InTail2ColorColorG:GetValue(req).Value,
+    InTail2ColorColorB:GetValue(req).Value,InTail2ColorColorA:GetValue(req).Value
+  }
+  params.OpenGapColor = {
+    InOpenGapColorColorR:GetValue(req).Value,
+    InOpenGapColorColorG:GetValue(req).Value,
+    InOpenGapColorColorB:GetValue(req).Value,InOpenGapColorColorA:GetValue(req).Value
+  }
+  params.PupilColor = {
+    InPupilColorColorR:GetValue(req).Value,
+    InPupilColorColorG:GetValue(req).Value,
+    InPupilColorColorB:GetValue(req).Value,InPupilColorColorA:GetValue(req).Value
+  }
+  params.IrisColor = {
+    InIrisColorColorR:GetValue(req).Value,
+    InIrisColorColorG:GetValue(req).Value,
+    InIrisColorColorB:GetValue(req).Value,InIrisColorColorA:GetValue(req).Value
+  }
+  params.ScleraColor = {
+    InScleraColorColorR:GetValue(req).Value,
+    InScleraColorColorG:GetValue(req).Value,
+    InScleraColorColorB:GetValue(req).Value,InScleraColorColorA:GetValue(req).Value
+  }
+  params.Background = {
+    InBackgroundColorR:GetValue(req).Value,
+    InBackgroundColorG:GetValue(req).Value,
+    InBackgroundColorB:GetValue(req).Value,InBackgroundColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.BubbleXY = {InBubbleXYPoint:GetValue(req).X,InBubbleXYPoint:GetValue(req).Y}
+  params.BubbleZ = InBubbleZSlider:GetValue(req).Value
+  params.EyeXY = {InEyeXYPoint:GetValue(req).X,InEyeXYPoint:GetValue(req).Y}
+  params.EyeZ = InEyeZSlider:GetValue(req).Value
+  params.zoomFactor = InzoomFactorSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddOutput("dst", dst)
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

@@ -1,0 +1,625 @@
+--[[--/*
+
+  PartyConcertVisuals2020.fuse
+
+  Based on https://www.shadertoy.com/view/WtscW4 a WebGL shader created by blackle.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  bool   Invers;
+  bool   ApplyColor;
+  bool   Fork;
+  float  Color[4];
+  float  AlphaThres;
+  float  BeatPerMinute;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define sin_f2(i) sin(i)
+ #define sin_f3(i) sin(i)
+ #define acos_f3(i) acos(i)
+ #define abs_f3(a) _fabs(a)
+ #define abs_f4(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define sin_f2(i) sin(i)
+ #define sin_f3(i) sin(i)
+ #define acos_f3(i) acos(i)
+ #define abs_f3(a) fabs(a)
+ #define abs_f4(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define sin_f3(i) to_float3( _sinf((i).x), _sinf((i).y), _sinf((i).z))
+ #define acos_f3(i) to_float3( _acosf((i).x), _acosf((i).y), _acosf((i).z))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define abs_f4(a) to_float4(_fabs((a).x), _fabs((a).y),_fabs((a).z),_fabs((a).w))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+#if defined(DEVICE_IS_METAL)
+
+  #define mat3_sub_mat3(A,B) ((A)-(B))
+
+  __DEVICE__ inline mat3 to_mat3_n( float A) {
+    mat3 D(0.0);
+    D[0][0] = D[1][1] = D[2][2] = A;
+    return D;
+  }
+
+  #define row(A,i) (A[i])
+
+#else
+
+  #define row(A,i) (A.r##i)
+
+
+  __DEVICE__ inline mat3 mat3_sub_mat3( mat3 A, mat3 B) {
+    mat3 C;
+
+    C.r0 = to_float3(A.r0.x - B.r0.x, A.r0.y - B.r0.y,A.r0.z - B.r0.z);
+    C.r1 = to_float3(A.r1.x - B.r1.x, A.r1.y - B.r1.y,A.r1.z - B.r1.z);
+    C.r2 = to_float3(A.r2.x - B.r2.x, A.r2.y - B.r2.y,A.r2.z - B.r2.z);
+
+    return C;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_n( float A) {
+    mat3 D;
+    D.r0 = to_float3(A,0.0f,0.0f);
+    D.r1 = to_float3(0.0f,A,0.0f);
+    D.r2 = to_float3(0.0f,0.0f,A);
+    return D;
+  }
+
+#endif
+
+
+#define asin_f2(i) to_float2( _asinf((i).x), _asinf((i).y))
+#define asin_f3(i) to_float3( _asinf((i).x), _asinf((i).y), _asinf((i).z))
+
+//CC0 1.0f Universal https://creativecommons.org/publicdomain/zero/1.0f/
+//To the extent possible under law, Blackle Mori has waived all copyright and related or neighboring rights to this work.
+
+__DEVICE__ float comp (float3 p, bool Fork) {
+    p = asin_f3(sin_f3(p)*0.9f);
+    if (Fork) p = acos_f3(sin_f3(p)*0.9f);
+    return length(p)-1.0f;
+}
+
+__DEVICE__ float3 erot(float3 p, float3 ax, float ro) {
+    return _mix(dot(p,ax)*ax,p,_cosf(ro))+_sinf(ro)*cross(ax,p);
+}
+
+__DEVICE__ float smin(float a, float b, float k) {
+    float h = _fmaxf(0.0f,k-_fabs(b-a))/k;
+    return _fminf(a,b)-h*h*h*k/6.0f;
+}
+
+__DEVICE__ float4 wrot(float4 p) {
+    //return to_float4_aw(dot(p,to_float4(1)), swi3(p,y,z,w) + swi3(p,z,w,y) - swi3(p,w,y,z) - swi3(p,x,x,x))/2.0f;
+    return to_float4(dot(p,to_float4_s(1)), p.y + p.z - p.w - p.x, p.z + p.w - p.y - p.x, p.w + p.y - p.z - p.x)/2.0f;
+}
+
+
+
+__DEVICE__ float scene(float3 p, inout float3 *p2, inout float *doodad, inout float *lazors, inout float *d1, inout float *d2, inout float *d3, float t, float iTime, float bpm, bool Fork ) {
+    *p2 = erot(p, to_float3(0,1,0), t);
+    *p2 = erot(*p2, to_float3(0,0,1), t/3.0f);
+    *p2 = erot(*p2, to_float3(1,0,0), t/5.0f);
+
+    float bpt = iTime/60.0f*bpm;
+    float4 p4 = to_float4_aw(*p2,0);
+    p4=_mix(p4,wrot(p4),smoothstep(-0.5f,0.5f,_sinf(bpt/4.0f)));
+    p4 =abs_f4(p4);
+    p4=_mix(p4,wrot(p4),smoothstep(-0.5f,0.5f,_sinf(bpt)));
+    float fctr = smoothstep(-0.5f,0.5f,_sinf(bpt/2.0f));
+    float fctr2 = smoothstep(0.9f,1.0f,_sinf(bpt/16.0f));
+
+    if (Fork) fctr = smoothstep(-0.5f,0.5f,_cosf(bpt/2.0f)), fctr2 = smoothstep(0.9f,1.0f,_cosf(bpt/16.0f));
+
+    *doodad = length(_fmaxf(abs_f4(p4)-_mix(0.05f,0.07f,fctr),to_float4_s(0.0f))+_mix(-0.1f,0.2f,fctr))-_mix(0.15f,0.55f,fctr*fctr)+fctr2;
+    /*
+        float4 p4 = to_float4_aw(p2,0);
+        p4=wrot(p4);
+        p4 = _fabs(p4);
+        p4=_mix(p4,wrot(p4),smoothstep(-0.5f,0.5f,_sinf(t)));
+        *doodad = length(_fmaxf(_fabs(p4)-0.07f,0)+0.2f)-0.55f;
+    }*/
+
+    p.x += _asinf(_sinf(t/80.0f)*0.99f)*80.0f;
+
+    *lazors = length(asin_f2(sin_f2(swi2(erot(p,to_float3(1,0,0),t*0.2f),y,z)*0.5f+1.0f))/0.5f)-0.1f;
+    *d1 = comp(p,Fork);
+    *d2 = comp(erot(p+5.0f, normalize(to_float3(1,3,4)),0.4f),Fork);
+    *d3 = comp(erot(p+10.0f, normalize(to_float3(3,2,1)),1.0f), Fork);
+
+    if (Fork) *d3 = comp(erot(p+10.0f, normalize(to_float3(1,2,3)),1.0f),Fork);
+
+    return _fminf(*doodad,_fminf(*lazors,0.3f-smin(smin(*d1,*d2,0.05f),*d3,0.05f)));
+}
+
+__DEVICE__ float3 norm(float3 p, inout float3 *p2, inout float *doodad, inout float *lazors, inout float *d1, inout float *d2, inout float *d3, float t, float iTime, float bpm, bool Fork) {
+    float precis = length(p) < 1.0f ? 0.005f : 0.01f;
+    mat3 k = mat3_sub_mat3( to_mat3_f3(p,p,p) , to_mat3_n(precis));
+    return normalize(scene(p, p2,doodad,lazors,d1,d2,d3,t,iTime,bpm, Fork)
+         - to_float3(scene(row(k,0), p2,doodad,lazors,d1,d2,d3,t,iTime,bpm,Fork),scene(row(k,1), p2,doodad,lazors,d1,d2,d3,t,iTime,bpm,Fork),scene(row(k,2), p2,doodad,lazors,d1,d2,d3,t,iTime,bpm,Fork)));
+}
+
+__KERNEL__ void PartyConcertVisuals2020Fuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Invers = params->Invers;
+  bool   ApplyColor = params->ApplyColor;
+  bool   Fork = params->Fork;
+  float4 Color = to_float4(params->Color[0], params->Color[1], params->Color[2], params->Color[3]);
+  float  AlphaThres = params->AlphaThres;
+  float  BeatPerMinute = params->BeatPerMinute;
+
+  // --------
+
+    float d1, d2, d3;
+    float t;
+    float lazors, doodad;
+    float3 p2;
+    float bpm = BeatPerMinute;//125.0f;
+
+    float2 uv = (fragCoord-0.5f*iResolution)/iResolution.y;
+
+    float bpt = iTime/60.0f*bpm;
+    float bp = _mix(_powf(_sinf(fract(bpt)*3.14f/2.0f),20.0f)+_floor(bpt), bpt,0.4f);
+    t = bp;
+    float3 cam = normalize(to_float3(0.8f+_sinf(bp*3.14f/4.0f)*0.3f,uv.x,uv.y));
+    float3 init = to_float3(-1.5f+_sinf(bp*3.14f)*0.2f,0,0)+cam*0.2f;
+    init = erot(init,to_float3(0,1,0),_sinf(bp*0.2f)*0.4f);
+    init = erot(init,to_float3(0,0,1),_cosf(bp*0.2f)*0.4f);
+
+    if (Fork)
+      cam = erot(cam,to_float3(0,1,0),_cosf(bp*0.2f)*0.4f),
+      cam = erot(cam,to_float3(0,0,1),_sinf(bp*0.2f)*0.4f);
+    else
+      cam = erot(cam,to_float3(0,1,0),_sinf(bp*0.2f)*0.4f),
+      cam = erot(cam,to_float3(0,0,1),_cosf(bp*0.2f)*0.4f);
+
+
+    float3 p = init;
+    bool hit = false;
+    float atten = 1.0f;
+    float tlen = 0.0f;
+    float glo = 0.0f;
+    float dist;
+    float fog = 0.0f;
+    float dlglo = 0.0f;
+    bool trg = false;
+    for (int i = 0; i <80 && !hit; i++) {
+        dist = scene(p, &p2,&doodad,&lazors,&d1,&d2,&d3,t, iTime, bpm, Fork);
+        hit = dist*dist < 1e-6;
+        glo += 0.2f/(1.0f+lazors*lazors*20.0f)*atten;
+        dlglo += 0.2f/(1.0f+doodad*doodad*20.0f)*atten;
+
+        bool lengthP2 = _sinf(_powf(length(p2*p2*p2),0.3f)*120.0f)>0.4f;
+        if (Fork) lengthP2 = _cosf(_powf(length(p2*p2*p2),0.3f)*120.0f)>0.4f;
+
+        //if (hit && ((_sinf(d3*45.0f)<-0.4f && (dist!=doodad )) || (dist==doodad && _sinf(_powf(length(p2*p2*p2),0.3f)*120.0f)>0.4f )) && dist != lazors) { //_cosf(pow
+        if (hit && ((_sinf(d3*45.0f)<-0.4f && (dist!=doodad )) || (dist==doodad &&  lengthP2  )) && dist != lazors) { //_cosf(pow
+
+        trg = trg || dist==doodad;
+            hit = false;
+            float3 n = norm(p, &p2,&doodad,&lazors,&d1,&d2,&d3,t, iTime, bpm, Fork);
+            atten *= 1.0f-_fabs(dot(cam,n))*0.98f;
+            cam = reflect(cam,n);
+            dist = 0.1f;
+        }
+        p += cam*dist;
+        tlen += dist;
+        fog += dist*atten/30.0f;
+    }
+    fog = smoothstep(0.0f,1.0f,fog);
+    bool lz = lazors == dist;
+    bool dl = doodad == dist;
+    float3 fogcol = _mix(to_float3(0.5f,0.8f,1.2f), to_float3(0.4f,0.6f,0.9f), length(uv));
+    float3 n = norm(p, &p2,&doodad,&lazors,&d1,&d2,&d3,t, iTime, bpm, Fork);
+    float3 r = reflect(cam,n);
+    float ss = smoothstep(-0.3f,0.3f,scene(p+to_float3_s(0.3f), &p2,&doodad,&lazors,&d1,&d2,&d3,t, iTime, bpm, Fork))+0.5f;
+
+    float fact = length(sin_f3(r*(dl?4.0f:3.0f))*0.5f+0.5f)/_sqrtf(3.0f)*0.7f+0.3f;
+    float3 matcol = _mix(to_float3(0.9f,0.4f,0.3f), to_float3(0.3f,0.4f,0.8f), smoothstep(-1.0f,1.0f,_sinf(d1*5.0f+iTime*2.0f)));
+    matcol = _mix(matcol, to_float3(0.5f,0.4f,1.0f), smoothstep(0.0f,1.0f,_sinf(d2*5.0f+iTime*2.0f)));
+    if (dl) matcol = _mix(to_float3_s(1),matcol,0.1f)*0.2f+0.1f;
+    float3 col = matcol*fact*ss + _powf(fact,10.0f);
+    if (lz) col = to_float3_s(4);
+
+    float3 fragColorxyz = col*atten + glo*glo + fogcol*glo;
+    fragColorxyz = _mix(fragColorxyz, fogcol, fog);
+    if(!dl)         fragColorxyz = abs_f3(erot(fragColorxyz, normalize(sin_f3(p*2.0f)),0.2f*(1.0f-fog)));
+    if(!trg&&!dl)   fragColorxyz += dlglo*dlglo*0.1f*to_float3(0.4f,0.6f,0.9f);
+    fragColorxyz = sqrt_f3(fragColorxyz);
+    fragColorxyz = smoothstep(to_float3_s(0),to_float3_s(1.2f),fragColorxyz);
+
+    fragColor = to_float4_aw(fragColorxyz,fragColor.w);
+
+    if (Invers) fragColor = to_float4_s(1.0f) - fragColor;
+    if (ApplyColor)
+    {
+      if (fragColor.x <= AlphaThres)      fragColor.w = Color.w;
+
+      fragColor = (fragColor + (Color-0.5f));
+    }
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  InInversCheckbox = self:AddInput("Invers", "Invers", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InApplyColorCheckbox = self:AddInput("ApplyColor", "ApplyColor", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InForkCheckbox = self:AddInput("Fork", "Fork", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  self:BeginControlNest("Color", "Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorColorR = self:AddInput("Red",   "ColorRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColorColorG = self:AddInput("Green", "ColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InColorColorB = self:AddInput("Blue",  "ColorBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InColorColorA = self:AddInput("Alpha", "ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InAlphaThresSlider = self:AddInput("AlphaThres", "AlphaThres", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 1.0,
+  })
+
+  InBeatPerMinuteSlider = self:AddInput("BeatPerMinute", "BeatPerMinute", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 190.0,
+      INP_Default        = 125.0,
+  })
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "PartyConcertVisuals2020Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.Invers = InInversCheckbox:GetValue(req).Value
+  params.ApplyColor = InApplyColorCheckbox:GetValue(req).Value
+  params.Fork = InForkCheckbox:GetValue(req).Value
+  params.Color = {
+    InColorColorR:GetValue(req).Value,
+    InColorColorG:GetValue(req).Value,
+    InColorColorB:GetValue(req).Value,InColorColorA:GetValue(req).Value
+  }
+  params.AlphaThres = InAlphaThresSlider:GetValue(req).Value
+  params.BeatPerMinute = InBeatPerMinuteSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+

@@ -1,0 +1,612 @@
+--[[--/*
+
+    Favela.fuse
+
+    Based on https://www.shadertoy.com/view/XsBXWt a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion.
+
+    Shader created by Kali
+
+*/--]]--
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  })
+
+-- */
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+ST_FractalLandParams =
+[[
+  float freq;
+  bool  showonlyedges;
+  bool  nyan;
+  bool  waves;
+  bool  border;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+ST_FractalLandKernel =
+    [[
+
+
+#if defined (DEVICE_IS_CUDA)
+  __DEVICE__ inline float sign(float x) { return (x<0.0f ? -1.0f : (x>0.0f ? 1.0f : 0.0f)); }
+  __DEVICE__ inline float3 pow_float3_float3(float3 a, float3 b)
+  {
+    return to_float3(_powf(a.x,b.x),_powf(a.y,b.y),_powf(a.z,b.z)); // idk if this makes any sense
+  }
+
+#else
+
+  __DEVICE__ inline float3 pow_float3_float3(float3 x, float3 y)
+  {
+    return pow(x,y);
+  }
+#endif
+
+#if defined (DEVICE_IS_METAL)
+  __DEVICE__ inline float2 abs_float2(float2 a) { return abs(a); }
+
+  typedef float2x2 mat2;
+
+  __DEVICE__ inline mat2    to_mat2( float  a, float  b, float c, float d) { return mat2(a,b,c,d);       }
+  __DEVICE__ inline float2  prod_float2_mat2( float2 v, mat2   m )  { return v*m; }
+
+  #define swixy(V) (V).xy
+  #define swiyx(V) (V).yx
+  #define swixz(V) (V).xz
+  #define swiyz(V) (V).yz
+  #define swixyz(V) (V).xyz
+  #define swixxy(V) (V).xxy
+  #define swixyx(V) (V).xyx
+  #define swiyxx(V) (V).yxx
+
+  #define lswixy(L,R) (L).xy = (R)
+  #define lswiyx(L,R) (L).yx = (R)
+  #define lswiyz(L,R) (L).yz = (R)
+  #define lswixz(L,R) (L).xz = (R)
+  #define lswixyz(L,R) (L).xyz = (R)
+
+  __DEVICE__ inline float2 max_float2(float2 a, float2 b) {return _fmaxf(a,b); }
+  __DEVICE__ inline float3 max_float3(float3 a, float3 b) {return _fmaxf(a,b); }
+  __DEVICE__ inline float3 abs_float3(float3 a) { return abs(a);}
+
+#else
+ __DEVICE__ inline float2 abs_float2(float2 a) { return to_float2(_fabs(a.x),_fabs(a.y)); }
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2    to_mat2( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+  __DEVICE__ inline float2  prod_float2_mat2( float2 v, mat2 m ) { float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t; }
+
+  #define swixy(V) to_float2((V).x,(V).y)
+  #define swiyx(V) to_float2((V).y,(V).x)
+  #define swixz(V) to_float2((V).x,(V).z)
+  #define swiyz(V) to_float2((V).y,(V).z)
+  #define swixyz(V) to_float3((V).x,(V).y,(V).z)
+  #define swixxy(V) to_float3((V).x,(V).x,(V).y)
+  #define swixyx(V) to_float3((V).x,(V).y,(V).x)
+  #define swiyxx(V) to_float3((V).y,(V).x,(V).x)
+
+  #define lswixy(L,R) { float2 tmp = (R); (L).x=tmp.x; (L).y=tmp.y; }
+  #define lswiyx(L,R) { float2 tmp = (R); (L).y=tmp.x; (L).x=tmp.y; }
+  #define lswiyz(L,R) { float2 tmp = (R); (L).y=tmp.x; (L).z=tmp.y; }
+  #define lswixz(L,R) { float2 tmp = (R); (L).x=tmp.x; (L).z=tmp.y; }
+  #define lswixyz(L,R) { float3 tmp = (R); (L).x=tmp.x; (L).y=tmp.y; (L).z=tmp.z; }
+
+  __DEVICE__ inline float2 max_float2(float2 a, float2 b) {return to_float2(_fmaxf(a.x,b.x),_fmaxf(a.y,b.y));}
+  __DEVICE__ inline float3 max_float3(float3 a, float3 b) {return to_float3(_fmaxf(a.x,b.x),_fmaxf(a.y,b.y),_fmaxf(a.z,b.z) );}
+  __DEVICE__ inline float3 abs_float3(float3 a) {return (to_float3(_fabs(a.x), _fabs(a.y),_fabs(a.z)));}
+
+#endif
+
+
+
+
+__DEVICE__ inline float _radiansf(float degrees) { return M_PI * degrees / 180.0f; }
+
+// "Fractal Cartoon" - former "DE edge detection" by Kali
+// There are no lights and no AO, only color by normals and dark edges.
+// update: Nyan Cat cameo, thanks to code from mu6k: https://www.shadertoy.com/view/4dXGWH
+
+#define FLAG_SHOWONLYEDGES  1
+#define FLAG_NYAN           2
+#define FLAG_WAVES          4
+#define FLAG_BORDER         8
+
+//#define SHOWONLYEDGES
+#define NYAN
+#define WAVES
+#define BORDER
+
+#define RAY_STEPS   150
+
+#define BRIGHTNESS  1.2f
+#define GAMMA       1.4f
+#define SATURATION  0.65f
+
+
+#define detail      0.001f
+#define t           iTime*0.5f
+
+
+//const float3 origin=to_float3(-1.0f,0.7f,0.0f);
+//float det=0.0f;
+
+
+// 2D rotation function
+__DEVICE__ mat2 rot(float a) {
+	return to_mat2(_cosf(a),_sinf(a),-_sinf(a),_cosf(a));
+}
+
+// "Amazing Surface" fractal
+__DEVICE__ float4 formula(float4 p) {
+
+  // p.xz = abs(p.xz+1.0f)-abs(p.xz-1.0f)-p.xz;
+  // p.y-=0.25f;
+  // p.xy*=rot(_radiansf(35.0f));
+
+  // p=p*2.0f/clamp(dot(p.xyz,p.xyz),0.2f,1.0f);
+  // return p;
+
+  lswixz(p,abs_float2(swixz(p)+1.0f)-abs_float2(swixz(p)-1.0f)-swixz(p));
+  p.y-=0.25f;
+  lswixy(p,prod_float2_mat2(swixy(p),rot(_radiansf(35.0f))));
+
+  p=p*2.0f/clamp(dot(swixyz(p),swixyz(p)),0.2f,1.0f);
+  return p;
+}
+
+// Distance function
+__DEVICE__ float de(float3 pos, float iTime) {
+#ifdef WAVES
+	pos.y+=_sinf(pos.z-t*6.0f)*0.15f; //waves!
+#endif
+	// float hid=0.0f; // unused
+	float3 tpos=pos;
+	tpos.z=_fabs(3.0f-_fmod(tpos.z,6.0f));
+	float4 p=to_float4_aw(tpos,1.0f);
+	for (int i=0; i<4; i++) {p=formula(p);}
+	float fr=(length(max_float2(to_float2_s(0.0f),swiyz(p)-1.5f))-1.0f)/p.w;
+	float ro=_fmaxf(_fabs(pos.x+1.0f)-0.3f,pos.y-0.35f);
+		  ro=_fmaxf(ro,-_fmaxf(_fabs(pos.x+1.0f)-0.1f,pos.y-0.5f));
+	pos.z=_fabs(0.25f-_fmod(pos.z,0.5f));
+		  ro=_fmaxf(ro,-_fmaxf(_fabs(pos.z)-0.2f,pos.y-0.3f));
+		  ro=_fmaxf(ro,-_fmaxf(_fabs(pos.z)-0.01f,-pos.y+0.32f));
+	float d=min(fr,ro);
+	return d;
+}
+
+
+// Camera path
+__DEVICE__ float3 path(float ti) {
+	ti*=1.5f;
+	float3  p=to_float3(_sinf(ti),(1.0f-_sinf(ti*2.0f))*0.5f,-ti*5.0f)*0.5f;
+	return p;
+}
+
+// Calc normals, and here is edge detection, set to variable "edge"
+
+//float edge=0.0f;
+#if defined(DEVICE_IS_METAL)
+__DEVICE__ float3 normal(float3 p, float iTime, float det, thread float* edge) {
+#else
+__DEVICE__ float3 normal(float3 p, float iTime, float det, float* edge) {
+#endif
+  float3 e = to_float3(0.0f,det*5.0f,0.0f);
+
+	float d1=de(p-swiyxx(e),iTime),d2=de(p+swiyxx(e),iTime);
+	float d3=de(p-swixyx(e),iTime),d4=de(p+swixyx(e),iTime);
+	float d5=de(p-swixxy(e),iTime),d6=de(p+swixxy(e),iTime);
+	float d=de(p,iTime);
+	*edge = _fabs(d-0.5f*(d2+d1))+_fabs(d-0.5f*(d4+d3))+_fabs(d-0.5f*(d6+d5));//edge finder
+	*edge = min(1.0f,_powf(*edge,0.55f)*15.0f);
+	return normalize(to_float3(d1-d2,d3-d4,d5-d6));
+}
+
+
+// Used Nyan Cat code by mu6k, with some mods
+
+__DEVICE__ float4 rainbow(float2 p, float iTime)
+{
+	// float q = _fmaxf(p.x,-0.1f); // unused
+	float s = _sinf(p.x*7.0f+t*70.0f)*0.08f;
+	p.y+=s;
+	p.y*=1.1f;
+
+	float4 c;
+	if (p.x>0.0f) c=to_float4(0.0f,0.0f,0.0f,0.0f); else
+	if (0.0f/6.0f<p.y&&p.y<1.0f/6.0f) c= to_float4(255.0f,43.0f,14.0f,255.0f)/255.0f; else
+	if (1.0f/6.0f<p.y&&p.y<2.0f/6.0f) c= to_float4(255.0f,168.0f,6.0f,255.0f)/255.0f; else
+	if (2.0f/6.0f<p.y&&p.y<3.0f/6.0f) c= to_float4(255.0f,244.0f,0.0f,255.0f)/255.0f; else
+	if (3.0f/6.0f<p.y&&p.y<4.0f/6.0f) c= to_float4(51.0f,234.0f,5.0f,255.0f)/255.0f; else
+	if (4.0f/6.0f<p.y&&p.y<5.0f/6.0f) c= to_float4(8.0f,163.0f,255.0f,255.0f)/255.0f; else
+	if (5.0f/6.0f<p.y&&p.y<6.0f/6.0f) c= to_float4(122.0f,85.0f,255.0f,255.0f)/255.0f; else
+	if (_fabs(p.y)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
+	if (_fabs(p.y-1.0f)-0.05f<0.0001f) c=to_float4(0.0f,0.0f,0.0f,1.0f); else
+		c=to_float4(0.0f,0.0f,0.0f,0.0f);
+	c.w*=0.8f-min(0.8f,_fabs(p.x*0.08f));
+	lswixyz(c,_mix(swixyz(c),to_float3_s(length(swixyz(c))),0.15f));
+	return c;
+}
+
+__DEVICE__ float4 nyan(float2 p, float iTime)
+{
+	float2 uv = p*to_float2(0.4f,1.0f);
+	float ns=3.0f;
+	float nt = iTime*ns; nt-=_fmod(nt,240.0f/256.0f/6.0f); nt = _fmod(nt,240.0f/256.0f);
+	float ny = _fmod(iTime*ns,1.0f); ny-=_fmod(ny,0.75f); ny*=-0.05f;
+//	float4 color = texture(iChannel1,to_float2(uv.x/3.0f+210.0f/256.0f-nt+0.05f,0.5f-uv.y-ny));
+  float4 color = to_float4_s(0.0f); // !!! @todo
+	if (uv.x<-0.3f) color.w = 0.0f;
+	if (uv.x>0.2) color.w=0.0f;
+	return color;
+}
+
+
+// Raymarching and 2D graphics
+
+__DEVICE__ float3 raymarch(float3 from, float3 dir, float iTime, int flags)
+{
+  float edge; // was global(!)
+  float det=0.0f; // was global(!)
+
+	edge=0.0f;
+	float3 p, norm;
+	float d=100.0f;
+	float totdist=0.0f;
+	for (int i=0; i<RAY_STEPS; i++) {
+		if (d>det && totdist<25.0f) {
+			p=from+totdist*dir;
+			d=de(p,iTime);
+			det=detail*exp(0.13f*totdist);
+			totdist+=d;
+		}
+	}
+	float3 col=to_float3_s(0.0f);
+	p-=(det-d)*dir;
+	norm=normal(p,iTime,det,&edge);
+
+  if (flags & FLAG_SHOWONLYEDGES)
+    col=1.0f-to_float3_s(edge); // show wireframe version
+  else
+    col=(1.0f-abs_float3(norm))*_fmaxf(0.0f,1.0f-edge*0.8f); // set normal as color with dark edges
+
+	totdist=clamp(totdist,0.0f,26.0f);
+	dir.y-=0.02f;
+	//float sunsize=7.0f-_fmaxf(0.0f,texture(iChannel0,to_float2(0.6f,0.2f)).x)*5.0f; // responsive sun size
+  float sunsize=7.0f; // !!! @todo
+	float an=_atan2f(dir.x,dir.y)+iTime*1.5f; // angle for drawing and rotating sun
+	float s=_powf(clamp(1.0f-length(swixy(dir))*sunsize-_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun
+	float sb=_powf(clamp(1.0f-length(swixy(dir))*(sunsize-0.2f)-_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),0.1f); // sun border
+	float sg=_powf(clamp(1.0f-length(swixy(dir))*(sunsize-4.5f)-0.5f*_fabs(0.2f-_fmod(an,0.4f)),0.0f,1.0f),3.0f); // sun rays
+	float y=_mix(0.45f,1.2f,_powf(smoothstep(0.0f,1.0f,0.75f-dir.y),2.0f))*(1.0f-sb*0.5f); // gradient sky
+
+	// set up background with sky and sun
+	float3 backg=to_float3(0.5f,0.0f,1.0f)*((1.0f-s)*(1.0f-sg)*y+(1.0f-sb)*sg*to_float3(1.0f,0.8f,0.15f)*3.0f);
+		 backg+=to_float3(1.0f,0.9f,0.1f)*s;
+		 backg=max_float3(backg,sg*to_float3(1.0f,0.9f,0.5f));
+
+	col=_mix(to_float3(1.0f,0.9f,0.3f),col,exp(-0.004f*totdist*totdist));// distant fading to sun color
+	if (totdist>25.0f) col=backg; // hit background
+	col=pow_float3_float3(col,to_float3_s(GAMMA))*BRIGHTNESS;
+	col=_mix(to_float3_s(length(col)),col,SATURATION);
+if (flags & FLAG_SHOWONLYEDGES)
+{	col=1.0f-to_float3_s(length(col));
+} else {
+	col*=to_float3(1.0f,0.9f,0.85f);
+  if (flags & FLAG_NYAN)
+	{ lswiyx(dir,prod_float2_mat2(swiyx(dir),rot(dir.x)));
+  	float2 ncatpos=(swixy(dir)+to_float2(-3.0f+_fmod(-t,6.0f),-0.27f));
+  	float4 ncat=nyan(ncatpos*5.0f,iTime);
+    float4 rain=rainbow(ncatpos*10.0f+to_float2(0.8f,0.5f),iTime);
+    if (totdist>8.0f) col=_mix(col,max_float3(to_float3_s(0.2f),swixyz(rain)),rain.w*0.9f);
+    if (totdist>8.0f) col=_mix(col,max_float3(to_float3_s(0.2f),swixyz(ncat)),ncat.w*0.9f);
+  }
+}
+	return col;
+}
+
+// get camera position
+// float3 move(inout float3 dir) { inout !!!
+__DEVICE__ float3 move(float3 dir, float iTime) {
+	float3 go=path(t);
+	float3 adv=path(t+0.7f);
+	//float hd=de(adv,iTime); // unused
+	float3 advec=normalize(adv-go);
+	float an=adv.x-go.x; an*=min(1.0f,_fabs(adv.z-go.z))*sign(adv.z-go.z)*0.7f;
+	lswixy(dir,prod_float2_mat2(swixy(dir),to_mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an))));
+    an=advec.y*1.7f;
+	lswiyz(dir,prod_float2_mat2(swiyz(dir),to_mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an))));
+	an=_atan2f(advec.x,advec.z);
+	lswixz(dir,prod_float2_mat2(swixz(dir),to_mat2(_cosf(an),_sinf(an),-_sinf(an),_cosf(an))));
+	return go;
+}
+
+
+
+//############################################################################
+
+
+__KERNEL__ void ST_FractalLandKernel(
+    __CONSTANTREF__ ST_FractalLandParams*  params,
+    __TEXTURE2D__                  iChannel0,
+    __TEXTURE2D_WRITE__            dst
+    )
+{
+
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  float2 fragCoord   = to_float2(x, y);
+  float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+  float4 fragColor   = to_float4_s(0.0f);
+
+  int flags = 0;
+
+  if (params->showonlyedges )  flags |= FLAG_SHOWONLYEDGES;
+  if (params->nyan          )  flags |= FLAG_NYAN;
+  if (params->border        )  flags |= FLAG_BORDER;
+  if (params->waves         )  flags |= FLAG_WAVES;
+
+
+
+
+  //##########################################################################
+	float2 uv = swixy(fragCoord) / swixy(iResolution)*2.0f-1.0f;
+	float2 oriuv=uv;
+	uv.y*=iResolution.y/iResolution.x;
+	//float2 mouse=(iMouse.xy/iResolution.xy-0.5f)*3.0f; // !!! @todo iMouse anklemmen
+	//if (iMouse.z<1.0f) mouse=to_float2(0.0f,-0.05f);
+  float2 mouse=to_float2(0.0f,-0.05f);
+
+	float fov=0.9f-_fmaxf(0.0f,0.7f-iTime*0.3f);
+	float3 dir=normalize(to_float3_aw(uv*fov,1.0f));
+	lswiyz(dir,prod_float2_mat2(swiyz(dir),rot(mouse.y)));
+	lswixz(dir,prod_float2_mat2(swixz(dir),rot(mouse.x)));
+
+	//float3 from=origin+move(dir,iTime);
+	float3 from=to_float3(-1.0f,0.7f,0.0f)+move(dir,-iTime);
+	float3 color=raymarch(from,dir,iTime,flags);
+	if (flags & FLAG_BORDER)
+	  color=_mix(to_float3_s(0.0f),color,_powf(_fmaxf(0.0f,0.95f-length(oriuv*oriuv*oriuv*to_float2(1.05f,1.1f))),0.3f));
+	fragColor = to_float4_aw(color,1.0f);
+
+
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+
+}
+
+]]
+
+-- /*
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+--------------------------------------------
+ShaderFuse.begin_create()
+--------------------------------------------
+  ----- In/Out
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    LINK_Visible = false,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+   InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+  })
+
+
+  InShowonlyedges = self:AddInput("SHOWONLYEDGES", "Showonlyedges", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+    IC_NoLabel = true,
+  })
+
+  InNyan = self:AddInput("NYAN (not implemented yet)", "Nyan", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    INP_External        = false,
+    INP_Disabled = true,
+    IC_NoLabel = true,
+  })
+
+  InWaves = self:AddInput("WAVES (disabling not implemented yet)", "Waves", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    INP_External        = false,
+    INP_Disabled = true,
+    IC_NoLabel = true,
+  })
+
+  InBorder = self:AddInput("BORDER", "Border", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    INP_External        = false,
+    IC_NoLabel = true,
+  })
+
+
+  ------ Information
+
+ --------------------------------------------
+ ShaderFuse.end_create()
+ --------------------------------------------
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+
+    -- Extern Texture or create a new one
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+    else
+        src1 = Image(imgattrs)
+        local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+        src1:Fill(p)
+    end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+    -- Interface for running DCTL-Code
+
+    node = DVIPComputeNode(req, "ST_FractalLandKernel", ST_FractalLandKernel, "ST_FractalLandParams", ST_FractalLandParams)
+
+
+    if not pcall(function ()  -- necessary to avoid memory leakage
+        params.freq         = InFreq:GetValue(req).Value
+        params.showonlyedges= InShowonlyedges:GetValue(req).Value
+        params.nyan         = InNyan:GetValue(req).Value
+        params.waves        = InWaves:GetValue(req).Value
+        params.border       = InBorder:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        node:SetParamBlock(params)
+    end) then
+        params              = node:GetParamBlock(ST_FractalLandParams)
+        params.freq         = InFreq:GetValue(req).Value
+        params.showonlyedges= InShowonlyedges:GetValue(req).Value
+        params.nyan         = InNyan:GetValue(req).Value
+        params.waves        = InWaves:GetValue(req).Value
+        params.border       = InBorder:GetValue(req).Value
+        params.compOrder    = src1:IsMask() and 1 or 15
+        params.width        = src1.DataWindow:Width()
+        params.height       = src1.DataWindow:Height()
+        params.iTime        = req.Time / framerate
+        node:SetParamBlock(params)
+    end
+
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst",      dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+    end
+    OutImage:Set(req, dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+	if (param ~= nil) then
+
+
+	end
+end
+
+-- */
+

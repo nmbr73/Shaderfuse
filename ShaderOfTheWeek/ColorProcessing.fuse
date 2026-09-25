@@ -1,0 +1,674 @@
+--[[--/*
+
+  ColorProcessing.fuse
+
+  Based on https://www.shadertoy.com/view/7tfBzs a WebGL shader created by sinvec.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  Color[4];
+  float  Color1[4];
+  float  Color2[4];
+  float  Color3[4];
+  float  Color4[4];
+  float  ViewXY[2];
+  float  ViewZ;
+  float  Hx;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+__DEVICE__ float vmax(float2 v) {return _fmaxf(v.x, v.y);}
+__DEVICE__ float fBox2(float2 p, float2 b) {return vmax(abs_f2(p)-b);}
+
+__DEVICE__ mat2 rot(float a) {float s=_sinf(a), c=_cosf(a); return to_mat2(c,s,-s,c);}
+__DEVICE__ float wf1(float2 p){return _sinf(p.x) + _cosf(p.y);}
+
+__DEVICE__ float cappedCylinder(float3 p, float h, float r){
+    float2 d = abs_f2(to_float2(length(swi2(p,x,z)),p.y)) - to_float2(r, h);
+    return _fminf(max(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f)));
+}
+
+__DEVICE__ float3 map(float3 p, inout float3 *gl, inout float *gl1, inout float3 *gl2, float iTime) {
+    float3 r = to_float3_s(0.0f);
+    float3 d = to_float3_s(0.0f);
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(iTime * 0.5f)));
+    float3 m = p;
+
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(_sinf(-p.y * 0.5f) * 1.1f)));
+    swi2S(p,x,z, abs_f2(swi2(p,z,x))-to_float2_s(0.8f));
+    float i = _sinf(p.y * 3.0f + iTime * 10.0f) * 0.5f + 0.5f;
+    float b = cappedCylinder(p,  5.5f , ((i - 0.5f) * 2.0f * 0.3f) * _cosf(p.y * 0.2f));
+    *gl += (0.0004f/(0.01f+b*b)) * _mix(to_float3(1.0f,0.0f,1.0f), to_float3(1.0f,1.0f,0.0f), p.y);
+    r.x = _fmaxf(cappedCylinder(p, 2.0f, 0.3f + 0.2f * i), -cappedCylinder(p, 3.0f, 0.2f + 0.25f * i));
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(p.y * 3.0f + iTime * 2.0f)));
+    float3 q = p;
+    swi2S(q,x,z, mul_f2_mat2(swi2(q,x,z) , rot(3.14f/2.0f)));
+    if (fBox2(swi2(p,x,y), to_float2(0.2f, 10.0f)) < 0.0f)      r.y=3.0f, r.z=0.0f;//swi2S(r,y,z, to_float2(3.0f,0.0f));
+    else if (fBox2(swi2(q,x,y), to_float2(0.2f, 10.0f)) < 0.0f) r.y=4.0f, r.z=0.0f;//swi2S(r,y,z, to_float2(4.0f, 0.0f));
+    else                                                        r.y=1.0f, r.z=1.0f;//swi2S(r,y,z, to_float2_s(1.0f));
+    *gl1 += (0.000001f/(0.000001f+_powf(r.x+0.003f, 2.0f)));
+    d.x = _fminf(r.x, cappedCylinder(p, 8.5f , (0.25f + (i - 0.5f) * 2.0f * 0.15f) * _cosf(p.y * 0.2f)));
+    d.y = 2.0f;
+    if (r.x > d.x) r = d;
+    p = m;
+    d.x = length(p) - 0.45f - 0.1f * (_sinf(iTime * 10.0f) * 0.5f + 0.5f);
+    *gl2 += (0.0006f/(0.01f+d.x*d.x)) * _mix(to_float3(1.0f,0.0f,1.0f), to_float3(1.0f,1.0f,0.0f), m.y);
+    if (r.x > d.x) r = d;
+    p = m;
+    if (p.y > 0.0f) swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(0.3f)));
+    p = abs_f3(p);
+    swi2S(p,z,x, mul_f2_mat2(swi2(p,z,x) , rot(-3.14f/4.0f)));
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , rot(-3.14f/4.0f)));
+    p.y -= 1.0f;
+    q = p;
+    swi2S(p,y,x, mul_f2_mat2(swi2(p,y,x) , rot( _sinf(p.y * 3.14f) * 0.3f )));
+    d.x =  cappedCylinder(p, 1.0f , (0.06f + (i - 0.5f) * 2.0f * 0.04f));
+    p = q; p.y -= 1.0f;
+    d.x = _fminf(d.x, length(p) - 0.15f - 0.05f * (_sinf(iTime * 10.0f + 1.5f) * 0.5f + 0.5f));
+    *gl2 += (0.0003f/(0.01f+d.x*d.x)) * _mix(to_float3(1.0f,0.0f,1.0f), to_float3(1.0f,1.0f,0.0f), -m.y);
+    d.y = 2.0f;
+    if (r.x > d.x) r = d;
+    return r;
+}
+
+
+__DEVICE__ float3 norm(float3 po, inout float3 *gl, inout float *gl1, inout float3 *gl2, float iTime) {
+
+  const float2 e = to_float2(0.00035f, -0.00035f);
+  return normalize(swi3(e,y,y,x)*map(po+swi3(e,y,y,x),gl,gl1,gl2,iTime).x + swi3(e,y,x,y)*map(po+swi3(e,y,x,y),gl,gl1,gl2,iTime).x +
+                   swi3(e,x,y,y)*map(po+swi3(e,x,y,y),gl,gl1,gl2,iTime).x + swi3(e,x,x,x)*map(po+swi3(e,x,x,x),gl,gl1,gl2,iTime).x);
+}
+
+__KERNEL__ void ColorProcessingFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 Color = to_float4(params->Color[0], params->Color[1], params->Color[2], params->Color[3]);
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  float4 Color3 = to_float4(params->Color3[0], params->Color3[1], params->Color3[2], params->Color3[3]);
+  float4 Color4 = to_float4(params->Color4[0], params->Color4[1], params->Color4[2], params->Color4[3]);
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  Hx = params->Hx;
+
+  // --------
+
+    float3 gl = to_float3_s(0.0f);
+    float gl1 = 0.0f;
+    float3 gl2 = to_float3_s(0.0f);
+
+    float2 uv = (fragCoord - iResolution * 0.5f) / iResolution.y;
+    float3 ro = to_float3(0.0f,3.0f,-6.0f);
+           ro += to_float3_aw(ViewXY,ViewZ);
+    float3 rd = normalize(to_float3_aw(uv,1.0f)),
+           p, h;
+    swi2S(rd,y,z, mul_f2_mat2(swi2(rd,y,z) , rot(-0.4f)));
+    float t = 0.0f;
+    for(int i = 0; i < 120; i++) {
+         p = ro + rd * t;
+         h = map(p,&gl,&gl1,&gl2,iTime);
+         if (h.x<0.0001f||t>40.0f) {
+             if (h.z == 1.0f) h.x = _fabs(h.x) + 0.0001f;
+             else break;
+         };
+         t += h.x * Hx;//0.7f;
+    }
+    //float3 ld = swi3(LD,x,y,z);//to_float3(0.0f, 1.0f,0.0f);
+    //float3 ld1 = swi3(LD1,x,y,z);//to_float3(3.0f, 3.0f, 0.0f);
+    //swi2S(ld1,x,z, mul_f2_mat2(swi2(ld1,x,z) , rot(iTime * 0.3f)));
+    float3 col = to_float3_s(0.1f);
+
+    float alpha = Color.w;
+
+    if (h.x<0.0001f) {
+        if (h.y == 1.0f) col = swi3(Color1,x,y,z);//to_float3(0.1f, 0.3f, 0.2f);
+        if (h.y == 2.0f) col = swi3(Color2,x,y,z);//to_float3(0.7f, 0.7f, 0.3f);
+        if (h.y == 3.0f) col = swi3(Color3,x,y,z);//to_float3(0.5f, 0.9f, 0.5f);
+        if (h.y == 4.0f) col = swi3(Color4,x,y,z);//to_float3(0.5f, 0.5f, 0.9f);
+        alpha = 1.0f;
+    }
+    //col = _mix(col, to_float3(0.1f, 0.3f, 0.2f), clamp(gl1,0.0f,1.0f));
+    col = _mix(col, swi3(Color,x,y,z), clamp(gl1,0.0f,1.0f));
+    col += gl;
+    col += gl2;
+    fragColor = to_float4_aw(col,alpha);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+
+  -- iMouse Controls
+
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    IC_Visible = false,
+  })
+
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+    IC_Visible = false,
+  })
+
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+    IC_Visible = false,
+  })
+  self:BeginControlNest("Color", "Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorColorR = self:AddInput("Red",   "ColorRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColorColorG = self:AddInput("Green", "ColorGreen", { INP_Default  = 0.3, IC_ControlID = 1, attrs})
+    InColorColorB = self:AddInput("Blue",  "ColorBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColorColorA = self:AddInput("Alpha", "ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color1", "Color1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor1ColorR = self:AddInput("Red",   "Color1Red",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InColor1ColorG = self:AddInput("Green", "Color1Green", { INP_Default  = 0.3, IC_ControlID = 1, attrs})
+    InColor1ColorB = self:AddInput("Blue",  "Color1Blue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    --InColor1ColorA = self:AddInput("Alpha", "Color1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs, IC_Visible = false})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color2", "Color2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor2ColorR = self:AddInput("Red",   "Color2Red",   { INP_Default  = 0.7, IC_ControlID = 0, attrs})
+    InColor2ColorG = self:AddInput("Green", "Color2Green", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InColor2ColorB = self:AddInput("Blue",  "Color2Blue",  { INP_Default  = 0.3, IC_ControlID = 2, attrs})
+    --InColor2ColorA = self:AddInput("Alpha", "Color2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs,IC_Visible = false})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color3", "Color3", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color3",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor3ColorR = self:AddInput("Red",   "Color3Red",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColor3ColorG = self:AddInput("Green", "Color3Green", { INP_Default  = 0.9, IC_ControlID = 1, attrs})
+    InColor3ColorB = self:AddInput("Blue",  "Color3Blue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    --InColor3ColorA = self:AddInput("Alpha", "Color3Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs,IC_Visible = false})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color4", "Color4", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color4",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor4ColorR = self:AddInput("Red",   "Color4Red",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColor4ColorG = self:AddInput("Green", "Color4Green", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InColor4ColorB = self:AddInput("Blue",  "Color4Blue",  { INP_Default  = 0.9, IC_ControlID = 2, attrs})
+    --InColor4ColorA = self:AddInput("Alpha", "Color4Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs,IC_Visible = false})
+
+  self:EndControlNest()
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 0.0,
+  })
+
+  InHxSlider = self:AddInput("Hx", "Hx", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 2.0,
+      INP_Default        = 0.7,
+  })
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "ColorProcessingFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  -- iMouse
+
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.Color = {
+    InColorColorR:GetValue(req).Value,
+    InColorColorG:GetValue(req).Value,
+    InColorColorB:GetValue(req).Value,InColorColorA:GetValue(req).Value
+  }
+  params.Color1 = {
+    InColor1ColorR:GetValue(req).Value,
+    InColor1ColorG:GetValue(req).Value,
+    InColor1ColorB:GetValue(req).Value,0.0--InColor2ColorA:GetValue(req).Value
+  }
+  params.Color2 = {
+    InColor2ColorR:GetValue(req).Value,
+    InColor2ColorG:GetValue(req).Value,
+    InColor2ColorB:GetValue(req).Value,0.0--InColor2ColorA:GetValue(req).Value
+  }
+  params.Color3 = {
+    InColor3ColorR:GetValue(req).Value,
+    InColor3ColorG:GetValue(req).Value,
+    InColor3ColorB:GetValue(req).Value,0.0--InColor3ColorA:GetValue(req).Value
+  }
+  params.Color4 = {
+    InColor4ColorR:GetValue(req).Value,
+    InColor4ColorG:GetValue(req).Value,
+    InColor4ColorB:GetValue(req).Value,0.0--InColor4ColorA:GetValue(req).Value
+  }
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.Hx = InHxSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+

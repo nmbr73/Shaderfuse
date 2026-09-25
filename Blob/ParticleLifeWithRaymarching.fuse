@@ -1,0 +1,1648 @@
+--[[--/*
+
+  ParticleLifeWithRaymarching.fuse
+
+  Based on https://www.shadertoy.com/view/43yfWR a WebGL shader created by astrolorant.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   Reset;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  SPACE_SIZE_X;
+  float  SPACE_SIZE_Y;
+  float  SPACE_SIZE_Z;
+  int    MAX_PARTICLES;
+  int    PARTICLE_TYPES;
+  float  SPAWN_CENTER_X;
+  float  SPAWN_CENTER_Y;
+  float  SPAWN_CENTER_Z;
+  float  SPAWN_WIDTH;
+  float  SPAWN_HEIGHT;
+  float  SPAWN_DEPTH;
+  float  MAX_ATTRACTION_DIST;
+  float  MIN_REPULSION_DIST;
+  float  COLLISION_DIST;
+  float  REPULSION_STRENGTH;
+  float  TIME_SCALE;
+  float  VELOCITY_PERSISTENCE;
+  float  FORCE_SCALE;
+  float  CHAOS_AMPLITUDE;
+  float  FLOW_STRENGTH;
+ 
+  float  Color1[4];
+  float  Color2[4];
+  float  Color3[4];
+  float  Color4[4];
+  float  Vignette[4];
+  float  SMOOTHING_FACTOR;
+  float  BASE_PARTICLE_SIZE;
+  float  SIZE_VARIATION;
+  float  PULSE_AMPLITUDE;
+  float  GLOW_INTENSITY;
+  float  LookZ;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) _fmod(a,b)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel0
+// Connect Buffer A 'Previsualization: Buffer B' to iChannel1
+
+
+// Buffer A: Particle Positions
+//#define MAX_PARTICLES 128
+//#define PARTICLE_TYPES 4
+
+// Space parameters
+//#define SPACE_SIZE_X 16.0
+//#define SPACE_SIZE_Y 20.0
+//#define SPACE_SIZE_Z 10.0
+
+// Spawn parameters
+//#define SPAWN_CENTER_X 0.0f
+//#define SPAWN_CENTER_Y 0.0f
+//#define SPAWN_CENTER_Z 0.0f
+//#define SPAWN_WIDTH    8.0f
+//#define SPAWN_HEIGHT   8.0f
+//#define SPAWN_DEPTH    8.0f
+
+// Utility functions
+__DEVICE__ float hash11(float p) {
+    p = fract(p * 0.1031f);
+    p *= p + 33.33f;
+    p *= p + p;
+    return fract(p);
+}
+
+__DEVICE__ float3 hash31(float p) {
+    float3 p3 = fract_f3(to_float3_s(p) * to_float3(0.1031f, 0.1030f, 0.0973f));
+    p3 += dot(p3, swi3(p3,y,z,x) + 33.33f);
+    return fract_f3((swi3(p3,x,x,y) + swi3(p3,y,z,z)) * swi3(p3,z,y,x));
+}
+
+// Wrap position in toroidal space
+__DEVICE__ float3 wrapPosition(float3 pos, float3 SPACE_SIZE) {
+    float3 spaceSize = SPACE_SIZE;//to_float3(SPACE_SIZE_X, SPACE_SIZE_Y, SPACE_SIZE_Z);
+    float3 halfSize = spaceSize * 0.5f;
+
+    float3 wrapped = pos;
+    wrapped.x = pos.x + halfSize.x;
+    wrapped.x = mod_f(wrapped.x, spaceSize.x);
+    wrapped.x = wrapped.x - halfSize.x;
+
+    wrapped.y = pos.y + halfSize.y;
+    wrapped.y = mod_f(wrapped.y, spaceSize.y);
+    wrapped.y = wrapped.y - halfSize.y;
+
+    wrapped.z = pos.z + halfSize.z;
+    wrapped.z = mod_f(wrapped.z, spaceSize.z);
+    wrapped.z = wrapped.z - halfSize.z;
+
+    return wrapped;
+}
+
+__KERNEL__ void ParticleLifeWithRaymarchingFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  SPACE_SIZE_X = params->SPACE_SIZE_X;
+  float  SPACE_SIZE_Y = params->SPACE_SIZE_Y;
+  float  SPACE_SIZE_Z = params->SPACE_SIZE_Z;
+  int    MAX_PARTICLES = params->MAX_PARTICLES;
+  int    PARTICLE_TYPES = params->PARTICLE_TYPES;
+  float  SPAWN_CENTER_X = params->SPAWN_CENTER_X;
+  float  SPAWN_CENTER_Y = params->SPAWN_CENTER_Y;
+  float  SPAWN_CENTER_Z = params->SPAWN_CENTER_Z;
+  float  SPAWN_WIDTH = params->SPAWN_WIDTH;
+  float  SPAWN_HEIGHT = params->SPAWN_HEIGHT;
+  float  SPAWN_DEPTH = params->SPAWN_DEPTH;
+  float  MAX_ATTRACTION_DIST = params->MAX_ATTRACTION_DIST;
+  float  MIN_REPULSION_DIST = params->MIN_REPULSION_DIST;
+  float  COLLISION_DIST = params->COLLISION_DIST;
+  float  REPULSION_STRENGTH = params->REPULSION_STRENGTH;
+  float  TIME_SCALE = params->TIME_SCALE;
+  float  VELOCITY_PERSISTENCE = params->VELOCITY_PERSISTENCE;
+  float  FORCE_SCALE = params->FORCE_SCALE;
+  float  CHAOS_AMPLITUDE = params->CHAOS_AMPLITUDE;
+  float  FLOW_STRENGTH = params->FLOW_STRENGTH;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  float4 Color3 = to_float4(params->Color3[0], params->Color3[1], params->Color3[2], params->Color3[3]);
+  float4 Color4 = to_float4(params->Color4[0], params->Color4[1], params->Color4[2], params->Color4[3]);
+  float4 Vignette = to_float4(params->Vignette[0], params->Vignette[1], params->Vignette[2], params->Vignette[3]);
+  float  SMOOTHING_FACTOR = params->SMOOTHING_FACTOR;
+  float  BASE_PARTICLE_SIZE = params->BASE_PARTICLE_SIZE;
+  float  SIZE_VARIATION = params->SIZE_VARIATION;
+  float  PULSE_AMPLITUDE = params->PULSE_AMPLITUDE;
+  float  GLOW_INTENSITY = params->GLOW_INTENSITY;
+  float  LookZ = params->LookZ;
+
+  // --------
+
+    fragCoord+=0.5f;
+
+    float3 SPACE_SIZE = to_float3(SPACE_SIZE_X, SPACE_SIZE_Y, SPACE_SIZE_Z);
+
+    int2 pixel = to_int2_cfloat(fragCoord);
+
+    if (pixel.y != 0 || pixel.x >= MAX_PARTICLES) {
+        fragColor = to_float4_s(0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    // Get current particle state
+    float4 particle = texelFetch(iChannel0, pixel, 0);
+    float4 velocity = texelFetch(iChannel1, pixel, 0);
+
+    // On first frame, initialize particles in visible area
+    if (iFrame == 0 || Reset) {
+        // Generate random position in spawn zone
+        float3 rand = hash31((float)(pixel.x));
+
+        float3 spawnPos;
+        spawnPos.x = SPAWN_CENTER_X + (rand.x * 2.0f - 1.0f) * (SPAWN_WIDTH * 0.5f);
+        spawnPos.y = SPAWN_CENTER_Y + (rand.y * 2.0f - 1.0f) * (SPAWN_HEIGHT * 0.5f);
+        spawnPos.z = SPAWN_CENTER_Z + (rand.z * 2.0f - 1.0f) * (SPAWN_DEPTH * 0.5f);
+
+        // Distribute types evenly
+        float type = _floor(hash11((float)(pixel.x) * 123.456f) * (float)(PARTICLE_TYPES));
+
+        fragColor = to_float4_aw(spawnPos, type);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    // Update position
+    float3 newPos = swi3(particle,x,y,z) + swi3(velocity,x,y,z) * 0.016f;
+
+    // Wrap position in toroidal space
+    newPos = wrapPosition(newPos, SPACE_SIZE);
+
+    fragColor = to_float4_aw(newPos, particle.w);
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer B                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer B 'Previsualization: Buffer A' to iChannel0
+// Connect Buffer B 'Previsualization: Buffer B' to iChannel1
+
+
+// Buffer B: Particle Velocities
+//#define MAX_PARTICLES 128
+//#define PARTICLE_TYPES 4
+
+// Space parameters (must match Buffer A)
+//#define SPACE_SIZE_X 16.0f
+//#define SPACE_SIZE_Y 20.0f
+//#define SPACE_SIZE_Z 10.0f
+
+// Interaction parameters
+//#define MAX_ATTRACTION_DIST 2.0f
+//#define MIN_REPULSION_DIST 0.5f
+//#define COLLISION_DIST 0.6f
+//#define REPULSION_STRENGTH 14.0f
+//
+//// Dynamic parameters
+//#define TIME_SCALE 0.4
+//#define VELOCITY_PERSISTENCE 1.0f
+//#define FORCE_SCALE 0.05f
+//#define CHAOS_AMPLITUDE 0.1f
+//#define FLOW_STRENGTH 0.1f
+
+union A2F
+ {
+   float3  F;    //32bit float
+   float  A[3];  //32bit Array
+ };
+
+// Calculate shortest distance in toroidal space
+__DEVICE__ float3 toroidalDifference(float3 pos1, float3 pos2, float3 SPACE_SIZE) {
+    //float3 spaceSize = SPACE_SIZE;//to_float3(SPACE_SIZE_X, SPACE_SIZE_Y, SPACE_SIZE_Z);
+    union A2F spaceSize;
+    spaceSize.F = SPACE_SIZE;//to_float3(SPACE_SIZE_X, SPACE_SIZE_Y, SPACE_SIZE_Z);
+    //float3 diff = pos2 - pos1;
+    union A2F diff;
+    diff.F = pos2 - pos1;
+
+    // For each dimension, check if going through the wrap is shorter
+    for (int i = 0; i < 3; i++) {
+        if (diff.A[i] > spaceSize.A[i] * 0.5f) {
+            diff.A[i] -= spaceSize.A[i];
+        } else if (diff.A[i] < -spaceSize.A[i] * 0.5f) {
+            diff.A[i] += spaceSize.A[i];
+        }
+    }
+    return diff.F;
+}
+
+// Flow field noise
+__DEVICE__ float hash12(float2 p) {
+    float3 p3  = fract_f3((swi3(p,x,y,x)) * 0.1031f);
+    p3 += dot(p3, swi3(p3,y,z,x) + 33.33f);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+__DEVICE__ float2 flowField(float3 pos, float time) {
+    float noiseScale = 0.5f;
+    float2 flow = to_float2(
+                             hash12((_floor(swi2(pos,x,z) * noiseScale + time))),
+                             hash12((_floor(swi2(pos,x,z) * noiseScale - time)))
+                           ) * 2.0f - 1.0f;
+    return flow;
+}
+
+__KERNEL__ void ParticleLifeWithRaymarchingFuse__Buffer_B(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  SPACE_SIZE_X = params->SPACE_SIZE_X;
+  float  SPACE_SIZE_Y = params->SPACE_SIZE_Y;
+  float  SPACE_SIZE_Z = params->SPACE_SIZE_Z;
+  int    MAX_PARTICLES = params->MAX_PARTICLES;
+  int    PARTICLE_TYPES = params->PARTICLE_TYPES;
+  float  SPAWN_CENTER_X = params->SPAWN_CENTER_X;
+  float  SPAWN_CENTER_Y = params->SPAWN_CENTER_Y;
+  float  SPAWN_CENTER_Z = params->SPAWN_CENTER_Z;
+  float  SPAWN_WIDTH = params->SPAWN_WIDTH;
+  float  SPAWN_HEIGHT = params->SPAWN_HEIGHT;
+  float  SPAWN_DEPTH = params->SPAWN_DEPTH;
+  float  MAX_ATTRACTION_DIST = params->MAX_ATTRACTION_DIST;
+  float  MIN_REPULSION_DIST = params->MIN_REPULSION_DIST;
+  float  COLLISION_DIST = params->COLLISION_DIST;
+  float  REPULSION_STRENGTH = params->REPULSION_STRENGTH;
+  float  TIME_SCALE = params->TIME_SCALE;
+  float  VELOCITY_PERSISTENCE = params->VELOCITY_PERSISTENCE;
+  float  FORCE_SCALE = params->FORCE_SCALE;
+  float  CHAOS_AMPLITUDE = params->CHAOS_AMPLITUDE;
+  float  FLOW_STRENGTH = params->FLOW_STRENGTH;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  float4 Color3 = to_float4(params->Color3[0], params->Color3[1], params->Color3[2], params->Color3[3]);
+  float4 Color4 = to_float4(params->Color4[0], params->Color4[1], params->Color4[2], params->Color4[3]);
+  float4 Vignette = to_float4(params->Vignette[0], params->Vignette[1], params->Vignette[2], params->Vignette[3]);
+  float  SMOOTHING_FACTOR = params->SMOOTHING_FACTOR;
+  float  BASE_PARTICLE_SIZE = params->BASE_PARTICLE_SIZE;
+  float  SIZE_VARIATION = params->SIZE_VARIATION;
+  float  PULSE_AMPLITUDE = params->PULSE_AMPLITUDE;
+  float  GLOW_INTENSITY = params->GLOW_INTENSITY;
+  float  LookZ = params->LookZ;
+
+  // --------
+    fragCoord+=0.5f;
+
+    float3 SPACE_SIZE = to_float3(SPACE_SIZE_X, SPACE_SIZE_Y, SPACE_SIZE_Z);
+
+
+
+    float attractionMatrix[16] = { // PARTICLE_TYPES * PARTICLE_TYPES
+                                                                    // Type 0  Type 1  Type 2  Type 3
+                                                                     13.0f,    -13.5f,    4.2f,    5.2f,    // Type 0
+                                                                    -9.5f,     21.0f,   -10.2f,    15.4f,    // Type 1
+                                                                     23.2f,    -11.2f,    46.0f,   -22.3f,    // Type 2
+                                                                     13.3f,     18.4f,   -14.3f,    19.4f     // Type 3
+                                                                    };
+
+
+    int2 pixel = to_int2_cfloat(fragCoord);
+
+    if (pixel.y != 0 || pixel.x >= MAX_PARTICLES) {
+        fragColor = to_float4_s(0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    // Get current particle state
+    float4 particle = texelFetch(iChannel0, pixel, 0);
+    float4 velocity = texelFetch(iChannel1, pixel, 0);
+
+    if (iFrame == 0 || Reset) {
+        fragColor = to_float4_s(0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    float3 force = to_float3_s(0.0f);
+    float3 repulsionForce = to_float3_s(0.0f);
+
+    // Time-varying parameters
+    float timeScale = TIME_SCALE * (1.0f + 0.2f * _sinf(iTime * 0.1f)); // Fluctuating time scale
+
+    // Calculate forces from other particles
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (i == pixel.x) continue;
+
+        float4 otherParticle = texelFetch(iChannel0, to_int2(i, 0), 0);
+        float3 diff = toroidalDifference(swi3(particle,x,y,z), swi3(otherParticle,x,y,z), SPACE_SIZE);
+        float dist = length(diff);
+
+        if (dist < COLLISION_DIST) {
+            float repulsionFactor = 1.0f - (dist / COLLISION_DIST);
+            repulsionForce -= normalize(diff) * repulsionFactor * REPULSION_STRENGTH;
+            continue;
+        }
+
+        if (dist > MAX_ATTRACTION_DIST) continue;
+
+        int type1 = (int)(particle.w);
+        int type2 = (int)(otherParticle.w);
+        float attraction = attractionMatrix[type1 * PARTICLE_TYPES + type2];
+
+        // Add time variation to force
+        float timeFactor = 1.0f + 0.2f * _sinf(iTime * 0.5f + (float)(type1 + type2));
+        float forceMag = attraction * timeFactor * (1.0f - smoothstep(MIN_REPULSION_DIST, MAX_ATTRACTION_DIST, dist));
+        force += normalize(diff) * forceMag;
+    }
+
+    // Add flow field influence
+    float2 flow = flowField(swi3(particle,x,y,z), iTime * 0.1f);
+    swi2S(force,x,z, swi2(force,x,z) + flow * FLOW_STRENGTH);
+
+    // Add some chaos
+    float3 chaos = to_float3(
+                              hash12(to_float2(iTime, pixel.x)),
+                              hash12(to_float2(iTime + 1.0f, pixel.x)),
+                              hash12(to_float2(iTime + 2.0f, pixel.x))
+                            ) * 2.0f - 1.0f;
+    force += chaos * CHAOS_AMPLITUDE;
+
+    // Combine forces
+    force += repulsionForce;
+
+    // Update velocity with varying parameters
+    float3 newVel = swi3(velocity,x,y,z) * VELOCITY_PERSISTENCE + force * FORCE_SCALE * timeScale;
+
+    // Limit maximum velocity
+    float maxSpeed = 2.0f + _sinf(iTime * 0.2f) * 0.5f; // Varying speed limit
+    float speed = length(newVel);
+    if (speed > maxSpeed) {
+        newVel = (newVel / speed) * maxSpeed;
+    }
+
+    fragColor = to_float4_aw(newVel, 0.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+// Connect Image 'Previsualization: Buffer B' to iChannel1
+
+
+//#define MAX_PARTICLES 128
+//#define PARTICLE_TYPES 4
+//#define SMOOTHING_FACTOR 0.14
+
+// Particle appearance parameters
+//#define BASE_PARTICLE_SIZE 0.12f    // Base size of particles
+//#define SIZE_VARIATION 0.05f        // How much size varies between types
+//#define PULSE_AMPLITUDE 0.02f       // How much size pulses
+//#define GLOW_INTENSITY 0.4f         // Intensity of particle glow
+
+__DEVICE__ float smin(float a, float b, float k) {
+    float h = clamp(0.5f + 0.5f * (b - a) / k, 0.0f, 1.0f);
+    return _mix(b, a, h) - k * h * (1.0f - h);
+}
+
+__DEVICE__ float getParticleSize(float type, float time, float BASE_PARTICLE_SIZE, float SIZE_VARIATION, int PARTICLE_TYPES, float PULSE_AMPLITUDE) {
+    // Base size varies by type
+    float size = BASE_PARTICLE_SIZE + SIZE_VARIATION * (type / (float)(PARTICLE_TYPES));
+
+    // Add pulsing effect
+    size += PULSE_AMPLITUDE * _sinf(time * 2.0f + type * 2.0f);
+
+    return size;
+}
+
+__DEVICE__ float particleSDF(float3 p, float3 center, float size) {
+    return length(p - center) - size;
+}
+
+__DEVICE__ float sceneSDF(float3 p, float BASE_PARTICLE_SIZE, float SIZE_VARIATION, int PARTICLE_TYPES, float PULSE_AMPLITUDE, int MAX_PARTICLES, float SMOOTHING_FACTOR, float iTime, float2 iResolution, __TEXTURE2D__ iChannel0 ) {
+    float d = 1000.0f;
+
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        float4 particle = texelFetch(iChannel0, to_int2(i, 0), 0);
+        float size = getParticleSize(particle.w, iTime, BASE_PARTICLE_SIZE, SIZE_VARIATION, PARTICLE_TYPES, PULSE_AMPLITUDE);
+        float particleD = particleSDF(p, swi3(particle,x,y,z), size);
+        d = smin(d, particleD, SMOOTHING_FACTOR);
+    }
+    return d;
+}
+
+__DEVICE__ float raymarch(float3 ro, float3 rd, float BASE_PARTICLE_SIZE, float SIZE_VARIATION, int PARTICLE_TYPES, float PULSE_AMPLITUDE, int MAX_PARTICLES, float SMOOTHING_FACTOR, float iTime, float2 iResolution, __TEXTURE2D__ iChannel0) {
+    float t = 0.0f;
+
+    for (int i = 0; i < 100; i++) {
+        float3 p = ro + rd * t;
+        float d = sceneSDF(p, BASE_PARTICLE_SIZE, SIZE_VARIATION, PARTICLE_TYPES, PULSE_AMPLITUDE, MAX_PARTICLES, SMOOTHING_FACTOR, iTime, iResolution, iChannel0);
+
+        if (d < 0.001f) break;
+        if (t > 20.0f) break;
+
+        t += d * 0.5f;
+    }
+    return t;
+}
+
+__DEVICE__ float3 calcNormal(float3 p, float BASE_PARTICLE_SIZE, float SIZE_VARIATION, int PARTICLE_TYPES, float PULSE_AMPLITUDE, int MAX_PARTICLES, float SMOOTHING_FACTOR, float iTime, float2 iResolution, __TEXTURE2D__ iChannel0) {
+    const float h = 0.001f;
+    const float2 k = to_float2(1.0f, -1.0f);
+    return normalize(
+        swi3(k,x,y,y) * sceneSDF(p + swi3(k,x,y,y) * h, BASE_PARTICLE_SIZE, SIZE_VARIATION, PARTICLE_TYPES, PULSE_AMPLITUDE, MAX_PARTICLES, SMOOTHING_FACTOR, iTime, iResolution, iChannel0) +
+        swi3(k,y,y,x) * sceneSDF(p + swi3(k,y,y,x) * h, BASE_PARTICLE_SIZE, SIZE_VARIATION, PARTICLE_TYPES, PULSE_AMPLITUDE, MAX_PARTICLES, SMOOTHING_FACTOR, iTime, iResolution, iChannel0) +
+        swi3(k,y,x,y) * sceneSDF(p + swi3(k,y,x,y) * h, BASE_PARTICLE_SIZE, SIZE_VARIATION, PARTICLE_TYPES, PULSE_AMPLITUDE, MAX_PARTICLES, SMOOTHING_FACTOR, iTime, iResolution, iChannel0) +
+        swi3(k,x,x,x) * sceneSDF(p + swi3(k,x,x,x) * h, BASE_PARTICLE_SIZE, SIZE_VARIATION, PARTICLE_TYPES, PULSE_AMPLITUDE, MAX_PARTICLES, SMOOTHING_FACTOR, iTime, iResolution, iChannel0)
+    );
+}
+
+__KERNEL__ void ParticleLifeWithRaymarchingFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  SPACE_SIZE_X = params->SPACE_SIZE_X;
+  float  SPACE_SIZE_Y = params->SPACE_SIZE_Y;
+  float  SPACE_SIZE_Z = params->SPACE_SIZE_Z;
+  int    MAX_PARTICLES = params->MAX_PARTICLES;
+  int    PARTICLE_TYPES = params->PARTICLE_TYPES;
+  float  SPAWN_CENTER_X = params->SPAWN_CENTER_X;
+  float  SPAWN_CENTER_Y = params->SPAWN_CENTER_Y;
+  float  SPAWN_CENTER_Z = params->SPAWN_CENTER_Z;
+  float  SPAWN_WIDTH = params->SPAWN_WIDTH;
+  float  SPAWN_HEIGHT = params->SPAWN_HEIGHT;
+  float  SPAWN_DEPTH = params->SPAWN_DEPTH;
+  float  MAX_ATTRACTION_DIST = params->MAX_ATTRACTION_DIST;
+  float  MIN_REPULSION_DIST = params->MIN_REPULSION_DIST;
+  float  COLLISION_DIST = params->COLLISION_DIST;
+  float  REPULSION_STRENGTH = params->REPULSION_STRENGTH;
+  float  TIME_SCALE = params->TIME_SCALE;
+  float  VELOCITY_PERSISTENCE = params->VELOCITY_PERSISTENCE;
+  float  FORCE_SCALE = params->FORCE_SCALE;
+  float  CHAOS_AMPLITUDE = params->CHAOS_AMPLITUDE;
+  float  FLOW_STRENGTH = params->FLOW_STRENGTH;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  float4 Color3 = to_float4(params->Color3[0], params->Color3[1], params->Color3[2], params->Color3[3]);
+  float4 Color4 = to_float4(params->Color4[0], params->Color4[1], params->Color4[2], params->Color4[3]);
+  float4 Vignette = to_float4(params->Vignette[0], params->Vignette[1], params->Vignette[2], params->Vignette[3]);
+  float  SMOOTHING_FACTOR = params->SMOOTHING_FACTOR;
+  float  BASE_PARTICLE_SIZE = params->BASE_PARTICLE_SIZE;
+  float  SIZE_VARIATION = params->SIZE_VARIATION;
+  float  PULSE_AMPLITUDE = params->PULSE_AMPLITUDE;
+  float  GLOW_INTENSITY = params->GLOW_INTENSITY;
+  float  LookZ = params->LookZ;
+
+  // --------
+
+    float2 uv = (fragCoord - 0.5f * iResolution) / iResolution.y;
+
+    float Alpha = 1.0f;
+
+    // Animated camera
+    float camRadius = 8.0f + _sinf(iTime * 0.1f) * 1.0f;
+    float camAngle = iTime * 0.2f;
+    float3 ro = to_float3(_cosf(camAngle) * camRadius, 2.0f + _sinf(iTime * 0.15f) * 1.0f, _sinf(camAngle) * camRadius) + to_float3_aw(ViewXY, ViewZ);
+    float3 lookAt = to_float3(0.0f, 0.0f, 0.0f) + to_float3_aw(swi2(iMouse,x,y)/iResolution, LookZ);
+
+    float3 forward = normalize(lookAt - ro);
+    float3 right = normalize(cross(forward, to_float3(0.0f, 1.0f, 0.0f)));
+    float3 up = cross(right, forward);
+    float3 rd = normalize(forward + right * uv.x + up * uv.y);
+
+    float t = raymarch(ro, rd, BASE_PARTICLE_SIZE, SIZE_VARIATION, PARTICLE_TYPES, PULSE_AMPLITUDE, MAX_PARTICLES, SMOOTHING_FACTOR, iTime, iResolution, iChannel0);
+
+    float3 col = to_float3_s(0.0f);
+    if (t < 20.0f) {
+        float3 p = ro + rd * t;
+        float3 n = calcNormal(p, BASE_PARTICLE_SIZE, SIZE_VARIATION, PARTICLE_TYPES, PULSE_AMPLITUDE, MAX_PARTICLES, SMOOTHING_FACTOR, iTime, iResolution, iChannel0);
+
+        float3 light = normalize(to_float3(1.0f, 1.0f, -1.0f));
+        float diff = _fmaxf(0.0f, dot(n, light));
+        float amb = 0.2f;
+
+        float minDist = 1000.0f;
+        int nearestType = 0;
+        for (int i = 0; i < MAX_PARTICLES; i++) {
+            float4 particle = texelFetch(iChannel0, to_int2(i, 0), 0);
+            float dist = length(p - swi3(particle,x,y,z));
+            if (dist < minDist) {
+                minDist = dist;
+                nearestType = (int)(particle.w);
+            }
+        }
+
+        float3 typeColors[4] = { // PARTICLE_TYPES
+                                                swi3(Color1,x,y,z),
+                                                swi3(Color2,x,y,z),
+                                                swi3(Color3,x,y,z),
+                                                swi3(Color4,x,y,z)
+                                            };
+
+        float3 baseColor = typeColors[nearestType];
+
+        // Add glow
+        float glow = _expf(-minDist * 2.0f) * GLOW_INTENSITY;
+        col = baseColor * (diff + amb) + baseColor * glow;
+
+    }
+    else
+      Alpha = Vignette.w;
+
+    // Add some post-processing
+    col = pow_f3(col, to_float3_s(0.8f));     // Gamma correction
+    col += swi3(Vignette,x,y,z) * length(uv); // Subtle vignette
+
+    fragColor = to_float4_aw(col, Alpha);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InSPACE_SIZE_XSlider = self:AddInput("SPACE_SIZE_X", "SPACE_SIZE_X", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 30.0,
+          INP_Default        = 16.0,
+      })
+
+  InSPACE_SIZE_YSlider = self:AddInput("SPACE_SIZE_Y", "SPACE_SIZE_Y", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 30.0,
+          INP_Default        = 20.0,
+      })
+
+  InSPACE_SIZE_ZSlider = self:AddInput("SPACE_SIZE_Z", "SPACE_SIZE_Z", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 30.0,
+          INP_Default        = 10.0,
+      })
+
+  InMAX_PARTICLESSlider = self:AddInput("MAX_PARTICLES", "MAX_PARTICLES", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 512,
+      INP_Default        = 128,
+      INP_Integer        = true,
+  })
+
+  InPARTICLE_TYPESSlider = self:AddInput("PARTICLE_TYPES", "PARTICLE_TYPES", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 20,
+      INP_Default        = 4,
+      INP_Integer        = true,
+  })
+
+  InSPAWN_CENTER_XSlider = self:AddInput("SPAWN_CENTER_X", "SPAWN_CENTER_X", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 0.0,
+      })
+
+  InSPAWN_CENTER_YSlider = self:AddInput("SPAWN_CENTER_Y", "SPAWN_CENTER_Y", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 0.0,
+      })
+
+  InSPAWN_CENTER_ZSlider = self:AddInput("SPAWN_CENTER_Z", "SPAWN_CENTER_Z", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 0.0,
+      })
+
+  InSPAWN_WIDTHSlider = self:AddInput("SPAWN_WIDTH", "SPAWN_WIDTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 8.0,
+      })
+
+  InSPAWN_HEIGHTSlider = self:AddInput("SPAWN_HEIGHT", "SPAWN_HEIGHT", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 8.0,
+      })
+
+  InSPAWN_DEPTHSlider = self:AddInput("SPAWN_DEPTH", "SPAWN_DEPTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 8.0,
+      })
+
+  InMAX_ATTRACTION_DISTSlider = self:AddInput("MAX_ATTRACTION_DIST", "MAX_ATTRACTION_DIST", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 2.0,
+      })
+
+  InMIN_REPULSION_DISTSlider = self:AddInput("MIN_REPULSION_DIST", "MIN_REPULSION_DIST", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 0.5,
+      })
+
+  InCOLLISION_DISTSlider = self:AddInput("COLLISION_DIST", "COLLISION_DIST", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 0.6,
+      })
+
+  InREPULSION_STRENGTHSlider = self:AddInput("REPULSION_STRENGTH", "REPULSION_STRENGTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 30.0,
+          INP_Default        = 14.0,
+      })
+
+  InTIME_SCALESlider = self:AddInput("TIME_SCALE", "TIME_SCALE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 0.4,
+      })
+
+  InVELOCITY_PERSISTENCESlider = self:AddInput("VELOCITY_PERSISTENCE", "VELOCITY_PERSISTENCE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.0,
+      })
+
+  InFORCE_SCALESlider = self:AddInput("FORCE_SCALE", "FORCE_SCALE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.05,
+      })
+
+  InCHAOS_AMPLITUDESlider = self:AddInput("CHAOS_AMPLITUDE", "CHAOS_AMPLITUDE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.1,
+      })
+
+  InFLOW_STRENGTHSlider = self:AddInput("FLOW_STRENGTH", "FLOW_STRENGTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.1,
+      })
+
+
+  self:BeginControlNest("Color1", "Colors", false, {})
+  self:BeginControlNest("Color1", "Color1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor1ColorR = self:AddInput("Red",   "Color1Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColor1ColorG = self:AddInput("Green", "Color1Green", { INP_Default  = 0.2, IC_ControlID = 1, attrs})
+    InColor1ColorB = self:AddInput("Blue",  "Color1Blue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColor1ColorA = self:AddInput("Alpha", "Color1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color2", "Color2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor2ColorR = self:AddInput("Red",   "Color2Red",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InColor2ColorG = self:AddInput("Green", "Color2Green", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColor2ColorB = self:AddInput("Blue",  "Color2Blue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColor2ColorA = self:AddInput("Alpha", "Color2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color3", "Color3", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color3",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor3ColorR = self:AddInput("Red",   "Color3Red",   { INP_Default  = 0.2, IC_ControlID = 0, attrs})
+    InColor3ColorG = self:AddInput("Green", "Color3Green", { INP_Default  = 0.2, IC_ControlID = 1, attrs})
+    InColor3ColorB = self:AddInput("Blue",  "Color3Blue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColor3ColorA = self:AddInput("Alpha", "Color3Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color4", "Color4", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color4",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor4ColorR = self:AddInput("Red",   "Color4Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColor4ColorG = self:AddInput("Green", "Color4Green", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColor4ColorB = self:AddInput("Blue",  "Color4Blue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColor4ColorA = self:AddInput("Alpha", "Color4Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Vignette", "Vignette", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Vignette",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InVignetteColorR = self:AddInput("Red",   "VignetteRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InVignetteColorG = self:AddInput("Green", "VignetteGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InVignetteColorB = self:AddInput("Blue",  "VignetteBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InVignetteColorA = self:AddInput("Alpha", "VignetteAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InSMOOTHING_FACTORSlider = self:AddInput("SMOOTHING_FACTOR", "SMOOTHING_FACTOR", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.1,
+      })
+
+  InBASE_PARTICLE_SIZESlider = self:AddInput("BASE_PARTICLE_SIZE", "BASE_PARTICLE_SIZE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.12,
+      })
+
+  InSIZE_VARIATIONSlider = self:AddInput("SIZE_VARIATION", "SIZE_VARIATION", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.05,
+      })
+
+  InPULSE_AMPLITUDESlider = self:AddInput("PULSE_AMPLITUDE", "PULSE_AMPLITUDE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.02,
+      })
+
+  InGLOW_INTENSITYSlider = self:AddInput("GLOW_INTENSITY", "GLOW_INTENSITY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.4,
+      })
+
+  InLookZSlider = self:AddInput("LookZ", "LookZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 0.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Visible = false, LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Visible = false, LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+  
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "ParticleLifeWithRaymarchingFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "ParticleLifeWithRaymarchingFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.SPACE_SIZE_X = InSPACE_SIZE_XSlider:GetValue(req).Value
+  params.SPACE_SIZE_Y = InSPACE_SIZE_YSlider:GetValue(req).Value
+  params.SPACE_SIZE_Z = InSPACE_SIZE_ZSlider:GetValue(req).Value
+  params.MAX_PARTICLES = InMAX_PARTICLESSlider:GetValue(req).Value
+  params.PARTICLE_TYPES = InPARTICLE_TYPESSlider:GetValue(req).Value
+  params.SPAWN_CENTER_X = InSPAWN_CENTER_XSlider:GetValue(req).Value
+  params.SPAWN_CENTER_Y = InSPAWN_CENTER_YSlider:GetValue(req).Value
+  params.SPAWN_CENTER_Z = InSPAWN_CENTER_ZSlider:GetValue(req).Value
+  params.SPAWN_WIDTH = InSPAWN_WIDTHSlider:GetValue(req).Value
+  params.SPAWN_HEIGHT = InSPAWN_HEIGHTSlider:GetValue(req).Value
+  params.SPAWN_DEPTH = InSPAWN_DEPTHSlider:GetValue(req).Value
+  params.MAX_ATTRACTION_DIST = InMAX_ATTRACTION_DISTSlider:GetValue(req).Value
+  params.MIN_REPULSION_DIST = InMIN_REPULSION_DISTSlider:GetValue(req).Value
+  params.COLLISION_DIST = InCOLLISION_DISTSlider:GetValue(req).Value
+  params.REPULSION_STRENGTH = InREPULSION_STRENGTHSlider:GetValue(req).Value
+  params.TIME_SCALE = InTIME_SCALESlider:GetValue(req).Value
+  params.VELOCITY_PERSISTENCE = InVELOCITY_PERSISTENCESlider:GetValue(req).Value
+  params.FORCE_SCALE = InFORCE_SCALESlider:GetValue(req).Value
+  params.CHAOS_AMPLITUDE = InCHAOS_AMPLITUDESlider:GetValue(req).Value
+  params.FLOW_STRENGTH = InFLOW_STRENGTHSlider:GetValue(req).Value
+
+  params.Color1 = {
+    InColor1ColorR:GetValue(req).Value,
+    InColor1ColorG:GetValue(req).Value,
+    InColor1ColorB:GetValue(req).Value,InColor1ColorA:GetValue(req).Value
+  }
+  params.Color2 = {
+    InColor2ColorR:GetValue(req).Value,
+    InColor2ColorG:GetValue(req).Value,
+    InColor2ColorB:GetValue(req).Value,InColor2ColorA:GetValue(req).Value
+  }
+  params.Color3 = {
+    InColor3ColorR:GetValue(req).Value,
+    InColor3ColorG:GetValue(req).Value,
+    InColor3ColorB:GetValue(req).Value,InColor3ColorA:GetValue(req).Value
+  }
+  params.Color4 = {
+    InColor4ColorR:GetValue(req).Value,
+    InColor4ColorG:GetValue(req).Value,
+    InColor4ColorB:GetValue(req).Value,InColor4ColorA:GetValue(req).Value
+  }
+  params.Vignette = {
+    InVignetteColorR:GetValue(req).Value,
+    InVignetteColorG:GetValue(req).Value,
+    InVignetteColorB:GetValue(req).Value,InVignetteColorA:GetValue(req).Value
+  }
+  params.SMOOTHING_FACTOR = InSMOOTHING_FACTORSlider:GetValue(req).Value
+  params.BASE_PARTICLE_SIZE = InBASE_PARTICLE_SIZESlider:GetValue(req).Value
+  params.SIZE_VARIATION = InSIZE_VARIATIONSlider:GetValue(req).Value
+  params.PULSE_AMPLITUDE = InPULSE_AMPLITUDESlider:GetValue(req).Value
+  params.GLOW_INTENSITY = InGLOW_INTENSITYSlider:GetValue(req).Value
+  params.LookZ = InLookZSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+    
+    
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",Image_Buff_GlobalA)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",Image_Buff_GlobalB)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "ParticleLifeWithRaymarchingFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeB:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+    
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "ParticleLifeWithRaymarchingFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    node:AddInput("iChannel1", Image_Buff_GlobalB)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+    
+  
+  collectgarbage();
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

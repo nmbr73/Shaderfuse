@@ -1,0 +1,1332 @@
+--[[--/*
+
+  Shadertext.fuse
+
+  Based on https://www.shadertoy.com/view/4s3XDn a WebGL shader created by Andre.
+  Converted to DCTL and embeddet into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    typedef float2x2 mat2;
+
+    #define mod_f(a,b)   fmod((a),(b))
+    #define sign_f(a)    sign(a)
+    #define abs_f2(a)    abs(a)
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    typedef struct { float2 r0; float2 r1; } mat2;
+
+    #if defined(USE_NATIVE_OPENCL_IMPL)
+
+      #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+      #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+      #define mod_f(a,b) _fmod(a,b)
+      #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+      #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+
+    #else // Generic
+
+      #define fract(a) ((a)-_floor(a))
+
+      #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+      #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+      #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+
+    #endif
+
+#endif
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+#define line1 H_ e_ l_ l_ o_ _ BOLD S_ h_ a_ d_ e_ r_ t_ o_ y_ BOLD _ t_ h_ i_ s_ _ i_ s_ _ m_ y_
+#define line2 BLUE p_ r_ o_ p_ o_ r_ t_ i_ o_ n_ a_ l_ BLUE _ f_ o_ n_ t_ _dot _ I_ _ h_ o_ p_ e_ _ y_ o_ u_
+#define line3 GREEN l_ i_ k_ e_ GREEN _ i_ t_ _comma _ RED f_ e_ e_ l_ RED _ ITAL f_ r_ e_ e_ ITAL _ t_ o_ _ u_ s_ e_ _ i_ t_ _dot
+#define line4 a_ b_ c_ d_ e_ f_ g_ h_ i_ j_ k_ l_ m_ n_ o_ p_ q_ r_ s_ t_ u_ v_ w_ x_ y_ z_
+#define line5 A_ B_ C_ D_ E_ F_ G_ H_ I_ J_ K_ L_ M_ N_ O_ P_ Q_ R_ S_ T_ U_ V_ W_ X_ Y_ Z_
+#define line6 _1 _2 _3 _4 _5 _6 _7 _8 _9 _0 _dot _comma _exclam _question _open1 _close1 _dotdot _dotcomma _equal _add _sub _mul _div _lt _gt _hash _and _or _und _open2 _close2 _open3 _close3
+
+#define MOVE 0
+
+// line function, used in k, v, w, x, y, z, 1, 2, 4, 7 and ,
+// rest is drawn using (stretched) circle(g)
+
+// todo: distance fields of s,S, J { and }
+// todo before we can show shaders :)
+
+
+__DEVICE__ float line(float2 p, float2 a, float2 b) {
+
+  float2 pa = p - a;
+  float2 ba = b - a;
+  float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0f, 1.0f);
+
+  return length(pa - ba * h);
+}
+
+
+//These functions are re-used by multiple letters
+__DEVICE__ float _u(float2 uv, float w, float v) {
+    return length(to_float2(
+                _fabs(length(to_float2(uv.x,
+                                _fmaxf(0.0f,-(0.4f-v)-uv.y) ))-w)
+               ,_fmaxf(0.0f,uv.y-0.4f)));
+}
+
+
+__DEVICE__ float _i(float2 uv) {
+    return length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.4f)));
+}
+
+
+__DEVICE__ float _j(float2 uv) {
+    uv.x += 0.2f;
+    uv.y += 0.55f;
+    float x = uv.x > 0.0f && uv.y < 0.0f ?
+                _fabs(length(uv)-0.25f)
+               : _fminf(length(uv+to_float2(0.0f,0.25f)),
+                    length(to_float2(uv.x-0.25f,_fmaxf(0.0f,_fabs(uv.y-0.475f)-0.475f))));
+    return x;
+}
+
+
+__DEVICE__ float _l(float2 uv) {
+    uv.y -= 0.2f;
+    return length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.6f)));
+}
+
+
+__DEVICE__ float _o(float2 uv) {
+    return _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.15f)))-0.25f);
+}
+
+
+// Here is the alphabet
+__DEVICE__ float aa_old(float2 uv) {
+    uv = -uv;
+    float x = _fabs(length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.05f),uv.y-0.2f))-0.2f);
+    x = _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y-0.2f)-0.2f))));
+    return _fminf(x,(uv.x<0.?uv.y<0.:_atan2f(uv.x,uv.y+0.15f)>2.0f)?_o(uv):length(to_float2(uv.x-0.22734f,uv.y+0.254f)));
+}
+
+
+#define pi 3.141
+#define deg(x) (x*pi/180.0f-pi)
+
+
+__DEVICE__ float aa(float2 uvo) {
+  // uv.y = _fabs(uv.y);
+  float yOfs = 0.4f;
+  float center = yOfs * 0.5f;
+  float a = _atan2f(uvo.x*sign_f(uvo.y),_fabs(uvo.y)-center);
+
+  float2 uv = to_float2(uvo.x,a>deg(0.0f) && a<deg(90.0f) ? -_fabs(uvo.y):_fabs(uvo.y));
+  float x = _fabs(length(
+        to_float2( _fmaxf(0.0f, _fabs(uv.x) - 0.25f + center),
+              uv.y - 0.5f * yOfs))
+                 -yOfs * 0.5f );
+  x = _fminf(x,length(to_float2(uvo.x+0.25f,uvo.y-center)));
+  // x = a>deg(45.0f) && a<deg(115.0f) ? length(to_float2(x,_fabs(a-deg(115.0f))*0.25f)) : x;
+  return _fminf(x,length(to_float2(uvo.x-0.25f,_fmaxf(0.0f,_fabs(uvo.y+0.25f*yOfs)-0.75f*yOfs))));
+}
+
+
+__DEVICE__ float bb(float2 uv) {
+    float x = _o(uv);
+    uv.x += 0.25f;
+    return _fminf(x,_l(uv));
+}
+
+
+__DEVICE__ float cc(float2 uv) {
+    float x = _o(uv);
+    uv.y= _fabs(uv.y);
+    return uv.x<0.||_atan2f(uv.x,uv.y-0.15f)<1.14?x:
+                    _fminf(length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.15f))),//makes df right
+                        length(uv+to_float2(-0.22734f,-0.254f)));
+}
+
+
+__DEVICE__ float dd(float2 uv) {
+    uv.x *= -1.0f;
+    return bb(uv);
+}
+
+
+__DEVICE__ float ee(float2 uv) {
+    float x = _o(uv);
+    return _fminf(uv.x<0.||uv.y>.05||_atan2f(uv.x,uv.y+0.15f)>2.?x:length(to_float2(uv.x-0.22734f,uv.y+0.254f)),
+               length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.05f)));
+}
+
+
+__DEVICE__ float ff(float2 uv) {
+    uv.x *= -1.0f;
+    uv.x += 0.05f;
+    float x = _j(to_float2(uv.x,-uv.y));
+    uv.y -= 0.4f;
+    x = _fminf(x,length(to_float2(_fmaxf(0.0f,_fabs(uv.x-0.05f)-0.25f),uv.y)));
+    return x;
+}
+
+
+__DEVICE__ float gg(float2 uv) {
+    float x = _o(uv);
+    return _fminf(x,uv.x>0.||_atan2f(uv.x,uv.y+0.6f)<-2.?
+               _u(uv,0.25f,-0.2f):
+               length(uv+to_float2(0.23f,0.7f)));
+}
+
+
+__DEVICE__ float hh(float2 uv) {
+    uv.y *= -1.0f;
+    float x = _u(uv,0.25f,0.25f);
+    uv.x += 0.25f;
+    uv.y *= -1.0f;
+    return _fminf(x,_l(uv));
+}
+
+
+__DEVICE__ float ii(float2 uv) {
+    return _fminf(_i(uv),length(to_float2(uv.x,uv.y-0.6f)));
+}
+
+
+__DEVICE__ float jj(float2 uv) {
+    uv.x+=0.05f;
+    return _fminf(_j(uv),length(to_float2(uv.x-0.05f,uv.y-0.6f)));
+}
+
+
+__DEVICE__ float kk(float2 uv) {
+    float x = line(uv,to_float2(-0.25f,-0.1f), to_float2(0.25f,0.4f));
+    x = _fminf(x,line(uv,to_float2(-0.15f,0.0f), to_float2(0.25f,-0.4f)));
+    uv.x+=0.25f;
+    return _fminf(x,_l(uv));
+}
+
+
+__DEVICE__ float ll(float2 uv) {
+    return _l(uv);
+}
+
+
+__DEVICE__ float mm(float2 uv) {
+    //uv.x *= 1.4f;
+    uv.y *= -1.0f;
+    uv.x-=0.175f;
+    float x = _u(uv,0.175f,0.175f);
+    uv.x+=0.35f;
+    x = _fminf(x,_u(uv,0.175f,0.175f));
+    uv.x+=0.175f;
+    return _fminf(x,_i(uv));
+}
+
+
+__DEVICE__ float nn(float2 uv) {
+    uv.y *= -1.0f;
+    float x = _u(uv,0.25f,0.25f);
+    uv.x+=0.25f;
+    return _fminf(x,_i(uv));
+}
+
+__DEVICE__ float oo(float2 uv) {
+    return _o(uv);
+}
+
+__DEVICE__ float pp(float2 uv) {
+    float x = _o(uv);
+    uv.x += 0.25f;
+    uv.y += 0.4f;
+    return _fminf(x,_l(uv));
+}
+
+
+__DEVICE__ float qq(float2 uv) {
+    uv.x = -uv.x;
+    return pp(uv);
+}
+
+
+__DEVICE__ float rr(float2 uv) {
+    uv.x -= 0.05f;
+    float x =_atan2f(uv.x,uv.y-0.15f)<1.14&&uv.y>0.?_o(uv):length(to_float2(uv.x-0.22734f,uv.y-0.254f));
+
+    //)?_o(uv):length(to_float2(uv.x-0.22734f,uv.y+0.254f))+0.4f);
+
+    uv.x+=0.25f;
+    return _fminf(x,_i(uv));
+}
+
+
+__DEVICE__ float ss_old(float2 uv) {
+    if (uv.y <0.225f-uv.x*0.5f && uv.x>0.0f || uv.y<-0.225f-uv.x*0.5f)
+        uv = -uv;
+    float a = _fabs(length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.05f),uv.y-0.2f))-0.2f);
+    float b = length(to_float2(uv.x-0.231505f,uv.y-0.284f));
+    float x = _atan2f(uv.x-0.05f,uv.y-0.2f)<1.14?a:b;
+    return x;
+}
+
+__DEVICE__ float ss(float2 uvo) {
+  float yOfs = 0.4f;
+  float center = yOfs * 0.5f;
+  float a = _atan2f(uvo.x*sign_f(uvo.y),_fabs(uvo.y)-center);
+
+  float2 uv = to_float2(uvo.x, a>deg(270.0f) && a<deg(360.0f) ? -_fabs(uvo.y):_fabs(uvo.y));
+  float x = _fabs(length(
+        to_float2( _fmaxf(0.0f, _fabs(uv.x) - 0.25f + center),
+              uv.y - center))
+                 -center );
+  x = _fminf(x,length(to_float2(uvo.x+0.25f,uvo.y-center)));
+  return x;
+}
+
+
+__DEVICE__ float tt(float2 uv) {
+    uv.x *= -1.0f;
+    uv.y -= 0.4f;
+    uv.x += 0.05f;
+    float x = _fminf(_j(uv),length(to_float2(_fmaxf(0.0f,_fabs(uv.x-0.05f)-0.25f),uv.y)));
+    return x;
+}
+
+
+__DEVICE__ float uu(float2 uv) {
+    return _u(uv,0.25f,0.25f);
+}
+
+
+__DEVICE__ float vv(float2 uv) {
+    uv.x=_fabs(uv.x);
+    return line(uv,to_float2(0.25f,0.4f), to_float2(0.0f,-0.4f));
+}
+
+
+__DEVICE__ float ww(float2 uv) {
+    uv.x=_fabs(uv.x);
+    return _fminf(line(uv,to_float2(0.3f,0.4f), to_float2(0.2f,-0.4f)),
+               line(uv,to_float2(0.2f,-0.4f), to_float2(0.0f,0.1f)));
+}
+
+
+__DEVICE__ float xx(float2 uv) {
+    uv=abs_f2(uv);
+    return line(uv,to_float2(0.0f,0.0f), to_float2(0.3f,0.4f));
+}
+
+
+__DEVICE__ float yy(float2 uv) {
+    return _fminf(line(uv,to_float2(0.0f,-0.2f), to_float2(-0.3f,0.4f)),
+                  line(uv,to_float2(0.3f,0.4f), to_float2(-0.3f,-0.8f)));
+}
+
+
+__DEVICE__ float zz(float2 uv) {
+    float l = line(uv,to_float2(0.25f,0.4f), to_float2(-0.25f,-0.4f));
+    uv.y=_fabs(uv.y);
+    float x = length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.4f));
+    return _fminf(x,l);
+}
+
+
+// Capitals
+__DEVICE__ float AA(float2 uv) {
+    float x = length(to_float2(
+                _fabs(length(to_float2(uv.x,
+                                _fmaxf(0.0f,uv.y-0.35f) ))-0.25f)
+               ,_fminf(0.0f,uv.y+0.4f)));
+    return _fminf(x,length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.1f) ));
+}
+
+
+__DEVICE__ float BB(float2 uv) {
+    uv.y -=0.1f;
+    uv.y = _fabs(uv.y);
+    float x = length(to_float2(
+                _fabs(length(to_float2(_fmaxf(0.0f,uv.x),
+                                 uv.y-0.25f))-0.25f)
+               ,_fminf(0.0f,uv.x+0.25f)));
+    return _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.5f)) ));
+}
+
+
+__DEVICE__ float CC(float2 uv) {
+    float x = _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.25f)))-0.25f);
+    uv.y -= 0.1f;
+    uv.y= _fabs(uv.y);
+    return uv.x<0.0f||_atan2f(uv.x,uv.y-0.25f)<1.14f?x:
+                      _fminf(length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.25f))),//makes df right
+                             length(uv+to_float2(-0.22734f,-0.354f)));
+}
+
+
+__DEVICE__ float DD(float2 uv) {
+    uv.y -=0.1f;
+    //uv.y = _fabs(uv.y);
+    float x = length(to_float2(
+                _fabs(length(to_float2(_fmaxf(0.0f,uv.x),
+                                _fmaxf(0.0f,_fabs(uv.y)-0.25f)))-0.25f)
+               ,_fminf(0.0f,uv.x+0.25f)));
+    return _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.5f)) ));
+}
+
+
+__DEVICE__ float EE(float2 uv) {
+    uv.y -=0.1f;
+    uv.y = _fabs(uv.y);
+    float x = _fminf(length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y)),
+                     length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.5f)));
+    return _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))));
+}
+
+
+__DEVICE__ float FF(float2 uv) {
+    uv.y -=0.1f;
+    float x = _fminf(length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y)),
+                     length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.5f)));
+    return _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))));
+}
+
+
+__DEVICE__ float GG(float2 uv) {
+    float x = _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.25f)))-0.25f);
+    uv.y -= 0.1f;
+    float a = _atan2f(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.25f));
+    x = uv.x<0.0f||a<1.14f || a>3.0f?x:
+                    _fminf(length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.25f))),//makes df right
+                           length(uv+to_float2(-0.22734f,-0.354f)));
+    x = _fminf(x,line(uv,to_float2(0.22734f,-0.1f),to_float2(0.22734f,-0.354f)));
+    return _fminf(x,line(uv,to_float2(0.22734f,-0.1f),to_float2(0.05f,-0.1f)));
+}
+
+
+__DEVICE__ float HH(float2 uv) {
+    uv.y -=0.1f;
+    uv.x = _fabs(uv.x);
+    float x = length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y));
+    return _fminf(x,length(to_float2(uv.x-0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))));
+}
+
+
+__DEVICE__ float II(float2 uv) {
+    uv.y -= 0.1f;
+    float x = length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.5f)));
+    uv.y = _fabs(uv.y);
+    return _fminf(x,length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.1f),uv.y-0.5f)));
+}
+
+
+__DEVICE__ float JJ(float2 uv) {
+    uv.x += 0.125f;
+    float x = length(to_float2(
+                _fabs(length(to_float2(uv.x,
+                                _fminf(0.0f,uv.y+0.15f) ))-0.25f)
+               ,_fmaxf(0.0f,_fmaxf(-uv.x,uv.y-0.6f))));
+    return _fminf(x,length(to_float2(_fmaxf(0.0f,_fabs(uv.x-0.125f)-0.125f),uv.y-0.6f)));
+}
+
+
+__DEVICE__ float KK(float2 uv) {
+    float x = line(uv,to_float2(-0.25f,-0.1f), to_float2(0.25f,0.6f));
+    x = _fminf(x,line(uv,to_float2(-0.1f, 0.1f), to_float2(0.25f,-0.4f)));
+//    uv.x+=0.25f;
+    return _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.5f))));
+}
+
+
+__DEVICE__ float LL(float2 uv) {
+    uv.y -=0.1f;
+    float x = length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.2f),uv.y+0.5f));
+    return _fminf(x,length(to_float2(uv.x+0.2f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))));
+}
+
+
+__DEVICE__ float MM(float2 uv) {
+    uv.y-=0.1f;
+    float x = _fminf(length(to_float2(uv.x-0.35f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))),
+                     line(uv,to_float2(-0.35f,0.5f),to_float2(0.0f,-0.1f)));
+    x = _fminf(x,line(uv,to_float2(0.0f,-0.1f),to_float2(0.35f,0.5f)));
+    return _fminf(x,length(to_float2(uv.x+0.35f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))));
+}
+
+
+__DEVICE__ float NN(float2 uv) {
+    uv.y-=0.1f;
+    float x = _fminf(length(to_float2(uv.x-0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))),
+                  line(uv,to_float2(-0.25f,0.5f),to_float2(0.25f,-0.5f)));
+    return _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))));
+}
+
+
+__DEVICE__ float OO(float2 uv) {
+    return _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.25f)))-0.25f);
+}
+
+
+__DEVICE__ float PP(float2 uv) {
+    float x = length(to_float2(
+                _fabs(length(to_float2(_fmaxf(0.0f,uv.x),
+                                 uv.y-0.35f))-0.25f)
+               ,_fminf(0.0f,uv.x+0.25f)));
+    return _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.5f)) ));
+}
+
+
+__DEVICE__ float QQ(float2 uv) {
+    float x = _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.25f)))-0.25f);
+    uv.y += 0.3f;
+    uv.x -= 0.2f;
+    return _fminf(x,length(to_float2(_fabs(uv.x+uv.y),_fmaxf(0.0f,_fabs(uv.x-uv.y)-0.2f)))/_sqrtf(2.0f));
+}
+
+
+__DEVICE__ float RR(float2 uv) {
+    float x = length(to_float2(
+                _fabs(length(to_float2(_fmaxf(0.0f,uv.x),
+                                       uv.y-0.35f))-0.25f)
+               ,_fminf(0.0f,uv.x+0.25f)));
+    x = _fminf(x,length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.5f)) ));
+    return _fminf(x,line(uv,to_float2(0.0f,0.1f),to_float2(0.25f,-0.4f)));
+}
+
+
+__DEVICE__ float SS(float2 uv) {
+    uv.y -= 0.1f;
+    if (uv.y <0.275f-uv.x*0.5f && uv.x>0.0f || uv.y<-0.275f-uv.x*0.5f)
+        uv = -uv;
+    float a = _fabs(length(to_float2(_fmaxf(0.0f,_fabs(uv.x)),uv.y-0.25f))-0.25f);
+    float b = length(to_float2(uv.x-0.236f,uv.y-0.332f));
+    float x = _atan2f(uv.x-0.05f,uv.y-0.25f)<1.14?a:b;
+    return x;
+}
+
+
+__DEVICE__ float TT(float2 uv) {
+    uv.y -= 0.1f;
+    float x = length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.5f)));
+    return _fminf(x,length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.5f)));
+}
+
+
+__DEVICE__ float UU(float2 uv) {
+    float x = length(to_float2(
+                     _fabs(length(to_float2(uv.x,
+                     _fminf(0.0f,uv.y+0.15f) ))-0.25f)
+                     ,_fmaxf(0.0f,uv.y-0.6f)));
+    return x;
+}
+
+
+__DEVICE__ float VV(float2 uv) {
+    uv.x=_fabs(uv.x);
+    return line(uv,to_float2(0.25f,0.6f), to_float2(0.0f,-0.4f));
+}
+
+
+__DEVICE__ float WW(float2 uv) {
+    uv.x=_fabs(uv.x);
+    return _fminf(line(uv,to_float2(0.3f,0.6f), to_float2(0.2f,-0.4f)),
+                  line(uv,to_float2(0.2f,-0.4f), to_float2(0.0f,0.2f)));
+}
+
+
+__DEVICE__ float XX(float2 uv) {
+    uv.y -= 0.1f;
+    uv=abs_f2(uv);
+    return line(uv,to_float2(0.0f,0.0f), to_float2(0.3f,0.5f));
+}
+
+
+__DEVICE__ float YY(float2 uv) {
+    return _fminf(min(line(uv,to_float2(0.0f, 0.1f), to_float2(-0.3f, 0.6f)),
+                      line(uv,to_float2(0.0f, 0.1f), to_float2( 0.3f, 0.6f))),
+                      length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y+0.15f)-0.25f))));
+}
+
+
+__DEVICE__ float ZZ(float2 uv) {
+    float l = line(uv,to_float2(0.25f,0.6f), to_float2(-0.25f,-0.4f));
+    uv.y-=0.1f;
+    uv.y=_fabs(uv.y);
+    float x = length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.5f));
+    return _fminf(x,l);
+}
+
+
+//Numbers
+__DEVICE__ float _11(float2 uv) {
+    return _fminf(min(
+             line(uv,to_float2(-0.2f,0.45f),to_float2(0.0f,0.6f)),
+             length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.5f)))),
+             length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.2f),uv.y+0.4f)));
+}
+
+
+__DEVICE__ float _22(float2 uv) {
+    float x = _fminf(line(uv,to_float2(0.185f,0.17f),to_float2(-0.25f,-0.4f)),
+                     length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y+0.4f)));
+    uv.y-=0.35f;
+    uv.x += 0.025f;
+    return _fminf(x,_fabs(_atan2f(uv.x,uv.y)-0.63f)<1.64f?_fabs(length(uv)-0.275f):
+                    length(uv+to_float2(0.23f,-0.15f)));
+}
+
+
+__DEVICE__ float _33(float2 uv) {
+    uv.y-=0.1f;
+    uv.y = _fabs(uv.y);
+    uv.y-=0.25f;
+    return _atan2f(uv.x,uv.y)>-1.?_fabs(length(uv)-0.25f):
+           _fminf(length(uv+to_float2(0.211f,-0.134f)),length(uv+to_float2(0.0f,0.25f)));
+}
+
+
+__DEVICE__ float _44(float2 uv) {
+    float x = _fminf(length(to_float2(uv.x-0.15f,_fmaxf(0.0f,_fabs(uv.y-0.1f)-0.5f))),
+                     line(uv,to_float2(0.15f,0.6f),to_float2(-0.25f,-0.1f)));
+    return _fminf(x,length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y+0.1f)));
+}
+
+
+__DEVICE__ float _55(float2 uv) {
+    float b = _fminf(length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.6f)),
+                     length(to_float2(uv.x+0.25f,_fmaxf(0.0f,_fabs(uv.y-0.36f)-0.236f))));
+    uv.y += 0.1f;
+    uv.x += 0.05f;
+    float c = _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.0f)))-0.3f);
+    return _fminf(b,_fabs(_atan2f(uv.x,uv.y)+1.57f)<0.86f && uv.x<0.0f?
+                  length(uv+to_float2(0.2f,0.224f))
+                  :c);
+}
+
+
+__DEVICE__ float _66(float2 uv) {
+    uv.y-=0.075f;
+    uv = -uv;
+    float b = _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.275f)))-0.25f);
+    uv.y-=0.175f;
+    float c = _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.05f)))-0.25f);
+    return _fminf(c,_cosf(_atan2f(uv.x,uv.y+0.45f)+0.65f)<0.0f||(uv.x>0.&& uv.y<0.0f)?b:
+               length(uv+to_float2(0.2f,0.6f)));
+}
+
+
+__DEVICE__ float _77(float2 uv) {
+    return _fminf(length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.6f)),
+                  line(uv,to_float2(-0.25f,-0.39f),to_float2(0.25f,0.6f)));
+}
+
+
+__DEVICE__ float _88(float2 uv) {
+    float l = length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.08f),uv.y-0.1f+uv.x*0.07f));
+    uv.y-=0.1f;
+    uv.y = _fabs(uv.y);
+    uv.y-=0.245f;
+    return _fminf(_fabs(length(uv)-0.255f),l);
+}
+
+
+__DEVICE__ float _99(float2 uv) {
+    uv.y-=0.125f;
+    float b = _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.275f)))-0.25f);
+    uv.y-=0.175f;
+    float c = _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.05f)))-0.25f);
+    return _fminf(c,_cosf(_atan2f(uv.x,uv.y+0.45f)+0.65f)<0.0f||(uv.x>0.0f&& uv.y<0.0f)?b:
+               length(uv+to_float2(0.2f,0.6f)));
+}
+
+
+__DEVICE__ float _00(float2 uv) {
+    uv.y-=0.1f;
+    return _fabs(length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.25f)))-0.25f);
+}
+
+
+//Symbols
+__DEVICE__ float ddot(float2 uv) {
+    uv.y+=0.4f;
+    return length(uv)*0.97f;//-0.03f;
+}
+
+
+__DEVICE__ float comma(float2 uv) {
+    return _fminf(ddot(uv),line(uv,to_float2(0.031f,-0.405f),to_float2(-0.029f,-0.52f)));
+}
+
+
+__DEVICE__ float exclam(float2 uv) {
+    return _fminf(ddot(uv),length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y-0.2f)-0.4f)))-uv.y*0.06f);
+}
+
+
+__DEVICE__ float question(float2 uv) {
+    float x = _fminf(ddot(uv),length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y+0.035f)-0.1125f))));
+    uv.y-=0.35f;
+    uv.x += 0.025f;
+    return _fminf(x,_fabs(_atan2f(uv.x,uv.y)-1.05f)<2.?_fabs(length(uv)-0.275f):
+                    length(uv+to_float2(0.225f,-0.16f))-0.0f);
+}
+
+
+__DEVICE__ float open1(float2 uv) {
+    uv.x-=0.62f;
+    return _fabs(_atan2f(uv.x,uv.y)+1.57f)<1.0f?
+           _fabs(length(uv)-0.8f)
+           :length(to_float2(uv.x+0.435f,_fabs(uv.y)-0.672f));
+}
+
+
+__DEVICE__ float close1(float2 uv) {
+    uv.x = -uv.x;
+    return open1(uv);
+}
+
+
+__DEVICE__ float dotdot(float2 uv) {
+    uv.y -= 0.1f;
+    uv.y = _fabs(uv.y);
+    uv.y-=0.25f;
+    return length(uv);
+}
+
+
+__DEVICE__ float dotcomma(float2 uv) {
+    uv.y -= 0.1f;
+    float x = line(uv,to_float2(0.0f,-0.28f),to_float2(-0.029f,-0.32f));
+    uv.y = _fabs(uv.y);
+    uv.y-=0.25f;
+    return _fminf(length(uv),x);
+}
+
+
+__DEVICE__ float eequal(float2 uv) {
+    uv.y -= 0.1f;
+    uv.y = _fabs(uv.y);
+    return length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.15f));
+}
+
+
+__DEVICE__ float aadd(float2 uv) {
+    uv.y -= 0.1f;
+    return _fminf(length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y)),
+                  length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.25f))));
+}
+
+
+__DEVICE__ float ssub(float2 uv) {
+    return length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.1f));
+}
+
+
+__DEVICE__ float mmul(float2 uv) {
+    uv.y -= 0.1f;
+    uv = abs_f2(uv);
+    return _fminf(line(uv,to_float2(0.866f*0.25f,0.5f*0.25f),to_float2_s(0.0f))
+                 ,length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.25f))));
+}
+
+
+__DEVICE__ float ddiv(float2 uv) {
+    return line(uv,to_float2(-0.25f,-0.4f),to_float2(0.25f,0.6f));
+}
+
+
+__DEVICE__ float lt(float2 uv) {
+    uv.y-=0.1f;
+    uv.y = _fabs(uv.y);
+    return line(uv,to_float2(0.25f,0.25f),to_float2(-0.25f,0.0f));
+}
+
+
+__DEVICE__ float gt(float2 uv) {
+    uv.x=-uv.x;
+    return lt(uv);
+}
+
+
+__DEVICE__ float hash(float2 uv) {
+    uv.y-=0.1f;
+    uv.x -= uv.y*0.1f;
+    uv = abs_f2(uv);
+    return _fminf(length(to_float2(uv.x-0.125f,_fmaxf(0.0f,_fabs(uv.y)-0.3f))),
+                  length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y-0.125f)));
+}
+
+
+__DEVICE__ float sym_and(float2 uv) {
+    uv.y-=0.44f;
+    uv.x+=0.05f;
+    float x = _fabs(_atan2f(uv.x,uv.y))<2.356f?_fabs(length(uv)-0.15f):1.0f;
+    x = _fminf(x,line(uv,to_float2(-0.106f,-0.106f),to_float2(0.4f,-0.712f)));
+    x = _fminf(x,line(uv,to_float2( 0.106f,-0.106f),to_float2(-0.116f,-0.397f)));
+    uv.x-=0.025f;
+    uv.y+=0.54f;
+    x = _fminf(x,_fabs(_atan2f(uv.x,uv.y)-0.785f)>1.57f?_fabs(length(uv)-0.2f):1.0f);
+    return _fminf(x,line(uv,to_float2( 0.141f,-0.141f),to_float2( 0.377f,0.177f)));
+}
+
+
+__DEVICE__ float sym_or(float2 uv) {
+    uv.y -= 0.1f;
+    return length(to_float2(uv.x,_fmaxf(0.0f,_fabs(uv.y)-0.5f)));
+}
+
+
+__DEVICE__ float und(float2 uv) {
+    return length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.25f),uv.y+0.4f));
+}
+
+
+__DEVICE__ float open2(float2 uv) {
+    uv.y -= 0.1f;
+    uv.y = _fabs(uv.y);
+    return _fminf(length(to_float2(uv.x+0.125f,_fmaxf(0.0f,_fabs(uv.y)-0.5f))),
+                  length(to_float2(_fmaxf(0.0f,_fabs(uv.x)-0.125f),uv.y-0.5f)));
+}
+
+
+__DEVICE__ float close2(float2 uv) {
+    uv.x=-uv.x;
+    return open2(uv);
+}
+
+
+__DEVICE__ float open3(float2 uv) {
+    uv.y -= 0.1f;
+    uv.y = _fabs(uv.y);
+    float x = length(to_float2(
+                     _fabs(length(to_float2((uv.x*sign_f(uv.y-0.25f)-0.2f),
+                     _fmaxf(0.0f,_fabs(uv.y-0.25f)-0.05f) ))-0.2f)
+               ,_fmaxf(0.0f,_fabs(uv.x)-0.2f)));
+    return  x;
+
+}
+
+
+__DEVICE__ float close3(float2 uv) {
+    uv.x=-uv.x;
+    return open3(uv);
+}
+
+
+__DEVICE__ float2 clc(float2 uv, float cp, float w, float ital) {
+    return uv-to_float2(cp-(w*0.5f)+uv.y*ital,0.0f);
+}
+
+
+__DEVICE__ bool hit(float2 uv,inout float *cp,float w, float px) {
+    return _fabs((*cp+=w)-uv.x)<w+0.2f;
+}
+
+
+//Render char if it's up
+#define ch(l,w) if (hit(uv,&cp,w,px)) { x=_fminf(x,l(clc(uv,cp,w,ital))); us=cur;}
+
+//Render char always (no effects anymore)
+//#define ch(l,w) x = _fminf(x,l(clc(uv,cp+=w,w,ital)));
+
+//Make it a bit easier to type text
+#define a_ ch(aa,0.7f);
+#define b_ ch(bb,0.7f);
+#define c_ ch(cc,0.7f);
+#define d_ ch(dd,0.7f);
+#define e_ ch(ee,0.7f);
+#define f_ ch(ff,0.6f);
+#define g_ ch(gg,0.7f);
+#define h_ ch(hh,0.7f);
+#define i_ ch(ii,0.33f);
+#define j_ ch(jj,0.33f);
+#define k_ ch(kk,0.7f);
+#define l_ ch(ll,0.33f);
+#define m_ ch(mm,0.9f);
+#define n_ ch(nn,0.7f);
+#define o_ ch(oo,0.7f);
+#define p_ ch(pp,0.7f);
+#define q_ ch(qq,0.7f);
+#define r_ ch(rr,0.7f);
+#define s_ ch(ss,0.7f);
+#define t_ ch(tt,0.7f);
+#define u_ ch(uu,0.7f);
+#define v_ ch(vv,0.7f);
+#define w_ ch(ww,0.8f);
+#define x_ ch(xx,0.8f);
+#define y_ ch(yy,0.8f);
+#define z_ ch(zz,0.7f);
+#define A_ ch(AA,0.7f);
+#define B_ ch(BB,0.7f);
+#define C_ ch(CC,0.7f);
+#define D_ ch(DD,0.7f);
+#define E_ ch(EE,0.7f);
+#define F_ ch(FF,0.7f);
+#define G_ ch(GG,0.7f);
+#define H_ ch(HH,0.7f);
+#define I_ ch(II,0.5f);
+#define J_ ch(JJ,0.5f);
+#define K_ ch(KK,0.7f);
+#define L_ ch(LL,0.5f);
+#define M_ ch(MM,0.9f);
+#define N_ ch(NN,0.7f);
+#define O_ ch(OO,0.7f);
+#define P_ ch(PP,0.7f);
+#define Q_ ch(QQ,0.7f);
+#define R_ ch(RR,0.7f);
+#define S_ ch(SS,0.7f);
+#define T_ ch(TT,0.7f);
+#define U_ ch(UU,0.7f);
+#define V_ ch(VV,0.7f);
+#define W_ ch(WW,0.8f);
+#define X_ ch(XX,0.8f);
+#define Y_ ch(YY,0.8f);
+#define Z_ ch(ZZ,0.7f);
+#define _1 ch(_11,0.7f);
+#define _2 ch(_22,0.7f);
+#define _3 ch(_33,0.7f);
+#define _4 ch(_44,0.7f);
+#define _5 ch(_55,0.7f);
+#define _6 ch(_66,0.7f);
+#define _7 ch(_77,0.7f);
+#define _8 ch(_88,0.7f);
+#define _9 ch(_99,0.7f);
+#define _0 ch(_00,0.7f);
+#define _dot ch(ddot,0.33f);
+#define _comma ch(comma,0.33f);
+#define _exclam ch(exclam,0.33f);
+#define _question ch(question,0.8f);
+#define _open1 ch(open1,0.7f);
+#define _close1 ch(close1,0.7f);
+#define _dotdot ch(dotdot,0.33f);
+#define _dotcomma ch(dotcomma,0.33f);
+#define _equal ch(eequal,0.7f);
+#define _add ch(aadd,0.7f);
+#define _sub ch(ssub,0.7f);
+#define _mul ch(mmul,0.7f);
+#define _div ch(ddiv,0.7f);
+#define _lt ch(lt,0.7f);
+#define _gt ch(gt,0.7f);
+#define _hash ch(hash,0.7f);
+#define _and ch(sym_and,0.9f);
+#define _or ch(sym_or,0.33f);
+#define _und ch(und,0.7f);
+#define _open2 ch(open2,0.6f);
+#define _close2 ch(close2,0.6f);
+#define _open3 ch(open3,0.7f);
+#define _close3 ch(close3,0.7f);
+
+//Space
+#define _ cp+=0.5f;
+
+//Markup
+#define BOLD cur.w = 1.5f-cur.w;
+#define ITAL ital = 0.15f-ital;
+#define RED cur.x = 0.8f-cur.x;
+#define GREEN cur.y = 0.6f-cur.y;
+#define BLUE cur.z = 1.0f-cur.z;
+
+//Next line
+#define crlf uv.y += 2.0f; cp = 0.0f;
+
+
+__KERNEL__ void ShadertextFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture) {
+
+  DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+  if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  // --------
+
+  float ms = 0.0f;
+  if (iMouse.z>0.0f) {
+    ms = 1.0f;
+  }
+  float scale = 1.1f-ms;
+  float2 mouseOffs = ms*(swi2(iMouse,x,y)-0.5f*iResolution) / scale;
+  float2 uv = (fragCoord+mouseOffs-0.5f*iResolution) / iResolution.x * 22.0f;
+
+  #if (MOVE)
+    scale += 1.0f-1.4f*_cosf(iTime*0.17f);
+    uv.x += _sinf(iTime);
+    uv.y += _cosf(iTime*2.13f);
+    float angle = _sinf(iTime*0.073f);
+    mat2 rotate = mat2(
+        _cosf(angle),-_sinf(angle),
+        _sinf(angle), _cosf(angle));
+    uv *= rotate;
+  #endif
+
+  uv *= scale;
+
+  //float ofs = _floor(uv.x)+8.0f;
+  //uv.x = mod_f(uv.x,1.0f)-0.5f;
+
+  float px = 42.0f/iResolution.x*_powf(scale,1.3f);
+  float x = 100.0f;
+  float cp = 0.0f;
+  float4 cur = to_float4(0.0f,0.0f,0.0f,0.5f);
+  float4 us = cur;
+  float ital = 0.0f;
+  //uv+= 0.03f*_cosf(uv*7.0f+iTime);
+  //uv.y += 2.0f;
+  uv.x += 10.1f;
+  //uv.y -= 3.0f;
+  //uv.x += 5.0f;
+
+  int lnr = 2-(int)(_floor(uv.y/2.0f));
+  uv.y = mod_f(uv.y,2.0f)-1.0f;
+
+  if (lnr==0) {line1}
+  if (lnr==1) {line2}
+  if (lnr==2) {line3}
+  if (lnr==3) {line4}
+  if (lnr==4) {line5}
+  if (lnr==5) {line6}
+
+  float3 clr = to_float3_s(0.0f);
+
+  // Wobbly font
+  // float weight = 0.05f+_sinf(length(-10.0f+uv*3.9f-10.0f*_sinf(0.09f*iTime)))/50.0f;
+
+  float weight = 0.01f+us.w*_fminf(iTime*0.02f-0.05f,0.05f);//+0.03f*length(_sinf(uv*6.0f+0.3f*iTime));//+0.02f-0.06f*_cosf(iTime*0.4f+1.0f);
+
+  if (ms>0.0f) {
+      fragColor = to_float4_aw(_mix(swi3(us,x,y,z)+0.5f-0.5f*smoothstep(0.0f,2.0f*px, _fabs(mod_f(x,0.1f)-0.05f)),to_float3_s(1.0f), _sqrtf(x)),1.0f);
+  } else {
+      fragColor = to_float4_aw(_mix(swi3(us,x,y,z),to_float3_s(1.0f),smoothstep(weight-px,weight+px, x)),1.0f);
+  }
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  -- iMouse Controls
+
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+
+
+
+function Process(req)
+
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+    node = DVIPComputeNode(req,
+    "ShadertextFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate)
+
+  -- iMouse
+
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+  node:AddOutput("dst", dst)
+
+
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+
+
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end
+
+ 	end
+end
+
+
+-- */

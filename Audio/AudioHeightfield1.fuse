@@ -1,0 +1,571 @@
+--[[--/*
+
+  AudioHeightfield1.fuse
+
+  Based on https://www.shadertoy.com/view/ldXGzN a WebGL shader created by huttarl.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image '/media/a/a6a1cf7a09adfed8c362492c88c30d74fb3d2f4f7ba180ba34b98556660fada1.mp3' to iChannel0
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+// Based on video heightfield by @simesgreen, https://www.shadertoy.com/view/Xss3zr
+
+/* To try:
+ - adjust range and scale of sound frequencies.
+   x use x^2 or something so they're spread more evenly
+   - adjust upward - are we missing some at the bottom?
+     No, there are no lower frequencies to show, apparently.
+*/
+
+
+
+// transforms
+__DEVICE__ float3 rotateX(float3 p, float a)
+{
+    float sa = _sinf(a);
+    float ca = _cosf(a);
+    float3 r;
+    r.x = p.x;
+    r.y = ca*p.y - sa*p.z;
+    r.z = sa*p.y + ca*p.z;
+    return r;
+}
+
+__DEVICE__ float3 rotateY(float3 p, float a)
+{
+    float sa = _sinf(a);
+    float ca = _cosf(a);
+    float3 r;
+    r.x = ca*p.x + sa*p.z;
+    r.y = p.y;
+    r.z = -sa*p.x + ca*p.z;
+    return r;
+}
+
+__DEVICE__ bool intersectBox(float3 ro, float3 rd, float3 boxmin, float3 boxmax, out float *tnear, out float *tfar)
+{
+  // compute intersection of ray with all six bbox planes
+  float3 invR = 1.0f / rd;
+  float3 tbot = invR * (boxmin - ro);
+  float3 ttop = invR * (boxmax - ro);
+  // re-order intersections to find smallest and largest on each axis
+  float3 tmin = _fminf (ttop, tbot);
+  float3 tmax = _fmaxf (ttop, tbot);
+  // find the largest tmin and the smallest tmax
+  float2 t0 = _fmaxf (swi2(tmin,x,x), swi2(tmin,y,z));
+  *tnear = _fmaxf (t0.x, t0.y);
+  t0 = _fminf (swi2(tmax,x,x), swi2(tmax,y,z));
+  *tfar = _fminf (t0.x, t0.y);
+  // check for hit
+  bool hit;
+  if ((*tnear > *tfar))
+    hit = false;
+  else
+    hit = true;
+  return hit;
+}
+
+
+__DEVICE__ float normalCurve(float x) {
+  const float pi = 3.141592653589f;
+  // const float e = 2.71828f;
+  // return _powf(e, -x*x*0.5f) / _sqrtf(2.0f * pi);
+  // Cauchy:
+  return 1.0f/(pi * (1.0f + x*x));
+}
+
+// return texture coords from 0 to 1
+__DEVICE__ float2 worldToTex(float3 p)
+{
+  float2 uv = swi2(p,x,z)*0.5f+0.5f;
+  uv.y = 1.0f - uv.y;
+  return uv;
+}
+
+__DEVICE__ float h1(float2 uv, __TEXTURE2D__ iChannel0) {
+  float band = _powf(uv.x, 2.0f); // _floor(uv.x * bands) / bands;
+  float amp = texture(iChannel0, to_float2(band, 0.25f)).x;
+  return amp * normalCurve((uv.y - 0.5f) * 5.0f) * 1.5f; //  * (1.0f - _fabs(p.z - 0.5f));
+}
+
+// return a value from 0 to 1
+__DEVICE__ float heightField(float3 p, __TEXTURE2D__ iChannel0)
+{
+  float2 uv = worldToTex(p);
+  // Get amplitude of the frequency that corresponds to p.x
+  return h1(uv, iChannel0);
+
+  // return _sinf(p.x * 4.0f) * _sinf(p.z * 4.0f) * 0.5f + 0.5f;
+}
+
+__DEVICE__ bool traceHeightField(float3 ro, float3 rayStep, out float3 *hitPos, __TEXTURE2D__ iChannel0, int _Steps)
+{
+  float3 p = ro;
+  bool hit = false;
+  float pH = 0.0f;
+  float3 pP = p;
+  for(int i=0; i<_Steps; i++) {
+    float h = heightField(p,iChannel0);
+    if ((p.y < h) && !hit) {
+      hit = true;
+      //*hitPos = p;
+      // interpolate based on height
+      *hitPos = _mix(pP, p, (pH - pP.y) / ((p.y - pP.y) - (h - pH)));
+    }
+    pH = h;
+    pP = p;
+    p += rayStep;
+  }
+  return hit;
+}
+
+__DEVICE__ float3 background(float3 rd)
+{
+     return _mix(to_float3(1.0f, 1.0f, 1.0f), to_float3(0.0f, 0.5f, 1.0f), _fabs(rd.y));
+}
+
+__KERNEL__ void AudioHeightfield1Fuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+
+  // --------
+
+
+
+  const int _Steps = 64;
+  const float3 lightDir = to_float3(0.577f, 0.577f, 0.577f);
+
+  const float bands = 30.0f;
+
+  float2 pixel = (fragCoord / iResolution)*2.0f-1.0f;
+
+  // compute ray origin and direction
+  float asp = iResolution.x / iResolution.y;
+  float3 rd = normalize(to_float3(asp*pixel.x, pixel.y, -2.0f));
+  float3 ro = to_float3(0.0f, 0.0f, 2.0f);
+
+  float2 mouse = (swi2(iMouse,x,y)) / iResolution - 0.5f;
+
+  // rotate view
+  float a;
+  a = (0.25f + mouse.y) * 2.0f - 1.0f;
+  //= -1.0f;
+  rd = rotateX(rd, a);
+  ro = rotateX(ro, a);
+
+  //a = -(mouse.x)*3.0f;
+  a = _sinf(iTime*0.2f-mouse.x);
+  rd = rotateY(rd, a);
+  ro = rotateY(ro, a);
+
+  // intersect with bounding box
+  bool hit;
+  const float3 boxMin = to_float3(-1.0f, -0.01f, -1.0f);
+  const float3 boxMax = to_float3(1.0f, 0.5f, 1.0f);
+  float tnear, tfar;
+  hit = intersectBox(ro, rd, boxMin, boxMax, &tnear, &tfar);
+
+  tnear -= 0.0001f;
+  float3 pnear = ro + rd*tnear;
+  float3 pfar = ro + rd*tfar;
+
+  float stepSize = length(pfar - pnear) / (float)(_Steps);
+
+  float3 rgb = background(rd);
+  if(hit)
+    {
+      // intersect with heightfield
+      ro = pnear;
+      float3 hitPos;
+      hit = traceHeightField(ro, rd*stepSize, &hitPos,iChannel0, _Steps);
+      if (hit) {
+        // rgb = hitPos*0.5f+0.5f;
+
+        float2 uv = worldToTex(hitPos);
+        // rgb = _tex2DVecN(iChannel0,uv.x,uv.y,15).xyz;
+        float amp = h1(uv,iChannel0) * 2.0f;
+
+        // float amp = hitPos.y * 2.0f;
+              // Compute hue
+        rgb = to_float3(amp, 4.0f * amp * (1.0f - amp), 0.5f * (1.0f - amp));
+              // Add white waveform
+        float wave = texture(iChannel0, to_float2(uv.x, 0.75f)).x;
+        rgb += 1.0f -  smoothstep( 0.0f, 0.01f, _fabs(wave - uv.y));
+        // to_float3(amp, amp * 0.7f + 0.2f, amp * 0.5f + 0.2f);
+        //vec2 g = gradient(iChannel0, uv, to_float2_s(1.0f) / iResolution);
+        //vec3 n = normalize(to_float3(g.x, 0.01f, g.y));
+        //rgb = n*0.5f+0.5f;
+#if 0
+        // shadows
+        hitPos += to_float3(0.0f, 0.01f, 0.0f);
+        bool shadow = traceHeightField(hitPos, lightDir*0.01f, &hitPos,iChannel0, _Steps);
+        if (shadow) {
+          rgb *= 0.75f;
+        }
+#endif
+      }
+    }
+
+    fragColor=to_float4_aw(rgb, 1.0f);
+  //fragColor = to_float4_aw(to_float3(tfar - tnear)*0.2f, 1.0f);
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+
+  -- iMouse Controls
+
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "AudioHeightfield1Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  -- iMouse
+
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+
