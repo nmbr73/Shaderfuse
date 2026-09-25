@@ -13,6 +13,58 @@ This is a list of the shadertoys I've tried to convert in some way. Its purpose 
 
 | Name | Type | Comment |
 | ------ | :------: | ------ |
+|[The Tetris Dimension](https://www.shadertoy.com/view/NtByzD)| fuse | ShaderOFTheWeek 39/26 |
+|[Day 515](https://www.shadertoy.com/view/73c3DB)| incub | A ! Blending |
+|[interactive soap bubble](https://www.shadertoy.com/view/7Xt3Dl)| incub | AB !!! |
+|[crystal skull v0](https://www.shadertoy.com/view/73cGzs)| incub | !!! Picture |
+|[Barrels](https://www.shadertoy.com/view/s33Gzf)| incub | !!! Picture |
+|[Bump Grid](https://www.shadertoy.com/view/7X33Rj)| incub |  |
+|[neon cube 3](https://www.shadertoy.com/view/733Gzj)| incub | A |
+|[Active Matter loading splash v2](https://www.shadertoy.com/view/sXc3Rj)| incub | !! |
+|[河流 - Fluss](https://www.shadertoy.com/view/s3dGD4)| incub | ! |
+|[trippy water thing heheh](https://www.shadertoy.com/view/N333zS)| incub | A Blending ! |
+|[[AI] A Breath of Becoming](https://www.shadertoy.com/view/73t3WN)| incub | A !! |
+|[Plasma Singularity](https://www.shadertoy.com/view/s3dGD8)| incub |  |
+|[Nice for eyes - Fabrice Fork...](https://www.shadertoy.com/view/73c3DH)| incub | AB Blending !! |
+|[Nonlinear Dynamical System](https://www.shadertoy.com/view/sfBGRK)| incub | ABCD ! |
+|[Maelstorm Relief](https://www.shadertoy.com/view/sXdGR7)| incub | ABCD Blending !! |
+|[Trains On Log Spirals](https://www.shadertoy.com/view/sX33Wr)| incub | !!! |
+|[Synapse (parametric)](https://www.shadertoy.com/view/fcVSWc)| incub | ! |
+|[Zero-Diffusion Bijection Fluid](https://www.shadertoy.com/view/fXcGR8)| incub |  |
+|[Graphic Design Experiment 17](https://www.shadertoy.com/view/lXXcDM)| fuse | ShaderOfTheWeek 36/26 |
+|[Disco Voronoi](https://www.shadertoy.com/view/7cKSzG)| incub | !! |
+|[So you think you can swim..](https://www.shadertoy.com/view/sfGSWz)| incub | !!! |
+|[Day 495](https://www.shadertoy.com/view/ffVSzy)| incub | A |
+|[Barquinhos](https://www.shadertoy.com/view/sfGSRw)| incub | !! |
+|[glass_panel](https://www.shadertoy.com/view/NfVXzz)| incub |  |
+|[Voronoi Squares Y28](https://www.shadertoy.com/view/NctSD4)| incub | ! |
+|[spirits](https://www.shadertoy.com/view/fftSzj)| incub | A |
+|[Day 483.2](https://www.shadertoy.com/view/Nc3Szj)| incub | AB ! |
+|[Glass Origin](https://www.shadertoy.com/view/scS3Wy)| fuse | ShaderOfTheWeek 34/26 |
+|[Pencil sketch](https://www.shadertoy.com/view/fctSRl)| incub | !! |
+|[Particle Tracking Study](https://www.shadertoy.com/view/7cdXDr)| incub | AB Blending |
+|[Wet stone](https://www.shadertoy.com/view/ldSSzV)| incub | !!! |
+|[blocks + techno](https://www.shadertoy.com/view/7ctXRM)| incub | !! |
+|[Club Claude](https://www.shadertoy.com/view/ctlGRl)| incub |  |
+|[Cube Subdivision](https://www.shadertoy.com/view/3XKXzG)| incub | A !! |
+|[Extruded Fibonacci Zoom](https://www.shadertoy.com/view/sfVGDG)| fuse | ShaderOfTheWeek 33/26 |
+|[lil house w/ garden](https://www.shadertoy.com/view/7cKGWK)| incub | !!! |
+|[Cartoon: La Linea Episode 10](https://www.shadertoy.com/view/NfVGzd)| incub | AB !!! |
+|[Luffing](https://www.shadertoy.com/view/sf3GRs)| incub | !! |
+|[Ink Cracking Effect](https://www.shadertoy.com/view/NfKGWy)| incub | A ! |
+|[RockySpiralIi5Tunnels15S](https://www.shadertoy.com/view/sfGGRR)| incub |  |
+|[033 - A bad smoke solver](https://www.shadertoy.com/view/sfKGzz)| incub | A ! |
+|[Inspired by Rafik Anadol](https://www.shadertoy.com/view/NfVGDw)| incub |  |
+|[Infinite chocolate](https://www.shadertoy.com/view/fcK3RK)| incub | A !!! |
+|[Bustling Galaxies](https://www.shadertoy.com/view/NfV3zD)| incub | ! |
+|[Happy Accident Tunnel Y28](https://www.shadertoy.com/view/fcVGzD)| incub | ! |
+|[Mineral Rich Tunnel #2 Y28](https://www.shadertoy.com/view/NfKGzD)| incub | !! |
+|[Mineral Rich Tunnel](https://www.shadertoy.com/view/ffKGzD)| incub | !! |
+|[Louvre in Glass](https://www.shadertoy.com/view/7fKGRD)| incub | !! |
+|[Grid Attractor](https://www.shadertoy.com/view/43cBzn)| incub |  |
+|[DULL SKULL - The Vigil](https://www.shadertoy.com/view/7cG3D1)| incub | ! |
+|[Space Elevator on the Moon](https://www.shadertoy.com/view/ffyGW1)| incub | !! |
+|[sorry for this](https://www.shadertoy.com/view/sfcGW7)| incub | AB !! |
 |[Cave Diving](https://www.shadertoy.com/view/XcVyWD)| fuse | ShaderOfTheWeek 29/26 |
 |[Retro TV Random Signal](https://www.shadertoy.com/view/Nfc3Rj)| incub | !!! |
 |[holographic foil card openPose](https://www.shadertoy.com/view/scd3zM)| incub | A Text defect |

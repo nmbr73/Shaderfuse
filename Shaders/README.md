@@ -34,10 +34,10 @@ See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. t
 [Cartoon: La Linea Episode 10
 ](Misc/CartoonLaLineaEpisode10.md) by [Espeset](https://www.shadertoy.com/user/Espeset)
 
-#### Current Shader of the Week (3th of September 2026):
+#### Current Shader of the Week (25th of September 2026):
 
-[![Graphic Design Experiment 17](ShaderOfTheWeek/GraphicDesignExperiment17.gif)](ShaderOfTheWeek/GraphicDesignExperiment17.md) <br>
-[Graphic Design Experiment 17](ShaderOfTheWeek/GraphicDesignExperiment17.md) by [yasuo](https://www.shadertoy.com/user/yasuo)
+[![The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.gif)](ShaderOfTheWeek/TheTetrisDimension.md) <br>
+[The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.md) by [Hyeve](https://www.shadertoy.com/user/Hyeve)
 
 
 

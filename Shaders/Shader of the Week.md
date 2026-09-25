@@ -4,9 +4,13 @@ title: Shader of the Week
 ---
 On the home page of ShaderToy.com the "Shader of the Week" is presented. As far as this can be converted to DCTL, I will set this shader here.
 ----
+## 25th of September 2026
+#### [The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.md) (Shadertoy ID [NtByzD](https://www.shadertoy.com/view/NtByzD))
+[![The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.gif)](ShaderOfTheWeek/TheTetrisDimension.md)
+----
 ## 3th of September 2026
 #### [Graphic Design Experiment 17](ShaderOfTheWeek/GraphicDesignExperiment17.md) (Shadertoy ID [lXXcDM](https://www.shadertoy.com/view/lXXcDM))
-[![Graphic Design Experiment 17](ShaderOfTheWeek/GraphicDesignExperiment17.gif)](ShaderOfTheWeek/GlassOrigin.md)
+[![Graphic Design Experiment 17](ShaderOfTheWeek/GraphicDesignExperiment17.gif)](ShaderOfTheWeek/GraphicDesignExperiment17.md)
 ----
 ## 21th of August 2026
 #### [Glass Origin](ShaderOfTheWeek/GlassOrigin.md) (Shadertoy ID [scS3Wy](https://www.shadertoy.com/view/scS3Wy))
