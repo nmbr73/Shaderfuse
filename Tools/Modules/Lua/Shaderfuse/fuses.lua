@@ -1,6 +1,6 @@
 --- A list of fuses.
 --
--- This module scanns all the files in the repository and manages all
+-- This module scans all the files in the repository and manages all
 -- the fuses found in a list of Fuse objects.
 --
 --    local fuses = require("Shaderfuse/fuses")
@@ -12,31 +12,26 @@
 -- Dependencies: `bmd.readdir`
 -- @module fuses
 
-
-
 Fuse = require("Shaderfuse/Fuse")
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Local structure to manage the Fuse objects.
---
--- This hash `fuses` contains a `list` structure with the valid Fuse object instances and with `categories` the names of the folders those
--- Fuses were found in.
+-- This hash `fuses` contains a `list` structure with the valid Fuse object instances
+-- and with `categories` the names of the folders those Fuses were found in.
 --
 -- @table fuses
--- @field list A structure to manage a list of fuses.
--- @field categories Hash to look up categories.
---
+-- @field list A structure to manage a list of fuses
+-- @field categories Hash to look up categories
+
 local fuses = {
   list = nil,
   categories = {}
 }
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
--- Get a fuse object form the list of fuses.
+------------------------------------------------------------------------------
+-- Get a fuse object from the list of fuses.
 --
 -- Searches in the list of fuses for an object of category `category` and the name `fusename`.
 --
@@ -50,13 +45,11 @@ function fuses.get_fuse(category,fusename)
       return f
     end
   end
-
   return nil
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Initialize the `fuses` structure.
 --
 -- Traverses the `path` and searches for Fuses to add them to the `fuses.list`.
@@ -65,21 +58,19 @@ end
 -- @param[type=bool,opt=false] details true, if the fuses should be read for details
 --
 function fuses.fetch(path, phase, list)
-
-  -- 'list' parameter is only for internal use to recursively call 'fetch()''.
+  -- 'list' parameter is only for internal use to recursively call 'fetch()'
   assert(phase)
-
   assert(path)
 
-  if list==nil then
+  if list == nil then
     list = {}
 
-    if path==nil or path=="" then
+    if path == nil or path == "" then
       return list
     end
 
-    if string.sub(path,-1) ~= "/" then
-      path = path.."/"
+    if string.sub(path, -1) ~= "/" then
+      path = path .. "/"
     end
 
     fuses.fetch(path, phase, list)
@@ -98,33 +89,30 @@ function fuses.fetch(path, phase, list)
     fuses.categories = {}
     local cat = ''
     for i, fuse in ipairs(fuses.list) do
-      if fuse.Category~=cat then
-        cat=fuse.Category
-        table.insert(fuses.categories,cat)
+      if fuse.Category ~= cat then
+        cat = fuse.Category
+        table.insert(fuses.categories, cat)
       end
     end
 
     table.sort(fuses.categories)
-
   else
-
-    local handle	= bmd.readdir(path .. "*")
+    local handle = bmd.readdir(path .. "*")
 
     for k, v in pairs(handle) do
-      if (v.Name ~= nil and string.sub(v.Name,0,1) ~= ".") then
-        if (v.IsDir == false) then
-          if string.sub(v.Name,-5) == '.fuse' then
-            table.insert(list,Fuse:new(path..v.Name,phase,true))
+      if v.Name ~= nil and string.sub(v.Name, 0, 1) ~= "." then
+        if v.IsDir == false then
+          if string.sub(v.Name, -5) == '.fuse' then
+            table.insert(list, Fuse:new(path .. v.Name, phase, true))
           end
         else
-          fuses.fetch(path..v.Name.."/", phase, list )
+          fuses.fetch(path .. v.Name .. "/", phase, list)
         end
       end
     end
-
   end
-
 end
+
 
 
 

@@ -8,7 +8,7 @@ local fuses = {}
 
 for _, file in ipairs(files) do
 
-	local handle = io.open(shaderfuses_path .. file.Name,"r")
+  local handle = io.open(shaderfuses_path .. file.Name,"r")
 
   if handle ~= nil then
 
@@ -28,13 +28,10 @@ for _, file in ipairs(files) do
         Version = version,
       })
     end
+
   end
+
 end
-
-
-
-
-
 
 local ui = fu.UIManager
 local ui_dispatcher = bmd.UIDispatcher(ui)
@@ -113,24 +110,22 @@ local win = ui_dispatcher:AddWindow({
     },
   })
 
-
 local itm = win:GetItems()
 local current_fuse = nil
 
 function win.On.Add.Clicked(ev)
-	-- win:Hide()
+  -- win:Hide()
   local fuse = current_fuse
   if fuse and fuse ~= "" and comp then
     comp:AddTool('Fuse.Shaderfuse_' .. tostring(fuse) .. '_reactor', -32768, -32768)
   end
-end
 
+end
 
 function win.On.Cancel.Clicked(ev)
     win:Hide()
     ui_dispatcher:ExitLoop()
 end
-
 
 function win.On.ShaderfuseOverview.Close(ev)
     win:Hide()
@@ -140,12 +135,11 @@ end
 function win.On.Files.ItemDoubleClicked(ev)
     local category = ev.item.Text[0]
     local name = ev.item.Text[1]
-
     if name ~= nil and category ~= nil then
       bmd.openurl('https://nmbr73.github.io/Shaderfuse/'..category..'/'..name..'/')
     end
-end
 
+end
 
 function win.On.Files.CurrentItemChanged(ev)
     local fuse=ev.item.Text[2]
@@ -158,14 +152,10 @@ function win.On.Files.CurrentItemChanged(ev)
     end
 
     itm.Add.Enabled = (comp ~= nil)
-
     itm.Thumbnail.Text='<img src="' .. shaderfuses_path .. path_separator .. fuse
       .. '.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
-
     itm.Info.Text = '  '..ev.item.Text[1]..' ported by '..ev.item.Text[4]
 end
-
-
 
 local hdr = itm.Files:NewItem()
 
@@ -201,15 +191,12 @@ for _, f in ipairs(fuses) do
 
     itm.Files:AddTopLevelItem(newitem)
 
-	numFuses=numFuses+1
+  numFuses=numFuses+1
 end
 
 itm.Files:SortByColumn(1, "AscendingOrder")
 itm.Files:SortByColumn(0, "AscendingOrder")
 
-
-
 win:Show()
 ui_dispatcher:RunLoop()
 win:Hide()
-

@@ -9,14 +9,10 @@ local selectFusesDialog = require("Shaderfuse/selectFusesDialog")
 -- print("path '".. user_config.pathToRepository .."'")
 -- local targetIsGitRepo = bmd.fileexists(user_config.pathToRepository..'.git')
 
-
 local ui_manager    = fu.UIManager
 local ui_dispatcher = bmd.UIDispatcher(ui_manager)
 
-
 fuses.fetch(user_config.pathToRepository..'Shaders/','development')
-
-
 
 selectFusesDialog.window(
     ui_manager,
@@ -28,6 +24,5 @@ selectFusesDialog.window(
       cancelLabel='OK',
       logo=image.logo_label(ui_manager),
     }):Show()
-
 
 ui_dispatcher:RunLoop()

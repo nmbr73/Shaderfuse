@@ -4,8 +4,7 @@ require("Shaderfuse/util")
 local fuses = require("Shaderfuse/fuses")
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Substitute placeholders in the installer template.
 --
 -- @param fuse The fuse the installer should be build for.
@@ -15,10 +14,8 @@ local fuses = require("Shaderfuse/fuses")
 -- @return the installer source code.
 
 function patch_installer_source(fuse,installer_code,fuse_code)
-
   if not installer_code then util.set_error("no installer_code for patch_installer_source()"); return nil end
   if not fuse_code then util.set_error("no fuse_code for patch_installer_source()"); return nil end
-
   installer_code = installer_code:gsub('{{> hash <}}',fuse.Commit.Hash)
   installer_code = installer_code:gsub('{{> hash15 <}}',string.sub(fuse.Commit.Hash,1,15))
   installer_code = installer_code:gsub('{{> version <}}',fuse.Commit.Version)
@@ -30,20 +27,16 @@ function patch_installer_source(fuse,installer_code,fuse_code)
   installer_code = installer_code:gsub('{{> Shadertoy.Name <}}',fuse.Shadertoy.Name)
   installer_code = installer_code:gsub('{{> Shadertoy.Author <}}',fuse.Shadertoy.Author)
   installer_code = installer_code:gsub('{{> Shadertoy.License <}}',fuse.Shadertoy.License)
-
   installer_code = installer_code:gsub('{{> thumbnail.data <}}',fuse.Thumbnail.Data)
   installer_code = installer_code:gsub('{{> fusecode.data <}}',util.base64_encode(fuse_code))
-
   installer_code = installer_code:gsub('{{> minilogo.width <}}',fuse.MiniLogo.Width)
   installer_code = installer_code:gsub('{{> minilogo.height <}}',fuse.MiniLogo.Height)
   installer_code = installer_code:gsub('{{> minilogo.image <}}',fuse.MiniLogo.Image)
-
   return installer_code
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Substitute elements in the fuse's code.
 --
 -- There are some 'devleopment only' constructs in the shader fuses that must replaced
@@ -120,13 +113,11 @@ function patch_fuse_source(fuse,fuse_code,atom)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Read the fuse's thumbnail.
 --
 
 function fuse_thumbnail(fuse)
-
   local handle = io.open(fuse.DirName..'/'..fuse.Name..'.png', "rb")
   if not handle then util.set_error("failed to open "..fuse.DirName..'/'..fuse.Name..'.png'); return nil end
   local thumbnail_data = handle:read("*all")
@@ -136,13 +127,11 @@ function fuse_thumbnail(fuse)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Get the fuse author's mini logo.
 --
 
 function fuse_minilogo(fuse)
-
   if fuse.Author == 'JiPi' then
     return { Width = 47, Height = 24, Image = '<img width="47" height="24" src="data:image/png;base64,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" />', }
   elseif fuse.Author == 'nmbr73' then
@@ -154,13 +143,11 @@ function fuse_minilogo(fuse)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Get the fuse's last commit hash and date.
 --
 
 function fuse_commit(fuse)
-
   local hash, date = util.last_commit(fuse.DirName, fuse.Name)
   if not hash or not date then return nil end
 
@@ -168,13 +155,11 @@ function fuse_commit(fuse)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Read the fuse's source code.
 --
 
 function fuse_source(fuse)
-
   local handle = io.open(fuse.DirName..'/'..fuse.Name..'.fuse', "r")
   if not handle then util.set_error("failed to open ".. fuse.DirName ..'/'..fuse.Name ..'.fuse'); return nil end
   local source_code = handle:read("*all")
@@ -184,13 +169,11 @@ function fuse_source(fuse)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Get the installer code template.
 --
 
 function installer_source()
-
   -- local handle = io.open("Installer-code.lua", "r")
   -- if not handle then util.set_error("failed to open Installer-code.lua"); return nil end
   -- local installer_code = handle:read("*all")
@@ -200,13 +183,11 @@ function installer_source()
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Get the code for an installer to install the fuse.
 --
 
 function installer_code(fuse)
-
     if not fuse:isValid() then util.set_error("can't create installer for invalid Fuse"); return nil end
 
     fuse.Thumbnail = fuse_thumbnail(fuse)   ; if not fuse.Thumbnail then return nil end
@@ -224,15 +205,13 @@ function installer_code(fuse)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Get path to repository, if not already initialized.
 --
 -- @param repositorypath The path to the repository (optional).
 -- @return Path to the reposiory.
 
 function get_repositorypath(repositorypath)
-
   if not repositorypath then
     if user_config then
       repositorypath = user_config.pathToRepository
@@ -240,21 +219,20 @@ function get_repositorypath(repositorypath)
       local user_config = require("Shaderfuse/~user_config")
       repositorypath = user_config.pathToRepository
     end
+
   end
 
   return repositorypath
-
 end
 
 
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Generate and write the installer for a fuse.
 --
 -- @param fuse The fuse to create an installer for.
 -- @param repositorypath The path to the repository (optional).
 
 function create_installer(fuse,repositorypath)
-
   repositorypath = get_repositorypath(repositorypath)
 
   if not fuse:isValid() then
@@ -268,15 +246,12 @@ function create_installer(fuse,repositorypath)
   end
 
   code = installer_code(fuse)
-
   if util.has_error() then return false end
-
   if (code or '') == '' then util.set_error("no code"); return false end
 
   local fpath = repositorypath..'build/Shaderfuse-Installers/'..fuse.Category
   bmd.createdir(fpath)
   -- local fpath=fuse.DirName
-
   local fname = fuse.Name ..'-Installer.lua'
   local f = io.open(fpath..'/'..fname,"wb")
   if not f then util.set_error("failed to write "..fname); return false end
@@ -287,18 +262,15 @@ function create_installer(fuse,repositorypath)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Generate all installers for all (valid) fuses.
 --
 -- @param repositorypath The path to the repository (optonal).
 
 function create_installers(repositorypath)
-
   repositorypath = get_repositorypath(repositorypath)
 
   fuses.fetch(repositorypath..'/Shaders/','installer')
-
   for _, fuse in ipairs(fuses.list) do
     util.clr_error()
     create_installer(fuse,repositorypath)
@@ -307,22 +279,18 @@ function create_installers(repositorypath)
     else
       -- print("installer for '".. fuse.Name .."' created")
     end
+
   end
 
 end
 
 
-
-
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Get the fuse's code as packaged for the atom.
 --
 
 function atom_code(fuse,reactor_release)
-
   if not fuse:isValid() then util.set_error("can't create installer for invalid Fuse"); return nil end
-
   fuse.Thumbnail = fuse_thumbnail(fuse)   ; if not fuse.Thumbnail then return nil end
   fuse.Commit    = fuse_commit(fuse)      ; if not fuse.Commit    then return nil end
   fuse.MiniLogo  = fuse_minilogo(fuse)
@@ -370,7 +338,6 @@ function atom_code(fuse,reactor_release)
     .."\n\n\n\n\n\n\n"..fuse_code
   end
 
-
   fuse.Thumbnail = nil
   fuse.Commit = nil
   fuse.MiniLogo = nil
@@ -379,27 +346,21 @@ function atom_code(fuse,reactor_release)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Generate and write the atom for a fuse.
 --
 -- @param fuse The fuse to create an atom fuse for.
 -- @param targetpath Where to wrte the fuse.
 
 function create_package_fuse(fuse,targetpath,reactor_release)
-
   if not fuse:isValid() then
     util.set_error("can't create atom for invalid fuse ("..fuse:getErrorText()..")")
     return false
   end
 
   local code = atom_code(fuse,reactor_release)
-
   if util.has_error() then return false end
-
   if (code or '') == '' then util.set_error("no code"); return false end
-
-
   local f = io.open(targetpath ..'/'.. fuse.Shadertoy.ID ..'.fuse',"wb")
   if not f then util.set_error("failed to write "..fuse.Shadertoy.ID ..'.fuse'); return false end
   f:write(code)
@@ -417,64 +378,45 @@ function create_package_fuse(fuse,targetpath,reactor_release)
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Generate the Atom package containing all (valid) fuses.
 --
 -- @param repositorypath The path to the repository (optional).
 
 function create_package_fuses(repositorypath)
-
   repositorypath = get_repositorypath(repositorypath)
-
   fuses.fetch(repositorypath..'/Shaders/','reactor')
-
   local image       = require("Shaderfuse/image")
-
-
   local YourCompanyName = 'JiPi'
   local YourPackageName = 'Shadertoys'
   local PackageIdentifier = 'com.JiPi.Shadertoys'
   local TargetFilepath = repositorypath .. 'atom/'
   local YourPackageVersion = '2.0'
-
   -- date in "{ YYYY, M, D }" format; like `os.date("%Y,%m,%d")` but without leading zeros
   local YourPackageDate= os.date("*t")
   YourPackageDate = "{" .. YourPackageDate.year .. ", " .. tonumber( YourPackageDate.month ) .. ", " .. tonumber(YourPackageDate.day) .. "}"
-
-
   local targetpath = TargetFilepath..PackageIdentifier..'/Fuses/Shaderfuse_wsl'
   bmd.createdir(targetpath)
-
   local OurPackageDescription=''
   local OurDeployments=''
   local OurDeployments_windows=''
   local OurDeployments_mac=''
-
   local patch_atom_for_platform = ''
-
   local currentCategory=''
   local descriptionIndent=''
-
   local describe    = {}
   local deploy_common = {} -- on all platforms
   local deploy_windows = {} -- on Windoes
   local deploy_mac = {} -- on macOS
-
   local num_common = 0
   local num_windows = 0
   local num_mac = 0
 
   for _, fuse in ipairs(fuses.list) do
-
     util.clr_error()
-
     create_package_fuse(fuse,targetpath, YourPackageVersion)
-
     if not util.has_error() then
-
         local info = ''
-
         if fuse.Compatibility.Windows_CUDA then
           if fuse.Compatibility.macOS_Metal then
             num_common = num_common + 1
@@ -484,6 +426,7 @@ function create_package_fuses(repositorypath)
             num_windows = num_windows + 1
             table.insert(deploy_windows,fuse.Shadertoy.ID)
           end
+
         else
           if fuse.Compatibility.macOS_Metal then
             info = ' (Mac only)'
@@ -493,6 +436,7 @@ function create_package_fuses(repositorypath)
             info = 'err'
             print(fuse.Shadertoy.ID .. "is compatible to nothing?!?!!")
           end
+
         end
 
         if describe[fuse.Category] == nil then
@@ -502,7 +446,9 @@ function create_package_fuses(repositorypath)
         if info ~= 'err' then
           table.insert(describe[fuse.Category],{ Name = fuse.Name, Info = info, ID = fuse.Shadertoy.ID })
         end
+
     end
+
   end
 
   if currentCategory~='' then
@@ -512,7 +458,6 @@ function create_package_fuses(repositorypath)
   end
 
   local handle = io.open(TargetFilepath..PackageIdentifier..'/'..PackageIdentifier..'.atom',"wb")
-
   if not handle then
     print("dang! failed to write atom package description!")
     return false
@@ -525,20 +470,17 @@ function create_package_fuses(repositorypath)
       Version = ]]..YourPackageVersion..[[,
       Date = ]]..YourPackageDate..",\n\n"
       )
-
   handle:write('      Description = [[<center><br />')
   handle:write(image.logo_html())
   handle:write('\n<br /><font color="#ffff60">')
-
-
   handle:write("v".. YourPackageVersion .. " including " .. num_common .. " Toys")
   if num_windows > 0 then
     handle:write(" +" .. num_windows .. " on Windows")
   end
+
   if num_mac > 0 then
     handle:write(" +" .. num_mac .. " on Mac")
   end
-
 
   handle:write(
 [[</font><br /><br />For the time being <font color="#ff6060">THIS PACKAGE IS MAC AND WINDOWS ONLY</font>,<br />but if you have some dev skills you are very welcome to checkout the repo and test on Linux.<br />&nbsp;<br />
@@ -551,7 +493,6 @@ For most shaders this regrettably means that in particular <font color="#ff6060"
 
   for c, l in pairs(describe) do
     handle:write('<p>'.. c ..' Shaders:\n<ul>\n')
-
     for _, f in pairs(l) do
         handle:write('  <li><strong style="color:#c0a050; ">'.. f.Name ..
           '</strong> <a href="https://nmbr73.github.io/Shaderfuse/'.. c .. '/' .. f.Name ..'">'.. f.ID .. '</a> '.. f.Info ..'</li>\n')
@@ -574,14 +515,10 @@ See the following videos for some examples:
   <li><a href="https://youtu.be/4R7ZVMyKLnY">Fire Water</a>,</li>
   <li><a href="https://youtu.be/oyndG0pLEQQ">Shadertoyparade</a> all by <a href="https://nmbr73.github.io/Shaderfuse/Profiles/JiPi.html" style="color:#a05050; ">JiPi</a></li>
 </ul>
-Find these and even more videos on our <a href="https://www.youtube.com/playlist?list=PLqbIsaWc6bt1AuwEHF116QcFsNPKnLYHD">Shaderfuse</a> YouTube playlist. 
+Find these and even more videos on our <a href="https://www.youtube.com/playlist?list=PLqbIsaWc6bt1AuwEHF116QcFsNPKnLYHD">Shaderfuse</a> YouTube playlist.
 </p>]])
 
   handle:write('\n]],\n\n') -- end endscription
-
-
-
-
   if patch_atom_for_platform ~= '' then
     patch_atom_for_platform =
          "mkdir -p Mac/Fuses/Shaderfuse_wsl/\n"
@@ -590,7 +527,6 @@ Find these and even more videos on our <a href="https://www.youtube.com/playlist
       .. patch_atom_for_platform
       ..
   'zip -r "../'..PackageIdentifier..'.zip" Scripts Fuses Windows Mac "'..PackageIdentifier..'.atom"\n'
-
       .. [[
   mv Windows/Fuses/Shaderfuse_wsl/* "Fuses/Shaderfuse_wsl/"
   mv Mac/Fuses/Shaderfuse_wsl/* "Fuses/Shaderfuse_wsl/"
@@ -604,7 +540,6 @@ Find these and even more videos on our <a href="https://www.youtube.com/playlist
       'zip -r "../'..PackageIdentifier..'.zip" Scripts Fuses "'..PackageIdentifier..'.atom"\n'
   end
 
-
   handle:write('  Deploy = {\n')
   for _, id in pairs(deploy_common) do handle:write('    "Fuses/Shaderfuse_wsl/'.. id ..'.fuse", "Fuses/Shaderfuse_wsl/'.. id ..'.png",\n') end
   handle:write('\n    Windows = {\n      "Scripts/Comp/Shaderfuse Browser.lua",\n')
@@ -615,7 +550,7 @@ Find these and even more videos on our <a href="https://www.youtube.com/playlist
 
     -- Use the installers if you are brave enough to
     -- test the Fuses on Linux.
-    -- Find a ZIP including all available installers on 
+    -- Find a ZIP including all available installers on
     -- https://nmbr73.github.io/Shaderfuse/#installer
     --
     -- Linux = {
@@ -623,11 +558,8 @@ Find these and even more videos on our <a href="https://www.youtube.com/playlist
     -- },
   },
 }]])
-
   handle:close()
-
   handle = io.open(TargetFilepath..'/atomize.sh',"wb")
-
   if not handle then
     print("dang! failed to write atomize.sh file!")
     return false
@@ -639,8 +571,8 @@ Find these and even more videos on our <a href="https://www.youtube.com/playlist
       handle:write('mv Fuses/Shaderfuse_wsl/'.. id ..'.fuse Windows/Fuses/Shaderfuse_wsl/'.. id ..'.fuse\n')
       handle:write('mv Fuses/Shaderfuse_wsl/'.. id ..'.png  Windows/Fuses/Shaderfuse_wsl/'.. id ..'.png\n')
     end
-  end
 
+  end
 
   if num_mac > 0 then
     handle:write('mkdir -p Mac/Fuses/Shaderfuse_wsl/\n')
@@ -648,15 +580,11 @@ Find these and even more videos on our <a href="https://www.youtube.com/playlist
       handle:write('mv Fuses/Shaderfuse_wsl/'.. id ..'.fuse Mac/Fuses/Shaderfuse_wsl/'.. id ..'.fuse\n')
       handle:write('mv Fuses/Shaderfuse_wsl/'.. id ..'.png  Mac/Fuses/Shaderfuse_wsl/'.. id ..'.png\n')
     end
+
   end
 
   handle:close()
-
-
-
-
   handle = io.open(TargetFilepath..'/detomize.sh',"wb")
-
   if not handle then
     print("dang! failed to write detomize.sh file!")
     return false
@@ -670,14 +598,9 @@ Find these and even more videos on our <a href="https://www.youtube.com/playlist
     handle:write('mv Mac/Fuses/Shaderfuse_wsl/* Fuses/Shaderfuse_wsl/\n')
   end
 
-
-
   handle:close()
   return true
-
 end
-
-
 
 local function update_fuse_markdown_file(fuse)
 
@@ -705,6 +628,7 @@ local function update_fuse_markdown_file(fuse)
     if (fuse.Author or '') ~= '' then
       prolog = prolog .. " This fuse is under construction by [".. fuse.Author .."](../Profiles/".. fuse.Author ..".md)."
     end
+
   end
 
   prolog = prolog .. " See [".. fuse.Category .."](README.md) for more fuses in this category.\n\n"
@@ -715,6 +639,7 @@ local function update_fuse_markdown_file(fuse)
     else
       prolog = prolog .. '!['.. fuse.Name ..'Thumbnail]('..fuse.Name..'.png)\n\n'
     end
+
   end
 
   local epilog = ''
@@ -733,7 +658,6 @@ local function update_fuse_markdown_file(fuse)
   if not handle then util.set_error("failed to open '"..fuse.Name..".md' in '".. fuse.DirName "/'"); return false end
   local md = handle:read("*all")
   handle:close()
-
 
   -- local a, b = md:find("<!%-%- %+%+%+ DO NOT REMOVE THIS COMMENT %+%+%+ DO NOT ADD OR EDIT ANY TEXT BEFORE THIS LINE %+%+%+ IT WOULD BE A REALLY BAD IDEA %+%+%+ %-%->")
   -- local c, d = md:find("<!%-%- %+%+%+ DO NOT REMOVE THIS COMMENT %+%+%+ DO NOT EDIT ANY TEXT THAT COMES AFTER THIS LINE %+%+%+ TRUST ME: JUST DON'T DO IT %+%+%+ %-%->",b)
@@ -755,21 +679,17 @@ local function update_fuse_markdown_file(fuse)
   handle:write(upd)
   handle:close()
 
-
   return true
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Generate the markdown files.
 --
 -- @param repositorypath The path to the repository (optional).
 
 function create_markdown_files(repositorypath)
-
   repositorypath = get_repositorypath(repositorypath)
-
   -- fuses.fetch(repositorypath..'/Shaders/','development')
   fuses.fetch(repositorypath..'/docs/','development')
 
@@ -793,55 +713,41 @@ function create_markdown_files(repositorypath)
 
 
 ]]
-
   overview:write(header)
   readme:write(header)
-
   -- local links=''
-
   -- for i,cat in ipairs(fuses.categories) do
   --   links=links..' · ['..cat..']('..cat..'/README.md)'
   -- end
-
-
   -- overview:write("[README](README.md) · **OVERVIEW**"..links.."\n\n")
   -- readme:write("**README** · [OVERVIEW](OVERVIEW.md)"..links.."\n\n")
-
   overview:write('# Shaders\n\n')
   readme:write('# Shaders\n\n')
 
   local readme_cat=nil
-
   local currentCategory=''
-
   local boom=0
   local okay=0
 
   for _, fuse in ipairs(fuses.list) do
-
     util.clr_error()
-
     if fuse.Category ~= currentCategory then -- new category
-
       if currentCategory~='' then
         overview:write('\n\n')
         if readme_cat~=nil then
           readme_cat:close()
           readme_cat=nil
         end
+
       end
 
       currentCategory=fuse.Category
-
       overview:write("\n\n## "..fuse.Category.." Shaders\n\n")
       -- readme:write('\n\n**['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)**\n')
       readme:write('\n\n### ['..fuse.Category..' Shaders]('..fuse.Category..'/README.md)\n\n')
-
       readme_cat   = io.open(repositorypath..'docs/'..fuse.Category..'/README.md',"w")
       readme_cat:write(header)
-
       -- local links='[README](../README.md) · [OVERVIEW](../OVERVIEW.md)'
-
       -- for i,cat in ipairs(fuses.categories) do
       --     if cat==currentCategory then
       --       links=links..' · **'..cat..'**'
@@ -849,7 +755,6 @@ function create_markdown_files(repositorypath)
       --       links=links..' · ['..cat..'](../'..cat..'/README.md)'
       --     end
       -- end
-
       -- readme_cat:write(links.."\n\n")
       readme_cat:write("# "..fuse.Category.." Shaders\n\n")
 
@@ -867,8 +772,6 @@ function create_markdown_files(repositorypath)
 
     end -- new category
 
-
-
     if fuse:hasErrors() or not fuse:isCompatible() then
       boom=boom+1
     else
@@ -880,18 +783,12 @@ function create_markdown_files(repositorypath)
       print("Category is '"..fuse.Category.."'")
     end
 
-
     overview:write(
         ''
       ..'<img src="../'..fuse.Category..'/'..fuse.Name..'.png" align="left" width="320 height="180" />'
       ..'<strong><a href="../'..fuse.Category..'/'..fuse.Name..'/" style="font-size:larger; ">'..fuse.Name..'</a></strong> '..((not(fuse:hasErrors()) and fuse:isCompatible()) and '🍀' or '💥')..'<br />'
       )
-
-
-
     update_fuse_markdown_file(fuse)
-
-
     if (not(fuse:hasErrors())) then
       overview:write(
           '<span style="font-size:smaller; font-weight:bold; ">'.. fuse.Shadertoy.License ..'</span><br />'
@@ -902,20 +799,15 @@ function create_markdown_files(repositorypath)
         ..'<a href="../'..fuse.Category..'/'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
         ..'<br clear="all" />\n'
         )
-
       readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) (Shadertoy ID ['..fuse.Shadertoy.ID..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')) ported by ['..fuse.Author..'](Profiles/'..fuse.Author..'.md)\n')
       readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)**\nbased on ['..fuse.Shadertoy.Name..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..') written by ['..fuse.Shadertoy.Author..'](https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..')<br />and ported to DaFusion by ['..fuse.Author..'](../Profiles/'..fuse.Author..'.md)\n\n')
-
-
     else
-
       -- overview:write(''..fuse:getErrorsHTML()..'</p><br clear="all" />\n')
       overview:write(
         'Category: <a href="../'..fuse.Category..'/">'..fuse.Category..' Shader</a><br />'
         ..'<br clear="all" />\n')
       readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) 💥\n')
       readme_cat:write('## **['..fuse.Name..']('..fuse.Name..'.md)** 💥\n- *'..fuse:getErrorText()..'*\n\n')
-
     end
 
     if util.has_error() then
@@ -923,7 +815,6 @@ function create_markdown_files(repositorypath)
     end
 
     overview:write('\n')
-
   end
 
   if currentCategory~='' then
@@ -938,41 +829,30 @@ function create_markdown_files(repositorypath)
     overview:write("💥 "..boom.."\n\n")
   end
 
-
   if readme_cat~=nil then readme_cat:close() end
-
   overview:close()
   readme:close()
-
-
 end
 
 
-
--------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Generate the CSV file.
 --
 -- @param repositorypath The path to the repository (optional).
 
 function create_csv(repositorypath)
-
   repositorypath = get_repositorypath(repositorypath)
-
   fuses.fetch(repositorypath..'/Shaders/','development')
 
   local csv      = io.open(repositorypath..'Shaders.csv',"w")
-
   if not(csv) then
     print("We have a Problem")
     return false -- os.exit(10)
   end
 
   csv:write("Shadertoy ID,Shader Autor,Shader Name,Category,Fuse Name,Ported by,Issue\n")
-
   for _, fuse in ipairs(fuses.list) do
-
     local info = ''
-
     if fuse:hasErrors() then
       info = fuse:getErrorText()
     else
@@ -985,8 +865,11 @@ function create_csv(repositorypath)
           if not fuse.Compatibility.Windows_CUDA and not fuse.Compatibility.macOS_Metal then
             info = "no compatibility"
           end
+
         end
+
       end
+
     end
 
     csv:write(
@@ -998,13 +881,8 @@ function create_csv(repositorypath)
         '"'.. fuse.Author ..'",' ..
         '"'.. info ..'"\n'
         )
-
   end
 
   csv:close()
-
   return true
 end
-
-
-

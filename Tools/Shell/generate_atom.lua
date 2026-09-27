@@ -6,4 +6,3 @@ bmd = require("Shaderfuse/bmd")
 
 require("Shaderfuse/maintenance_functions")
 create_package_fuses()
-

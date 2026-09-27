@@ -1,43 +1,29 @@
 local selectFusesDialog={}
 
 function selectFusesDialog.window(ui,dispatcher,params)
-
   assert(params~=nil)
   assert(params.fuses~=nil)
-
   local thumbWidth=107 -- 160
   local thumbHeight=60 -- 90
-
   local win = dispatcher:AddWindow({
-
     ID = "ShaderInstallMain",
     WindowTitle = params.windowTitle,
     Geometry = { 100, 100, 800, 400 },
-
     ui:VGroup {
-
       ui:HGroup {
         Weight = 0,
         -- ui.logo(),
-
         params.logo,
-
         ui:HGap(0,1),
-
         ui:Label{
           Weight = 0,
           ID = "Thumbnail",
           MinimumSize = {thumbWidth, thumbHeight},
           Alignment = { AlignHCenter = false, AlignTop = true, },
           WordWrap = false, ReadOnly = true, Flat = true, Text = '',
-
         },
       },
-
-
       ui:VGap(5),
-
-
       ui:Tree {
         ID = 'Files',
         Weight = 2,
@@ -45,43 +31,32 @@ function selectFusesDialog.window(ui,dispatcher,params)
         SortingEnabled=true, -- UpdatesEnabled=true,
         Events = { ItemDoubleClicked=true, CurrentItemChanged = true, }, -- ItemActivated=true, ItemClicked=true,
       },
-
-
       ui:VGap(5),
-
       ui:HGroup{
         Weight = 0,
-
         ui:Label {
           ID = 'Info',
           Weight = 3.0,
           Alignment = { AlignHCenter = false, AlignVTop = true, },
           WordWrap = false,
         },
-
         ui:HGap(0,1),
         ui:Button{ ID = "Install",  Text = (params.installLabel and  params.installLabel or "Install"), Hidden = (params.onInstall == nil and true or false) },
         ui:Button{ ID = "Cancel",   Text = (params.cancelLabel and  params.cancelLabel or "Cancel") },
       },
-
     },
   })
-
-
   local itm = win:GetItems()
-
 
   function win.On.Install.Clicked(ev)
     win:Hide()
     params.onInstall(params.fuses)
   end
 
-
   function win.On.Cancel.Clicked(ev)
     win:Hide()
     dispatcher:ExitLoop()
   end
-
 
   function win.On.ShaderInstallMain.Close(ev)
     win:Hide()
@@ -90,20 +65,17 @@ function selectFusesDialog.window(ui,dispatcher,params)
 
   function win.On.Files.ItemDoubleClicked(ev)
     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
-
     if fuse~=nil then
       bmd.openurl('https://nmbr73.github.io/Shaderfuse/'..fuse.Category..'/'..fuse.Name..'/')
     end
+
   end
 
   local defaultInfoText=""
 
   function win.On.Files.CurrentItemChanged(ev)
-
     local fuse=params.fuses.get_fuse(ev.item.Text[0],ev.item.Text[1])
-
     if fuse==nil then return end
-
     if fuse:hasThumbnail() then
       itm.Thumbnail.Text='<img src="' .. fuse.DirName .. '/' .. fuse.Name .. '.png" width="'..thumbWidth..'" height="'..thumbHeight..'" />'
     else
@@ -112,8 +84,6 @@ function selectFusesDialog.window(ui,dispatcher,params)
 
     itm.Info.Text = fuse:hasErrors() and '<span style="color:#ff9090; ">'..fuse:getErrorText().."</span>" or defaultInfoText
   end
-
-
 
   local hdr = itm.Files:NewItem()
 
@@ -149,6 +119,7 @@ function selectFusesDialog.window(ui,dispatcher,params)
     if f.error==nil then
       numFuses=numFuses+1
     end
+
   end
 
   itm.Files:SortByColumn(1, "AscendingOrder")
@@ -159,6 +130,7 @@ function selectFusesDialog.window(ui,dispatcher,params)
   return win
 
 end
+
 
 
 

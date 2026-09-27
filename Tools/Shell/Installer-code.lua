@@ -1,6 +1,4 @@
 
-
-
 --   =========================================================================
 --
 --             A T O M A G I C A L Y   G E N E R A T E D   F I L E
@@ -29,11 +27,8 @@
 --
 --   =========================================================================
 
-
 local ui            = fu.UIManager
 local uidispatcher  = bmd.UIDispatcher(ui)
-
-
 
 function dec(data)
     local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
@@ -51,8 +46,6 @@ function dec(data)
     end))
 end
 
-
-
 function file_exists(path, file)
 
     assert(path~=nil and path~='')
@@ -67,22 +60,15 @@ function file_exists(path, file)
     return false;
 end
 
-
-
 function InstallWindow()
-
     local fuseFileExists = file_exists(fusion:MapPath('Fuses:/Shaderfuse_beta'), '{{> Shadertoy.ID <}}_b.fuse')
-
     local installWindow = uidispatcher:AddWindow({
         ID = 'InstallWindow',
         WindowTitle = '{{> Fuse.Name <}} Installer',
         Geometry = {100, 100, 1024, 270},
         Spacing = 10,
-
         ui:VGroup {
-
             ID = 'root',
-
             ui:HGroup {
                 ui:Label {
                     ID = "thumbnail", WordWrap = false, Weight = 0,
@@ -90,14 +76,11 @@ function InstallWindow()
                     Alignment = { AlignHCenter = false, AlignTop = true, },
                     Text = '<img width="320" height="180" src="data:image/png;base64,{{> thumbnail.data <}}" />',
                 },
-
                 ui:HGap(20),
-
                 ui:Label {
                     ID = 'text', WordWrap = true, Weight = 2.0,
                     OpenExternalLinks = true,
                     Alignment = { AlignHCenter = false, AlignVCenter = false, },
-
                     Text = [[
                         <h2 style="color:#efbd78; ">Welcome to the {{> Fuse.Name <}} Setup</h2>
                         <p style="font-size:large; color:#ffffff; ">
@@ -118,15 +101,10 @@ function InstallWindow()
                         ..(fuseFileExists and [[<p align="center"><span style="color:#ffffff; "><span style="background-color:#ff0000; ">&nbsp;ATTENTION!&nbsp;</span><span style="background-color:#000000; ">&nbsp;Fuse already exists and will be deleted resp. overwritten!&nbsp;</span></span></p>]] or ''),
                 },
             },
-
             ui:Label { Weight = 0, ID = 'hr', Text='<hr />', },
-
             ui:HGroup{
-
                 Weight = 0,
-
                 ui:HGap(5),
-
                 ui:Label {
                     ID = "logo", WordWrap = false, Weight = 0,
                     MinimumSize = { {{> minilogo.width <}}, {{> minilogo.height <}} },
@@ -134,9 +112,7 @@ function InstallWindow()
                     Alignment = { AlignHCenter = false, AlignTop = true, },
                     Text = '{{> minilogo.image <}}',
                 },
-
                 ui:HGap(0, 2.0),
-
                 ui:Button{  ID = "Uninstall", Text = "Uninstall", Hidden = (not fuseFileExists),  },
                 ui:Button{  ID = "Install", Text = (fuseFileExists and "Overwrite" or "Install"),    },
                 ui:Button{  ID = "Cancel",  Text = "Cancel",  },
@@ -166,8 +142,6 @@ function InstallWindow()
     return installWindow
 end
 
-
-
 function EndScreen(text)
 
     local endScreen = uidispatcher:AddWindow({
@@ -177,14 +151,12 @@ function EndScreen(text)
 
         ui:VGroup{
             ID = 'root',
-
             ui:Label{
                 Weight = 1.0, ID = 'FinalTextLabel',
                 Text = text .. '<p>{{> minilogo.image <}}</p>',
                 Alignment = { AlignHCenter = true, AlignVTop = true, },
                 WordWrap = true,
             },
-
             ui:HGroup{
                 Weight = 0,
                 ui:HGap(0, 2.0),
@@ -206,39 +178,29 @@ function EndScreen(text)
   return endScreen
 end
 
-
-
 function write_fuse()
 
     local f = io.open(fusion:MapPath('Fuses:/Shaderfuse_beta/{{> Shadertoy.ID <}}_b.fuse'),"wb")
-
     if not f then return false end
-
     f:write(dec("{{> fusecode.data <}}"))
     f:close()
 
     local t = io.open(fusion:MapPath('Fuses:/Shaderfuse_beta/{{> Shadertoy.ID <}}_b.png'),"wb")
-
     if not t then return false end
-
     t:write(dec("{{> thumbnail.data <}}"))
     t:close()
 
     return true
 end
 
-
-
 function install_action(overwrite)
 
     local text = ''
-
     if not overwrite then
         bmd.createdir(fusion:MapPath('Fuses:/Shaderfuse_beta'))
     end
 
     if write_fuse() then
-
         if not overwrite then
             text = [[
                 <h2>Installation of <span style="color:#ffffff; ">{{> Fuse.Name <}}</span> (hopefully) completed</h2>
@@ -266,7 +228,6 @@ function install_action(overwrite)
         end
 
     else
-
         text = [[
             <h2>Installation of <span style="color:#ffffff; ">{{> Fuse.Name <}}</span> failed!</h2>
             <p>
@@ -275,14 +236,11 @@ function install_action(overwrite)
             <h2 style="color:#ff0000; ">Something went terribly wrong!</h2>
             <p style="color:#ffffff; ">Dang!</p>
         ]]
-
     end
 
     local endScreen = EndScreen(text)
     endScreen:Show()
 end
-
-
 
 function uninstall_action()
 
@@ -306,7 +264,6 @@ function uninstall_action()
 
     local endScreen = EndScreen(text)
     endScreen:Show()
-
 end
 
 local installWindow = InstallWindow()

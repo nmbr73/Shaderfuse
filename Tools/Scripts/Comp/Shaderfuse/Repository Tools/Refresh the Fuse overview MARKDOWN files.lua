@@ -28,5 +28,4 @@ simpleDialog.window(
             ]]
     }):Show()
 
-
 ui_dispatcher:RunLoop()

@@ -61,7 +61,5 @@ for i = 1,#videos do
   print('<td style="border-width:0px; "><strong style="font-size:x-large; ">'..title..'</strong><br /><a href="'..href..'" target="_blank"><img src="https://img.shields.io/youtube/views/'..id..'?style=social" /></a><br />by '..creator..'<br />')
   print('</td>')
 end
+
 print('</table>')
-
-
-
