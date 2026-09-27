@@ -136,6 +136,10 @@ function do_docs {
   cp -rp build/Shaderfuse-Installers/* docs
   mv build/Shaderfuse-Installers.zip docs/
   rm -rf build/Shaderfuse-Installers/
+
+  # create csv to make it available via the docs
+  do_csv
+  cp Shaders.csv docs/
 }
 
 # ----------------------------------------------------------------------------

@@ -24,7 +24,7 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 ## Fuses
 
-See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list.
+See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list. There is also a [Shaders.csv](Shaders.csv) file to quickly check for existing conversions.
 
 
 #### My Current Shader of the Week (7th of August 2026):
