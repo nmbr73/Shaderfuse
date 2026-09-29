@@ -1,7 +1,6 @@
 # Shader of the Week
 
-On the frontpage of [Shadertoy.com](https://www.shadertoy.com/) you'll find a "[Shader of the Week](https://www.shadertoy.com/playlist/week)".
-[JiPi](Profiles/JiPi.md), in particular, has made it his personal hobby to implement as many of these Shaders of the Week as possible.
+On the frontpage of [Shadertoy.com](https://www.shadertoy.com/) you'll find a "[Shader of the Week](https://www.shadertoy.com/playlist/week)". [JiPi](Profiles/JiPi.md), in particular, has made it his personal hobby to implement as many of these Shaders of the Week as possible.
 
 ## 2026
 
@@ -367,13 +366,6 @@ On the frontpage of [Shadertoy.com](https://www.shadertoy.com/) you'll find a "[
 #### [NintendoSwitch](ShaderOfTheWeek/NintendoSwitch.md) (Shadertoy ID [wtlXRH](https://www.shadertoy.com/view/wtlXRH))
 [![NintendoSwitch](ShaderOfTheWeek/NintendoSwitch.gif)](ShaderOfTheWeek/NintendoSwitch.md)
 
-### 26th of December 2022 to 31th of January 2023
-Not a worthwhile shader for fusion
-#### 4D Sun (Shadertoy ID [wtVGDR](https://www.shadertoy.com/view/wtVGDR))
-#### tHe gRiD (Shadertoy ID [7tGfWy](https://www.shadertoy.com/view/7tGfWy))
-#### Desire Crystal (Shadertoy ID [flfyRS](https://www.shadertoy.com/view/flfyRS))
-#### 4Traveling by the mountains (Shadertoy ID [Nlcczf](https://www.shadertoy.com/view/Nlcczf))
-
 ## 2022
 
 ### 19th of December 2022
@@ -416,10 +408,6 @@ Not a worthwhile shader for fusion
 #### [Jeweled Vortex](ShaderOfTheWeek/JeweledVortex.md) (Shadertoy ID [fdjfDc](https://www.shadertoy.com/view/fdjfDc))
 [![Jeweled Vortex](ShaderOfTheWeek/JeweledVortex.gif)](ShaderOfTheWeek/JeweledVortex.md)
 
-### 7th of June 2022
-#### fluffballs (Shadertoy ID [fscczX](https://www.shadertoy.com/view/fscczX))
-Not a worthwhile shader for fusion
-
 ### 3rd of June 2022
 #### [Coastal Landscape](ShaderOfTheWeek/CoastalLandscape.md) (Shadertoy ID [fstyD4](https://www.shadertoy.com/view/fstyD4))
 [![Coastal Landscape](ShaderOfTheWeek/CoastalLandscape.gif)](ShaderOfTheWeek/CoastalLandscape.md)
@@ -452,10 +440,6 @@ Not a worthwhile shader for fusion
 #### [Stars and galaxy](ShaderOfTheWeek/StarsAndGalaxy.md) (Shadertoy ID [stBcW1](https://www.shadertoy.com/view/stBcW1))
 [![Stars and galaxy](ShaderOfTheWeek/StarsAndGalaxy.png)](ShaderOfTheWeek/StarsAndGalaxy.md)
 
-### 7th of April 2022
-#### Desperate Distraction (Shadertoy ID [7ddSD7](https://www.shadertoy.com/view/7ddSD7))
-Not a worthwhile shader for fusion
-
 ### 30th of March 2022
 #### [@Party Concert Visuals 2020](ShaderOfTheWeek/PartyConcertVisuals2020.md) (Shadertoy ID [WtscW4](https://www.shadertoy.com/view/WtscW4))
 [![@Party Concert Visuals 2020](ShaderOfTheWeek/PartyConcertVisuals2020.gif)](ShaderOfTheWeek/PartyConcertVisuals2020.md)
@@ -463,18 +447,6 @@ Not a worthwhile shader for fusion
 ### 23rd of March 2022
 #### [OMZG Shader Royale](ShaderOfTheWeek/OMZGShaderRoyale.md) (Shadertoy ID [3l3Bzl](https://www.shadertoy.com/view/3l3Bzl))
 [![OMZG Shader Royale](ShaderOfTheWeek/OMZGShaderRoyale.gif)](ShaderOfTheWeek/OMZGShaderRoyale.md)
-
-## 16th of March 2022
-#### Morning Commute (Shadertoy ID [wdKBz1](https://www.shadertoy.com/view/wdKBz1))
-Not a worthwhile shader for fusion
-
-### 9th of March 2022
-#### Quartz - wip (Shadertoy ID [fs2GWh](https://www.shadertoy.com/view/fs2GWh))
-Not a worthwhile shader for fusion
-
-### 2th of March 2022
-#### Synthwave song (sound) (Shadertoy ID [NddSzl](https://www.shadertoy.com/view/NddSzl))
-AudioShader, which is not convertible
 
 ### 23rd of February 2022
 #### [Lover](ShaderOfTheWeek/Lover.md) (Shadertoy ID [fsjyR3](https://www.shadertoy.com/view/fsjyR3))
@@ -514,10 +486,6 @@ AudioShader, which is not convertible
 #### [Truchet + Kaleidoscope FTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md) (Shadertoy ID [7lKSWW](https://www.shadertoy.com/view/7lKSWW))
 [![Truchet + Kaleidoscope FTW](ShaderOfTheWeek/TruchetKaleidoscopeFTW.gif)](ShaderOfTheWeek/TruchetKaleidoscopeFTW.md)
 
-### 16th of Dezember 2021
-#### Paper Plane (Shadertoy ID [tstczS](https://www.shadertoy.com/view/tstczS))
-GameShader, is not interesting as a shaderfuse, as it is intended for playing
-
 ### 8th of December 2021
 #### [HyperDough](ShaderOfTheWeek/HyperDough.md) (Shadertoy ID [7tcGWB](https://www.shadertoy.com/view/7tcGWB))
 [![HyperDough](ShaderOfTheWeek/HyperDough.gif)](ShaderOfTheWeek/HyperDough.md)
@@ -554,10 +522,6 @@ GameShader, is not interesting as a shaderfuse, as it is intended for playing
 #### [SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.md) (Shadertoy ID [NdKGWV](https://www.shadertoy.com/view/NdKGWV))
 [![SimpleSphereRaymarching](ShaderOfTheWeek/SimpleSphereRaymarching.gif)](ShaderOfTheWeek/SimpleSphereRaymarching.md)
 
-### 21st of September 2021
-#### TechnoSong (Shadertoy ID [sls3WM](https://www.shadertoy.com/view/sls3WM))
-AudioShader, which is not convertible
-
 ### 14th of September 2021
 #### [Day94](ShaderOfTheWeek/Day94.md) (Shadertoy ID [tdXcWM](https://www.shadertoy.com/view/tdXcWM))
 [![Day94](ShaderOfTheWeek/Day94.gif)](ShaderOfTheWeek/Day94.md)
@@ -565,3 +529,4 @@ AudioShader, which is not convertible
 ### 7th of September 2021
 #### [FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.md) (Shadertoy ID [4s3SRN](https://www.shadertoy.com/view/4s3SRN))
 [![FractalFlythrough](ShaderOfTheWeek/FractalFlythrough.gif)](ShaderOfTheWeek/FractalFlythrough.md)
+
