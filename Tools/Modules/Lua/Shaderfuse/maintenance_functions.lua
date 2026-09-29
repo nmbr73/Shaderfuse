@@ -611,6 +611,10 @@ local function update_fuse_markdown_file(fuse)
     prolog = prolog .. '<a href="../'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
   end
 
+  if fuse:hasShaderInfo() and fuse.Shadertoy.SOTW then
+    prolog = prolog .. '<a href="https://www.shadertoy.com/playlist/week"><img alt="Shader of the Week" src="https://img.shields.io/static/v1?label=SOTW&message='..fuse.Shadertoy.SOTW..'&color=orange" /></a>\n'
+  end
+
   prolog = prolog .. '\n'
 
   if fuse:hasShaderInfo() then

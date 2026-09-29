@@ -131,6 +131,9 @@ function do_docs {
   # create the videos list file
   lua Tools/Shell/print_videos.lua > docs/Videos.md
 
+  # create sotw file
+  lua Tools/Shell/print_sotw.lua >> 'docs/Shader of the Week.md'
+
   # create the installers, as they are referenced in the markdown files
   do_installers
   cp -rp build/Shaderfuse-Installers/* docs
@@ -139,7 +142,7 @@ function do_docs {
 
   # create csv to make it available via the docs
   do_csv
-  cp Shaders.csv docs/
+  mv Shaders.csv docs/
 }
 
 # ----------------------------------------------------------------------------

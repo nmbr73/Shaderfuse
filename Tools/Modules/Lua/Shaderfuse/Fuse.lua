@@ -44,6 +44,7 @@ function Fuse:clear()
   self.CompatibilityIssues = {}
   self.FuRegister = {}
   self._hasThumbnail = false
+  self._hasGif = false
 end
 
 
@@ -55,6 +56,21 @@ function Fuse:hasThumbnail()
   assert(self ~= nil, "call as INSTANCE:hasThumbnail()")
 
   if not self._hasThumbnail then
+    return false
+  end
+
+  return true
+end
+
+
+------------------------------------------------------------------------------
+-- Check if valid GIF file existst.
+--
+
+function Fuse:hasGif()
+  assert(self ~= nil, "call as INSTANCE:hasGif()")
+
+  if not self._hasGif then
     return false
   end
 
@@ -108,7 +124,7 @@ function Fuse:isCompatible()
      and self.Compatibility.Windows_OpenCL
      and self.Compatibility.macOS_Metal
 
-  end
+end
 
 
 ------------------------------------------------------------------------------
@@ -192,21 +208,36 @@ function Fuse:readInfo()
       InfoURL = 'https://www.shadertoy.com/',
     }
   else
+
     -- ----------
     -- Mandatory: Shadertoy.ID, .Name, .Author
     if (info.Shadertoy.ID or '') == '' then info.Shadertoy.ID = ''; self:addError("no Shadertoy.ID in sfi file") end
     if (info.Shadertoy.Name or '') == '' then info.Shadertoy.Name = ''; self:addError("no Shadertoy.Name in sfi file") end
     if (info.Shadertoy.Author or '') == '' then info.Shadertoy.Author = ''; self:addError("no Shadertoy.Author in sfi file") end
+
     -- ----------
     -- Optional (kind of): Shadertoy.License
     if (info.Shadertoy.License or '') == '' then
       info.Shadertoy.License = info.Shadertoy.Author ~= '' and "© "..info.Shadertoy.Author.." (CC BY-NC-SA 3.0)" or "CC BY-NC-SA 3.0"
     end
+
     -- ----------
     -- Auto: Shadertoy.InfoURL
     info.Shadertoy.InfoURL = 'https://www.shadertoy.com/view/'.. info.Shadertoy.ID
+
+    -- ----------
+    -- Optional: Shadertoy.SOTW
+    if info.Shadertoy.SOTW then
+      if not info.Shadertoy.SOTW:match("^([0-9][0-9][0-9][0-9])%-([0-9][0-9])%-([0-9][0-9])$") then
+        self:addError("Shadertoy.SOTW must be YYYY-MM-DD")
+        info.Shadertoy.SOTW = nil
+      end
+    end
+
     self.Shadertoy = info.Shadertoy
+
   end
+
 
   if info.Fuse == nil then
     self:addError("no Fuse information")
@@ -337,6 +368,22 @@ function Fuse:readInfo()
       self:addError("Thumbnail seems to be not a 320x180 pixel PNG")
     else
       self._hasThumbnail = true
+    end
+  end
+
+  -- ----------
+  -- Auto: Fuse.hasGif (optional)
+  self._hasGif = false
+  local gif = io.open(self.DirName .. '/' .. self.Name .. '.gif', "rb")
+  if gif then
+    local bytes = gif:read(10)
+    gif:close()
+    if bytes and #bytes == 10 then
+      local s = bytes:sub(1, 6)           -- "GIF89a" oder "GIF87a"
+      local w  = string.byte(bytes, 7) + string.byte(bytes, 8) * 256
+      local h  = string.byte(bytes, 9) + string.byte(bytes,10) * 256
+      self._hasGif = (s == "GIF89a" or s == "GIF87a") and w == 320 and h == 240
+self._hasGif = true;
     end
   end
 
