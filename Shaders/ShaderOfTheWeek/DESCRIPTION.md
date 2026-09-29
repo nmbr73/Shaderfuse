@@ -1,1 +1,3 @@
-On the home page of [Shadertoy.com](https://www.shadertoy.com) the "[Shader of the Week](https://www.shadertoy.com/playlist/week)" is presented. If such a shader can be converted to DCTL (and its license allows it), the corresponding Fuse is published here.
+On the home page of [Shadertoy.com](https://www.shadertoy.com) the "[Shader of the Week](https://www.shadertoy.com/playlist/week)" is presented. If such a shader can be converted to DCTL (and its license allows it), the corresponding Fuse is published.
+
+See the complete list of all these shaders on our [Shader of the Week](../Shader of the Week.md) overview. In this ShaderOfTheWeek category you'll only finde those shaders, that had not been assigned a more specific category yet.
