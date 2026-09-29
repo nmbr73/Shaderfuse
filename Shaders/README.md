@@ -24,64 +24,7 @@ Furthermore must be mentioned that this repository is only an incubator to devel
 
 ## Fuses
 
-See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list. There is also a [Shaders.csv](Shaders.csv) file to quickly check for existing conversions.
-
-
-#### My Current Shader of the Week (7th of August 2026):
-
-[![Cartoon: La Linea Episode 10
-](Misc/CartoonLaLineaEpisode10.gif)](Misc/CartoonLaLineaEpisode10.md) <br>
-[Cartoon: La Linea Episode 10
-](Misc/CartoonLaLineaEpisode10.md) by [Espeset](https://www.shadertoy.com/user/Espeset)
-
-#### Current Shader of the Week (25th of September 2026):
-
-[![The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.gif)](ShaderOfTheWeek/TheTetrisDimension.md) <br>
-[The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.md) by [Hyeve](https://www.shadertoy.com/user/Hyeve)
-
-
-
-### A new Category: Monster
-[![Goldeen](Monster/Goldeen.gif)](Monster/Goldeen.md) <br>
-[Goldeen](Monster/Goldeen.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Magnemite](Monster/Magnemite.gif)](Monster/Magnemite.md) <br>
-[Magnemite](Monster/Magnemite.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Staryu](Monster/Staryu.gif)](Monster/Staryu.md) <br>
-[Staryu](Monster/Staryu.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Gastly](Monster/Gastly.gif)](Monster/Gastly.md) <br>
-[Gastly](Monster/Gastly.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Sad Voltorb](Monster/SadVoltorb.gif)](Monster/SadVoltorb.md) <br>
-[Sad Voltorb](Monster/SadVoltorb.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Poliwag](Monster/Poliwag.gif)](Monster/Poliwag.md) <br>
-[Poliwag](Monster/Poliwag.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Venonat](Monster/Venonat.gif)](Monster/Venonat.md) <br>
-[Venonat](Monster/Venonat.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Grimer](Monster/Grimer.gif)](Monster/Grimer.md) <br>
-[Grimer](Monster/Grimer.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Ditto](Monster/Ditto.gif)](Monster/Ditto.md) <br>
-[Ditto](Monster/Ditto.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Dragonair](Monster/Dragonair.gif)](Monster/Dragonair.md) <br>
-[Dragonair](Monster/Dragonair.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Geodude](Monster/Geodude.gif)](Monster/Geodude.md) <br>
-[Geodude](Monster/Geodude.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-[![Oddish](Monster/Oddish.gif)](Monster/Oddish.md) <br>
-[Oddish](Monster/Oddish.md) by [noztol](https://www.shadertoy.com/user/noztol)
-
-<center>
-</center>
-
-
+See [Shaders](Shaders.md) for a list of all shaders implemented so far - resp. the [Overview](Overview.md) to have with thumbnails a more 'visual experience'. Find what's new with the [latest conversions](Latest Conversions.md), or have a look at the [Shader of the Week](Shader of the Week.md) list. There is also a [Shaders.csv](Shaders.csv) file to quickly check for existing conversions. See in particular the [News](News.md) mentioning dedicated shaders and giving some context.
 
 ## Installation
 

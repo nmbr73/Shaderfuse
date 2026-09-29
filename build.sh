@@ -134,6 +134,9 @@ function do_docs {
   # create sotw file
   lua Tools/Shell/print_sotw.lua >> 'docs/Shader of the Week.md'
 
+  # create latest file
+  lua Tools/Shell/print_latest.lua >> 'docs/Latest Conversions.md'
+
   # create the installers, as they are referenced in the markdown files
   do_installers
   cp -rp build/Shaderfuse-Installers/* docs
