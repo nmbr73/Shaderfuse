@@ -640,10 +640,20 @@ local function update_fuse_markdown_file(fuse)
   prolog = prolog .. " See [".. fuse.Category .."](README.md) for more fuses in this category.\n\n"
 
   if fuse:hasThumbnail() then
+
+    local gif = ""
+    if fuse:hasGif() then
+      if fuse:hasShaderInfo() then
+        gif = ' [!['.. fuse.Name ..' GifAnim]('..fuse.Name..'.gif)](https://www.shadertoy.com/view/'.. fuse.Shadertoy.ID ..' "View on Shadertoy.com")"'
+      else
+        gif = ' !['.. fuse.Name ..'GifAnim]('..fuse.Name..'.gif)'
+      end
+    end
+
     if fuse:hasShaderInfo() then
-      prolog = prolog .. '[!['.. fuse.Name ..' Thumbnail]('..fuse.Name..'.png)](https://www.shadertoy.com/view/'.. fuse.Shadertoy.ID ..' "View on Shadertoy.com")\n\n'
+      prolog = prolog .. '[!['.. fuse.Name ..' Thumbnail]('..fuse.Name..'.png)](https://www.shadertoy.com/view/'.. fuse.Shadertoy.ID ..' "View on Shadertoy.com")'..gif..'\n\n'
     else
-      prolog = prolog .. '!['.. fuse.Name ..'Thumbnail]('..fuse.Name..'.png)\n\n'
+      prolog = prolog .. '!['.. fuse.Name ..'Thumbnail]('..fuse.Name..'.png)'..gif..'\n\n'
     end
 
   end
