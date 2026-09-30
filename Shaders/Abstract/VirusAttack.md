@@ -1,4 +1,3 @@
-![Image](VirusAttack.gif)
 
 This Fuse contains these two shaders:
 Virus Attack
