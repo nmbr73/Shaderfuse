@@ -72,6 +72,7 @@ function do_installers {
 
   rm -rf build/Shaderfuse-Installers
   rm -f build/Shaderfuse-Installers.zip
+  rm -f build/Shaderfuse-Installers_alpha.zip
 
   cd 'Tools/Shell/'
   lua generate_installer.lua
@@ -79,6 +80,7 @@ function do_installers {
 
   cd build
   zip -r Shaderfuse-Installers.zip Shaderfuse-Installers
+  zip -r Shaderfuse-Installers_alpha.zip Shaderfuse-Installers_alpha
   cd ..
 }
 
@@ -86,7 +88,7 @@ function do_installers {
 
 function do_assets {
   # this function does just call some of the other
-  # do_whatsoever functions to then move theire
+  # do_whatsoever functions to then move their
   # generated output into an assets/ directory that
   # can then be used as a source for the assets to
   # be uploaded with a new GitHub release.
@@ -95,7 +97,7 @@ function do_assets {
   mkdir -p assets
 
   do_csv
-  mv Shaders.csv assets/Shaderfuses.csv
+  mv Shaders.csv assets/
 
   do_atom
   mv "atom/${ATOM_URI}.zip" assets/
@@ -104,6 +106,8 @@ function do_assets {
   do_installers
   mv build/Shaderfuse-Installers.zip assets/
   rm -rf build/Shaderfuse-Installers
+  mv build/Shaderfuse-Installers_alpha.zip assets/
+  rm -rf build/Shaderfuse-Installers_alpha
 }
 
 # ----------------------------------------------------------------------------
@@ -138,10 +142,17 @@ function do_docs {
   lua Tools/Shell/print_latest.lua >> 'docs/Latest Conversions.md'
 
   # create the installers, as they are referenced in the markdown files
+  
   do_installers
+  
   cp -rp build/Shaderfuse-Installers/* docs
   mv build/Shaderfuse-Installers.zip docs/
   rm -rf build/Shaderfuse-Installers/
+  
+  cp -rp build/Shaderfuse-Installers_alpha/* docs
+  # mv build/Shaderfuse-Installers_alpha.zip docs/
+  rm -f build/Shaderfuse-Installers_alpha.zip # atm I see no need to download all of them
+  rm -rf build/Shaderfuse-Installers_alpha/
 
   # create csv to make it available via the docs
   do_csv

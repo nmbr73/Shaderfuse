@@ -240,16 +240,18 @@ function create_installer(fuse,repositorypath)
     return false
   end
 
+  local alpha = ""
   if not fuse:isCompatible() then
-    util.set_error("can't create installer for fuse that is not fully compatible")
-    return false
+    -- util.set_error("can't create installer for fuse that is not fully compatible")
+    -- return false
+    alpha = "_alpha"
   end
 
   code = installer_code(fuse)
   if util.has_error() then return false end
   if (code or '') == '' then util.set_error("no code"); return false end
 
-  local fpath = repositorypath..'build/Shaderfuse-Installers/'..fuse.Category
+  local fpath = repositorypath..'build/Shaderfuse-Installers'.. alpha ..'/'..fuse.Category
   bmd.createdir(fpath)
   -- local fpath=fuse.DirName
   local fname = fuse.Name ..'-Installer.lua'
@@ -794,13 +796,22 @@ function create_markdown_files(repositorypath)
       )
     update_fuse_markdown_file(fuse)
     if (not(fuse:hasErrors())) then
+
+      local dl_label = "Download"
+      local dl_color = "blue"
+
+      if not fuse:isCompatible() then
+        dl_label = "At your own RISK"
+        dl_color = "red"
+      end
+
       overview:write(
           '<span style="font-size:smaller; font-weight:bold; ">'.. fuse.Shadertoy.License ..'</span><br />'
           ..'Category: <a href="../'..fuse.Category..'/">'..fuse.Category..' Shader</a><br />'
           ..'Shadertoy: <a href="https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..'">'..fuse.Shadertoy.Name..'</a><br />'
         ..'Author: <a href="https://www.shadertoy.com/user/'..fuse.Shadertoy.Author..'">'..fuse.Shadertoy.Author..'</a><br />'
         ..'Ported by: <a href="../Profiles/'..fuse.Author..'">'..fuse.Author..'</a><br />&nbsp;<br />'
-        ..'<a href="../'..fuse.Category..'/'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label=Download&message='..fuse.Name..'-Installer.lua&color=blue" /></a>\n'
+        ..'<a href="../'..fuse.Category..'/'..fuse.Name..'-Installer.lua" download><img alt="Download Installer" src="https://img.shields.io/static/v1?label='.. dl_label ..'&message='..fuse.Name..'-Installer.lua&color='.. dl_color..'" /></a>\n'
         ..'<br clear="all" />\n'
         )
       readme:write('- ['..fuse.Name..']('..fuse.Category..'/'..fuse.Name..'.md) (Shadertoy ID ['..fuse.Shadertoy.ID..'](https://www.shadertoy.com/view/'..fuse.Shadertoy.ID..')) ported by ['..fuse.Author..'](Profiles/'..fuse.Author..'.md)\n')
