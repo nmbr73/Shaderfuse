@@ -643,15 +643,16 @@ local function update_fuse_markdown_file(fuse)
 
     local gif = ""
     if fuse:hasGif() then
-      if fuse:hasShaderInfo() then
-        gif = ' [!['.. fuse.Name ..' GifAnim]('..fuse.Name..'.gif)](https://www.shadertoy.com/view/'.. fuse.Shadertoy.ID ..' "View on Shadertoy.com")"'
-      else
+      -- if fuse:hasShaderInfo() then
+      --   gif = ' [!['.. fuse.Name ..' GifAnim]('..fuse.Name..'.gif)](https://www.shadertoy.com/view/'.. fuse.Shadertoy.ID ..' "View on Shadertoy.com")"'
+      -- else
         gif = ' !['.. fuse.Name ..'GifAnim]('..fuse.Name..'.gif)'
-      end
+      -- end
     end
 
+
     if fuse:hasShaderInfo() then
-      prolog = prolog .. '[!['.. fuse.Name ..' Thumbnail]('..fuse.Name..'.png)](https://www.shadertoy.com/view/'.. fuse.Shadertoy.ID ..' "View on Shadertoy.com")'..gif..'\n\n'
+      prolog = prolog .. '[!['.. fuse.Name ..' Thumbnail]('..fuse.Name..'.png)](https://www.shadertoy.com/embed/'.. fuse.Shadertoy.ID ..'?gui=false&t=10&paused=false&muted=false "View on Shadertoy.com")'..gif..'\n\n'
     else
       prolog = prolog .. '!['.. fuse.Name ..'Thumbnail]('..fuse.Name..'.png)'..gif..'\n\n'
     end
@@ -667,6 +668,15 @@ local function update_fuse_markdown_file(fuse)
   if fuse:hasErrors() then
     epilog = epilog .. "## Problems\n\n" .. fuse:getErrorsMarkdown() .. '\n\n'
   end
+
+  if fuse:hasShaderInfo() then
+    epilog = epilog .. "<br />&nbsp;<br />&nbsp;<br />"
+      .."<center>"
+      ..'<a href = "https://www.shadertoy.com/view/'.. fuse.Shadertoy.ID ..'">Edit on the Shadertoy.com Playground</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;'
+      ..'<a href = "https://github.com/nmbr73/Shaderfuse/blob/main/Shaders/'.. fuse.Category .. '/' .. fuse.Name .. '.fuse">View the Fuse Source Code</a>'
+      ..'</center>'
+  end
+
 
   local handle
 
