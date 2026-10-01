@@ -1,0 +1,1136 @@
+--[[--/*
+
+  WalkLikeAnEgyptian.fuse
+
+  Based on https://www.shadertoy.com/view/msjGzw a WebGL shader created by XT95.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  bool   MountOpt;
+  float  Color1[4];
+  float  ColorGrading[4];
+  float  ColorCactus[4];
+  float  ColorMount1[4];
+  float  ColorMount2[4];
+  float  ColorPyramid1[4];
+  float  ColorPyramid2[4];
+  float  ColBKG1[4];
+  float  ColBKG2[4];
+  float  ColBKG3[4];
+  float  ColBKG4[4];
+  float  ViewDXY[2];
+  float  ViewXY[2];
+  float  LAYER_SPEED;
+  float  Vignette;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+ #define fract_f3(A) fract(A)
+
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define distance_f2( p1, p2) distance(p1, p2)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+
+
+#define PI 3.14159265f
+#define _saturatef(x) clamp(x,0.0f,1.0f)
+
+
+__DEVICE__ float line( in float2 p, in float2 a, in float2 b )
+{
+    float2 pa = p-a, ba = b-a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0f, 1.0f );
+    return length( pa - ba*h );
+}
+
+__DEVICE__ float hash1_f2( float2 p )
+{
+    p  = 50.0f*fract_f2( p*0.3183099f );
+    return fract( p.x*p.y*(p.x+p.y) );
+}
+__DEVICE__ float noise( in float2 x )
+{
+    float2 p = _floor(x);
+    float2 w = fract_f2(x);
+    #if 1
+    float2 u = w*w*w*(w*(w*6.0f-15.0f)+10.0f);
+    #else
+    float2 u = w*w*(3.0f-2.0f*w);
+    #endif
+
+    float a = hash1_f2(p+to_float2(0,0));
+    float b = hash1_f2(p+to_float2(1,0));
+    float c = hash1_f2(p+to_float2(0,1));
+    float d = hash1_f2(p+to_float2(1,1));
+
+    return -1.0f+2.0f*(a + (b-a)*u.x + (c-a)*u.y + (a - b - c + d)*u.x*u.y);
+}
+
+
+__DEVICE__ float fbm(float2 p) {
+    const mat2 m2 = to_mat2(  0.80f,  0.60f, -0.60f,  0.80f );
+
+    float f = 1.9f;
+    float s = 0.55f;
+    float a = 0.0f;
+    float b = 0.5f;
+    for( int i=0; i<4; i++ )
+    {
+        float n = noise(p);
+        a += b*n;
+        b *= s;
+        p = f*mul_mat2_f2(m2,p);
+    }
+  return a;
+}
+
+__DEVICE__ float hash1( float n )
+{
+    return fract( n*17.0f*fract( n*0.3183099f ) );
+}
+
+__DEVICE__ float noise_f3( in float3 x )
+{
+    float3 p = _floor(x);
+    float3 w = fract_f3(x);
+
+    #if 1
+    float3 u = w*w*w*(w*(w*6.0f-15.0f)+10.0f);
+    #else
+    float3 u = w*w*(3.0f-2.0f*w);
+    #endif
+
+    float n = p.x + 317.0f*p.y + 157.0f*p.z;
+
+    float a = hash1(n+0.0f);
+    float b = hash1(n+1.0f);
+    float c = hash1(n+317.0f);
+    float d = hash1(n+318.0f);
+    float e = hash1(n+157.0f);
+    float f = hash1(n+158.0f);
+    float g = hash1(n+474.0f);
+    float h = hash1(n+475.0f);
+
+    float k0 =   a;
+    float k1 =   b - a;
+    float k2 =   c - a;
+    float k3 =   e - a;
+    float k4 =   a - b - c + d;
+    float k5 =   a - c - e + g;
+    float k6 =   a - b - e + f;
+    float k7 = - a + b + c - d + e - f - g + h;
+
+    return -1.0f+2.0f*(k0 + k1*u.x + k2*u.y + k3*u.z + k4*u.x*u.y + k5*u.y*u.z + k6*u.z*u.x + k7*u.x*u.y*u.z);
+}
+
+
+__DEVICE__ float fbm_f3(float3 p) {
+    const mat3 m3  = to_mat3( 0.00f,  0.80f,  0.60f,
+                             -0.80f,  0.36f, -0.48f,
+                             -0.60f, -0.48f,  0.64f );
+
+
+    float f = 1.9f;
+    float s = 0.55f;
+    float a = 0.0f;
+    float b = 0.5f;
+    for( int i=0; i<4; i++ )
+    {
+        float n = noise_f3(p);
+        a += b*n;
+        b *= s;
+        p = f*mul_mat3_f3(m3,p);
+    }
+  return a;
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+#define sunpos to_float2(0.5f,0.25f)
+
+__DEVICE__ float clouds(float2 uv, float iTime) {
+    uv.x += iTime*0.001f;
+    float d = fbm_f3( to_float3_aw(uv*to_float2(4.0f,10.0f)*1.1f+50.0f, iTime*0.01f) );
+    d += _fabs(_cosf(uv.x*70.0f)*0.5f + _cosf(uv.x*160.0f)*0.25f)*0.07f;
+    d += uv.y-1.0f;
+    return d+0.2f;
+}
+
+__DEVICE__ float4 background(float2 uv, float2 p, float iTime, float3 Colors[4]) {
+    float4 col = to_float4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // greenish sky
+    swi3S(col,x,y,z, pow_f3( to_float3_s(0.5f), to_float3(5.0f, 2.5f*uv.y, 2.0f*(uv.y*-0.1f+1.0f)) ));
+
+    // clouds
+    float c = smoothstep(0.3f,0.32f,clouds(uv, iTime));
+    float cs = smoothstep(0.3f,0.32f, clouds(uv - normalize(p-sunpos)*0.015f, iTime));
+    swi3S(col,x,y,z, swi3(col,x,y,z) + Colors[0] * c * (1.0f-cs));  //to_float3(0.5f,0.4f,0.3f)
+    swi3S(col,x,y,z, swi3(col,x,y,z) + Colors[1]*0.75f * c * (cs)); //to_float3(0.5f,0.4f,0.3f)
+
+    // stars
+    swi3S(col,x,y,z, swi3(col,x,y,z) + to_float3_s(1.0f) * smoothstep(0.8f,1.0f, noise_f3(to_float3_aw(uv*500.0f, iTime*0.1f))) * (1.0f-c));
+
+    // sun
+    float d = distance_f2(p, sunpos);
+    swi3S(col,x,y,z, swi3(col,x,y,z) + Colors[2] * smoothstep(0.16f,0.15f,d));        //to_float3_s(1.0f)
+    swi3S(col,x,y,z, swi3(col,x,y,z) + Colors[3] * _powf(1.0f/(1.0f+d), 8.0f)*1.0f);  //to_float3(1.0f,1.0f,0.5f)
+
+    return col;
+}
+
+__DEVICE__ float4 pyramids(float2 p, float freq, float proba, float3 Colors[2]) {
+    float4 col = to_float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+    float seed = _floor(p.x*freq-0.5f);
+    float h = fract(p.x*freq);
+    float d = -p.y + _fabs(h-0.5f)/freq * step(proba,hash1(seed));
+    float m = smoothstep(0.0f,0.01f,d) ;
+
+    float ds = -p.y + _saturatef(h-0.5f)/freq * step(proba,hash1(seed));
+    float ms = smoothstep(0.0f,0.01f,ds) ;
+
+    swi3S(col,x,y,z, Colors[0] * smoothstep(0.6f,0.5f, fbm(p*to_float2(10.0f,100.0f)*freq))); //to_float3(1.0f, 0.5f, 0.0f)
+    swi3S(col,x,y,z, _mix(swi3(col,x,y,z), Colors[1]*0.3f, ms)); //to_float3(1.0f, 0.5f, 0.0f)
+
+    swi3S(col,x,y,z, swi3(col,x,y,z) * smoothstep(0.0f,0.015f, _fabs(d-0.005f))); // outline
+
+    swi3S(col,x,y,z, _saturatef(swi3(col,x,y,z)));
+
+    col.w = _fmaxf(m, ms);
+
+    return col * col.w;
+}
+
+__DEVICE__ float moutainsHeight(float2 p, float amp, float power) {
+    float d = - _powf(_fabs(_sinf(p.x*5.0f)*0.5f+ _sinf(p.x*2.0f+2.5f)*0.25f + _sinf(p.x*4.0f+2.0f)*0.125f), power) * amp;
+    return d;
+}
+
+__DEVICE__ float4 mountains(float2 p, float amp, float power, float4 Colors[2], bool MountOpt) {
+    float4 col = to_float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+    float h = -p.y + moutainsHeight(p,amp,power);
+    float hs = -p.y +moutainsHeight(p + normalize(p-(sunpos*2.0f-1.0f))*0.05f,amp,power);
+    float d = smoothstep(0.0f,0.01f,h);
+    float ds = smoothstep(0.0f,0.01f,hs);
+
+    col = Colors[0] * d;//to_float4(1.0f, 1.0f, 1.0f, 1.0f) * d;
+    swi3S(col,x,y,z, swi3(col,x,y,z) * swi3(Colors[1],x,y,z)*(smoothstep(0.0f,-1.0f,ds-d)*0.75f+0.25f)); //to_float3(1.0f, 0.4f, 0.2f)
+    swi3S(col,x,y,z, swi3(col,x,y,z) * smoothstep(0.0f,0.02f,_fabs(h-0.01f))); // outline
+    if(MountOpt)
+    {
+      swi3S(col,x,y,z, swi3(col,x,y,z) * (_sinf(d*50.0f+fbm(p*to_float2(5.0f,50.0f)))*0.5f+0.5f)*0.5f+0.5f);
+    }
+    swi3S(col,x,y,z, _saturatef(swi3(col,x,y,z)));
+    return col * col.w;
+}
+
+__DEVICE__ float4 cactus(float2 p, float freq, float3 Color) {
+
+    float4 col = to_float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+    float2 ip = _floor(p*freq);
+    float2 fp = fract_f2(p*freq)-0.5f;
+    float seed = hash1(ip.x);
+    fp.y = p.y*2.0f + (seed)*0.4f;
+
+    if (hash1(ip.x+1000.0f) > 0.3f) {
+        return to_float4_s(0.0f);
+    }
+
+    float d = line(fp, to_float2(0.0f,-0.3f), to_float2(0.0f,0.3f));
+
+    if (hash1(ip.x+100.0f) > 0.5f) {
+        fp.x = -fp.x;
+    }
+
+    if (seed > 0.25f) {
+        d = _fminf(d, line(fp, to_float2(0.0f,0.0f), to_float2(0.3f,0.0f))*1.8f);
+        d = _fminf(d, line(fp, to_float2(0.3f,0.015f), to_float2(0.3f,0.2f))*1.3f);
+    }
+
+    d = _fminf(d, line(fp, to_float2(0.0f,-0.15f), to_float2(-0.3f,-0.15f))*1.8f);
+    d = _fminf(d, line(fp, to_float2(-0.3f,-0.14f), to_float2(-0.3f,0.05f))*1.3f);
+    d = d-p.y*0.3f - fbm(p*300.0f+5.0f)*0.005f;
+
+    col = to_float4_aw(Color*0.5f * (smoothstep(0.5f,0.6f, fbm(p*to_float2(300.0f,5.0f)+5.0f)*0.5f+0.5f)*0.25f+0.75f), smoothstep(0.1f,0.09f,d)); //0.4f,1.0f,0.0f
+
+    swi3S(col,x,y,z, swi3(col,x,y,z) * to_float3_s(1.0f) * smoothstep(0.007f,0.012f, _fabs(d-0.098f))); // outline
+
+    return col * col.w;
+}
+
+
+__KERNEL__ void WalkLikeAnEgyptianFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   MountOpt = params->MountOpt;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 ColorGrading = to_float4(params->ColorGrading[0], params->ColorGrading[1], params->ColorGrading[2], params->ColorGrading[3]);
+  float4 ColorCactus = to_float4(params->ColorCactus[0], params->ColorCactus[1], params->ColorCactus[2], params->ColorCactus[3]);
+  float4 ColorMount1 = to_float4(params->ColorMount1[0], params->ColorMount1[1], params->ColorMount1[2], params->ColorMount1[3]);
+  float4 ColorMount2 = to_float4(params->ColorMount2[0], params->ColorMount2[1], params->ColorMount2[2], params->ColorMount2[3]);
+  float4 ColorPyramid1 = to_float4(params->ColorPyramid1[0], params->ColorPyramid1[1], params->ColorPyramid1[2], params->ColorPyramid1[3]);
+  float4 ColorPyramid2 = to_float4(params->ColorPyramid2[0], params->ColorPyramid2[1], params->ColorPyramid2[2], params->ColorPyramid2[3]);
+  float4 ColBKG1 = to_float4(params->ColBKG1[0], params->ColBKG1[1], params->ColBKG1[2], params->ColBKG1[3]);
+  float4 ColBKG2 = to_float4(params->ColBKG2[0], params->ColBKG2[1], params->ColBKG2[2], params->ColBKG2[3]);
+  float4 ColBKG3 = to_float4(params->ColBKG3[0], params->ColBKG3[1], params->ColBKG3[2], params->ColBKG3[3]);
+  float4 ColBKG4 = to_float4(params->ColBKG4[0], params->ColBKG4[1], params->ColBKG4[2], params->ColBKG4[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  LAYER_SPEED = params->LAYER_SPEED;
+  float  Vignette = params->Vignette;
+
+  // --------
+
+    float4 ColorsMount[2] = { ColorMount1, ColorMount2 };
+    float3 ColorsPyramid[2] = { swi3(ColorPyramid1,x,y,z), swi3(ColorPyramid2,x,y,z) };
+    float3 ColorsBKG[4] = { swi3(ColBKG1,x,y,z), swi3(ColBKG2,x,y,z), swi3(ColBKG3,x,y,z), swi3(ColBKG4,x,y,z) };
+
+
+    float2 invRes = to_float2_s(1.0f) / iResolution;
+    float2 uv = fragCoord * invRes + ViewXY;
+    float2 p = (2.0f*fragCoord - iResolution) / iResolution.y + ViewDXY;
+    float2 pp = p;
+
+    // background
+    float4 col = background(uv, pp, iTime, ColorsBKG);
+
+    // layers
+    //#define LAYER_SPEED 0.05f
+    #define LAYER_COUNT 8
+    float4 layer[LAYER_COUNT];
+    p.x += iTime*LAYER_SPEED;    layer[0] = mountains(p*to_float2(0.5f,3.0f)-to_float2(0.0f,0.3f), 0.75f, 1.2f, ColorsMount, MountOpt) * to_float4_aw(to_float3_s(0.25f),1.0f);
+    p.x += iTime*LAYER_SPEED;    layer[1] = pyramids(p-to_float2(0.0f,-0.4f), 1.0f, 0.6f, ColorsPyramid);
+    p.x += iTime*LAYER_SPEED;    layer[2] = pyramids(p-to_float2(0.0f,-0.39f), 0.5f, 0.6f, ColorsPyramid);
+    p.x += iTime*LAYER_SPEED;    layer[3] = mountains(p*to_float2(0.25f,2.25f)-to_float2(10.0f,-0.5f), 1.0f, 1.2f, ColorsMount, MountOpt);
+    p.x += iTime*LAYER_SPEED;    layer[4] = cactus(p*1.5f-to_float2(0.0f,-0.7f),3.0f, swi3(ColorCactus,x,y,z))*1.0f;
+    p.x += iTime*LAYER_SPEED;    layer[5] = mountains(p*to_float2(0.25f,2.0f)-to_float2(0.0f,-0.6f), 1.0f, 1.2f, ColorsMount, MountOpt);
+    p.x += iTime*LAYER_SPEED;    layer[6] = mountains(p*to_float2(0.15f,2.0f)-to_float2(1000.0f,-0.7f), 1.0f, 1.2f, ColorsMount, MountOpt);
+    p.x += iTime*LAYER_SPEED;    layer[7] = cactus(p*0.2f-to_float2(0.0f,-0.0f),3.0f, swi3(ColorCactus,x,y,z));
+
+    // merge layers with alpha premultiplied
+    for(int i=0; i<LAYER_COUNT; i++) {
+        swi3S(col,x,y,z, swi3(col,x,y,z) * (1.0f-layer[i].w) + swi3(layer[i],x,y,z) * (2.0f/(_powf((float)(i),2.5f)+1.0f)));
+    }
+
+    // flare
+    float d = distance_f2(pp, sunpos);
+    swi3S(col,x,y,z, swi3(col,x,y,z) + swi3(Color1,x,y,z) * _powf(1.0f/(1.0f+d), 3.0f)*0.1f); //to_float3(1.0f,1.0f,0.5f)
+
+    // color grading
+    swi3S(col,x,y,z, pow_f3(swi3(col,x,y,z),  swi3(ColorGrading,x,y,z)));//to_float3(1.0f,1.5f,1.3f)));
+
+    // vignetting
+    swi3S(col,x,y,z, swi3(col,x,y,z) * _powf( uv.x*uv.y*(1.0f-uv.x)*(1.0f-uv.y)*100.0f, Vignette));
+
+    // gamma correction
+    swi3S(col,x,y,z, pow_f3(swi3(col,x,y,z), to_float3_s(1.0f/2.2f)));
+
+    // output to the screen
+    fragColor = to_float4_aw(swi3(col,x,y,z) * smoothstep(0.0f,3.0f, iTime),1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  InMountOptCheckbox = self:AddInput("MountOpt", "MountOpt", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("Color1", "Color1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor1ColorR = self:AddInput("Red",   "Color1Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColor1ColorG = self:AddInput("Green", "Color1Green", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColor1ColorB = self:AddInput("Blue",  "Color1Blue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InColor1ColorA = self:AddInput("Alpha", "Color1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorGrading", "ColorGrading", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorGrading",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorGradingColorR = self:AddInput("Red",   "ColorGradingRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorGradingColorG = self:AddInput("Green", "ColorGradingGreen", { INP_Default  = 1.5, IC_ControlID = 1, attrs})
+    InColorGradingColorB = self:AddInput("Blue",  "ColorGradingBlue",  { INP_Default  = 1.3, IC_ControlID = 2, attrs})
+    InColorGradingColorA = self:AddInput("Alpha", "ColorGradingAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorCactus", "ColorCactus", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorCactus",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorCactusColorR = self:AddInput("Red",   "ColorCactusRed",   { INP_Default  = 0.4, IC_ControlID = 0, attrs})
+    InColorCactusColorG = self:AddInput("Green", "ColorCactusGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColorCactusColorB = self:AddInput("Blue",  "ColorCactusBlue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColorCactusColorA = self:AddInput("Alpha", "ColorCactusAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorMount1", "ColorMount1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorMount1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorMount1ColorR = self:AddInput("Red",   "ColorMount1Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorMount1ColorG = self:AddInput("Green", "ColorMount1Green", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColorMount1ColorB = self:AddInput("Blue",  "ColorMount1Blue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColorMount1ColorA = self:AddInput("Alpha", "ColorMount1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorMount2", "ColorMount2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorMount2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorMount2ColorR = self:AddInput("Red",   "ColorMount2Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorMount2ColorG = self:AddInput("Green", "ColorMount2Green", { INP_Default  = 0.4, IC_ControlID = 1, attrs})
+    InColorMount2ColorB = self:AddInput("Blue",  "ColorMount2Blue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InColorMount2ColorA = self:AddInput("Alpha", "ColorMount2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorPyramid1", "ColorPyramid1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorPyramid1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorPyramid1ColorR = self:AddInput("Red",   "ColorPyramid1Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorPyramid1ColorG = self:AddInput("Green", "ColorPyramid1Green", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InColorPyramid1ColorB = self:AddInput("Blue",  "ColorPyramid1Blue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColorPyramid1ColorA = self:AddInput("Alpha", "ColorPyramid1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorPyramid2", "ColorPyramid2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorPyramid2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorPyramid2ColorR = self:AddInput("Red",   "ColorPyramid2Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorPyramid2ColorG = self:AddInput("Green", "ColorPyramid2Green", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InColorPyramid2ColorB = self:AddInput("Blue",  "ColorPyramid2Blue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColorPyramid2ColorA = self:AddInput("Alpha", "ColorPyramid2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBKG1", "ColBKG1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBKG1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBKG1ColorR = self:AddInput("Red",   "ColBKG1Red",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColBKG1ColorG = self:AddInput("Green", "ColBKG1Green", { INP_Default  = 0.4, IC_ControlID = 1, attrs})
+    InColBKG1ColorB = self:AddInput("Blue",  "ColBKG1Blue",  { INP_Default  = 0.3, IC_ControlID = 2, attrs})
+    InColBKG1ColorA = self:AddInput("Alpha", "ColBKG1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBKG2", "ColBKG2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBKG2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBKG2ColorR = self:AddInput("Red",   "ColBKG2Red",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColBKG2ColorG = self:AddInput("Green", "ColBKG2Green", { INP_Default  = 0.4, IC_ControlID = 1, attrs})
+    InColBKG2ColorB = self:AddInput("Blue",  "ColBKG2Blue",  { INP_Default  = 0.3, IC_ControlID = 2, attrs})
+    InColBKG2ColorA = self:AddInput("Alpha", "ColBKG2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBKG3", "ColBKG3", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBKG3",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBKG3ColorR = self:AddInput("Red",   "ColBKG3Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColBKG3ColorG = self:AddInput("Green", "ColBKG3Green", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColBKG3ColorB = self:AddInput("Blue",  "ColBKG3Blue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColBKG3ColorA = self:AddInput("Alpha", "ColBKG3Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBKG4", "ColBKG4", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBKG4",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBKG4ColorR = self:AddInput("Red",   "ColBKG4Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColBKG4ColorG = self:AddInput("Green", "ColBKG4Green", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColBKG4ColorB = self:AddInput("Blue",  "ColBKG4Blue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InColBKG4ColorA = self:AddInput("Alpha", "ColBKG4Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InLAYER_SPEEDSlider = self:AddInput("LAYER_SPEED", "LAYER_SPEED", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.1,
+          INP_MaxScale       = 0.1,
+          INP_Default        = 0.05,
+      })
+
+  InVignetteSlider = self:AddInput("Vignette", "Vignette", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.1,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "WalkLikeAnEgyptianFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.MountOpt = InMountOptCheckbox:GetValue(req).Value
+  params.Color1 = {
+    InColor1ColorR:GetValue(req).Value,
+    InColor1ColorG:GetValue(req).Value,
+    InColor1ColorB:GetValue(req).Value,InColor1ColorA:GetValue(req).Value
+  }
+  params.ColorGrading = {
+    InColorGradingColorR:GetValue(req).Value,
+    InColorGradingColorG:GetValue(req).Value,
+    InColorGradingColorB:GetValue(req).Value,InColorGradingColorA:GetValue(req).Value
+  }
+  params.ColorCactus = {
+    InColorCactusColorR:GetValue(req).Value,
+    InColorCactusColorG:GetValue(req).Value,
+    InColorCactusColorB:GetValue(req).Value,InColorCactusColorA:GetValue(req).Value
+  }
+  params.ColorMount1 = {
+    InColorMount1ColorR:GetValue(req).Value,
+    InColorMount1ColorG:GetValue(req).Value,
+    InColorMount1ColorB:GetValue(req).Value,InColorMount1ColorA:GetValue(req).Value
+  }
+  params.ColorMount2 = {
+    InColorMount2ColorR:GetValue(req).Value,
+    InColorMount2ColorG:GetValue(req).Value,
+    InColorMount2ColorB:GetValue(req).Value,InColorMount2ColorA:GetValue(req).Value
+  }
+  params.ColorPyramid1 = {
+    InColorPyramid1ColorR:GetValue(req).Value,
+    InColorPyramid1ColorG:GetValue(req).Value,
+    InColorPyramid1ColorB:GetValue(req).Value,InColorPyramid1ColorA:GetValue(req).Value
+  }
+  params.ColorPyramid2 = {
+    InColorPyramid2ColorR:GetValue(req).Value,
+    InColorPyramid2ColorG:GetValue(req).Value,
+    InColorPyramid2ColorB:GetValue(req).Value,InColorPyramid2ColorA:GetValue(req).Value
+  }
+  params.ColBKG1 = {
+    InColBKG1ColorR:GetValue(req).Value,
+    InColBKG1ColorG:GetValue(req).Value,
+    InColBKG1ColorB:GetValue(req).Value,InColBKG1ColorA:GetValue(req).Value
+  }
+  params.ColBKG2 = {
+    InColBKG2ColorR:GetValue(req).Value,
+    InColBKG2ColorG:GetValue(req).Value,
+    InColBKG2ColorB:GetValue(req).Value,InColBKG2ColorA:GetValue(req).Value
+  }
+  params.ColBKG3 = {
+    InColBKG3ColorR:GetValue(req).Value,
+    InColBKG3ColorG:GetValue(req).Value,
+    InColBKG3ColorB:GetValue(req).Value,InColBKG3ColorA:GetValue(req).Value
+  }
+  params.ColBKG4 = {
+    InColBKG4ColorR:GetValue(req).Value,
+    InColBKG4ColorG:GetValue(req).Value,
+    InColBKG4ColorB:GetValue(req).Value,InColBKG4ColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.LAYER_SPEED = InLAYER_SPEEDSlider:GetValue(req).Value
+  params.Vignette = InVignetteSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  
+  node:AddOutput("dst", dst)
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

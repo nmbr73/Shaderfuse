@@ -1,0 +1,751 @@
+--[[--/*
+
+  CreationBySilexars.fuse
+
+  Based on https://www.shadertoy.com/view/XsXXDn a WebGL shader created by Danguafer.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  bool   Reset;
+  float  ColorOut[4];
+  float  Level1;
+  float  Level2;
+  float  Level3;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+  #else
+
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f2(value,divisor) fmod(value,divisor)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ //#define mod_f2(value,divisor) _fmod(value,divisor)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ //#define mod_f2(value,divisor) to_float2(mod_f((value).x, (divisor)),mod_f((value).y, (divisor)))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+union A2F
+ {
+   float3 F;    //32bit float
+   float  A[3];  //32bit Array
+ };
+
+
+// http://www.pouet.net/prod.php?which=57245
+// If you intend to reuse this shader, please add credits to 'Danilo Guanabara'
+
+#define t iTime
+#define r iResolution
+
+#define mod_f(a,b) (a-b*_floor(a/b))
+__DEVICE__ float2 mod_f2(float2 value, float divisor) {return to_float2(mod_f(value.x, divisor),mod_f(value.y, divisor));}
+
+__KERNEL__ void CreationBySilexarsFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  float4 ColorOut = to_float4(params->ColorOut[0], params->ColorOut[1], params->ColorOut[2], params->ColorOut[3]);
+  float  Level1 = params->Level1;
+  float  Level2 = params->Level2;
+  float  Level3 = params->Level3;
+
+  // --------
+
+  //float3 c;
+  union A2F c;
+
+  float l,z=t;
+  for(int i=0;i<3;i++) {
+    float2 uv, p=fragCoord/r;
+    uv=p;
+    p-= 0.5f;
+    p.x*=r.x/r.y;
+    z+=Level1;//0.07f;
+    l=length(p);
+    //uv+=p/l*(_sinf(z)+1.0f)*_fabs(_sinf(l*9.0f-z-z));
+    uv+= (p)/(l)*(_sinf(z)+Level2)*_fabs(_sinf(l*Level3-z-z));
+
+    c.A[i]=0.01f/length(mod_f2(uv,1.0f)-0.5f);
+  }
+  fragColor=to_float4_aw(c.F/l,t);
+
+  fragColor = to_float4_aw(swi3(fragColor,x,y,z) * (swi3(ColorOut,x,y,z) + 0.5f), ColorOut.w == 0.0 ? fragColor.w : ColorOut.w);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  self:BeginControlNest("ColorOut", "ColorOut", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorOut",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorOutColorR = self:AddInput("Red",   "ColorOutRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColorOutColorG = self:AddInput("Green", "ColorOutGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InColorOutColorB = self:AddInput("Blue",  "ColorOutBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InColorOutColorA = self:AddInput("Alpha", "ColorOutAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InLevel1Slider = self:AddInput("Level1", "Level1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.07,
+      })
+
+  InLevel2Slider = self:AddInput("Level2", "Level2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 1.75,
+      })
+
+  InLevel3Slider = self:AddInput("Level3", "Level3", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 9.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    { CCS_AddString = "BufferC", },
+    { CCS_AddString = "BufferD", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = false
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+  Image_Buff_GlobalC = Image(ImgAttrs_Global)
+  Image_Buff_GlobalD = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstC = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstD = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstI = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "CreationBySilexarsFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "CreationBySilexarsFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.ColorOut = {
+    InColorOutColorR:GetValue(req).Value,
+    InColorOutColorG:GetValue(req).Value,
+    InColorOutColorB:GetValue(req).Value,InColorOutColorA:GetValue(req).Value
+  }
+  params.Level1 = InLevel1Slider:GetValue(req).Value
+  params.Level2 = InLevel2Slider:GetValue(req).Value
+  params.Level3 = InLevel3Slider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+    
+    
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+        node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",Image_Buff_GlobalC)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",Image_Buff_GlobalD)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "CreationBySilexarsFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeB:AddInput("iChannel1", Image_Buff_GlobalD)  -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+    
+
+    -------------------------- BufferC-Kernel----------------------------------------
+    local nodeC = DVIPComputeNode(req,
+      "CreationBySilexarsFuse__Buffer_C", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeC:SetParamBlock(params)
+
+    --nodeC:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeC)
+
+    nodeC:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeC:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeC:AddOutput("dst", dstC)
+
+    local success = nodeC:RunSession(req)
+    if not success then
+      dstC = nil
+      dump(nodeC:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalC = dstC --Recursiv Image	
+
+
+    -------------------------- BufferD-Kernel----------------------------------------
+    local nodeD = DVIPComputeNode(req,
+      "CreationBySilexarsFuse__Buffer_D", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeD:SetParamBlock(params)
+
+    --nodeD:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeD)
+
+    nodeD:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    nodeD:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeD:AddOutput("dst", dstD)
+
+    local success = nodeD:RunSession(req)
+    if not success then
+      dstD = nil
+      dump(nodeD:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalD = dstD --Recursiv Image	
+
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "CreationBySilexarsFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    node:AddInput("iChannel1", iChannel0)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+    if (InDebugImage:GetValue(req).Value == 3) then OutImage:Set(req, Image_Buff_GlobalC) end
+    if (InDebugImage:GetValue(req).Value == 4) then OutImage:Set(req, Image_Buff_GlobalD) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+    
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

@@ -1,0 +1,947 @@
+--[[--/*
+
+  EndlessScrewScrollGenuary28.fuse
+
+  Based on https://www.shadertoy.com/view/XXKfDh a WebGL shader created by flockaroo.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iChannelResolution[4][2];
+  float  iTime;
+  float  iMouse[4];
+  bool   DZSOn;
+  bool   AlphaOn;
+  float  Color1[4];
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ScrewR;
+  float  WindHMul;
+  float  NutH;
+  float  NutW;
+  float  dn;
+  float  d;
+  float  dzMul;
+  float  DZS;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2_f2_f2(A,B) mat2((A),(B))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2_f2_f2( float2 a, float2 b                  )  { mat2 t; t.r0 = a; t.r1 = b;                                     return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define sin_f2(i) sin(i)
+ #define cos_f2(i) cos(i)
+ #define abs_f2(a) _fabs(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define sin_f2(i) sin(i)
+ #define cos_f2(i) cos(i)
+ #define abs_f2(a) fabs(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define cos_f2(i) to_float2( _cosf((i).x), _cosf((i).y))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+
+  #endif
+
+#endif
+
+__DEVICE__ float4 decube_f3(__TEXTURE2D__ t, float3 xyz)
+{
+  float ax=_fabs(xyz.x);
+  float ay=_fabs(xyz.y);
+  float az=_fabs(xyz.z);
+
+  if (xyz.x>0.0f && ax>=ay && ax>=az) // +X, Face 0, right
+    return _tex2DVecN(t,(-xyz.z/ax+1.0f)/8.0f + 0.5f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y>0.0f && ay>=ax && ay>=az) // +Y, Face 2, top
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(-xyz.z/ay+1.0f)/6.0f + (2.0f/3.0f),15);
+
+  if (xyz.z>0.0f && az>=ax && az>=ay) // +Z, Face 4, front
+    return _tex2DVecN(t,(xyz.x/az+1.0f)/8.0f + 0.25f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.x<0.0f && ax>=ay && ax>=az) // -X, Face 1, left
+    return _tex2DVecN(t,(xyz.z/ax+1.0f)/8.0f,(xyz.y/ax+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  if (xyz.y<0.0f && ay>=ax && ay>=az) // -Y, Face 3, bottom
+    return _tex2DVecN(t,(xyz.x/ay+1.0f)/8.0f + 0.25f,(xyz.z/ay+1.0f)/6.0f,15);
+
+  if (xyz.z<0.0f && az>=ax && az>=ay) // -Z, Face 5, back
+    return _tex2DVecN(t,(-xyz.x/az+1.0f)/8.0f + 0.75f,(xyz.y/az+1.0f)/6.0f + (1.0f/3.0f),15);
+
+  return to_float4(1.0f,0.0f,0.0f,1.0f); // error
+}
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Cubemap: Forest_0' to iChannel0
+// Connect Image 'Texture: RGBA Noise Medium' to iChannel1
+
+
+// created by florian berger (flockaroo) - 2025
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0f Unported License.
+//
+// screw scroll - genuary28 - genuary2025
+
+#define Res (iResolution)
+#define Res0 iChannelResolution[0]
+#define Res1 iChannelResolution[1]
+#define PI  3.14159265359f
+#define PI2 6.28318530718f
+#define PIH 1.57079632679f
+#define SQH _sqrtf(0.5f)
+
+#define PIH 1.57079632679f
+
+#define ROTM(ang) to_mat2_f2_f2(cos_f2(ang-to_float2(0,PIH)),-1.0f*sin_f2(ang-to_float2(0,PIH)))
+
+__DEVICE__ float3 rotZ(float ang, float3 p) {
+    return to_float3_aw(mul_mat2_f2(ROTM(ang),swi2(p,x,y)),p.z);
+  }
+__DEVICE__ float3 rotX(float ang, float3 p) { return swi3(rotZ(ang,swi3(p,y,z,x)),z,x,y); }
+
+__DEVICE__ float fermi(float x) {
+    return 1.0f/(1.0f+_expf(-x));
+}
+
+__DEVICE__ float smin0(float a, float b, float k)
+{
+    return _mix(a,b,fermi((a-b)/k))-k*_expf(-(_fabs(a)+_fabs(b))/k/2.0f);
+}
+
+__DEVICE__ float smin(float a, float b, float k) { return smin0(a,b,k); }
+__DEVICE__ float smax(float a, float b, float k) { return -smin(-a,-b,k); }
+//__DEVICE__ float4 getRand(int i, float2 iResolution) { return texelFetch(iChannel1,to_int2(i,i%256)%256,0); }
+__DEVICE__ float4 getRand(int i, float2 iResolution, __TEXTURE2D__ iChannel1) { return texelFetch(iChannel1,to_int2(i%256,i%256%256),0); }
+
+//float length2(float2 v) { float2 q=_fabs(v); return _fmaxf(q.x,q.y); }
+__DEVICE__ float length2(float2 v) { float2 q=abs_f2(v); return q.x*0.8f+q.y*1.2f; }
+
+
+
+__DEVICE__ float dist(float3 p, bool g_bump, float iTime, float ScrewR, float WindHMul, float NutH, float NutW, float dn, float d, float dzMul, float DZS, bool DZSOn, __TEXTURE2D__ iChannel1)
+{
+//    float ScrewR=0.5f;
+    float WindH=ScrewR*WindHMul;//0.45f;
+//    float NutH=0.5f;
+//    float NutW=2.0f;
+
+//    float dn=1000.0f,ds,d2,d=10000.0f;
+    float ds,d2;
+    float dz=iTime*dzMul;//0.1f;
+    float dzs=_sinf(iTime)*0.2f;
+
+    if(DZSOn) dzs = DZS;
+
+    float screwAng=((dz+dzs)/WindH)*PI2;
+
+    // screw
+    float3 p0=p;
+    p.z-=dz;
+    //if (g_bump) p+=textureLod(iChannel1,swi2(p,x,y)*0.7f,0.0f).xyz*0.00025f;
+    //shane deamnded some anisotrppy ;-)
+    if (g_bump) p += swi3(texture(iChannel1,swi2(p,x,y)*dot(swi2(p,x,y),swi2(p,x,y))*dot(swi2(p,x,y),swi2(p,x,y))*1.7f-p.z*0.1f),x,y,z)*0.0007f;
+    d2=length(swi2(p,x,y))-ScrewR;
+    d=_fminf(d,d2);
+    float ang=_atan2f(p.y,p.x);
+    d2=length2(to_float2(length(swi2(p,x,y))-ScrewR,(fract(p.z/WindH+ang/PI2)-0.5f)*WindH))-WindH*0.5f;
+    d=smax(d,-d2,0.006f);
+    ds=d;
+
+    //nut
+    p=p0;
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , ROTM(screwAng)));
+    ang-=screwAng;
+    p.z+=dzs;
+    if (g_bump) p += swi3(texture(iChannel1,swi2(p,x,y)*0.17f),x,y,z)*0.0005f;
+    //outer cone
+    d2=dot(to_float2(length(swi2(p,x,y)),_fabs(p.z)),normalize(to_float2(1,1)))-1.03f;
+    dn=_fminf(dn,d2);
+    dn=smax(dn,(_fabs(p.z)-NutH),0.01f);
+    dn=smax(dn,-(ds-0.02f),0.01f);
+    float angN=_floor(ang/PI2*6.0f+0.5f)*PI2/6.0f;
+    dn=smax(dn,dot(swi2(p,x,y),cos_f2(angN-to_float2(0,PIH)))-NutW*0.5f,0.005f);
+    //inner cone
+    d2=dot(to_float2(length(swi2(p,x,y)),_fabs(p.z)),normalize(to_float2(-1,1.1f)))-0.0f;
+    dn=smax(dn,d2,0.005f);
+    //dn=_fmaxf(dn,-_fmaxf(-p0.x,p0.y));
+    d=_fminf(d,dn);
+
+    return d;
+}
+
+__DEVICE__ float3 getGrad(float3 p, float eps, bool g_bump, float iTime, float ScrewR, float WindHMul, float NutH, float NutW, float dn, float d, float dzMul, float DZS, bool DZSOn, __TEXTURE2D__ iChannel1)
+{
+    float2 _d=to_float2(eps,0);
+    float d0=dist(p, g_bump, iTime, ScrewR, WindHMul, NutH, NutW, dn, d, dzMul, DZS, DZSOn, iChannel1);
+    return to_float3(dist(p+swi3(_d,x,y,y), g_bump, iTime, ScrewR, WindHMul, NutH, NutW, dn, d, dzMul, DZS, DZSOn, iChannel1)-d0,dist(p+swi3(_d,y,x,y), g_bump, iTime, ScrewR, WindHMul, NutH, NutW, dn, d, dzMul, DZS, DZSOn, iChannel1)-d0,dist(p+swi3(_d,y,y,x), g_bump, iTime, ScrewR, WindHMul, NutH, NutW, dn, d, dzMul, DZS, DZSOn, iChannel1)-d0)/eps;
+}
+
+__DEVICE__ void march(inout float3 *pos, float3 dir, bool g_bump, float iTime, float ScrewR, float WindHMul, float NutH, float NutW, float dn, float d, float dzMul, float DZS, bool DZSOn, __TEXTURE2D__ iChannel1)
+{
+    float eps=0.001f;
+    for(int i=0;i<180;i++)
+    {
+        float _d=dist(*pos, g_bump, iTime, ScrewR, WindHMul, NutH, NutW, dn, d, dzMul, DZS, DZSOn, iChannel1);
+        *pos+=dir*_d*0.7f;
+        if (_d<eps) break;
+    }
+}
+
+__DEVICE__ void getTrafo(inout float3 *pos, inout float3 *dir, float2 fc, float2 iResolution, float4 iMouse, float3 View)
+{
+    float2 sc=(fc-Res*0.5f)/Res.x*2.0f;
+    *dir=normalize(to_float3(0,0,-2.5f)+to_float3_aw(sc,0));
+    *pos=to_float3(0,0,10.0f/**_expf(-iMouseData.z/3000.0f)*/)+View;
+    float ph = iMouse.x/Res.x*10.0f+2.0f;
+    float th = iMouse.y/Res.y*10.0f-0.7f;//1.2f;
+    swi2S(*pos,y,z, mul_mat2_f2(ROTM(th),swi2(*pos,y,z)));
+    swi2S(*dir,y,z, mul_mat2_f2(ROTM(th),swi2(*dir,y,z)));
+    swi2S(*pos,x,y, mul_mat2_f2(ROTM(ph),swi2(*pos,x,y)));
+    swi2S(*dir,x,y, mul_mat2_f2(ROTM(ph),swi2(*dir,x,y)));
+}
+
+__KERNEL__ void EndlessScrewScrollGenuary28Fuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iChannelResolution[2];
+  iChannelResolution[0] = to_float2(params->iChannelResolution[0][0], params->iChannelResolution[0][1]);
+  iChannelResolution[1] = to_float2(params->iChannelResolution[1][0], params->iChannelResolution[1][1]);
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   DZSOn = params->DZSOn;
+  bool   AlphaOn = params->AlphaOn;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float  ScrewR = params->ScrewR;
+  float  WindHMul = params->WindHMul;
+  float  NutH = params->NutH;
+  float  NutW = params->NutW;
+  float  dn = params->dn;
+  float  d = params->d;
+  float  dzMul = params->dzMul;
+  float  DZS = params->DZS;
+
+  // --------
+    mat2 dummy;
+
+    bool g_bump=false;
+
+    float3 pos,dir;
+    getTrafo(&pos,&dir,fragCoord, iResolution, iMouse, to_float3_aw(ViewDXY, ViewDZ));
+    march(&pos,dir, g_bump, iTime, ScrewR, WindHMul, NutH, NutW, dn, d, dzMul, DZS, DZSOn, iChannel1);
+    g_bump=true;
+    float3 n=normalize(getGrad(pos,0.001f, g_bump, iTime, ScrewR, WindHMul, NutH, NutW, dn, d, dzMul, DZS, DZSOn, iChannel1)+0.00001f);
+    swi3S(fragColor,x,y,z, n*0.05f+0.95f);
+    float diff=_fmaxf(0.0f,dot(n,normalize(to_float3(1,1,1))))*0.5f+0.5f;
+    //float diff=_fmaxf(0.0f,dot(n,normalize(swi3(Color1,x,y,z))))*0.5f+0.5f;
+    float ao=1.0f;
+    for(float sc=1.0f;sc>0.02f;sc*=0.5f) ao*=0.9f+0.1f*dist(pos+n*sc, g_bump, iTime, ScrewR, WindHMul, NutH, NutW, dn, d, dzMul, DZS, DZSOn, iChannel1)/sc;
+
+    swi3S(fragColor,x,y,z, swi3(fragColor,x,y,z)*ao*diff);
+    swi3S(fragColor,x,y,z, swi3(fragColor,x,y,z)*0.4f+0.6f*swi3(decube_f3(iChannel0,reflect(dir,n)),x,y,z));
+
+    fragColor.w=1.0f;
+
+    fragColor = clamp(fragColor, 0.0f, 1.0f);
+
+    if(AlphaOn == 1.0f) if(fragColor.x >= 1.0f && fragColor.y >= 1.0f && fragColor.z >= 1.0f) fragColor = to_float4_s(0.0f);
+
+    fragColor = to_float4_aw(swi3(fragColor,x,y,z) * (swi3(Color1,x,y,z) + 0.5f),fragColor.w);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InDZSOnCheckbox = self:AddInput("DZSOn", "DZSOn", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAlphaOnCheckbox = self:AddInput("AlphaOn", "AlphaOn", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  self:BeginControlNest("Color1", "Color1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor1ColorR = self:AddInput("Red",   "Color1Red",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColor1ColorG = self:AddInput("Green", "Color1Green", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InColor1ColorB = self:AddInput("Blue",  "Color1Blue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InColor1ColorA = self:AddInput("Alpha", "Color1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InScrewRSlider = self:AddInput("ScrewR", "ScrewR", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.5,
+      })
+
+  InWindHMulSlider = self:AddInput("WindHMul", "WindHMul", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.45,
+      })
+
+  InNutHSlider = self:AddInput("NutH", "NutH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.5,
+      })
+
+  InNutWSlider = self:AddInput("NutW", "NutW", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.0,
+      })
+
+  IndnSlider = self:AddInput("dn", "dn", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2000.0,
+          INP_Default        = 1000.0,
+      })
+
+  IndSlider = self:AddInput("d", "d", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20000.0,
+          INP_Default        = 10000.0,
+      })
+
+  IndzMulSlider = self:AddInput("dzMul", "dzMul", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.1,
+      })
+
+  InDZSSlider = self:AddInput("DZS", "DZS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -200.0,
+          INP_MaxScale       = 200.0,
+          INP_Default        = 0.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "EndlessScrewScrollGenuary28Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.DZSOn = InDZSOnCheckbox:GetValue(req).Value
+  params.AlphaOn = InAlphaOnCheckbox:GetValue(req).Value
+  params.Color1 = {
+    InColor1ColorR:GetValue(req).Value,
+    InColor1ColorG:GetValue(req).Value,
+    InColor1ColorB:GetValue(req).Value,InColor1ColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ScrewR = InScrewRSlider:GetValue(req).Value
+  params.WindHMul = InWindHMulSlider:GetValue(req).Value
+  params.NutH = InNutHSlider:GetValue(req).Value
+  params.NutW = InNutWSlider:GetValue(req).Value
+  params.dn = IndnSlider:GetValue(req).Value
+  params.d = IndSlider:GetValue(req).Value
+  params.dzMul = IndzMulSlider:GetValue(req).Value
+  params.DZS = InDZSSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  params.iChannelResolution[0][0] = iChannel0.DataWindow:Width()    
+  params.iChannelResolution[0][1] = iChannel0.DataWindow:Height()   
+  params.iChannelResolution[1][0] = iChannel1.DataWindow:Width()    
+  params.iChannelResolution[1][1] = iChannel1.DataWindow:Height() 
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+    
+  
+  collectgarbage();
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

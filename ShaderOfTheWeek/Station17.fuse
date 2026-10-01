@@ -1,0 +1,1489 @@
+--[[--/*
+
+  Station17.fuse
+
+  Based on https://www.shadertoy.com/view/3fVyDw a WebGL shader created by Zerofile.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  Color1[4];
+  float  Color2[4];
+  float  Color3[4];
+  float  Color4[4];
+  float  Color5[4];
+  float  Color6[4];
+  float  Color7[4];
+  float  Color8[4];
+  float  Color9[4];
+  float  Color10[4];
+  float  Color11[4];
+  float  PLPosXY[2];
+  float  PLPosZ;
+  float  STPosXY[2];
+  float  STPosZ;
+  float  UPAxisXY[2];
+  float  UPAxisZ;
+  float  plRad;
+  float  stScale;
+  float  Nebular;
+  float  Mark;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define tanh_f3(i) tanh(i)
+ #define sqrt_f3(a) _sqrtf(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) _fmod(a,b)
+ #define tanh_f3(i) tanh(i)
+ #define sqrt_f3(a) _sqrtf(a)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define tanh_f3(i) to_float3(_tanhf((i).x), _tanhf((i).y), _tanhf((i).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+__DEVICE__ mat3 transpose(mat3 m)
+{
+    return(to_mat3(m.r0.x,m.r1.x,m.r2.x, m.r0.y,m.r1.y,m.r2.y, m.r0.z,m.r1.z,m.r2.z));
+}
+
+
+  #define PI 3.1415926535897f
+__DEVICE__ mat2 rot(float a){ return to_mat2(_cosf(a),_sinf(a),-_sinf(a),_cosf(a)); }
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Noise' to iChannel0
+
+
+
+#define rgb(r,g,b) to_float3(r,g,b) / 255.0f
+#define grgb(r,g,b) to_float3(r,g,b) * to_float3(r,g,b) / 65025.0f
+
+__DEVICE__ float3 sunDir(float iTime) {
+
+    float t = mod_f((iTime + 1.0f) / 15.0f, 4.0f);
+
+    if (t > 3.0f) return normalize(to_float3(-0.1f, 0.0f, 1.0f));
+    if (t > 2.0f) return normalize(to_float3(3.0f, 0.0f, 0.0f));
+    if (t > 1.0f) return normalize(to_float3(-1.0f, 1.0f, 0.7f));
+    if (t > 0.0f) return normalize(to_float3(2.0f, 3.0f, 0.7f));
+}
+
+/*
+noise
+*/
+
+__DEVICE__ float noise(float seed) {
+    return fract( _sinf(seed) * 753.5453f );
+}
+
+__DEVICE__ float sNoise(float3 position) {
+
+    float3 pi = _floor(position);
+    float3 pm = fract_f3(position);
+
+    pm *= pm * (3.0f - 2.0f * pm);
+
+    float vx = dot(pi, to_float3(1.0f, 157.0f, 113.0f));
+
+
+    return _mix(
+           _mix(
+            _mix(noise(vx          ), noise(vx + 1.0f   ), pm.x),
+            _mix(noise(vx + 157.0f ), noise(vx + 158.0f ), pm.x),
+            pm.y
+        ),
+           _mix(
+            _mix(noise(vx + 113.0f ), noise(vx + 114.0f ), pm.x),
+            _mix(noise(vx + 270.0f ), noise(vx + 271.0f ), pm.x),
+            pm.y
+        ),
+        pm.z
+    );
+
+}
+
+// worley-sphere
+// same principle as: https://www.shadertoy.com/view/t32yzd
+__DEVICE__ float wsNoise(float3 dir, float rad) {
+    dir *= rad;
+    float3 pi = _floor(dir);
+    float3 pm = fract_f3(dir);
+
+    float mx = 1.732f;
+
+    for (int i = -1; i <= 1; i++) {
+      for (int j = -1; j <= 1; j++) {
+        for (int k = -1; k <= 1; k++) {
+          float rng = dot(pi + to_float3(i, j, k), to_float3(1.0f, 157.0f, 113.0f));
+          rng = noise(rng);
+          float3 cell = to_float3(rng, fract(rng * 16.0f), fract(rng * 256.0f));
+          cell += to_float3(i, j, k) + pi;
+                float l = length(cell);
+                if (_fabs(l - rad) < 0.4f) {
+                cell = cell / l * rad;
+          mx = _fminf(length(cell - dir), mx);}
+        }
+      }
+    }
+
+    return mx / 1.732f;
+}
+
+
+/*
+rendering
+*/
+
+__DEVICE__ void space(float3 dir, float3 pos, inout float3 *col, float time, float3 Colors[11], __TEXTURE2D__ iChannel0) {
+
+    // stars
+
+    float star = wsNoise(dir, 20.0f);
+    star *= 250.0f; star = _expf(-(star * star));
+    *col = star * Colors[0] * 8.0f;//grgb(252, 198, 3) * 8.0f;
+
+    // wisps
+
+    float3 s = dir * 0.2f + time;
+    s += swi3(_tex2DVecN(iChannel0,s.x,s.y,15),z,x,y) * 0.024f;
+    s += swi3(_tex2DVecN(iChannel0,s.x,s.z,15),z,x,y) * 0.024f;
+
+    float l = _tex2DVecN(iChannel0,s.x,s.y,15).x;
+          l += _tex2DVecN(iChannel0,s.x,s.z,15).x;
+    s += 1.618f; s *= 2.0f;
+    l += _tex2DVecN(iChannel0,s.x,s.y,15).x * 0.25f;
+    l += _tex2DVecN(iChannel0,s.x,s.z,15).x * 0.25f;
+
+    s += 1.618f; s *= 2.0f;
+    l += _tex2DVecN(iChannel0,s.x,s.y,15).x * 0.125f;
+    l += _tex2DVecN(iChannel0,s.x,s.z,15).x * 0.125f;
+    s += 1.618f; s *= 2.0f;
+    l += _tex2DVecN(iChannel0,s.x,s.y,15).x * 0.0125f;
+    l += _tex2DVecN(iChannel0,s.x,s.z,15).x * 0.0125f;
+    l /= 1.875f; l *= l; l *= l;
+
+    *col *= _expf(-l * 8.0f);
+
+    *col += (l * 8.0f + 0.2f) * Colors[1] * 0.2f;//grgb(2, 64, 19) * 0.2f;
+    *col += l *l * Colors[2];//grgb(237, 172, 21);
+}
+
+__DEVICE__ float airmass(float s, float e, float a, float b) {
+    float o = 0.0f;
+    float t = s;
+    float dt = (e - s) / 40.0f;
+    for (int i = 0; i < 40; i++) {
+        o += _expf(-b * _sqrtf(a + t*t)) * dt;
+        t += dt;
+    }
+    return o;
+}
+
+__DEVICE__ void planetSurface(float3 dir, inout float3 *albedo, float iTime, float3 Colors[11], __TEXTURE2D__ iChannel0) {
+    *albedo = Colors[3];//grgb(242, 230, 160);
+
+    // cloud
+
+    float3 s = dir * to_float3(5.0f, 20.0f, 5.0f);
+
+    #ifdef ORG
+    s += swi3(texture(iChannel0, dir * 5.0f),x,y,z) * 0.65f;
+    s += swi3(texture(iChannel0, dir * 2.0f),x,y,z) * 0.25f;
+    s += swi3(texture(iChannel0, dir * 1.0f),x,y,z) * 0.5f;
+    s += swi3(texture(iChannel0, s * 0.003f),x,y,z) * 5.0f;
+    s += swi3(texture(iChannel0, s * 0.014f + to_float3_s(0.618f)),x,y,z) * 2.5f;
+    s += swi3(texture(iChannel0, s * 0.047f + 2.0f * to_float3_s(0.618f)),x,y,z) * 3.0f;
+    s += swi3(texture(iChannel0, dir * 1.0f),x,y,z) * 1.0f;
+    s += swi3(texture(iChannel0, dir * 2.0f),x,y,z) * 0.5f;
+
+    #endif
+
+    s += swi3(texture(iChannel0, swi2(dir,x,y) * 5.0f),x,y,z) * 0.325f;
+    s += swi3(texture(iChannel0, swi2(dir,x,z) * 5.0f),x,y,z) * 0.325f;
+
+    s += swi3(texture(iChannel0, swi2(dir,x,y) * 2.0f),x,y,z) * 0.125f;
+    s += swi3(texture(iChannel0, swi2(dir,x,z) * 2.0f),x,y,z) * 0.125f;
+
+    s += swi3(texture(iChannel0, swi2(dir,x,y) * 1.0f),x,y,z) * 0.25f;
+    s += swi3(texture(iChannel0, swi2(dir,x,z) * 1.0f),x,y,z) * 0.25f;
+
+    s += swi3(texture(iChannel0, swi2(s,x,y) * 0.003f),x,y,z) * 2.50f;
+    s += swi3(texture(iChannel0, swi2(s,x,z) * 0.003f),x,y,z) * 2.50f;
+
+    s += swi3(texture(iChannel0, swi2(s,x,y) * 0.014f + to_float2_s(0.618f)),x,y,z) * 1.25f;
+    s += swi3(texture(iChannel0, swi2(s,x,z) * 0.014f + to_float2_s(0.618f)),x,y,z) * 1.25f;
+
+    s += swi3(texture(iChannel0, swi2(s,x,y) * 0.047f + 2.0f * to_float2_s(0.618f)),x,y,z) * 1.50f;
+    s += swi3(texture(iChannel0, swi2(s,x,z) * 0.047f + 2.0f * to_float2_s(0.618f)),x,y,z) * 1.50f;
+
+    s += swi3(texture(iChannel0, swi2(dir,x,y) * 1.0f),x,y,z) * 0.50f;
+    s += swi3(texture(iChannel0, swi2(dir,x,z) * 1.0f),x,y,z) * 0.50f;
+
+    s += swi3(texture(iChannel0, swi2(dir,x,y) * 2.0f),x,y,z) * 0.25f;
+    s += swi3(texture(iChannel0, swi2(dir,x,z) * 2.0f),x,y,z) * 0.25f;
+
+    float c = sNoise(s * 0.5f  + iTime * 0.3f + 0.4f );
+    *albedo = _mix(*albedo, to_float3_s(1.0f) * (0.5f + c*c * 0.6f),
+    clamp(c * 3.0f - 1.0f, 0.0f, 1.0f) * 0.5f);
+
+}
+
+
+__DEVICE__ void planet(float3 dir, float3 pos, inout float3 *col, float3 plPos, float plRad, float iTime, float3 Colors[11], __TEXTURE2D__ iChannel0) {
+
+    float proj = dot(plPos - pos, dir);
+    float3 o = plPos - pos - dir * proj;
+    float a2 = plRad * plRad - dot(o,o);
+
+    float3 hit; float3 norm;
+    if (a2 > 0.0f) {
+
+        hit = plPos - o - _sqrtf(a2) * dir;
+        norm = normalize(hit - plPos);
+
+        float3 albedo; planetSurface(norm, &albedo, iTime, Colors, iChannel0);
+        *col = albedo * 2.5f;
+
+        *col *= _fmaxf(dot(norm, sunDir(iTime)), 0.0f);
+    }
+
+    // atmosphere
+    // uses approx 'e^(-d)' distribution for absorbtion
+    // with single-sample approximation for contributed lighting
+
+    float alpha_l = _expf(25.0f); float alpha_u = _expf(4.0f);
+    float beta_l = 32.0f; float beta_u = 6.0f;
+
+    float r = dot(o,o);
+
+    float end = 10.0f;
+    if (a2 > 0.0f) end = -_sqrtf(a2);
+
+    float A = _expf(-airmass(-proj, end, r, beta_l) * alpha_l
+                  -airmass(-proj, end, r, beta_u) * alpha_u);
+    *col *= A;
+
+    // contribute lighting (approx)
+
+    float3 exC = normalize(pos - plPos); // extreme contribution angle
+    if (proj > 0.0f) exC = -1.0f*normalize(o);
+    if (a2 > 0.0f) exC = norm;
+    float l = dot(exC, sunDir(iTime));
+    float3 l2 = 0.5f + 0.5f * tanh_f3(4.0f * l - to_float3(-0.2f, 0.5f, 0.8f));
+
+    *col += (1.0f - A) * l2 * Colors[4] * 0.56f;//grgb(197, 250, 234) * 0.56f;
+}
+
+
+
+__DEVICE__ float3 toStationSpace(float3 pos, float3 stPos, float3 upAxis, float stScale, float iTime) {
+
+    const float3 tangent = normalize(cross(upAxis, to_float3(1.0f, -2.0f, 0.0f)));
+    const float3 bitangent = normalize(cross(tangent, upAxis));
+    const mat3 rot = to_mat3_f3(tangent, upAxis, bitangent);
+
+    pos -= stPos;
+    pos = mul_mat3_f3(transpose(rot) , pos);
+    pos /= stScale;
+
+    float t = iTime * 0.1f;
+    swi2S(pos,x,z, mul_mat2_f2(to_mat2(_cosf(t), _sinf(t), -_sinf(t), _cosf(t)) , swi2(pos,x,z)));
+
+    return pos;
+}
+
+__DEVICE__ float stationDF(float3 pos, float3 stPos, float3 upAxis, float stScale, float3 Colors[11], float iTime) {
+
+    pos = toStationSpace(pos, stPos, upAxis, stScale, iTime);
+
+    float2 rpos = to_float2(length(swi2(pos,x,z)), pos.y);
+    float d, df;
+
+    // top dome
+    d = length(rpos - to_float2(0.0f, 1.0f)) - (3.0f - _sqrtf(5.0f));
+    if (rpos.y < 1.0f) {
+        d = 1.0f - rpos.y;
+        if (rpos.x > 3.0f - _sqrtf(5.0f)) d = length(to_float2(3.0f - _sqrtf(5.0f),1.0f) - rpos);
+    }
+
+    df = d;
+    // pin
+    d = 3.0f - length(rpos - to_float2(3.0f,-1.0f));
+    if (rpos.x > 3.0f - _sqrtf(5.0f)) d = _fmaxf(d,  rpos.x - (3.0f - _sqrtf(5.0f)));
+    if (rpos.y >  1.0f) d = _fmaxf(d, rpos.y - 1.0f);
+    if (rpos.y < -0.87f) d = _fmaxf(d,-rpos.y + 0.87f);
+    df = _fminf(df, d);
+    // ring 1
+    d = length(rpos - to_float2(1.0f, 0.5f)) - 0.1f;
+    df = _fminf(df, d);
+    // ring 2
+    d = length(rpos - to_float2(0.75f, -0.1f)) - 0.1f;
+    df = _fminf(df, d);
+
+    float a = _atan2f(pos.z, pos.x); a = mod_f(a, 3.141592f / 3.0f) - 3.141592f / 6.0f;
+    float2 hpos = to_float2(_cosf(a), _sinf(a)) * length(swi2(pos,x,z));
+    // beams
+    d = length(to_float3(clamp(hpos.x,0.0f,1.0f) - hpos.x, hpos.y, pos.y - 0.5f)) - 0.015f;
+    df = _fminf(df, d);
+    d = length(to_float3(clamp(hpos.x,0.0f,0.75f) - hpos.x, hpos.y, pos.y + 0.1f)) - 0.015f;
+    df = _fminf(df, d);
+
+    return df * stScale;
+}
+
+__DEVICE__ void lightWindows(float3 pos, float rad, float lower, float upper, inout float3 *light, float3 Colors[11]) {
+    if (pos.y < lower || pos.y > upper) return;
+    float div = round((upper - lower) / 0.015f);
+    if (_fabs(fract((pos.y - lower) / (upper - lower) * div) - 0.5f) > 0.3f) return;
+    if (_fabs(length(swi2(pos,x,z)) / rad - 1.0f) > 0.15f) return;
+    float segments = rad * 20.0f;
+    float a = _atan2f(pos.z, pos.x);
+    float b = fract(a / (3.141592f * 2.0f) * segments);
+    if (_fabs(b - 0.5f) > 0.45f) return;
+    b = fract(a / (3.141592f * 2.0f) * segments * 10.0f);
+    if (_fabs(b - 0.5f) > 0.4f) return;
+
+    if (_fabs(fract((b - 0.1f) / 0.8f * 3.0f) - 0.5f) > 0.4f) return;
+
+    float id = _floor(a / (3.141592f * 2.0f) * segments * 10.0f);
+    float rand = sNoise(to_float3(id, pos.y * 40.0f, rad) * 4.0f);
+
+    *light += Colors[5] * rand * 1.6f;//grgb(252, 198, 3) * rand * 1.6f;
+}
+
+__DEVICE__ void stationSurface(float3 pos, inout float3 *albedo, inout float3 *light, float3 stPos, float3 upAxis, float stScale, float3 Colors[11], float iTime) {
+
+    pos = toStationSpace(pos, stPos, upAxis, stScale, iTime);
+
+    *light  = to_float3_s(0.0f);
+    *albedo = Colors[6]; //grgb(230, 228, 202);
+
+    if (_fabs(pos.y - 1.1f) < 0.04f)  *albedo = Colors[7];//grgb(181, 179, 156);
+    if (_fabs(pos.y - 1.16f) < 0.01f) *albedo = Colors[8];//grgb(181, 179, 156);
+
+    lightWindows(pos, 0.05f, -0.47f, -0.42f, light, Colors);
+    lightWindows(pos, 0.25f, 0.19f, 0.25f, light, Colors);
+    lightWindows(pos, 0.33f, 0.36f, 0.4f, light, Colors);
+    lightWindows(pos, 0.62f, 0.83f, 0.84f, light, Colors);
+
+    lightWindows(pos, 1.1f, 0.51f, 0.54f, light, Colors);
+    lightWindows(pos, 0.85f, -0.09f, -0.07f, light, Colors);
+
+}
+
+__DEVICE__ void station(float3 dir, float3 pos, inout float3 *col, float3 plPos, float3 stPos, float3 upAxis, float stScale, float3 Colors[11], float iTime) {
+    float3 ray = pos;
+    bool intersection = false;
+
+    for (int i = 0; i < 200; i++) {
+        float d = stationDF(ray, stPos, upAxis, stScale, Colors, iTime);
+        if (d < 0.000001f) {intersection = true; break;}
+        if (d > 4.0f) break; // exit if too far
+        ray += d * dir;
+    }
+
+    if (intersection) {
+
+        float2 e = to_float2(0.000001f,0.0f);
+        float3 norm =   to_float3(stationDF(ray + swi3(e,x,y,y), stPos, upAxis, stScale, Colors, iTime),
+                                  stationDF(ray + swi3(e,y,x,y), stPos, upAxis, stScale, Colors, iTime),
+                                  stationDF(ray + swi3(e,y,y,x), stPos, upAxis, stScale, Colors, iTime))
+                    - to_float3_s(stationDF(ray, stPos, upAxis, stScale, Colors, iTime));
+        norm = normalize(norm);
+
+        float3 albedo, light;
+        stationSurface(ray, &albedo, &light, stPos, upAxis, stScale, Colors, iTime);
+
+        float3 diffuse = _fmaxf(dot(norm, sunDir(iTime)), 0.0f) * to_float3_s(2.5f);
+
+        // shadows
+        ray += 0.00001f * norm;
+        bool intersection = false;
+        float3 sd = sunDir(iTime);
+        for (int i = 0; i < 200; i++) {
+            float d = stationDF(ray, stPos, upAxis, stScale, Colors, iTime);
+            if (d < 0.000001f) {intersection = true; break;}
+            if (d > 4.0f) break;
+            ray += d * sd;
+        }
+        if (intersection) diffuse = to_float3_s(0.0f);
+
+        // re-bound from planet
+        float3 plDiffuse = _fmaxf(dot(norm, normalize(plPos - stPos)), 0.0f)
+                           //* (grgb(242, 230, 160) * 0.4f + grgb(197, 250, 234)) * 0.2f;
+                           * (Colors[9] * 0.4f + Colors[10]) * 0.2f;
+        diffuse += plDiffuse;
+
+        *col = albedo * diffuse + light;
+    }
+}
+
+__DEVICE__ void render(float2 uv, inout float3 *col, float3 plPos, float plRad, float iTime, float3 stPos, float3 upAxis, float stScale, float time, float3 Colors[11], __TEXTURE2D__ iChannel0) {
+
+    float3 dir = normalize(to_float3_aw(uv, 1.0f));
+    float3 pos = to_float3_s(0.0f);
+
+    *col = to_float3_s(0.0f);
+
+    space(dir, pos, col, time, Colors, iChannel0);
+    planet(dir, pos, col, plPos, plRad, iTime, Colors, iChannel0);
+    station(dir, pos, col, plPos, stPos, upAxis, stScale, Colors, iTime);
+}
+
+
+__KERNEL__ void Station17Fuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  float4 Color3 = to_float4(params->Color3[0], params->Color3[1], params->Color3[2], params->Color3[3]);
+  float4 Color4 = to_float4(params->Color4[0], params->Color4[1], params->Color4[2], params->Color4[3]);
+  float4 Color5 = to_float4(params->Color5[0], params->Color5[1], params->Color5[2], params->Color5[3]);
+  float4 Color6 = to_float4(params->Color6[0], params->Color6[1], params->Color6[2], params->Color6[3]);
+  float4 Color7 = to_float4(params->Color7[0], params->Color7[1], params->Color7[2], params->Color7[3]);
+  float4 Color8 = to_float4(params->Color8[0], params->Color8[1], params->Color8[2], params->Color8[3]);
+  float4 Color9 = to_float4(params->Color9[0], params->Color9[1], params->Color9[2], params->Color9[3]);
+  float4 Color10 = to_float4(params->Color10[0], params->Color10[1], params->Color10[2], params->Color10[3]);
+  float4 Color11 = to_float4(params->Color11[0], params->Color11[1], params->Color11[2], params->Color11[3]);
+  float2 PLPosXY = to_float2(params->PLPosXY[0], params->PLPosXY[1]);
+  float  PLPosZ = params->PLPosZ;
+  float2 STPosXY = to_float2(params->STPosXY[0], params->STPosXY[1]);
+  float  STPosZ = params->STPosZ;
+  float2 UPAxisXY = to_float2(params->UPAxisXY[0], params->UPAxisXY[1]);
+  float  UPAxisZ = params->UPAxisZ;
+  float  plRad = params->plRad;
+  float  stScale = params->stScale;
+  float  Nebular = params->Nebular;
+  float  Mark = params->Mark;
+
+  // --------
+    float3 Colors[11] = {swi3(Color1,x,y,z), swi3(Color2,x,y,z), swi3(Color3,x,y,z), swi3(Color4,x,y,z), swi3(Color5,x,y,z),
+                         swi3(Color6,x,y,z), swi3(Color7,x,y,z), swi3(Color8,x,y,z), swi3(Color9,x,y,z), swi3(Color10,x,y,z), swi3(Color11,x,y,z)};
+
+    float3 plPos = to_float3(-0.8f, -0.3f, 1.5f) + to_float3_aw(PLPosXY, PLPosZ);
+    //float plRad = 0.7f;
+
+    float3 stPos = to_float3(0.025f, -0.001f, 0.05f)  + to_float3_aw(STPosXY, STPosZ);
+    float3 upAxis = normalize(to_float3(-0.3f, 1.0f, 0.3f) + to_float3_aw(UPAxisXY, UPAxisZ));
+    //float stScale = 0.01f;
+
+
+    float Angle = iMouse.x/iResolution.x - 0.5f;
+    float Zoom  = iMouse.y/iResolution.y + 0.5f;
+
+
+    float time = iTime*Nebular;
+
+
+    float2 uv = fragCoord / iResolution;
+    uv -= 0.5f;
+    uv.x *= iResolution.x / iResolution.y;
+
+    float3 col = rgb(0, 0, 0);
+
+    // 4xAA
+    float3 tmp;
+    for (float x = 0.0f; x < 2.0f; x+=1.0f) {
+        for (float y = 0.0f; y < 2.0f; y+=1.0f) {
+            render(mul_f2_mat2((uv + to_float2(x,y) / iResolution * 0.5f), rot(Angle))*Zoom, &tmp, plPos, plRad, iTime, stPos, upAxis, stScale, time, Colors, iChannel0);
+            col += tmp * 0.25f;
+        }
+    }
+
+    // tone
+    col = sqrt_f3(tanh_f3(col + dot(col, col) * to_float3_s(0.05f)));
+
+    // fade
+    float t = mod_f((iTime + 1.0f) / 15.0f, 4.0f);
+    t = fract(t + 0.5f);
+    col *= clamp(_fabs(t - 0.5f) * 16.0f,0.0f, 1.0f);
+
+    // mark
+    float f = length(fragCoord / iResolution - to_float2_s(0.5f)) / 0.71f;
+    f *= f; f *= f; f *= 0.2f;
+    swi2S(col,x,y, swi2(col,x,y) * (1.0f - f)); f *= 1.5f * Mark;
+    int2 i = to_int2_cfloat(fragCoord * 0.5f);
+    if (((i.x ^ i.y) ^ (i.x + i.y)) % 5 == 0) {
+        col = (col * (1.0f - f) + f);
+    }
+
+    fragColor = to_float4_aw(col,1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  
+  self:BeginControlNest("Color1", "Colors", false, {})
+  self:BeginControlNest("Color1", "Color1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor1ColorR = self:AddInput("Red",   "Color1Red",   { INP_Default  = 0.97, IC_ControlID = 0, attrs})
+    InColor1ColorG = self:AddInput("Green", "Color1Green", { INP_Default  = 0.60, IC_ControlID = 1, attrs})
+    InColor1ColorB = self:AddInput("Blue",  "Color1Blue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColor1ColorA = self:AddInput("Alpha", "Color1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color2", "Color2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor2ColorR = self:AddInput("Red",   "Color2Red",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InColor2ColorG = self:AddInput("Green", "Color2Green", { INP_Default  = 0.19, IC_ControlID = 1, attrs})
+    InColor2ColorB = self:AddInput("Blue",  "Color2Blue",  { INP_Default  = 0.016, IC_ControlID = 2, attrs})
+    InColor2ColorA = self:AddInput("Alpha", "Color2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color3", "Color3", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color3",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor3ColorR = self:AddInput("Red",   "Color3Red",   { INP_Default  = 0.86, IC_ControlID = 0, attrs})
+    InColor3ColorG = self:AddInput("Green", "Color3Green", { INP_Default  = 0.45, IC_ControlID = 1, attrs})
+    InColor3ColorB = self:AddInput("Blue",  "Color3Blue",  { INP_Default  = 0.01, IC_ControlID = 2, attrs})
+    InColor3ColorA = self:AddInput("Alpha", "Color3Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color4", "Color4", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color4",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor4ColorR = self:AddInput("Red",   "Color4Red",   { INP_Default  = 0.9, IC_ControlID = 0, attrs})
+    InColor4ColorG = self:AddInput("Green", "Color4Green", { INP_Default  = 0.81, IC_ControlID = 1, attrs})
+    InColor4ColorB = self:AddInput("Blue",  "Color4Blue",  { INP_Default  = 0.39, IC_ControlID = 2, attrs})
+    InColor4ColorA = self:AddInput("Alpha", "Color4Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color5", "Color5", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color5",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor5ColorR = self:AddInput("Red",   "Color5Red",   { INP_Default  = 0.6, IC_ControlID = 0, attrs})
+    InColor5ColorG = self:AddInput("Green", "Color5Green", { INP_Default  = 0.95, IC_ControlID = 1, attrs})
+    InColor5ColorB = self:AddInput("Blue",  "Color5Blue",  { INP_Default  = 0.84, IC_ControlID = 2, attrs})
+    InColor5ColorA = self:AddInput("Alpha", "Color5Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color6", "Color6", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color6",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor6ColorR = self:AddInput("Red",   "Color6Red",   { INP_Default  = 0.97, IC_ControlID = 0, attrs})
+    InColor6ColorG = self:AddInput("Green", "Color6Green", { INP_Default  = 0.6, IC_ControlID = 1, attrs})
+    InColor6ColorB = self:AddInput("Blue",  "Color6Blue",  { INP_Default  = 0.0, IC_ControlID = 2, attrs})
+    InColor6ColorA = self:AddInput("Alpha", "Color6Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color7", "Color7", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color7",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor7ColorR = self:AddInput("Red",   "Color7Red",   { INP_Default  = 0.81, IC_ControlID = 0, attrs})
+    InColor7ColorG = self:AddInput("Green", "Color7Green", { INP_Default  = 0.8, IC_ControlID = 1, attrs})
+    InColor7ColorB = self:AddInput("Blue",  "Color7Blue",  { INP_Default  = 0.81, IC_ControlID = 2, attrs})
+    InColor7ColorA = self:AddInput("Alpha", "Color7Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color8", "Color8", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color8",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor8ColorR = self:AddInput("Red",   "Color8Red",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColor8ColorG = self:AddInput("Green", "Color8Green", { INP_Default  = 0.49, IC_ControlID = 1, attrs})
+    InColor8ColorB = self:AddInput("Blue",  "Color8Blue",  { INP_Default  = 0.37, IC_ControlID = 2, attrs})
+    InColor8ColorA = self:AddInput("Alpha", "Color8Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color9", "Color9", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color9",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor9ColorR = self:AddInput("Red",   "Color9Red",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColor9ColorG = self:AddInput("Green", "Color9Green", { INP_Default  = 0.49, IC_ControlID = 1, attrs})
+    InColor9ColorB = self:AddInput("Blue",  "Color9Blue",  { INP_Default  = 0.37, IC_ControlID = 2, attrs})
+    InColor9ColorA = self:AddInput("Alpha", "Color9Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color10", "Color10", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color10",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor10ColorR = self:AddInput("Red",   "Color10Red",   { INP_Default  = 0.9, IC_ControlID = 0, attrs})
+    InColor10ColorG = self:AddInput("Green", "Color10Green", { INP_Default  = 0.81, IC_ControlID = 1, attrs})
+    InColor10ColorB = self:AddInput("Blue",  "Color10Blue",  { INP_Default  = 0.39, IC_ControlID = 2, attrs})
+    InColor10ColorA = self:AddInput("Alpha", "Color10Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color11", "Color11", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color11",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor11ColorR = self:AddInput("Red",   "Color11Red",   { INP_Default  = 0.6, IC_ControlID = 0, attrs})
+    InColor11ColorG = self:AddInput("Green", "Color11Green", { INP_Default  = 0.95, IC_ControlID = 1, attrs})
+    InColor11ColorB = self:AddInput("Blue",  "Color11Blue",  { INP_Default  = 0.84, IC_ControlID = 2, attrs})
+    InColor11ColorA = self:AddInput("Alpha", "Color11Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InPLPosXYPoint = self:AddInput("PLPosXY", "PLPosXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InPLPosZSlider = self:AddInput("PLPosZ", "PLPosZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InSTPosXYPoint = self:AddInput("STPosXY", "STPosXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InSTPosZSlider = self:AddInput("STPosZ", "STPosZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InUPAxisXYPoint = self:AddInput("UPAxisXY", "UPAxisXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InUPAxisZSlider = self:AddInput("UPAxisZ", "UPAxisZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InplRadSlider = self:AddInput("plRad", "plRad", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.7,
+      })
+
+  InstScaleSlider = self:AddInput("stScale", "stScale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.1,
+          INP_MaxScale       = 0.1,
+          INP_Default        = 0.01,
+      })
+
+  InNebularSlider = self:AddInput("Nebular", "Nebular", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.002,
+      })
+
+  InMarkSlider = self:AddInput("Mark", "Mark", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 1.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "Station17Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.Color1 = {
+    InColor1ColorR:GetValue(req).Value,
+    InColor1ColorG:GetValue(req).Value,
+    InColor1ColorB:GetValue(req).Value,InColor1ColorA:GetValue(req).Value
+  }
+  params.Color2 = {
+    InColor2ColorR:GetValue(req).Value,
+    InColor2ColorG:GetValue(req).Value,
+    InColor2ColorB:GetValue(req).Value,InColor2ColorA:GetValue(req).Value
+  }
+  params.Color3 = {
+    InColor3ColorR:GetValue(req).Value,
+    InColor3ColorG:GetValue(req).Value,
+    InColor3ColorB:GetValue(req).Value,InColor3ColorA:GetValue(req).Value
+  }
+  params.Color4 = {
+    InColor4ColorR:GetValue(req).Value,
+    InColor4ColorG:GetValue(req).Value,
+    InColor4ColorB:GetValue(req).Value,InColor4ColorA:GetValue(req).Value
+  }
+  params.Color5 = {
+    InColor5ColorR:GetValue(req).Value,
+    InColor5ColorG:GetValue(req).Value,
+    InColor5ColorB:GetValue(req).Value,InColor5ColorA:GetValue(req).Value
+  }
+  params.Color6 = {
+    InColor6ColorR:GetValue(req).Value,
+    InColor6ColorG:GetValue(req).Value,
+    InColor6ColorB:GetValue(req).Value,InColor6ColorA:GetValue(req).Value
+  }
+  params.Color7 = {
+    InColor7ColorR:GetValue(req).Value,
+    InColor7ColorG:GetValue(req).Value,
+    InColor7ColorB:GetValue(req).Value,InColor7ColorA:GetValue(req).Value
+  }
+  params.Color8 = {
+    InColor8ColorR:GetValue(req).Value,
+    InColor8ColorG:GetValue(req).Value,
+    InColor8ColorB:GetValue(req).Value,InColor8ColorA:GetValue(req).Value
+  }
+  params.Color9 = {
+    InColor9ColorR:GetValue(req).Value,
+    InColor9ColorG:GetValue(req).Value,
+    InColor9ColorB:GetValue(req).Value,InColor9ColorA:GetValue(req).Value
+  }
+  params.Color10 = {
+    InColor10ColorR:GetValue(req).Value,
+    InColor10ColorG:GetValue(req).Value,
+    InColor10ColorB:GetValue(req).Value,InColor10ColorA:GetValue(req).Value
+  }
+  params.Color11 = {
+    InColor11ColorR:GetValue(req).Value,
+    InColor11ColorG:GetValue(req).Value,
+    InColor11ColorB:GetValue(req).Value,InColor11ColorA:GetValue(req).Value
+  }
+  params.PLPosXY = {InPLPosXYPoint:GetValue(req).X,InPLPosXYPoint:GetValue(req).Y}
+  params.PLPosZ = InPLPosZSlider:GetValue(req).Value
+  params.STPosXY = {InSTPosXYPoint:GetValue(req).X,InSTPosXYPoint:GetValue(req).Y}
+  params.STPosZ = InSTPosZSlider:GetValue(req).Value
+  params.UPAxisXY = {InUPAxisXYPoint:GetValue(req).X,InUPAxisXYPoint:GetValue(req).Y}
+  params.UPAxisZ = InUPAxisZSlider:GetValue(req).Value
+  params.plRad = InplRadSlider:GetValue(req).Value
+  params.stScale = InstScaleSlider:GetValue(req).Value
+  params.Nebular = InNebularSlider:GetValue(req).Value
+  params.Mark = InMarkSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

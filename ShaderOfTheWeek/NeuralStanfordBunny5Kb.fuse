@@ -1,0 +1,872 @@
+--[[--/*
+
+  NeuralStanfordBunny5Kb.fuse
+
+  Based on https://www.shadertoy.com/view/wtVyWK a WebGL shader created by blackle.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  bool   TexBunny;
+  bool   TexBG;
+  float  TexBunnyXY[2];
+  float  TexBunnyScale;
+  float  TexBGXY[2];
+  float  TexBGScale;
+  float  NZ;
+  float  Specular;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+#endif // end of mat3 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat4 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float4x4 mat4;
+
+  __DEVICE__ inline mat4 to_mat4( float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
+  {
+    return mat4(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p);
+  }
+
+  __DEVICE__ inline float4 mul_mat4_f4( mat4 B, float4 A) { return (B*A); }
+
+#else
+
+  typedef struct { float4 r0; float4 r1; float4 r2; float4 r3; } mat4;
+
+  __DEVICE__ inline mat4 to_mat4( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
+  {
+    mat4 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c; t.r0.w = d;
+    t.r1.x = e; t.r1.y = f; t.r1.z = g; t.r1.w = h;
+    t.r2.x = i; t.r2.y = j; t.r2.z = k; t.r2.w = l;
+    t.r3.x = m; t.r3.y = n; t.r3.z = o; t.r3.w = p;
+    return t;
+  }
+
+__DEVICE__ inline float4 mul_mat4_f4( mat4 B, float4 A)
+  {
+    float4 C;
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x + A.w * B.r3.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y + A.w * B.r3.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z + A.w * B.r3.z;
+    C.w = A.x * B.r0.w + A.y * B.r1.w + A.z * B.r2.w + A.w * B.r3.w;
+    return C;
+}
+
+#endif // end of mat4 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define sin_f3(i) sin(i)
+ #define sin_f4(i) sin(i)
+ #define sqrt_f4(a) _sqrtf(a)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define sin_f3(i) sin(i)
+ #define sin_f4(i) sin(i)
+ #define sqrt_f4(a) _sqrtf(a)
+ #define distance_f3( p1, p2) distance(p1, p2)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define sin_f3(i) to_float3( _sinf((i).x), _sinf((i).y), _sinf((i).z))
+ #define sin_f4(i) to_float4( _sinf((i).x), _sinf((i).y), _sinf((i).z), _sinf((i).w))
+ #define sqrt_f4(a) to_float4(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z),_sqrtf((a).w))
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Bunny' to iChannel0
+// Connect Image 'Texture: Background' to iChannel1
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+//CC0 1.0f Universal https://creativecommons.org/publicdomain/zero/1.0f/
+//To the extent possible under law, Blackle Mori has waived all copyright and related or neighboring rights to this work.
+
+//like the last few shaders I've published, this is a neural network experiment.
+//this time, the neural network reproduces an SDF given the x,y,z coordinates
+//using siren networks with skip connections: https://vsitzmann.github.io/siren/
+
+__DEVICE__ float3 erot(float3 p, float3 ax, float ro) {
+    return _mix(dot(p,ax)*ax,p,_cosf(ro))+_sinf(ro)*cross(ax,p);
+}
+
+__DEVICE__ float scene(float3 p) {
+    //sdf is undefined outside the unit sphere, uncomment to witness the abominations
+    if (length(p) > 1.0f) {
+        return length(p)-0.8f;
+    }
+    //neural networks can be really compact... when they want to be
+    float4 f00= sin_f4(p.y*to_float4(-3.02f,1.95f,-3.42f,-0.60f)+p.z*to_float4(3.08f,0.85f,-2.25f,-0.24f)-p.x*to_float4(-0.29f,1.16f,-3.74f,2.89f)+to_float4(-0.71f,4.50f,-3.24f,-3.50f));
+    float4 f01= sin_f4(p.y*to_float4(-0.40f,-3.61f,3.23f,-0.14f)+p.z*to_float4(-0.36f,3.64f,-3.91f,2.66f)-p.x*to_float4(2.90f,-0.54f,-2.75f,2.71f)+to_float4(7.02f,-5.41f,-1.12f,-7.41f));
+    float4 f02= sin_f4(p.y*to_float4(-1.77f,-1.28f,-4.29f,-3.20f)+p.z*to_float4(-3.49f,-2.81f,-0.64f,2.79f)-p.x*to_float4(3.15f,2.14f,-3.85f,1.83f)+to_float4(-2.07f,4.49f,5.33f,-2.17f));
+    float4 f03= sin_f4(p.y*to_float4(-0.49f,0.68f,3.05f,0.42f)+p.z*to_float4(-2.87f,0.78f,3.78f,-3.41f)-p.x*to_float4(-2.65f,0.33f,0.07f,-0.64f)+to_float4(-3.24f,-5.90f,1.14f,-4.71f));
+    float4 f10= sin_f4(mul_mat4_f4(to_mat4(-0.34f,0.06f,-0.59f,-0.76f,0.10f,-0.19f,-0.12f,0.44f,0.64f,-0.02f,-0.26f,0.15f,-0.16f,0.21f,0.91f,0.15f),f00)+
+                       mul_mat4_f4(to_mat4(0.01f,0.54f,-0.77f,0.11f,0.06f,-0.14f,0.43f,0.51f,-0.18f,0.08f,0.39f,0.20f,0.33f,-0.49f,-0.10f,0.19f),f01)+
+                       mul_mat4_f4(to_mat4(0.27f,0.22f,0.43f,0.53f,0.18f,-0.17f,0.23f,-0.64f,-0.14f,0.02f,-0.10f,0.16f,-0.13f,-0.06f,-0.04f,-0.36f),f02)+
+                       mul_mat4_f4(to_mat4(-0.13f,0.29f,-0.29f,0.08f,1.13f,0.02f,-0.83f,0.32f,-0.32f,0.04f,-0.31f,-0.16f,0.14f,-0.03f,-0.20f,0.39f),f03)+
+                       to_float4(0.73f,-4.28f,-1.56f,-1.80f))/1.0f+f00;
+    float4 f11=sin_f4(mul_mat4_f4(to_mat4(-1.11f,0.55f,-0.12f,-1.00f,0.16f,0.15f,-0.30f,0.31f,-0.01f,0.01f,0.31f,-0.42f,-0.29f,0.38f,-0.04f,0.71f),f00)+
+                      mul_mat4_f4(to_mat4(0.96f,-0.02f,0.86f,0.52f,-0.14f,0.60f,0.44f,0.43f,0.02f,-0.15f,-0.49f,-0.05f,-0.06f,-0.25f,-0.03f,-0.22f),f01)+
+                      mul_mat4_f4(to_mat4(0.52f,0.44f,-0.05f,-0.11f,-0.56f,-0.10f,-0.61f,-0.40f,-0.04f,0.55f,0.32f,-0.07f,-0.02f,0.28f,0.26f,-0.49f),f02)+
+                      mul_mat4_f4(to_mat4(0.02f,-0.32f,0.06f,-0.17f,-0.59f,0.00f,-0.24f,0.60f,-0.06f,0.13f,-0.21f,-0.27f,-0.12f,-0.14f,0.58f,-0.55f),f03)+
+                      to_float4(-2.24f,-3.48f,-0.80f,1.41f))/1.0f+f01;
+    float4 f12=sin_f4(mul_mat4_f4(to_mat4(0.44f,-0.06f,-0.79f,-0.46f,0.05f,-0.60f,0.30f,0.36f,0.35f,0.12f,0.02f,0.12f,0.40f,-0.26f,0.63f,-0.21f),f00)+
+                      mul_mat4_f4(to_mat4(-0.48f,0.43f,-0.73f,-0.40f,0.11f,-0.01f,0.71f,0.05f,-0.25f,0.25f,-0.28f,-0.20f,0.32f,-0.02f,-0.84f,0.16f),f01)+
+                      mul_mat4_f4(to_mat4(0.39f,-0.07f,0.90f,0.36f,-0.38f,-0.27f,-1.86f,-0.39f,0.48f,-0.20f,-0.05f,0.10f,-0.00f,-0.21f,0.29f,0.63f),f02)+
+                      mul_mat4_f4(to_mat4(0.46f,-0.32f,0.06f,0.09f,0.72f,-0.47f,0.81f,0.78f,0.90f,0.02f,-0.21f,0.08f,-0.16f,0.22f,0.32f,-0.13f),f03)+
+                      to_float4(3.38f,1.20f,0.84f,1.41f))/1.0f+f02;
+    float4 f13=sin_f4(mul_mat4_f4(to_mat4(-0.41f,-0.24f,-0.71f,-0.25f,-0.24f,-0.75f,-0.09f,0.02f,-0.27f,-0.42f,0.02f,0.03f,-0.01f,0.51f,-0.12f,-1.24f),f00)+
+                      mul_mat4_f4(to_mat4(0.64f,0.31f,-1.36f,0.61f,-0.34f,0.11f,0.14f,0.79f,0.22f,-0.16f,-0.29f,-0.70f,0.02f,-0.37f,0.49f,0.39f),f01)+
+                      mul_mat4_f4(to_mat4(0.79f,0.47f,0.54f,-0.47f,-1.13f,-0.35f,-1.03f,-0.22f,-0.67f,-0.26f,0.10f,0.21f,-0.07f,-0.73f,-0.11f,0.72f),f02)+
+                      mul_mat4_f4(to_mat4(0.43f,-0.23f,0.13f,0.09f,1.38f,-0.63f,1.57f,-0.20f,0.39f,-0.14f,0.42f,0.13f,-0.57f,-0.08f,-0.21f,0.21f),f03)+
+                      to_float4(-0.34f,-3.28f,0.43f,-0.52f))/1.0f+f03;
+    f00=sin_f4(mul_mat4_f4(to_mat4(-0.72f,0.23f,-0.89f,0.52f,0.38f,0.19f,-0.16f,-0.88f,0.26f,-0.37f,0.09f,0.63f,0.29f,-0.72f,0.30f,-0.95f),f10)+
+               mul_mat4_f4(to_mat4(-0.22f,-0.51f,-0.42f,-0.73f,-0.32f,0.00f,-1.03f,1.17f,-0.20f,-0.03f,-0.13f,-0.16f,-0.41f,0.09f,0.36f,-0.84f),f11)+
+               mul_mat4_f4(to_mat4(-0.21f,0.01f,0.33f,0.47f,0.05f,0.20f,-0.44f,-1.04f,0.13f,0.12f,-0.13f,0.31f,0.01f,-0.34f,0.41f,-0.34f),f12)+
+               mul_mat4_f4(to_mat4(-0.13f,-0.06f,-0.39f,-0.22f,0.48f,0.25f,0.24f,-0.97f,-0.34f,0.14f,0.42f,-0.00f,-0.44f,0.05f,0.09f,-0.95f),f13)+
+               to_float4(0.48f,0.87f,-0.87f,-2.06f))/1.4f+f10;
+    f01=sin_f4(mul_mat4_f4(to_mat4(-0.27f,0.29f,-0.21f,0.15f,0.34f,-0.23f,0.85f,-0.09f,-1.15f,-0.24f,-0.05f,-0.25f,-0.12f,-0.73f,-0.17f,-0.37f),f10)+
+               mul_mat4_f4(to_mat4(-1.11f,0.35f,-0.93f,-0.06f,-0.79f,-0.03f,-0.46f,-0.37f,0.60f,-0.37f,-0.14f,0.45f,-0.03f,-0.21f,0.02f,0.59f),f11)+
+               mul_mat4_f4(to_mat4(-0.92f,-0.17f,-0.58f,-0.18f,0.58f,0.60f,0.83f,-1.04f,-0.80f,-0.16f,0.23f,-0.11f,0.08f,0.16f,0.76f,0.61f),f12)+
+               mul_mat4_f4(to_mat4(0.29f,0.45f,0.30f,0.39f,-0.91f,0.66f,-0.35f,-0.35f,0.21f,0.16f,-0.54f,-0.63f,1.10f,-0.38f,0.20f,0.15f),f13)+
+               to_float4(-1.72f,-0.14f,1.92f,2.08f))/1.4f+f11;
+    f02=sin_f4(mul_mat4_f4(to_mat4(1.00f,0.66f,1.30f,-0.51f,0.88f,0.25f,-0.67f,0.03f,-0.68f,-0.08f,-0.12f,-0.14f,0.46f,1.15f,0.38f,-0.10f),f10)+
+               mul_mat4_f4(to_mat4(0.51f,-0.57f,0.41f,-0.09f,0.68f,-0.50f,-0.04f,-1.01f,0.20f,0.44f,-0.60f,0.46f,-0.09f,-0.37f,-1.30f,0.04f),f11)+
+               mul_mat4_f4(to_mat4(0.14f,0.29f,-0.45f,-0.06f,-0.65f,0.33f,-0.37f,-0.95f,0.71f,-0.07f,1.00f,-0.60f,-1.68f,-0.20f,-0.00f,-0.70f),f12)+
+               mul_mat4_f4(to_mat4(-0.31f,0.69f,0.56f,0.13f,0.95f,0.36f,0.56f,0.59f,-0.63f,0.52f,-0.30f,0.17f,1.23f,0.72f,0.95f,0.75f),f13)+
+               to_float4(-0.90f,-3.26f,-0.44f,-3.11f))/1.4f+f12;
+    f03=sin_f4(mul_mat4_f4(to_mat4(0.51f,-0.98f,-0.28f,0.16f,-0.22f,-0.17f,-1.03f,0.22f,0.70f,-0.15f,0.12f,0.43f,0.78f,0.67f,-0.85f,-0.25f),f10)+
+               mul_mat4_f4(to_mat4(0.81f,0.60f,-0.89f,0.61f,-1.03f,-0.33f,0.60f,-0.11f,-0.06f,0.01f,-0.02f,-0.44f,0.73f,0.69f,1.02f,0.62f),f11)+
+               mul_mat4_f4(to_mat4(-0.10f,0.52f,0.80f,-0.65f,0.40f,-0.75f,0.47f,1.56f,0.03f,0.05f,0.08f,0.31f,-0.03f,0.22f,-1.63f,0.07f),f12)+
+               mul_mat4_f4(to_mat4(-0.18f,-0.07f,-1.22f,0.48f,-0.01f,0.56f,0.07f,0.15f,0.24f,0.25f,-0.09f,-0.54f,0.23f,-0.08f,0.20f,0.36f),f13)+
+               to_float4(-1.11f,-4.28f,1.02f,-0.23f))/1.4f+f13;
+    return dot(f00,to_float4(0.09f,0.12f,-0.07f,-0.03f))+dot(f01,to_float4(-0.04f,0.07f,-0.08f,0.05f))+
+           dot(f02,to_float4(-0.01f,0.06f,-0.02f,0.07f))+dot(f03,to_float4(-0.05f,0.07f,0.03f,0.04f))-0.16f;
+}
+
+ __DEVICE__ inline mat3 mat3_sub_mat3( mat3 A, mat3 B) {
+  mat3 C;
+
+  C.r0 = to_float3(A.r0.x - B.r0.x, A.r0.y - B.r0.y,A.r0.z - B.r0.z);
+  C.r1 = to_float3(A.r1.x - B.r1.x, A.r1.y - B.r1.y,A.r1.z - B.r1.z);
+  C.r2 = to_float3(A.r2.x - B.r2.x, A.r2.y - B.r2.y,A.r2.z - B.r2.z);
+
+  return C;
+  }
+
+__DEVICE__ inline mat3 to_mat3_n( float A)
+  {
+  mat3 D;
+  D.r0 = to_float3(A,0.0f,0.0f);
+  D.r1 = to_float3(0.0f,A,0.0f);
+  D.r2 = to_float3(0.0f,0.0f,A);
+  return D;
+  }
+
+__DEVICE__ float3 norm(float3 p) {
+    mat3 k = mat3_sub_mat3(to_mat3_f3(p,p,p), to_mat3_n(0.001f));
+    return normalize(scene(p) - to_float3(scene(k.r0),scene(k.r1),scene(k.r2)));
+}
+
+
+
+__KERNEL__ void NeuralStanfordBunny5KbFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   TexBunny = params->TexBunny;
+  bool   TexBG = params->TexBG;
+  float2 TexBunnyXY = to_float2(params->TexBunnyXY[0], params->TexBunnyXY[1]);
+  float  TexBunnyScale = params->TexBunnyScale;
+  float2 TexBGXY = to_float2(params->TexBGXY[0], params->TexBGXY[1]);
+  float  TexBGScale = params->TexBGScale;
+  float  NZ = params->NZ;
+  float  Specular = params->Specular;
+
+  // --------
+
+    float2 uv = (fragCoord-0.5f*iResolution)/iResolution.y;
+    float2 mouse = (swi2(iMouse,x,y)-0.5f*iResolution)/iResolution.y;
+    float ratio = iResolution.y/iResolution.x;
+
+    float3 cam = normalize(to_float3(1.5f,uv.x,uv.y));
+    float3 init = to_float3(-3.0f,0,0);
+
+    float yrot = 0.5f;
+    float zrot = iTime*0.2f;
+    if (iMouse.z > 0.0f) {
+        yrot += -4.0f*mouse.y;
+        zrot = 4.0f*mouse.x;
+    }
+    cam = erot(cam, to_float3(0,1,0), yrot);
+    init = erot(init, to_float3(0,1,0), yrot);
+    cam = erot(cam, to_float3(0,0,1), zrot);
+    init = erot(init, to_float3(0,0,1), zrot);
+
+    float3 p = init;
+    bool hit = false;
+    for (int i = 0; i < 150 && !hit; i++) {
+        float dist = scene(p);
+        hit = dist*dist < 1e-6;
+        p+=dist*cam;
+        if (distance_f3(p,init)>5.0f) break;
+    }
+    float3 n = norm(p);
+    float3 r = reflect(cam,n);
+    //don't ask how I stumbled on this texture
+    float3 nz = p - erot(p, to_float3_s(1), 2.0f) + erot(p, to_float3_s(1), 4.0f);
+    float spec = length(sin_f3(r*3.5f+sin_f3(nz*120.0f*NZ)*0.15f)*0.4f+0.6f)/_sqrtf(3.0f);
+    spec *= smoothstep(-0.3f,0.2f,scene(p+r*0.2f)) * Specular;
+
+    float3 col = to_float3(0.1f,0.1f,0.12f) * spec + _powf(spec,8.0f);
+    if(TexBunny)
+    {
+      float2 tuv = (to_float2(p.x*ratio,p.y)+TexBunnyXY)*TexBunnyScale;
+      col = swi3(texture(iChannel0, tuv),x,y,z)*spec + _powf(spec,8.0f);
+    }
+
+    float bgdot = length(sin_f3(cam*8.0f)*0.4f+0.6f)/2.0f;
+    float3 bg = to_float3(0.1f,0.1f,0.11f) * bgdot + _powf(bgdot, 10.0f);
+    if(TexBG)
+    {
+      //float2 tuv = (to_float2(uv.x*ratio,uv.y)+TexBGXY)*TexBGScale;
+      float2 tuv = (to_float2(cam.x*ratio,cam.z)+TexBGXY)*TexBGScale;
+      bg = swi3(texture(iChannel1, tuv+0.5f),x,y,z) * bgdot + _powf(bgdot, 10.0f);
+    }
+
+    swi3S(fragColor,x,y,z, hit ? col : bg);
+    fragColor = smoothstep(to_float4_s(-0.02f),to_float4_s(1.05f),sqrt_f4(fragColor)) * (1.0f- dot(uv,uv)*0.5f);
+
+    fragColor.w = 1.0f;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InTexBunnyCheckbox = self:AddInput("TexBunny", "TexBunny", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTexBGCheckbox = self:AddInput("TexBG", "TexBG", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTexBunnyXYPoint = self:AddInput("TexBunnyXY", "TexBunnyXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTexBunnyScaleSlider = self:AddInput("TexBunnyScale", "TexBunnyScale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InTexBGXYPoint = self:AddInput("TexBGXY", "TexBGXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTexBGScaleSlider = self:AddInput("TexBGScale", "TexBGScale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InNZSlider = self:AddInput("NZ", "NZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InSpecularSlider = self:AddInput("Specular", "Specular", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 1.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+  	IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+    ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ShaderFuse.end_create()
+
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "NeuralStanfordBunny5KbFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.TexBunny = InTexBunnyCheckbox:GetValue(req).Value
+  params.TexBG = InTexBGCheckbox:GetValue(req).Value
+  params.TexBunnyXY = {InTexBunnyXYPoint:GetValue(req).X,InTexBunnyXYPoint:GetValue(req).Y}
+  params.TexBunnyScale = InTexBunnyScaleSlider:GetValue(req).Value
+  params.TexBGXY = {InTexBGXYPoint:GetValue(req).X,InTexBGXYPoint:GetValue(req).Y}
+  params.TexBGScale = InTexBGScaleSlider:GetValue(req).Value
+  params.NZ = InNZSlider:GetValue(req).Value
+  params.Specular = InSpecularSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+-- */

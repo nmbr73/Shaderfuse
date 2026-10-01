@@ -1,0 +1,461 @@
+--[[--/*
+
+  Rlstyle.fuse
+
+  Based on https://www.shadertoy.com/view/llXyzN a WebGL shader created by clintolibre.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  bool   Wave;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+  #else
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A '/media/a/a6a1cf7a09adfed8c362492c88c30d74fb3d2f4f7ba180ba34b98556660fada1.mp3' to iChannel1
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel0
+
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+
+__KERNEL__ void RlstyleFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+    float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+    float4 fragColor   = to_float4_s(0.0f);
+    float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+    bool   Wave = params->Wave;
+
+  // --------
+
+    float Line = 0;
+
+    if (Wave)  Line = iResolution.y-1;
+
+
+    fragCoord+=0.5f;
+
+    //same as usual uv but we offset by one so we grab the previous frame/texture from Buf A one frame higher;
+    float2 ouv = to_float2(fragCoord.x, fragCoord.y-1.0f) / iResolution;
+    //not offset texture for grabbing "max" values
+    float2 uv = to_float2(fragCoord.x, fragCoord.y) / iResolution;
+
+    //conversion factor for our texture to sound texture
+    int tx = (int)(fragCoord.x);
+
+    //grab previous frame but offset by one pixel
+    fragColor = _tex2DVecN(iChannel0,ouv.x,ouv.y,15);
+    //old values for grabbing "max" values
+    float4 fragColorOld = _tex2DVecN(iChannel0,uv.x,uv.y,15);
+
+    //get frequency data
+    //float freq = texture( iChannel1, (make_float2(to_int2(tx,0))+0.5f)/iResolution).x;
+    //float freq = texture( iChannel1, (make_float2(to_int2(tx,Line))+0.5f)/iResolution).x;
+    float freq = texture( iChannel1, (make_float2((int)tx,(int)Line)+0.5f)/iResolution).x;
+    //float freq = texture( iChannel1, fragCoord/iResolution).x;
+
+    //only overwrite pixel if its the bottom one!
+    //fragColor = _mix(fragColor, to_float4_aw(to_float3(freq), 1.0f), clamp(1.0f-fragCoord.y,0.0f,1.0f));
+
+    //simpler code for overwriting third to bottom pixel
+    if ((int)(fragCoord.y) == 2) {
+        fragColor = to_float4_aw(to_float3_s(freq),1.0f);
+    }
+    //write max in second to bottom pixel
+    if ((int)(fragCoord.y) == 1) {
+        if (freq > fragColorOld.x) {
+          fragColor = to_float4(freq, 0.0f, 0.0f,1.0f);
+        } else {
+          //reduce max over time
+          fragColor = to_float4(fragColorOld.x-0.005f, 0.0f, 0.0f,1.0f);
+        }
+    }
+
+   //fragColor = to_float4(freq,0.0f,0.0f,1.0f);
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+
+
+__KERNEL__ void RlstyleFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+    if (fusion_x >= params->width || fusion_y >= params->height)
+      return;
+
+    float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+    float4 fragColor   = to_float4_s(0.0f);
+    float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+    bool   Wave = params->Wave;
+
+  // --------
+
+
+    fragCoord+=0.5f;
+
+    //basic background
+    float4 base = to_float4(7.0f/255.0f, 38.0f/255.0f, 70.0f/255.0f, 1.0f);
+    fragColor = base;
+
+    //proper ratios
+    float2 uv = fragCoord / iResolution;
+    uv.y = uv.y*1.1f;
+    uv.x = uv.x*2.0f - 0.45f;
+
+
+    //lookup conversion (512 frequences returned by input)
+    int tx = (int)(uv.x*512.0f);
+
+    //bucketed values of current and max frequencies
+    int starter = (int)(_floor((float)(tx)/57.0f))*57;
+    int diff = tx-starter;
+    float sum = 0.0f;
+    float maxSum = 0.0f;
+    for (int i = 0; i<9;i++) {
+
+      //sum    = sum + texture( iChannel0, (make_float2(to_int2(starter+i,2))+0.5f)/iResolution).x;
+      sum    = sum + texture( iChannel0, (make_float2((int)(starter+i),(int)2)+0.5f)/iResolution).x;
+      maxSum = maxSum + texture( iChannel0, (make_float2((int)(starter+i),(int)1)+0.5f)/iResolution).x;
+    }
+
+    //normalize values
+    sum = (sum/9.0f);
+    maxSum = (maxSum/9.0f);
+
+    //Draw bars
+    float height = sum;
+    float col = ((sum)-0.2f)*1.25f;
+    if (sum > uv.y && diff>20) {
+        fragColor = to_float4(uv.y + base.x, uv.y+base.y, uv.y+base.z, 1.0f);
+    }
+
+    //draw "max" lines
+    float mDiff = _fabs((uv.y+0.01f)-maxSum);
+    float mVal = 1.0f-(mDiff*50.0f);
+    if (mDiff<0.02f && diff>20 && maxSum > 0.001f) {
+        fragColor = to_float4(_mix(fragColor.x,1.0f, mVal),_mix(fragColor.y, 1.0f, mVal),_mix(fragColor.z,1.0f,  mVal), 1.0f);
+    }
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Visible = false, LINK_Main = 2, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+  InWaveCheckbox = self:AddInput("Wave", "Wave", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+	      IMG_DeferAlloc = false,
+        }
+
+Image_Buff_GlobalA = Image(ImgAttrs_Global)
+
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local dstA  = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "RlstyleFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+
+  params.Wave = InWaveCheckbox:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddInput("iChannel0",Image_Buff_GlobalA) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  node:AddOutput("dst", dstA)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dstA = nil
+    dump(node:GetErrorLog())
+	end
+
+  Image_Buff_GlobalA = dstA
+
+
+  local nodeI = DVIPComputeNode(req,
+                                "RlstyleFuse", ShaderCompatibilityCode..ShaderKernelCode,
+                                "Params", ShaderParameters
+  )
+
+  nodeI:SetParamBlock(params)
+
+  nodeI:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+  nodeI:AddInput("iChannel0", Image_Buff_GlobalA)
+  nodeI:AddOutput("dst", dst)
+
+  local success = nodeI:RunSession(req)
+  if not success then
+    dst = nil
+    dump(nodeI:GetErrorLog())
+  end
+
+
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+

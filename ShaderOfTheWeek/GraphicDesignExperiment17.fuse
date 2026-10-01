@@ -1,0 +1,1788 @@
+--[[--/*
+
+  GraphicDesignExperiment17.fuse
+
+  Based on https://www.shadertoy.com/view/lXXcDM a WebGL shader created by yasuo.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   BKG;
+  float  ColorDif1[4];
+  float  ColorDif2[4];
+  float  ColorDif3[4];
+  float  ColorBKG1[4];
+  float  ColorBKG2[4];
+  float  ColSpeaker1[4];
+  float  ColSpeaker2[4];
+  float  ColBox1[4];
+  float  ColBox2[4];
+  float  ColKnobs1[4];
+  float  ColKnobs2[4];
+  float  ColBC1[4];
+  float  ColBC2[4];
+  float  ColVar1[4];
+  float  ColVar2[4];
+  float  TexXY[2];
+  float  TexScale;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  IOR;
+  float  Zoom;
+  int    matID;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 B, mat3 A)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+ #define mod_f2(value,divisor) fmod(value,divisor)
+
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f(a) sign(a)
+ #define refract_f3(I,N,eta) refract(I,N,eta)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define mod_f(a,b) _fmod(a,b)
+ #define mod_f2(value,divisor) _fmod(value,divisor)
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f(a) sign(a)
+
+__DEVICE__ float3 refract_f3(float3 I, float3 N, float eta) {
+   float dotNI = dot(N, I);
+   float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+   if (k < 0.0f) {
+      return to_float3_s(0.0f);
+   }
+   return eta * I - (eta * dotNI * _sqrtf(k)) * N; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+ }
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+ #if defined(DEVICE_IS_CUDA)
+   #define radians(a) a * M_PI/180.0f
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define mod_f2(value,divisor) to_float2(mod_f((value).x, (divisor)),mod_f((value).y, (divisor)))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+
+ __DEVICE__ float3 refract_f3(float3 I, float3 N, float eta) {
+    float dotNI = dot(N, I);
+    float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+    if (k < 0.0f) {
+      return to_float3_s(0.0f);
+    }
+    return eta * I - (eta * dotNI * _sqrtf(k)) * N; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+ }
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Picture' to iChannel0
+
+#define PI 3.1415926535897f
+
+#define MAX_STEPS 64
+#define MAX_DIST 64.0f
+#define SURF_DIST 0.0005f
+#define Rot(a) to_mat2(_cosf(a),-_sinf(a),_sinf(a),_cosf(a))
+#define antialiasing(n) n/_fminf(iResolution.y,iResolution.x)
+#define S(d,b) smoothstep(antialiasing(1.0f),b,d)
+#define B(p,s) _fmaxf(_fabs((p).x)-(s).x,_fabs((p).y)-(s).y)
+#define deg45 0.707f
+#define R45(p) (( p + to_float2(p.y,-p.x) ) *deg45)
+#define Tri(p,s) _fmaxf(R45(p).x,_fmaxf(R45(p).y,B(p,s)))
+#define SUV(p) to_float2(_atan2f(p.x,p.z),_acosf(p.y))
+#define ZERO  0 //(_fminf(iFrame,0))
+
+// thx iq! https://iquilezles.org/articles/distfunctions/
+__DEVICE__ float sdBox( float3 p, float3 b )
+{
+    float3 q = abs_f3(p) - b;
+    return length(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f);
+}
+
+// thx iq! https://iquilezles.org/articles/distfunctions/
+__DEVICE__ float sdTorus( float3 p, float2 t )
+{
+    float2 q = to_float2(length(swi2(p,x,y))-t.x,p.z);
+    return length(q)-t.y;
+}
+
+// thx iq! https://iquilezles.org/articles/distfunctions/
+__DEVICE__ float sdCone( float3 p, float2 c, float h )
+{
+  // c is the sin/cos of the angle, h is height
+  // Alternatively pass q instead of (c,h),
+  // which is the point at the base in 2D
+  float2 q = h*to_float2(c.x/c.y,-1.0f);
+
+  float2 w = to_float2( length(swi2(p,x,y)), -p.z );
+  float2 a = w - q*clamp( dot(w,q)/dot(q,q), 0.0f, 1.0f );
+  float2 b = w - q*to_float2( clamp( w.x/q.x, 0.0f, 1.0f ), 1.0f );
+  float k = sign_f( q.y );
+  float d = _fminf(dot( a, a ),dot(b, b));
+  float s = _fmaxf( k*(w.x*q.y-w.y*q.x),k*(w.y-q.y)  );
+  return _sqrtf(d)*sign_f(s);
+}
+
+__DEVICE__ float knob(float3 p, float speed, float iTime){
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , Rot(radians(30.0f*_sinf(iTime*speed)))));
+    float d = _fmaxf(_fabs(p.z)-0.01f,length(swi2(p,x,y))-0.015f);
+    float d2 = sdBox(p-to_float3(0.0f,0.0f,-0.02f),to_float3(0.004f,0.1f,0.014f));
+    d = _fmaxf(-d2,d);
+    return d;
+}
+
+__DEVICE__ float circleSlider(float3 p, float speed, float iTime){
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , Rot(radians(30.0f*_sinf(iTime*speed)))));
+    float d = _fmaxf(_fabs(p.x)-0.01f,length(swi2(p,y,z))-0.02f);
+    float d2 = sdBox(p-to_float3(0.0f,0.0f,-0.017f),to_float3(0.01f,0.008f,0.01f));
+    d = _fminf(d,d2);
+    return d;
+}
+
+__DEVICE__ float rectSlider(float3 p, float speed, float iTime){
+    p.y+=_sinf(iTime*speed)*0.025f;
+    float d = sdBox(p,to_float3(0.008f,0.015f,0.02f));
+    return d;
+}
+
+__DEVICE__ float upperFarSideItem(float3 p){
+    float3 prevP = p;
+    float d = sdBox(p,to_float3(0.05f,0.04f,0.04f));
+    float a = radians(-30.0f);
+    p.y = _fabs(p.y);
+    float c = dot(p-to_float3(0.0f,0.07f,0.0f),to_float3(0.0f,_sinf(a),_cosf(a)));
+    d = _fmaxf(-c,d);
+    p = prevP;
+    d = _fmaxf(-sdBox(p-to_float3(0.0f,0.0f,-0.03f),to_float3(0.04f,0.03f,0.05f)),d);
+    float d2 = sdBox(p-to_float3(0.0f,0.0f,-0.035f),to_float3(0.05f,0.004f,0.003f));
+    d = _fminf(d,d2);
+    return d;
+}
+
+__DEVICE__ float centerBottomItem(float3 p){
+    float3 prevP = p;
+    float d = sdBox(p,to_float3(0.09f,0.025f,0.025f));
+    float a = radians(-30.0f);
+    float c = dot(p-to_float3(0.0f,0.04f,0.0f),to_float3(0.0f,_sinf(a),_cosf(a)));
+    d = _fmaxf(-c,d);
+
+    p.x = _fabs(p.x)-0.01f;
+    p.y+=-0.013f;
+    p.z+=0.02f;
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , Rot(radians(-30.0f))));
+    float d2 = sdBox(p,to_float3(0.008f,0.015f,0.005f));
+    d = _fminf(d,d2);
+    p.x = _fabs(p.x)-0.02f;
+    d2 = sdBox(p,to_float3(0.008f,0.015f,0.005f));
+    d = _fminf(d,d2);
+    p.x = _fabs(p.x)-0.02f;
+    d2 = sdBox(p,to_float3(0.008f,0.015f,0.005f));
+    d = _fminf(d,d2);
+    return d;
+}
+
+__DEVICE__ float speaker(float3 p){
+    float3 prevP = p;
+    float d = sdTorus(p,to_float2(0.105f,0.005f));
+    float d2 = sdCone(p-to_float3(0.0f,0.0f,-0.1f),to_float2_s(0.15f),0.13f);
+    d2 = _fmaxf((_fabs(p.z)-0.015f),d2);
+    d2 = _fmaxf(-(length(swi2(p,y,x))-0.075f),d2);
+    d = _fminf(d,d2);
+    d2 = length(p-to_float3(0.0f,0.0f,0.05f))-0.028f;
+    d = _fminf(d,d2);
+
+    p.y = _fabs(p.y)-0.022f;
+    p.y+=-0.01f;
+    p.z+=0.015f;
+    d2 = sdBox(p,to_float3(0.1f,0.01f,0.01f));
+    float a = radians(-50.0f);
+    p.x = _fabs(p.x)-0.09f;
+    float c = dot((p-to_float3(0.0f,0.02f,0.0f)),to_float3(_sinf(a),_cosf(a),0.0f));
+    d2 = _fmaxf(-c,d2);
+    p = prevP;
+    p.y = _fabs(p.y)-0.022f;
+    p.z+=0.015f;
+    d2 = _fmaxf(-d2,sdBox(p,to_float3(0.09f,0.012f,0.005f)));
+    d = _fminf(d,d2);
+
+    p = prevP;
+    p.z+=0.015f;
+    p.x = _fabs(p.x)-0.08f;
+    d2 = sdBox(p,to_float3(0.01f,0.007f,0.01f));
+    d = _fminf(d,d2);
+
+    return d;
+}
+
+#define matSpeaker 1.0f
+#define matBox1 2.0f
+#define matBox2 3.0f
+#define matBox3 4.0f
+#define matBox4 5.0f
+#define matHandle 6.0f
+#define matRightSlider 7.0f
+#define matCenterSlider 8.0f
+#define matKnobs 9.0f
+#define matBottonCenter 10.0f
+
+__DEVICE__ float2 boomBox(float3 p, float iTime){
+    float mat = 0.0f;
+    float3 prevP = p;
+    float d = sdBox(p,to_float3(0.35f,0.22f,0.08f));
+    float a = radians(-30.0f);
+    float c = dot(p-to_float3(0.0f,0.3f,0.0f),to_float3(0.0f,_sinf(a),_cosf(a)));
+    d = _fmaxf(-c,d); if(d<=-c) mat = matBox1;//if(-c<=d) mat = matBox1;
+    p.x = _fabs(p.x)-0.35f;                                                          // Gehäuse
+    float d2 = sdBox(p-to_float3(0.0f,-0.02f,0.0f),to_float3(0.005f,0.16f,0.06f));
+    d = _fmaxf(-d2,d); if(-d2<=d) mat = matBox2;
+    p = prevP;
+    p+=to_float3(0.3f,-0.19f,0.06f);                           // kleiner linker Einschaltknopf
+    d2 = _fmaxf(_fabs(p.z)-0.02f,length(swi2(p,x,y))-0.01f);
+    d = _fminf(d,d2); if(d2<=d) mat = matBox3;
+    p = prevP;
+    p+=to_float3(-0.29f,-0.175f,0.07f);                        // rechter grosser Knopf
+    d2 = _fmaxf(_fabs(p.z)-0.02f,length(swi2(p,x,y))-0.025f);
+    d = _fminf(d,d2); if(d2<=d) mat = matBox4;
+
+    // antenna
+    p = prevP;
+    p.x = _fabs(p.x)-0.05f;
+    p.y-=0.25f;
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , Rot(radians(45.0f))));
+    d2 = _fmaxf(_fabs(p.y)-0.2f,length(swi2(p,x,z))-0.005f);
+    d = _fminf(d,d2);
+    p = prevP;
+    p.y-=0.21f;
+    d2 = sdBox(p,to_float3(0.06f,0.02f,0.01f));
+    d = _fminf(d,d2);
+
+    // handle
+    p = prevP;
+    p+=to_float3(0.0f,-0.25f,-0.03f);
+    d2 = sdBox(p,to_float3(0.32f,0.05f,0.012f));
+    d2 = _fmaxf(-sdBox(p-to_float3(0.0f,-0.005f,0.0f),to_float3(0.305f,0.025f,0.05f)),d2);
+    d = _fminf(d,d2);  if(d2<=d) mat = matHandle;
+
+    // right circle slider
+    p = prevP;
+    p.x -= 0.19f;
+    p.y+=-0.08f;
+    p.x = _fabs(p.x)-0.02f;
+    p += to_float3(0.0f,0.0f,0.08f);
+    d = _fmaxf(-sdBox(p,to_float3(0.017f,0.027f,0.02f)),d);
+    p -= to_float3(0.0f,0.0f,0.01f);
+    d2 = circleSlider(p,1.5f, iTime);
+    d = _fminf(d,d2);
+
+    p = prevP;
+    p.y+=-0.08f;
+    p.x = _fabs(p.x)-0.1f;
+    p += to_float3(0.0f,0.0f,0.08f);
+    d = _fmaxf(-sdBox(p,to_float3(0.017f,0.027f,0.02f)),d);
+    p -= to_float3(0.0f,0.0f,0.01f);
+    d2 = circleSlider(p,-1.2f, iTime);
+    d = _fminf(d,d2);  if(d2<=d) mat = matRightSlider;
+
+    // center slider
+    p = prevP;
+    p.y+=-0.1f;
+    p.x = _fabs(p.x)-0.015f;
+    p += to_float3(0.0f,0.0f,0.08f);
+    d = _fmaxf(-sdBox(p,to_float3(0.012f,0.045f,0.02f)),d);
+    p -= to_float3(0.0f,0.0f,0.01f);
+    d2 = rectSlider(p,-1.2f, iTime);
+    d = _fminf(d,d2);
+
+    p = prevP;
+    p.y+=-0.1f;
+    p.x = _fabs(p.x)-0.045f;
+    p += to_float3(0.0f,0.0f,0.08f);
+    d = _fmaxf(-sdBox(p,to_float3(0.012f,0.045f,0.02f)),d);
+    p -= to_float3(0.0f,0.0f,0.01f);
+    d2 = rectSlider(p,1.7f, iTime);
+    d = _fminf(d,d2); if(d2<=d) mat = matCenterSlider;
+
+    // knobs
+    p = prevP;
+    p.x += 0.18f;
+    p.y+=-0.07f;
+    p.z+=0.08f;
+    d2 = knob(p,1.7f, iTime);
+    d = _fminf(d,d2);
+
+    p.x = _fabs(p.x)-0.04f;
+    d2 = knob(p,-1.2f, iTime);
+    d = _fminf(d,d2);
+
+    // upper far side parts
+    p = prevP;
+    p.y+=-0.095f;
+    p.z+=0.08f;
+    p.x = _fabs(p.x)-0.29f;
+    d2 = upperFarSideItem(p);
+    d = _fminf(d,d2);   if(d2<=d) mat = matKnobs;
+
+    // bottom center
+    p = prevP;
+    p.z+=0.08f;
+    p.y-=0.01f;
+    d2 = sdBox(p,to_float3(0.09f,0.03f,0.01f));
+    d2 = _fmaxf(-sdBox(p,to_float3(0.04f,0.01f,0.02f)),d2);
+    d = _fminf(d,d2);
+    p.y+=0.05f;
+    d2 = sdBox(p,to_float3(0.09f,0.01f,0.01f));
+    d = _fminf(d,d2);
+    p.y+=0.06f;
+    d2 = sdBox(p,to_float3(0.09f,0.04f,0.01f));
+    d2 = _fmaxf(-sdBox(p,to_float3(0.04f,0.02f,0.02f)),d2);
+    d = _fminf(d,d2);
+    p.y+=0.075f;
+    d2 = centerBottomItem(p);
+    d = _fminf(d,d2);   if(d2<=d) mat = matBottonCenter;
+
+    // speakers
+    p = prevP;
+    p.y+=0.08f;
+    p.z+=0.08f;
+    p.x = _fabs(p.x)-0.22f;
+    d2 = sdBox(p,to_float3(0.12f,0.12f,0.01f));
+    d = _fminf(d,d2);
+    p.z+=0.01f;
+    d2 = speaker(p);
+    p.z+=0.035f;
+    d = _fmaxf(-(length(p)-0.08f),d);
+    d = _fminf(d,d2); if(d2<=d) mat = matSpeaker;
+    return to_float2(d, mat);
+}
+
+__DEVICE__ float2 GetDist(float3 p, float iTime) {
+    float3 prevP = p;
+
+    float2 d = boomBox(p, iTime);
+
+    return d;//to_float2(d,0);
+}
+
+__DEVICE__ float2 RayMarch(float3 ro, float3 rd, float side, int stepnum, float iTime) {
+    float2 dO = to_float2_s(0.0f);
+
+    for(int i=0; i<stepnum; i++) {
+        float3 p = ro + rd*dO.x;
+        float2 dS = GetDist(p, iTime);
+        dO.x += dS.x*side;
+        dO.y = dS.y;
+
+        if(dO.x>MAX_DIST || _fabs(dS.x)<SURF_DIST) break;
+    }
+
+    return dO;
+}
+
+__DEVICE__ float3 GetNormal(float3 p, float iTime) {
+    float d = GetDist(p, iTime).x;
+    float2 e = to_float2(0.001f, 0);
+
+    float3 n = d - to_float3(
+        GetDist(p-swi3(e,x,y,y), iTime).x,
+        GetDist(p-swi3(e,y,x,y), iTime).x,
+        GetDist(p-swi3(e,y,y,x), iTime).x);
+
+    return normalize(n);
+}
+
+__DEVICE__ float3 R(float2 uv, float3 p, float3 l, float z) {
+    float3 f = normalize(l-p),
+        r = normalize(cross(to_float3(0,1,0), f)),
+        u = cross(f,r),
+        c = p+f*z,
+        i = c + uv.x*r + uv.y*u,
+        d = normalize(i-p);
+    return d;
+}
+
+// https://www.shadertoy.com/view/3lsSzf
+__DEVICE__ float calcOcclusion( in float3 pos, in float3 nor, float iTime )
+{
+    float occ = 0.0f;
+    float sca = 1.0f;
+    for( int i=ZERO; i<3; i++ )
+    {
+        float h = 0.01f + 0.15f*(float)(i)/4.0f;
+        float3 opos = pos + h*nor;
+        float d = GetDist( opos, iTime ).x;
+        occ += (h-d)*sca;
+        sca *= 0.95f;
+    }
+    return clamp( 1.0f - 2.0f*occ, 0.0f, 1.0f );
+}
+
+__DEVICE__ float3 diffuseMaterial(float3 n, float3 rd, float3 p, float3 col, float iTime, float3 ColorsDiff[3]) {
+    float occ = calcOcclusion(p,n, iTime);
+    float3 diffCol = to_float3_s(0.0f);
+    float3 lightDir = normalize(to_float3(1,10,10));
+    float diff = clamp(dot(n,lightDir),0.0f,1.0f);
+    float skyDiff = clamp(0.5f+0.5f*dot(n,to_float3(0,1,0)),0.0f,1.0f);
+    float bounceDiff = clamp(0.5f+0.5f*dot(n,to_float3(0,-1,0)),0.0f,1.0f);
+    diffCol = col*ColorsDiff[0]*diff*occ; //to_float3_s(-0.5f)
+    diffCol += col*ColorsDiff[1]*skyDiff*occ; //to_float3(1.0f,1.0f,0.9f)
+    diffCol += col*ColorsDiff[2]*bounceDiff*occ; //to_float3_s(0.8f)
+    diffCol += col*_powf(_fmaxf(dot(rd, reflect(lightDir, n)), 0.0f), 60.0f)*occ; // spec
+
+    return diffCol;
+}
+
+// the reflection code reference from the following: https://www.shadertoy.com/view/tsXSRs
+__DEVICE__ float3 reflectionBg(float2 uv, float3 colors[2]){
+    const float pi = 3.14159f;
+    //return _mix(to_float3_s(0.05f), to_float3_s(2.0f), smoothstep(pi*0.35f, pi*0.98f, uv.y));
+    return _mix(colors[0], colors[1], smoothstep(pi*0.35f, pi*0.98f, uv.y));
+}
+
+__DEVICE__ float3 materials(int mat, float3 n, float3 rd, float3 p, float3 col, float iTime, float IOR, int matID, float3 Colors[14], float4 TexPar, __TEXTURE2D__ iChannel0){
+    //float IOR =  1.309f; //IOR:index of reflection
+    float3 rdir = refract_f3(-rd,n,1.0f/IOR);
+    float3 colors[2] = {to_float3_s(0.05f), to_float3_s(2.0f)};
+
+
+    switch (mat)
+    {
+      case 1: //Speaker
+        colors[0]=Colors[3];
+        colors[1]=Colors[4];
+      break;
+
+      case 3: //Box
+        colors[0]=Colors[5];
+        colors[1]=Colors[6];
+      break;
+
+      case 9:  //Knobs
+        colors[0]=Colors[7];
+        colors[1]=Colors[8];
+      break;
+
+      case 10: //BottonCenter
+        colors[0]=Colors[9];
+        colors[1]=Colors[10];
+      break;
+
+      default:
+            colors[0]=to_float3_s(0.05f);
+            colors[1]=to_float3_s(2.0f);
+    }
+
+    if(matID==mat)
+    {
+      colors[0]=Colors[11];
+      colors[1]=Colors[12];
+    }
+
+    col = reflectionBg(SUV(rdir), colors);
+    col = diffuseMaterial(n,rd,p,sqrt_f3(col), iTime, Colors);
+//    if(matID==mat)
+//      col=Colors[3];
+
+    if(matID = matBox2 && n.z == 1.0f)
+    {
+      float2 tuv = (swi2(p,x,y)*to_float2(TexPar.w,1.0f)+swi2(TexPar,x,y))*TexPar.z;
+      col = swi3(texture(iChannel0, tuv),x,y,z);
+    }
+
+    return col;
+}
+
+__DEVICE__ float dots(float2 p, float size, float dirX, float dirY, float iTime){
+    p.x-=iTime*0.02f*dirX;
+    p.y-=iTime*0.02f*dirY;
+    return length(mod_f2(p,0.03f)-0.015f)-size;
+}
+
+__DEVICE__ float bgItem(float2 p, float iTime){
+
+    p=mul_f2_mat2(p,Rot(radians(-25.0f)));
+    p*=0.7f;
+    p.x-=0.13f;
+    float2 prevP = p;
+    p.y*=1.5f;
+    p-=to_float2(0.12f,-0.02f);
+    p=mul_f2_mat2(p,Rot(radians(100.0f)));
+    float d = Tri(p,to_float2_s(0.2f));
+    p = prevP;
+    p-=to_float2(-0.1f,0.03f);
+    p=mul_f2_mat2(p,Rot(radians(115.0f)));
+    float d2 = B(p,to_float2(0.05f,0.12f));
+    d = _fminf(d,d2);
+    p = prevP;
+    p-=to_float2(-0.4f,0.04f);
+    p=mul_f2_mat2(p,Rot(radians(-100.0f)));
+    p.x*=4.0f;
+    p.y*=0.9f;
+    d2 = Tri(p,to_float2_s(0.2f));
+
+    d = _fminf(d,d2);
+    p = prevP;
+
+    return _fmaxf(d,dots(p,0.007f,3.0f,0.0f, iTime));
+}
+
+__DEVICE__ float stripes(float2 p, float dir, float iTime){
+    float2 prevP = p;
+
+    p=mul_f2_mat2(p,Rot(radians(30.0f)));
+    p.x+=iTime*0.05f*dir;
+    p.x = mod_f(p.x,0.02f)-0.01f;
+
+    float d = B(p,to_float2(0.003f,10.0f));
+    return d;
+}
+
+__DEVICE__ float3 triBg(float2 p, float3 col, float iTime, float2 iResolution){
+    float2 prevP = p;
+    float d = _fmaxf(Tri(p,to_float2_s(0.3f)),dots(p,0.001f,0.0f,1.0f, iTime));
+    return _mix(col,to_float3_s(0.7f),S(d,0.0f));
+}
+
+__DEVICE__ float3 circleBg(float2 p, float3 col, float iTime, float2 iResolution){
+    float2 prevP = p;
+    float d = _fmaxf(_fabs(length(p)-0.15f)-0.02f,dots(p,0.001f,0.0f,1.0f, iTime));
+    return _mix(col,to_float3_s(0.7f),S(d,0.0f));
+}
+
+__DEVICE__ float3 stripeBg(float2 p, float3 col, float iTime, float2 iResolution, float3 ColorsBKG){
+    float2 prevP = p;
+    float d = stripes(p,1.0f, iTime);
+    d = _fmaxf(B(p,to_float2(0.55f,0.25f)),d);
+    return _mix(col,ColorsBKG,S(d,0.0f)); //to_float3_s(0.13f)
+}
+
+__DEVICE__ float3 drawBg(float2 p, float3 col, float iTime, float2 iResolution, float3 ColorsBKG[2]) {
+    float2 prevP = p;
+    p=mul_f2_mat2(p,Rot(radians(iTime*-10.0f)));
+    // https://en.wikipedia.org/wiki/Log-polar_coordinates
+    float r = _logf(sqrt(p.x*p.x+p.y*p.y)); // or _logf(length(p))
+    float theta = _atan2f(p.y/p.x, 1.0f);
+    p.x = r;
+    p.y = theta;
+
+    p.x-=iTime*0.3f;
+    p*=2.0f;
+    p = fract_f2(p)-0.5f;
+    p*=0.75f;
+
+    float d = bgItem(p,iTime);
+    p = prevP;
+    col = triBg(p-to_float2(-0.5f,-0.1f),col, iTime, iResolution);
+    col = triBg((to_float2(p.x,p.y*-1.0f)-to_float2(0.5f,-0.1f)),col, iTime, iResolution);
+    col = circleBg(p-to_float2(-0.54f,0.25f),col, iTime, iResolution);
+    col = circleBg(to_float2(p.x,p.y*-1.0f)-to_float2(0.54f,0.25f),col, iTime, iResolution);
+    col = stripeBg(p,col, iTime, iResolution, ColorsBKG[1]);
+    col += _mix(col,ColorsBKG[0],S(d,0.0f));
+
+    d = length(p)-0.01f;
+    col = _mix(col,ColorsBKG[1],S(d,0.0f));
+
+    return col;
+}
+
+__KERNEL__ void GraphicDesignExperiment17Fuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   BKG = params->BKG;
+  float4 ColorDif1 = to_float4(params->ColorDif1[0], params->ColorDif1[1], params->ColorDif1[2], params->ColorDif1[3]);
+  float4 ColorDif2 = to_float4(params->ColorDif2[0], params->ColorDif2[1], params->ColorDif2[2], params->ColorDif2[3]);
+  float4 ColorDif3 = to_float4(params->ColorDif3[0], params->ColorDif3[1], params->ColorDif3[2], params->ColorDif3[3]);
+  float4 ColorBKG1 = to_float4(params->ColorBKG1[0], params->ColorBKG1[1], params->ColorBKG1[2], params->ColorBKG1[3]);
+  float4 ColorBKG2 = to_float4(params->ColorBKG2[0], params->ColorBKG2[1], params->ColorBKG2[2], params->ColorBKG2[3]);
+  float4 ColSpeaker1 = to_float4(params->ColSpeaker1[0], params->ColSpeaker1[1], params->ColSpeaker1[2], params->ColSpeaker1[3]);
+  float4 ColSpeaker2 = to_float4(params->ColSpeaker2[0], params->ColSpeaker2[1], params->ColSpeaker2[2], params->ColSpeaker2[3]);
+  float4 ColBox1 = to_float4(params->ColBox1[0], params->ColBox1[1], params->ColBox1[2], params->ColBox1[3]);
+  float4 ColBox2 = to_float4(params->ColBox2[0], params->ColBox2[1], params->ColBox2[2], params->ColBox2[3]);
+  float4 ColKnobs1 = to_float4(params->ColKnobs1[0], params->ColKnobs1[1], params->ColKnobs1[2], params->ColKnobs1[3]);
+  float4 ColKnobs2 = to_float4(params->ColKnobs2[0], params->ColKnobs2[1], params->ColKnobs2[2], params->ColKnobs2[3]);
+  float4 ColBC1 = to_float4(params->ColBC1[0], params->ColBC1[1], params->ColBC1[2], params->ColBC1[3]);
+  float4 ColBC2 = to_float4(params->ColBC2[0], params->ColBC2[1], params->ColBC2[2], params->ColBC2[3]);
+  float4 ColVar1 = to_float4(params->ColVar1[0], params->ColVar1[1], params->ColVar1[2], params->ColVar1[3]);
+  float4 ColVar2 = to_float4(params->ColVar2[0], params->ColVar2[1], params->ColVar2[2], params->ColVar2[3]);
+  float2 TexXY = to_float2(params->TexXY[0], params->TexXY[1]);
+  float  TexScale = params->TexScale;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float  IOR = params->IOR;
+  float  Zoom = params->Zoom;
+  int    matID = params->matID;
+
+  // --------
+
+    //CONNECT_COLOR5(ColSpeaker1, 0.05f, 0.05f, 0.05f, 1.0f);  // Speaker
+    //CONNECT_COLOR7(ColBox1, 0.05f, 0.05f, 0.05f, 1.0f);      // Box
+    //CONNECT_COLOR9(ColKnobs1, 0.05f, 0.05f, 0.05f, 1.0f);    // Knobs
+    //CONNECT_COLOR11(ColBC1, 0.05f, 0.05f, 0.05f, 1.0f);      // BottonCenter
+    //CONNECT_COLOR13(ColVar1, 0.05f, 0.05f, 0.05f, 1.0f);     // Variable über matID
+
+
+    //CONNECT_SLIDER3(IOR, -1.0f, 3.0f, 1.309f); //IOR:index of reflection
+
+
+    float3 ColorsDiff[14] = {swi3(ColorDif1,x,y,z),swi3(ColorDif2,x,y,z),swi3(ColorDif3,x,y,z),swi3(ColSpeaker1,x,y,z),swi3(ColSpeaker2,x,y,z),swi3(ColBox1,x,y,z),swi3(ColBox2,x,y,z),swi3(ColKnobs1,x,y,z),swi3(ColKnobs2,x,y,z),swi3(ColBC1,x,y,z),swi3(ColBC2,x,y,z),swi3(ColVar1,x,y,z),swi3(ColVar2,x,y,z)};
+    float3 ColorsBKG[2] = {swi3(ColorBKG1,x,y,z),swi3(ColorBKG2,x,y,z)};
+
+    float alpha = 1.0f;
+    float ratio = iResolution.y/iResolution.x;
+    float4 TexPar = {TexXY.x+0.2f, TexXY.y+0.2f, TexScale, ratio};
+
+    float2 uv = (fragCoord-0.5f*iResolution)/iResolution.y;
+    float2 prevUV = uv;
+
+    float3 ro = to_float3(0, 0, -1.0f) + to_float3_aw(ViewXY, ViewZ);
+    swi2S(ro,y,z, mul_f2_mat2(swi2(ro,y,z) , Rot(radians(-5.0f))));
+    swi2S(ro,x,z, mul_f2_mat2(swi2(ro,x,z) , Rot(radians(_sinf(iTime*0.6f)*30.0f))));
+
+    float3 rd = R(uv, ro, to_float3_aw(ViewDXY, ViewDZ), Zoom);
+
+    //############### 3D Mouse-Rotation des Objektes ##############
+    float crz = (iMouse.x - iResolution.x / 2.0f) / iResolution.x * PI;
+    float crx = (iMouse.y - iResolution.y / 2.0f) / iResolution.y * PI;
+
+    mat3 m = mul_mat3_mat3(to_mat3(_cosf(crz), 0.0f, _sinf(crz), 0.0f, 1.0f, 0.0f, -_sinf(crz), 0.0f, _cosf(crz)) ,
+                           to_mat3(1.0f, 0.0f, 0.0f, 0.0f, _cosf(crx), _sinf(crx), 0.0f, -_sinf(crx), _cosf(crx)));
+
+    if(iMouse.z > 0.0f)
+    {
+        ro = mul_mat3_f3(m , ro);
+        rd = mul_mat3_f3(m , rd);
+    }
+    //#############################################################
+
+
+    float2 d = RayMarch(ro, rd, 1.0f,MAX_STEPS, iTime);
+    float3 col = to_float3_s(0.0f);
+    float3 n;
+    int mat;
+    if(d.x<MAX_DIST) {
+        float3 p = ro + rd * d.x;
+        n = GetNormal(p, iTime);
+        mat = (int)(d.y);
+        col = materials(mat,n,rd,p,col, iTime, IOR, matID, ColorsDiff, TexPar, iChannel0);
+    } else {
+      if(BKG)
+        col = drawBg(uv,col, iTime, iResolution, ColorsBKG);
+      else
+        col = swi3(ColorBKG1,x,y,z);
+      alpha = ColorBKG1.w;
+    }
+
+    fragColor = to_float4_aw(col,alpha);
+
+    //fragColor = to_float4(d.x,d.y,0.0f,1.0f);
+    //fragColor = to_float4_aw(n,1.0f);
+    //fragColor = to_float4_aw(((float)n,1.0f);
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InBKGCheckbox = self:AddInput("BKG", "BKG", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("ColorDif1", "ColorDif1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorDif1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorDif1ColorR = self:AddInput("Red",   "ColorDif1Red",   { INP_Default  = -0.5, IC_ControlID = 0, attrs})
+    InColorDif1ColorG = self:AddInput("Green", "ColorDif1Green", { INP_Default  = -0.5, IC_ControlID = 1, attrs})
+    InColorDif1ColorB = self:AddInput("Blue",  "ColorDif1Blue",  { INP_Default  = -0.5, IC_ControlID = 2, attrs})
+    InColorDif1ColorA = self:AddInput("Alpha", "ColorDif1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorDif2", "ColorDif2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorDif2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorDif2ColorR = self:AddInput("Red",   "ColorDif2Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColorDif2ColorG = self:AddInput("Green", "ColorDif2Green", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColorDif2ColorB = self:AddInput("Blue",  "ColorDif2Blue",  { INP_Default  = 0.9, IC_ControlID = 2, attrs})
+    InColorDif2ColorA = self:AddInput("Alpha", "ColorDif2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorDif3", "ColorDif3", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorDif3",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorDif3ColorR = self:AddInput("Red",   "ColorDif3Red",   { INP_Default  = 0.8, IC_ControlID = 0, attrs})
+    InColorDif3ColorG = self:AddInput("Green", "ColorDif3Green", { INP_Default  = 0.8, IC_ControlID = 1, attrs})
+    InColorDif3ColorB = self:AddInput("Blue",  "ColorDif3Blue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    InColorDif3ColorA = self:AddInput("Alpha", "ColorDif3Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorBKG1", "ColorBKG1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBKG1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBKG1ColorR = self:AddInput("Red",   "ColorBKG1Red",   { INP_Default  = 0.7, IC_ControlID = 0, attrs})
+    InColorBKG1ColorG = self:AddInput("Green", "ColorBKG1Green", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InColorBKG1ColorB = self:AddInput("Blue",  "ColorBKG1Blue",  { INP_Default  = 0.7, IC_ControlID = 2, attrs})
+    InColorBKG1ColorA = self:AddInput("Alpha", "ColorBKG1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColorBKG2", "ColorBKG2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorBKG2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorBKG2ColorR = self:AddInput("Red",   "ColorBKG2Red",   { INP_Default  = 0.13, IC_ControlID = 0, attrs})
+    InColorBKG2ColorG = self:AddInput("Green", "ColorBKG2Green", { INP_Default  = 0.13, IC_ControlID = 1, attrs})
+    InColorBKG2ColorB = self:AddInput("Blue",  "ColorBKG2Blue",  { INP_Default  = 0.13, IC_ControlID = 2, attrs})
+    InColorBKG2ColorA = self:AddInput("Alpha", "ColorBKG2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColSpeaker1", "ColSpeaker1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColSpeaker1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColSpeaker1ColorR = self:AddInput("Red",   "ColSpeaker1Red",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InColSpeaker1ColorG = self:AddInput("Green", "ColSpeaker1Green", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InColSpeaker1ColorB = self:AddInput("Blue",  "ColSpeaker1Blue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InColSpeaker1ColorA = self:AddInput("Alpha", "ColSpeaker1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColSpeaker2", "ColSpeaker2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColSpeaker2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColSpeaker2ColorR = self:AddInput("Red",   "ColSpeaker2Red",   { INP_Default  = 2.0, IC_ControlID = 0, attrs})
+    InColSpeaker2ColorG = self:AddInput("Green", "ColSpeaker2Green", { INP_Default  = 2.0, IC_ControlID = 1, attrs})
+    InColSpeaker2ColorB = self:AddInput("Blue",  "ColSpeaker2Blue",  { INP_Default  = 2.0, IC_ControlID = 2, attrs})
+    InColSpeaker2ColorA = self:AddInput("Alpha", "ColSpeaker2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBox1", "ColBox1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBox1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBox1ColorR = self:AddInput("Red",   "ColBox1Red",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InColBox1ColorG = self:AddInput("Green", "ColBox1Green", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InColBox1ColorB = self:AddInput("Blue",  "ColBox1Blue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InColBox1ColorA = self:AddInput("Alpha", "ColBox1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBox2", "ColBox2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBox2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBox2ColorR = self:AddInput("Red",   "ColBox2Red",   { INP_Default  = 2.0, IC_ControlID = 0, attrs})
+    InColBox2ColorG = self:AddInput("Green", "ColBox2Green", { INP_Default  = 2.0, IC_ControlID = 1, attrs})
+    InColBox2ColorB = self:AddInput("Blue",  "ColBox2Blue",  { INP_Default  = 2.0, IC_ControlID = 2, attrs})
+    InColBox2ColorA = self:AddInput("Alpha", "ColBox2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColKnobs1", "ColKnobs1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColKnobs1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColKnobs1ColorR = self:AddInput("Red",   "ColKnobs1Red",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InColKnobs1ColorG = self:AddInput("Green", "ColKnobs1Green", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InColKnobs1ColorB = self:AddInput("Blue",  "ColKnobs1Blue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InColKnobs1ColorA = self:AddInput("Alpha", "ColKnobs1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColKnobs2", "ColKnobs2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColKnobs2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColKnobs2ColorR = self:AddInput("Red",   "ColKnobs2Red",   { INP_Default  = 2.0, IC_ControlID = 0, attrs})
+    InColKnobs2ColorG = self:AddInput("Green", "ColKnobs2Green", { INP_Default  = 2.0, IC_ControlID = 1, attrs})
+    InColKnobs2ColorB = self:AddInput("Blue",  "ColKnobs2Blue",  { INP_Default  = 2.0, IC_ControlID = 2, attrs})
+    InColKnobs2ColorA = self:AddInput("Alpha", "ColKnobs2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBC1", "ColBC1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBC1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBC1ColorR = self:AddInput("Red",   "ColBC1Red",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InColBC1ColorG = self:AddInput("Green", "ColBC1Green", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InColBC1ColorB = self:AddInput("Blue",  "ColBC1Blue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InColBC1ColorA = self:AddInput("Alpha", "ColBC1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBC2", "ColBC2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBC2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBC2ColorR = self:AddInput("Red",   "ColBC2Red",   { INP_Default  = 2.0, IC_ControlID = 0, attrs})
+    InColBC2ColorG = self:AddInput("Green", "ColBC2Green", { INP_Default  = 2.0, IC_ControlID = 1, attrs})
+    InColBC2ColorB = self:AddInput("Blue",  "ColBC2Blue",  { INP_Default  = 2.0, IC_ControlID = 2, attrs})
+    InColBC2ColorA = self:AddInput("Alpha", "ColBC2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColVar1", "ColVar1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColVar1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColVar1ColorR = self:AddInput("Red",   "ColVar1Red",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InColVar1ColorG = self:AddInput("Green", "ColVar1Green", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InColVar1ColorB = self:AddInput("Blue",  "ColVar1Blue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InColVar1ColorA = self:AddInput("Alpha", "ColVar1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColVar2", "ColVar2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColVar2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColVar2ColorR = self:AddInput("Red",   "ColVar2Red",   { INP_Default  = 2.0, IC_ControlID = 0, attrs})
+    InColVar2ColorG = self:AddInput("Green", "ColVar2Green", { INP_Default  = 2.0, IC_ControlID = 1, attrs})
+    InColVar2ColorB = self:AddInput("Blue",  "ColVar2Blue",  { INP_Default  = 2.0, IC_ControlID = 2, attrs})
+    InColVar2ColorA = self:AddInput("Alpha", "ColVar2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InTexXYPoint = self:AddInput("TexXY", "TexXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTexScaleSlider = self:AddInput("TexScale", "TexScale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 2.5,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InIORSlider = self:AddInput("IOR", "IOR", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.309,
+      })
+
+  InZoomSlider = self:AddInput("Zoom", "Zoom", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.0,
+      })
+
+  InmatIDSlider = self:AddInput("matID", "matID", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1,
+      INP_MaxScale       = 20,
+      INP_Default        = 0,
+      INP_Integer        = true,
+  })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "GraphicDesignExperiment17Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.BKG = InBKGCheckbox:GetValue(req).Value
+  params.ColorDif1 = {
+    InColorDif1ColorR:GetValue(req).Value,
+    InColorDif1ColorG:GetValue(req).Value,
+    InColorDif1ColorB:GetValue(req).Value,InColorDif1ColorA:GetValue(req).Value
+  }
+  params.ColorDif2 = {
+    InColorDif2ColorR:GetValue(req).Value,
+    InColorDif2ColorG:GetValue(req).Value,
+    InColorDif2ColorB:GetValue(req).Value,InColorDif2ColorA:GetValue(req).Value
+  }
+  params.ColorDif3 = {
+    InColorDif3ColorR:GetValue(req).Value,
+    InColorDif3ColorG:GetValue(req).Value,
+    InColorDif3ColorB:GetValue(req).Value,InColorDif3ColorA:GetValue(req).Value
+  }
+  params.ColorBKG1 = {
+    InColorBKG1ColorR:GetValue(req).Value,
+    InColorBKG1ColorG:GetValue(req).Value,
+    InColorBKG1ColorB:GetValue(req).Value,InColorBKG1ColorA:GetValue(req).Value
+  }
+  params.ColorBKG2 = {
+    InColorBKG2ColorR:GetValue(req).Value,
+    InColorBKG2ColorG:GetValue(req).Value,
+    InColorBKG2ColorB:GetValue(req).Value,InColorBKG2ColorA:GetValue(req).Value
+  }
+  params.ColSpeaker1 = {
+    InColSpeaker1ColorR:GetValue(req).Value,
+    InColSpeaker1ColorG:GetValue(req).Value,
+    InColSpeaker1ColorB:GetValue(req).Value,InColSpeaker1ColorA:GetValue(req).Value
+  }
+  params.ColSpeaker2 = {
+    InColSpeaker2ColorR:GetValue(req).Value,
+    InColSpeaker2ColorG:GetValue(req).Value,
+    InColSpeaker2ColorB:GetValue(req).Value,InColSpeaker2ColorA:GetValue(req).Value
+  }
+  params.ColBox1 = {
+    InColBox1ColorR:GetValue(req).Value,
+    InColBox1ColorG:GetValue(req).Value,
+    InColBox1ColorB:GetValue(req).Value,InColBox1ColorA:GetValue(req).Value
+  }
+  params.ColBox2 = {
+    InColBox2ColorR:GetValue(req).Value,
+    InColBox2ColorG:GetValue(req).Value,
+    InColBox2ColorB:GetValue(req).Value,InColBox2ColorA:GetValue(req).Value
+  }
+  params.ColKnobs1 = {
+    InColKnobs1ColorR:GetValue(req).Value,
+    InColKnobs1ColorG:GetValue(req).Value,
+    InColKnobs1ColorB:GetValue(req).Value,InColKnobs1ColorA:GetValue(req).Value
+  }
+  params.ColKnobs2 = {
+    InColKnobs2ColorR:GetValue(req).Value,
+    InColKnobs2ColorG:GetValue(req).Value,
+    InColKnobs2ColorB:GetValue(req).Value,InColKnobs2ColorA:GetValue(req).Value
+  }
+  params.ColBC1 = {
+    InColBC1ColorR:GetValue(req).Value,
+    InColBC1ColorG:GetValue(req).Value,
+    InColBC1ColorB:GetValue(req).Value,InColBC1ColorA:GetValue(req).Value
+  }
+  params.ColBC2 = {
+    InColBC2ColorR:GetValue(req).Value,
+    InColBC2ColorG:GetValue(req).Value,
+    InColBC2ColorB:GetValue(req).Value,InColBC2ColorA:GetValue(req).Value
+  }
+  params.ColVar1 = {
+    InColVar1ColorR:GetValue(req).Value,
+    InColVar1ColorG:GetValue(req).Value,
+    InColVar1ColorB:GetValue(req).Value,InColVar1ColorA:GetValue(req).Value
+  }
+  params.ColVar2 = {
+    InColVar2ColorR:GetValue(req).Value,
+    InColVar2ColorG:GetValue(req).Value,
+    InColVar2ColorB:GetValue(req).Value,InColVar2ColorA:GetValue(req).Value
+  }
+  params.TexXY = {InTexXYPoint:GetValue(req).X,InTexXYPoint:GetValue(req).Y}
+  params.TexScale = InTexScaleSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.IOR = InIORSlider:GetValue(req).Value
+  params.Zoom = InZoomSlider:GetValue(req).Value
+  params.matID = InmatIDSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+ 
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

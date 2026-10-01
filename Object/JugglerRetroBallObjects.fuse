@@ -1,0 +1,1167 @@
+--[[--/*
+
+  JugglerRetroBallObjects.fuse
+
+  Based on https://www.shadertoy.com/view/t3XGRN a WebGL shader created by misol101.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  int    NOF_OBJS;
+  float  TIME_PER_OBJ;
+  float  FADE_TIME;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat4 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float4x4 mat4;
+
+  __DEVICE__ inline mat4 to_mat4( float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
+  {
+    return mat4(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p);
+  }
+
+  __DEVICE__ inline float4 mul_mat4_f4( mat4 B, float4 A) { return (B*A); }
+  __DEVICE__ inline mat4 mul_mat4_mat4( mat4 A, mat4 B) { return (A*B); }
+
+#else
+
+  typedef struct { float4 r0; float4 r1; float4 r2; float4 r3; } mat4;
+
+  __DEVICE__ inline mat4 to_mat4( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
+  {
+    mat4 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c; t.r0.w = d;
+    t.r1.x = e; t.r1.y = f; t.r1.z = g; t.r1.w = h;
+    t.r2.x = i; t.r2.y = j; t.r2.z = k; t.r2.w = l;
+    t.r3.x = m; t.r3.y = n; t.r3.z = o; t.r3.w = p;
+    return t;
+  }
+
+__DEVICE__ inline float4 mul_mat4_f4( mat4 B, float4 A)
+  {
+    float4 C;
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x + A.w * B.r3.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y + A.w * B.r3.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z + A.w * B.r3.z;
+    C.w = A.x * B.r0.w + A.y * B.r1.w + A.z * B.r2.w + A.w * B.r3.w;
+    return C;
+}
+
+__DEVICE__ inline mat4 mul_mat4_mat4( mat4 B, mat4 A)
+{
+
+  float r[4][4];
+  float a[4][4] = {{A.r0.x, A.r0.y, A.r0.z, A.r0.w},
+                   {A.r1.x, A.r1.y, A.r1.z, A.r1.w},
+                   {A.r2.x, A.r2.y, A.r2.z, A.r2.w},
+                   {A.r3.x, A.r3.y, A.r3.z, A.r3.w}};
+  float b[4][4] = {{B.r0.x, B.r0.y, B.r0.z, B.r0.w},
+                   {B.r1.x, B.r1.y, B.r1.z, B.r1.w},
+                   {B.r2.x, B.r2.y, B.r2.z, B.r2.w},
+                   {B.r3.x, B.r3.y, B.r3.z, B.r3.w}};
+
+  for( int i = 0; i < 4; ++i)
+  {
+   for( int j = 0; j < 4; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 4; ++k)
+     {
+     r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat4 R = to_mat4(r[0][0], r[0][1], r[0][2], r[0][3],
+                   r[1][0], r[1][1], r[1][2], r[1][3],
+                   r[2][0], r[2][1], r[2][2], r[2][3],
+                   r[3][0], r[3][1], r[3][2], r[3][3]);
+  return R;
+}
+#endif // end of mat4 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define cos_f3(i) cos(i)
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define cos_f3(i) cos(i)
+ #define distance_f2( p1, p2) distance(p1, p2)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define cos_f3(i) to_float3( _cosf((i).x), _cosf((i).y), _cosf((i).z))
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+  #endif
+
+#endif
+
+#define to_float4_f2f2(A,B) to_float4((A).x,(A).y,(B).x,(B).y ) // or is there some to_float_..() for that?!? - No - that is missing in DCTL :-) but now we have "one"
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+
+//#define NOF_OBJS 10
+//#define TIME_PER_OBJ 11.0
+//#define FADE_TIME 1.0
+//const float HALF_FADE = FADE_TIME * 0.5f;
+
+#define PI 3.14159265359f
+
+struct ObjData {
+    int rotType;
+    float rotSpeed;
+    int colType;
+    int scaleType;
+    float scaleMul;
+    float3 colMul;
+};
+
+__DEVICE__ struct ObjData getObjData(float time, float TIME_PER_OBJ, float NOF_OBJS) {
+    struct ObjData oData;
+    int index = (int)(mod_f(time, TIME_PER_OBJ * (float)(NOF_OBJS)) / (float)(TIME_PER_OBJ));
+    float3 defColMul = to_float3(0.95f, 0.95f, 1.2f);
+
+    switch(index) {
+        case 0: {struct ObjData oData1 = {3, 1.0f, 1, 0, 0.37f, defColMul}; oData = oData1; break;};
+        case 1: {struct ObjData oData2 = {0, 2.0f, 1, 1, 0.5f,  defColMul}; oData = oData2; break;};
+        case 2: {struct ObjData oData3 = {0, 2.0f, 0, 0, 0.4f,  defColMul}; oData = oData3; break;};
+        case 3: {struct ObjData oData4 = {2, 1.0f, 1, 2, 0.75f, defColMul}; oData = oData4; break;};
+        case 4: {struct ObjData oData5 = {0, 1.0f, 0, 0, 0.6f,  to_float3(1.0f, 0.8f, 0.15f)};  oData = oData5; break;};
+        case 5: {struct ObjData oData6 = {1, 1.5f, 0, 0, 0.45f, to_float3(1.0f, 0.95f, 0.95f)}; oData = oData6; break;};
+        case 6: {struct ObjData oData7 = {1, 2.0f, 0, 2, 0.85f, to_float3(0.95f, 1.0f, 1.0f)};  oData = oData7; break;};
+        case 7: {struct ObjData oData8 = {2, -1.3f, 1, 2, 0.8f, defColMul}; oData = oData8;  break;};
+        case 8: {struct ObjData oData9 = {0, 1.0f, 2, 1, 0.375f, defColMul}; oData = oData9; break;};
+        case 9: {struct ObjData oData10 = {1, 2.0f, 2, 2, 0.7f,  defColMul}; oData = oData10; break;};
+    }
+    return oData;
+}
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+
+
+
+__DEVICE__ float3 ColorPalette(in float t, in float3 a, in float3 b, in float3 c, in float3 d ) {
+    return a + b*cos_f3( 6.28318f*(c*t+d) );
+}
+
+__DEVICE__ float4 sphere(float2 fragCoord, float2 ballPos, float rad, float4 col, float4 orgCol, float AA, float2 iResolution) {
+    float dist = distance_f2(fragCoord, ballPos);
+    return _mix(col, orgCol, smoothstep(rad-iResolution.x*AA, rad, dist));
+}
+
+__DEVICE__ float4 drawBall(float2 fragCoord, float2 ballPos, float4 col, float rad, int index, float bright, float2 iResolution) {
+  float4 ballCol = to_float4_aw(ColorPalette((float)(index)*0.13f, to_float3(0.5f, 0.5f, 0.5f),
+                                             to_float3_s(0.5f),
+                                             to_float3(0.6f, 0.4f, 0.3f),
+                                             to_float3(0.6f, 0.4f, 0.3f)) + 0.12f, 1.0f) ;
+    //ballCol = to_float4(0.95f, 0.19f, 0.4f, 1.0f);
+    col = sphere(fragCoord, ballPos, rad, ballCol * 0.6f, col, 0.003f, iResolution);
+    col = sphere(fragCoord, ballPos-to_float2(rad*0.08f,-rad*0.08f), rad*1.05f, ballCol * 0.31f, col, 0.013f, iResolution);
+    col = sphere(fragCoord, ballPos-to_float2(rad*0.15f,-rad*0.15f), rad*0.85f, ballCol * 1.8f, col, 0.065f, iResolution);
+    col = sphere(fragCoord, ballPos-to_float2(rad*0.2f,-rad*0.2f), rad*0.18f, ballCol*6.5f, col, 0.011f, iResolution) * bright;
+
+    return to_float4_aw(swi3(col,x,y,z), 1.0f);
+}
+
+
+
+// Star (25)
+const float big = 0.03f, sml = 0.07f;
+const float v = 0.25f;
+
+
+// Inverted Star (25)
+const float big2 = 0.065f, sml2 = 0.035f;
+const float v2 = 0.3f;
+
+
+// "Cube" (20)
+const float v3 = 0.65f,   v3b=0.65f*0.15f; //v3b=v3*0.15f;
+const float big3 = 0.13f, sml3=0.07f;
+
+
+// "Flat" (28)
+const float v4 = 0.3f;
+const float big4 = 0.06f, sml4=0.05f;
+
+
+// Juggler (33)
+const float v5 = 0.35f, xp5 = 0.2f;
+const float big5 = 0.09f, sml5=0.037f;
+
+
+const int nofB[] = { 33, 28, 25, 20, 25 };
+
+__DEVICE__ float4 juggle(int index, float4 ball, float iTime) {
+    float xmv = 0.0f, ymv = 0.0f;
+    switch(index) {
+        case 9:
+        case 10:
+        case 11:
+           ymv = _cosf(iTime * 12.0f + PI * 0.5f) * ((float)(index-8))*0.07f; break;
+        case 15:
+        case 16:
+        case 17:
+           ymv = _sinf(iTime * 12.0f) * ((float)(index-14))*0.07f; break;
+        case 30:
+        case 31:
+        case 32:
+           {
+             float _prog = PI * (float)(index - 30) * 0.33f;
+             xmv = _sinf((_prog + iTime) * 4.0f) * 0.3f;
+             ymv = 0.4f + _cosf((_prog + iTime) * 8.0f) * 0.45f;
+             break;
+           }
+    }
+    return ball + to_float4(xmv, ymv, 0.0f, 0.0f);
+}
+
+__DEVICE__ void ballObject(inout float4 *c, float2 p, float rx, float ry, float rz, int ix, int nofBalls, int scaleType, float scaleMul, int colType, float2 iResolution, float4 iMouse, float iTime) {
+
+
+  const float4 obj1[] = { to_float4(0.0f,0.0f,0.0f,0.09f)
+                         ,to_float4(v,0.0f,0.0f,big), to_float4(-v,0.0f,0.0f,big), to_float4(0.0f,v,0.0f,big), to_float4(0.0f,-v,0.0f,big), to_float4(0.0f,0.0f,v,big), to_float4(0.0f,0.0f,-v,big)
+                         ,to_float4(v*2.0f,0.0f,0.0f,big), to_float4(-v*2.0f,0.0f,0.0f,big), to_float4(0.0f,v*2.0f,0.0f,big), to_float4(0.0f,-v*2.0f,0.0f,big), to_float4(0.0f,0.0f,v*2.0f,big), to_float4(0.0f,0.0f,-v*2.0f,big)
+                         ,to_float4(v*3.0f,0.0f,0.0f,big), to_float4(-v*3.0f,0.0f,0.0f,big), to_float4(0.0f,v*3.0f,0.0f,big), to_float4(0.0f,-v*3.0f,0.0f,big), to_float4(0.0f,0.0f,v*3.0f,big), to_float4(0.0f,0.0f,-v*3.0f,big)
+                         ,to_float4(v*4.0f,0.0f,0.0f,sml), to_float4(-v*4.0f,0.0f,0.0f,sml), to_float4(0.0f,v*4.0f,0.0f,sml), to_float4(0.0f,-v*4.0f,0.0f,sml), to_float4(0.0f,0.0f,v*4.0f,sml), to_float4(0.0f,0.0f,-v*4.0f,sml)
+                        };
+
+  const float4 obj2[] = { to_float4(0.0f,0.0f,0.0f,0.045f)
+                       ,to_float4(v2,0.0f,0.0f,big2), to_float4(-v,0.0f,0.0f,big2), to_float4(0.0f,v,0.0f,big2), to_float4(0.0f,-v2,0.0f,big2), to_float4(0.0f,0.0f,v2,big2), to_float4(0.0f,0.0f,-v2,big2)
+                       ,to_float4(v2*2.0f,0.0f,0.0f,big2), to_float4(-v2*2.0f,0.0f,0.0f,big2), to_float4(0.0f,v2*2.0f,0.0f,big2), to_float4(0.0f,-v2*2.0f,0.0f,big2), to_float4(0.0f,0.0f,v2*2.0f,big2), to_float4(0.0f,0.0f,-v2*2.0f,big2)
+                       ,to_float4(v2*3.0f,0.0f,0.0f,big2), to_float4(-v2*3.0f,0.0f,0.0f,big2), to_float4(0.0f,v2*3.0f,0.0f,big2), to_float4(0.0f,-v2*3.0f,0.0f,big2), to_float4(0.0f,0.0f,v2*3.0f,big2), to_float4(0.0f,0.0f,-v2*3.0f,big2)
+                       ,to_float4(v2*3.75f,0.0f,0.0f,sml2), to_float4(-v2*3.75f,0.0f,0.0f,sml2), to_float4(0.0f,v2*3.75f,0.0f,sml2), to_float4(0.0f,-v2*3.75f,0.0f,sml2), to_float4(0.0f,0.0f,v2*3.75f,sml2), to_float4(0.0f,0.0f,-v2*3.75f,sml2)
+                      };
+
+  const float4 obj3[] = {
+                         to_float4(v3,v3,v3,big3),to_float4(-v3,v3,v3,big3), to_float4(-v3,-v3,v3,big3), to_float4(v3,-v3,v3,big3)
+                        ,to_float4(v3,v3,-v3,big3),to_float4(-v3,v3,-v3,big3), to_float4(-v3,-v3,-v3,big3), to_float4(v3,-v3,-v3,big3)
+                        ,to_float4(v3,0.0f,v3,sml3), to_float4(-v3,0.0f,v3,sml3), to_float4(0.0f,v3,v3,sml3), to_float4(0.0f,-v3,v3,sml3)
+                        ,to_float4(v3,0.0f,-v3,sml3), to_float4(-v3,0.0f,-v3,sml3), to_float4(0.0f,v3,-v3,sml3), to_float4(0.0f,-v3,-v3,sml3)
+                        ,to_float4(v3,v3,0.0f,sml3), to_float4(-v3,v3,0.0f,sml3), to_float4(v3,-v3,0.0f,sml3), to_float4(-v3,-v3,0.0f,sml3)
+                        ,to_float4(0.0f,0.0f,0.0f, 0.04f)
+                       };
+
+
+  const float4 obj4[] = {
+                            to_float4(v4*3.0f,0.0f,-v4*1.5f,big4),to_float4(v4*3.0f,0.0f,0.0f,big4), to_float4(v4*3.0f,0.0f,v4*1.5f,big4)
+                           ,to_float4(-v4*3.0f,0.0f,-v4*1.5f,big4),to_float4(-v4*3.0f,0.0f,0.0f,big4), to_float4(-v4*3.0f,0.0f,v4*1.5f,big4)
+                           ,to_float4(v4*1.5f,0.0f,-v4*3.0f,big4),to_float4(0.0f,0.0f,-v4*3.0f,big4), to_float4(-v4*1.5f,0.0f,-v4*3.0f,big4)
+                           ,to_float4(v4*1.5f,0.0f,v4*3.0f,big4),to_float4(0.0f,0.0f,v4*3.0f,big4), to_float4(-v4*1.5f,0.0f,v4*3.0f,big4)
+
+                            ,to_float4(v4*1.5f,v4*0.75f,-v4*0.75f,sml4),to_float4(v4*1.5f,v4*0.75f,v4*0.75f,sml4)
+                            ,to_float4(-v4*1.5f,v4*0.75f,-v4*0.75f,sml4),to_float4(-v4*1.5f,v4*0.75f,v4*0.75f,sml4)
+                            ,to_float4(-v4*0.75f,v4*0.75f,v4*1.5f,sml4),to_float4(v4*0.75f,v4*0.75f,v4*1.5f,sml4)
+                            ,to_float4(-v4*0.75f,v4*0.75f,-v4*1.5f,sml4),to_float4(v4*0.75f,v4*0.75f,-v4*1.5f,sml4)
+
+                            ,to_float4(v4*1.5f,-v4*0.75f,-v4*0.75f,sml4),to_float4(v4*1.5f,-v4*0.75f,v4*0.75f,sml4)
+                            ,to_float4(-v4*1.5f,-v4*0.75f,-v4*0.75f,sml4),to_float4(-v4*1.5f,-v4*0.75f,v4*0.75f,sml4)
+                            ,to_float4(-v4*0.75f,-v4*0.75f,v4*1.5f,sml4),to_float4(v4*0.75f,-v4*0.75f,v4*1.5f,sml4)
+                            ,to_float4(-v4*0.75f,-v4*0.75f,-v4*1.5f,sml4),to_float4(v4*0.75f,-v4*0.75f,-v4*1.5f,sml4) };
+
+  const float4 obj5[] = {
+                            to_float4(xp5+0.0f,0.0f,0.0f,big5),to_float4(xp5+0.0f,v5,0.0f,big5*1.25f), to_float4(xp5+0.0f,v5*2.0f,0.0f,big5)
+
+                            ,to_float4(xp5+-0.07f,v5*2.3f,0.15f,sml5*0.55f)
+                            ,to_float4(xp5+0.07f,v5*2.3f,0.15f,sml5*0.55f)
+                            ,to_float4(xp5+0.0f,v5*2.0f,0.2f,sml5*0.66f)
+
+                            ,to_float4(xp5-0.3f,v5*1.25f,0.0f,sml5), to_float4(xp5-0.3f,v5*0.8f,0.0f,sml5*0.95f), to_float4(xp5-0.3f,v5*0.35f,0.0f,sml5*0.85f), to_float4(xp5-0.3f,v5*0.3f,0.15f,sml5*0.85f), to_float4(xp5-0.3f,v5*0.25f,0.3f,sml5*0.85f), to_float4(xp5-0.3f,v5*0.25f,0.45f,sml5*1.1f)
+                            ,to_float4(xp5+0.3f,v5*1.25f,0.0f,sml5), to_float4(xp5+0.3f,v5*0.8f,0.0f,sml5*0.95f), to_float4(xp5+0.3f,v5*0.35f,0.0f,sml5*0.85f), to_float4(xp5+0.3f,v5*0.3f,0.15f,sml5*0.85f), to_float4(xp5+0.3f,v5*0.25f,0.3f,sml5*0.85f), to_float4(xp5+0.3f,v5*0.25f,0.45f,sml5*1.1f)
+
+                            ,to_float4(xp5-0.15f,-v5*0.75f,0.0f,sml5) ,to_float4(xp5-0.15f,-v5*1.25f,0.02f,sml5) ,to_float4(xp5-0.15f,-v5*1.75f,0.03f,sml5*0.99f)
+                            ,to_float4(xp5+0.15f,-v5*0.75f,0.0f,sml5) ,to_float4(xp5+0.15f,-v5*1.25f,0.02f,sml5) ,to_float4(xp5+0.15f,-v5*1.75f,0.03f,sml5*0.99f)
+
+                            ,to_float4(xp5-0.15f,-v5*2.25f,0.01f,sml5*0.9f), to_float4(xp5-0.15f,-v5*2.3f,0.14f,sml5*0.7f), to_float4(xp5-0.15f,-v5*2.35f,0.24f,sml5*0.55f)
+                            ,to_float4(xp5+0.15f,-v5*2.25f,0.01f,sml5*0.9f), to_float4(xp5+0.15f,-v5*2.3f,0.14f,sml5*0.7f), to_float4(xp5+0.15f,-v5*2.35f,0.24f,sml5*0.55f)
+
+                            ,to_float4(xp5+0.0f,v5*0.2f,0.45f,sml5*0.6f)
+                            ,to_float4(xp5+0.0f,v5*0.2f,0.45f,sml5*0.6f)
+                            ,to_float4(xp5+0.0f,v5*0.2f,0.45f,sml5*0.6f)
+                        };
+
+
+  // Based on rasterizer (https://www.shadertoy.com/view/MdS3Rz) by HLorenzi
+  const  mat4 transform1 =
+         to_mat4(1, 0, 0, 0,
+                 0, 1, 0, 0,
+                 0, 0, 1, 0,
+                 0, 0, -2.5f, 1);
+
+
+  float dist = 2.0f;
+  float4 xyg = to_float4_f2f2(to_float2(0.0f,0.0f), to_float2_s(0.0f));
+
+  float2 fcP = p * iResolution;
+
+  float cx = _cosf(rx); float sx = _sinf(rx);
+  float cy = _cosf(ry); float sy = _sinf(ry);
+  float cz = _cosf(rz); float sz = _sinf(rz);
+
+  mat4 transform2 = to_mat4(cz*cy, -sz*cy, sy, 0,
+                            sz*cx + cz*sy*sx, cz*cx - sz*sy*sx, -cy*sx, 0,
+                            sz*sx - cz*sy*cx,cz*sx + sz*sy*cx, cy*cx, 0,
+                            0, 0, 0, 1);
+
+  float n = dist, f = 300.0f, t = 1.0f;
+  float r = 1.0f * iResolution.x / iResolution.y;
+  mat4 projection = to_mat4(n/r, 0, 0, 0,
+                            0, n/t, 0, 0,
+                            0, 0, -(f+n)/(f-n), -1,
+                            0, 0, -(2.0f*f*n)/(f-n), 0);
+
+    mat4 finalTransform = mul_mat4_mat4(mul_mat4_mat4(projection , transform1) , transform2);
+    float zV = 1e5;
+
+    for (int i = 0; i < nofBalls; i++) {
+        float4 ball;
+        switch(ix) {
+          case 0: ball=juggle(i, obj5[i], iTime); break;
+          case 1: ball=obj4[i]; break;
+          case 2: ball=obj1[i]; break;
+          case 3: ball=obj3[i]; break;
+          case 4: ball=obj2[i]; break;
+        }
+        float4 pt = mul_mat4_f4(finalTransform, to_float4_aw(swi3(ball,x,y,z), 1.0f)) + xyg;
+
+        float ballSize = ball.w * iResolution.x;
+        int st = scaleType;
+        if (iMouse.z > 0.0f) st = 1 - st;
+        if (st == 1)
+           ballSize *= _fabs(pt.z) * _fabs(pt.z) * scaleMul;
+        if (st == 2)
+           ballSize *= _fabs(pt.z) * scaleMul;
+
+        if (pt.z < zV) {
+            if (distance_f2(fcP, swi2(pt,x,y) / pt.w * iResolution) < ballSize) {
+                *c = drawBall(p*iResolution, swi2(pt,x,y) / pt.w * iResolution, *c, ballSize, colType<2 ? i : (int)(length(ball)*4.0f), 1.0f, iResolution);
+                zV = pt.z;
+            }
+        }
+    }
+}
+
+__KERNEL__ void JugglerRetroBallObjectsFuse__Buffer_A(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  int    NOF_OBJS = params->NOF_OBJS;
+  float  TIME_PER_OBJ = params->TIME_PER_OBJ;
+  float  FADE_TIME = params->FADE_TIME;
+
+  // --------
+
+    fragCoord += 0.5f;
+
+    const float HALF_FADE = FADE_TIME * 0.5f;
+
+    float2 uv = fragCoord / iResolution;
+    uv = uv * 2.0f - to_float2_s(1.0f);
+    float4 c = to_float4_s(0);
+
+    struct ObjData oData = getObjData(iTime, TIME_PER_OBJ, NOF_OBJS);
+    float rx = iTime * 1.3f;
+    float ry = (iTime * 2.0f);
+    float rz;
+    switch(oData.rotType) {
+        case 0: default: rz = iTime*oData.rotSpeed; break;
+        case 1: rz=_sinf(iTime)*oData.rotSpeed; break;
+        case 2: rz=iTime*oData.rotSpeed - _sinf(iTime*oData.rotSpeed); break;
+        case 3: rz=0.0f; rx=0.0f; ry=ry*0.5f-3.3f; break;
+    }
+
+//    int ix = oData.objIndex; // crazy slow
+    int ix = ((int)(mod_f(iTime, TIME_PER_OBJ * (float)(NOF_OBJS)) / (float)(TIME_PER_OBJ)) % 5);
+
+    ballObject(&c, uv, rx,ry,rz, ix, nofB[ix], oData.scaleType, oData.scaleMul, oData.colType, iResolution, iMouse, iTime);
+    fragColor = c;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer B                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer B 'Previsualization: Buffer A' to iChannel1
+// Connect Buffer B 'Previsualization: Buffer B' to iChannel0
+
+union A2F
+ {
+   float4  F;    //32bit float
+   float  A[4];  //32bit Array
+ };
+
+__KERNEL__ void JugglerRetroBallObjectsFuse__Buffer_B(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  int    iFrame      = params->iFrame;
+  float4 O   = to_float4_s(0.0f);
+  float2 F   = to_float2(fusion_x,fusion_y);
+
+
+  int    NOF_OBJS = params->NOF_OBJS;
+  float  TIME_PER_OBJ = params->TIME_PER_OBJ;
+  float  FADE_TIME = params->FADE_TIME;
+
+  // --------
+
+    int RowSampler = 15; // Total irre !!! Tausend Shader, die liefen ohne diese Zeile mit OpenCL. Dieser Shader braucht aber genau dies nur für OpenCL -> Total irre !!!
+
+    F+=0.5f;
+
+    union A2F _O;
+
+    _O.F = texelFetch(iChannel0, to_int2_cfloat(F), 0);
+    _O.A[iFrame % 4] = texelFetch(iChannel1, to_int2_cfloat(F) ,0).x;
+
+    O = _O.F;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, O);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+// Connect Image 'Previsualization: Buffer B' to iChannel1
+
+
+/* Ball / BOB Objects by misol101 */
+
+__KERNEL__ void JugglerRetroBallObjectsFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  int    NOF_OBJS = params->NOF_OBJS;
+  float  TIME_PER_OBJ = params->TIME_PER_OBJ;
+  float  FADE_TIME = params->FADE_TIME;
+
+  // --------
+    int RowSampler = 15; // Total irre !!! Tausend Shader, die liefen ohne diese Zeile mit OpenCL. Dieser Shader braucht aber genau dies nur für OpenCL -> Total irre !!!
+
+    mat4 dummy;
+
+    const float HALF_FADE = FADE_TIME * 0.5f;
+
+    struct ObjData oData = getObjData(iTime, TIME_PER_OBJ, NOF_OBJS);
+    float blue = 1.0f;
+
+    float4 fullCol = texelFetch( iChannel0, to_int2_cfloat(fragCoord), 0 ) * to_float4_aw(oData.colMul, 1.0f);
+
+    if (oData.colType == 0) {
+        float4 hist = texelFetch( iChannel1, to_int2_cfloat(fragCoord), 0 );
+        float val = (hist.x + hist.y + hist.z + hist.w) * (0.64f/3.0f);
+
+        float2 center = 0.5f * iResolution;
+        float2 uv = (fragCoord - center) / iResolution.y;
+        blue = _fabs(uv.y) < 0.43f ? 0.133f : 0.0f;
+
+        float white = blue>0.0f && _fabs(uv.y) > 0.427f && fragCoord.x > 15.0f && fragCoord.x < iResolution.x - 15.0f ? 1.0f : 0.0f;
+
+        fragColor = to_float4_s(white);
+        float3 bc = step(to_float3_s(1.0f), oData.colMul) * blue;
+        fragColor += to_float4_aw(bc, 0.0f);
+        fragColor += val * to_float4_aw(oData.colMul, 1.0f);
+    } else {
+        fragColor = fullCol;
+    }
+
+    float h = fract(_sinf(fragCoord.y)*99.0f)+0.1f, x = mod_f((iTime+99.0f) * h * 0.3f, 1.0f);
+    float star = step(_fabs(x * iResolution.x - fragCoord.x), 1.0f) * h;
+    fragColor += star * 0.9f * step(0.1f, blue) * step(fullCol.w, 0.01f);
+
+    float time = mod_f(iTime, TIME_PER_OBJ), cAdd = 0.0f;
+    if (time < HALF_FADE) cAdd = 1.0f-(time/HALF_FADE);
+    else if (time > TIME_PER_OBJ - HALF_FADE) cAdd = 1.0f-(TIME_PER_OBJ - time) / HALF_FADE;
+    fragColor += cAdd * 1.1f;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InNOF_OBJSSlider = self:AddInput("NOF_OBJS", "NOF_OBJS", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 1,
+      INP_MaxScale       = 20,
+      INP_Default        = 10,
+      INP_Integer        = true,
+  })
+
+  InTIME_PER_OBJSlider = self:AddInput("TIME_PER_OBJ", "TIME_PER_OBJ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 11.0,
+      })
+
+  InFADE_TIMESlider = self:AddInput("FADE_TIME", "FADE_TIME", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 1.0,
+      })
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, LINK_Visible = false, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, LINK_Visible = false, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "JugglerRetroBallObjectsFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "JugglerRetroBallObjectsFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.NOF_OBJS = InNOF_OBJSSlider:GetValue(req).Value
+  params.TIME_PER_OBJ = InTIME_PER_OBJSlider:GetValue(req).Value
+  params.FADE_TIME = InFADE_TIMESlider:GetValue(req).Value
+  
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+    
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "JugglerRetroBallObjectsFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeB:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+ 
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "JugglerRetroBallObjectsFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    node:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+    
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
