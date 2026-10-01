@@ -5,7 +5,4 @@ And the console can be rotated and moved in all three axes.
 
 Have fun playing
 
-[![NintendoSwitch](https://user-images.githubusercontent.com/78935215/217755415-62e43bf7-801c-4811-9d9b-c307cee53820.gif)](NintendoSwitch.fuse)
-
-[![Screenshot](NintendoSwitch_screenshot.png)](https://www.shadertoy.com/view/wtlXRH "View on Shadertoy.com")
-
+![Screenshot](NintendoSwitch_screenshot.png)

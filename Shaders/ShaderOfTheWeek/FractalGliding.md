@@ -3,7 +3,4 @@ There are 9 float, 6 double float, 4 tripple float, one boolean and one integer,
 
 Have fun playing
 
-![FractalGliding](https://user-images.githubusercontent.com/78935215/144676583-8f728705-53d6-4c52-8302-a9e9a88c780b.gif)
-
-
-[![FractalGliding](FractalGliding_screenshot.png)](FractalGliding.fuse)
+![FractalGliding](FractalGliding_screenshot.png)

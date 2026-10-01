@@ -1,11 +1,8 @@
-![Extruded Fibonacci Zoom](ExtrudedFibonacciZoom.gif)
-
 A typical "Shane" shader
 
 Have fun playing
 
-
-[![Thumbnail](ExtrudedFibonacciZoom_screenshot.png)](ExtrudedFibonacciZoom.fuse)
+![Screenshot](ExtrudedFibonacciZoom_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 An extruded Fibonacci zoom.

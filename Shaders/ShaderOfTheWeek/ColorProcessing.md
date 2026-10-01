@@ -1,2 +1,2 @@
-[![ColorProcessing](https://user-images.githubusercontent.com/78935215/166887489-87295291-9e32-4db8-9c42-786b9cfc57b3.gif)](https://www.shadertoy.com/view/7tfBzs "View on Shadertoy.com")
-[![Screenshot](ColorProcessing_screenshot.png)](ColorProcessing.fuse "View the Fuse")
+
+![Screenshot](ColorProcessing_screenshot.png)

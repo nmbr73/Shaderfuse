@@ -1,9 +1,5 @@
-![Saturday cubism experiment](SaturdayCubismExperiment.gif)
 
-
-
-
-[![Thumbnail](SaturdayCubismExperiment_screenshot.png)](SaturdayCubismExperiment.fuse)
+![Screenshot](SaturdayCubismExperiment_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 CC0: Saturday cubism experiment

@@ -2,6 +2,4 @@ Several intertwined bands of different colors meander through the image. There a
 
 Have fun playing
 
-[![WednesdayMessingAround](https://user-images.githubusercontent.com/78935215/199586416-e9cbca39-9d1c-41d2-be33-695a25e075f3.gif)](WednesdayMessingAround.fuse)
-
-[![Screenshot](WednesdayMessingAround_screenshot.png)](https://www.shadertoy.com/view/NtcyDn "View on Shadertoy.com")
+![Screenshot](WednesdayMessingAround_screenshot.png)

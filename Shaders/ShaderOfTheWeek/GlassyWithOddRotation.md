@@ -1,8 +1,5 @@
-![GlassyWithOddRotation](GlassyWithOddRotation.gif)
 
-
-
-[![Thumbnail](GlassyWithOddRotation_screenshot.png)](GlassyWithOddRotation.fuse)
+![Screenshot](GlassyWithOddRotation_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 Slight exploration of bugged.

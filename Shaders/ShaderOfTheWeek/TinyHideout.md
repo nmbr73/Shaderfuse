@@ -1,8 +1,5 @@
-![Tiny Hideout](TinyHideout.gif)
 
-
-
-[![Thumbnail](TinyHideout_screenshot.png)](TinyHideout.fuse)
+![Screenshot](TinyHideout_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 Stylized Diorama.

@@ -1,7 +1,5 @@
-![NeonwaveSunrise](NeonwaveSunrise.gif)
 
-[![Thumbnail](NeonwaveSunrise_screenshot.png)](NeonwaveSunrise.fuse)
-
+![Screenshot](NeonwaveSunrise_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 CC0 - Neonwave sunrise

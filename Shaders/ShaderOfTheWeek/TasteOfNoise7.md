@@ -2,7 +2,4 @@ A very nice abstract shader that gets by with only one buffer. I have also added
 
 Have fun playing
 
-![TasteOfNoise7](https://user-images.githubusercontent.com/78935215/138074392-90ea744c-82e5-4215-ae4c-f55c1a184a47.gif)
-
-
-[![TasteOfNoise7](TasteOfNoise7_screenshot.png)](TasteOfNoise7.fuse)
+![TasteOfNoise7](TasteOfNoise7_screenshot.png)

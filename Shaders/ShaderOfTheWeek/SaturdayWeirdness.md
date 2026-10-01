@@ -1,7 +1,5 @@
-![SaturdayWeirdness](https://github.com/nmbr73/Shaderfuse/assets/78935215/5d1db868-6552-4857-abd9-28fc224a763c)
 
-
-[![Thumbnail](SaturdayWeirdness_screenshot.png)](SaturdayWeirdness.fuse)
+![Screenshot](SaturdayWeirdness_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 CC0: Saturday weirdness

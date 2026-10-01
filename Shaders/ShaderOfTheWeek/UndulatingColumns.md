@@ -2,6 +2,4 @@ A simple but beautiful shader. A cubemap can be connected to Image1-Input and th
 
 Have fun playing
 
-![UndulatingColumns](https://user-images.githubusercontent.com/78935215/152228434-9bd5366d-51e9-4302-a493-c8d4c84a31a0.gif)
-
-[![Screenshot](UndulatingColumns_screenshot.png)](https://www.shadertoy.com/view/WlXXDH "View on Shadertoy.com")
+![Screenshot](UndulatingColumns_screenshot.png)

@@ -3,6 +3,4 @@ In the implementation, both mat3 and mat4 matrices are used extensively.
 
 Have fun playing
 
-![Alexander](https://user-images.githubusercontent.com/78935215/140505472-a94508a6-5299-4090-98d0-d28151fcde3b.gif)
-
-[![SpiraledLayers](AlexanderHornedSphereZoom_screenshot.png)](AlexanderHornedSphereZoom.fuse)
+![Screenshot](AlexanderHornedSphereZoom_screenshot.png)

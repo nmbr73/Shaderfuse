@@ -1,11 +1,7 @@
-![The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.gif)
 
-
-
-[![Thumbnail](TheTetrisDimension_screenshot.png)](TheTetrisDimension.fuse)
+![Screenshot](TheTetrisDimension_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 this is a mess
-
 
 but it looks cool :>

@@ -1,7 +1,5 @@
-![4D Beats](D4DBeats.gif)
 
-
-[![Thumbnail](D4DBeats_screenshot.png)](D4DBeats.fuse)
+![Screenshot](D4DBeats_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 CC0: 4D Beats

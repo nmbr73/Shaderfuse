@@ -1,8 +1,5 @@
-![Dark Transit](DarkTransit.gif)
 
-
-
-[![Thumbnail](DarkTransit_screenshot.png)](DarkTransit.fuse)
+![Screenshot](DarkTransit_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 Forked from Gibson Tunnel

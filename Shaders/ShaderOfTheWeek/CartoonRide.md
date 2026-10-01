@@ -1,5 +1,3 @@
-![CartoonRide](CartoonRide.gif)
-
 Converting this was a lot of fun again.
 
 I've added many parameters. The colors of the UFO, the path, and the surroundings can be customized.
@@ -12,7 +10,7 @@ Have fun playing!
 
 
 
-[![Thumbnail](CartoonRide_Screenshot.png)](CartoonRide.fuse)
+![Screenshot](CartoonRide_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 try a cartoon style with a kind of adaptative anti-aliasing.

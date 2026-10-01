@@ -1,7 +1,5 @@
-[![DullSkull](DullSkull.gif)](ShaderOfTheWeek/DullSkull.md)
 
-
-[![Thumbnail](DullSkull_screenshot.png)](DullSkull.fuse)
+![Screenshot](DullSkull_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 // All work and no play makes Jack a Dull Skull //

@@ -1,8 +1,5 @@
-![HexaGold2](Hexagold2.gif)]
 
-
-
-[![Thumbnail](Hexagold2_screenshot.png)](Hexagold2.fuse)
+![Screenshot](Hexagold2_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 An HexaGold :-,)

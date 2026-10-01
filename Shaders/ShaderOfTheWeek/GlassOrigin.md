@@ -1,10 +1,8 @@
-![Glass Origin](GlassOrigin.gif)
-
 A very nice tunnel shader variant
 
 Have fun playing
 
-[![Thumbnail](GlassOrigin_screenshot.png)](GlassOrigin.fuse)
+![Screenshot](GlassOrigin_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 Using volumetric translucency and oscillating color i to imitate glass.

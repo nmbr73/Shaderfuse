@@ -1,1 +1,2 @@
-[![Screenshot](StarsAndGalaxy_screenshot.png)](https://www.shadertoy.com/view/stBcW1 "View on Shadertoy.com")
+
+![Screenshot](StarsAndGalaxy_screenshot.png)

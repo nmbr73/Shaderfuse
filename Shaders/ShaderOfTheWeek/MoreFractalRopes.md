@@ -1,8 +1,5 @@
-![More Fractal Ropes](MoreFractalRopes.gif)
 
-
-
-[![Thumbnail](MoreFractalRopes_screenshot.png)](MoreFractalRopes.fuse)
+![Screenshot](MoreFractalRopes_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 still not too good at colors etc,

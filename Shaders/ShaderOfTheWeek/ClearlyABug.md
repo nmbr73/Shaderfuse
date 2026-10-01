@@ -1,8 +1,5 @@
-![Clearly a bug](ClearlyABug.gif)
 
-
-
-[![Thumbnail](ClearlyABug_screenshot.png)](ClearlyABug.fuse)
+![Screenshot](ClearlyABug_screenshot.png)
 
 
 ### Description of the Shader in Shadertoy:

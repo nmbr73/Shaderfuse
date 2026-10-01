@@ -1,11 +1,8 @@
-![Just Another Cube](JustAnotherCube.gif)
-
 A nice, compact shader. The cube can be rotated using the mouse parameter. The background color and reflection color are adjustable. The cube's alpha is set using ColorOut, and the background's alpha is set using BKGColor.
 
 Enjoy playing!
 
-
-[![Thumbnail](JustAnotherCube_screenshot.png)](JustAnotherCube.fuse)
+![Screenshot](JustAnotherCube_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 CC0: Just another cube
