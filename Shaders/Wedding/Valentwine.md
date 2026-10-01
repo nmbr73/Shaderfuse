@@ -3,6 +3,4 @@ Here it is important (as with all recursive shaders) that the shader is started 
 
 Have fun playing
 
-
-[![Valentwine](https://user-images.githubusercontent.com/78935215/198817168-863e9681-f4b7-490a-b08f-76890d5ffb5d.gif)](Valentwine.fuse)
-[![Screenshot](Valentwine_screenshot.png)](https://www.shadertoy.com/view/fsffW4 "View on Shadertoy.com")
+![Screenshot](Valentwine_screenshot.png)

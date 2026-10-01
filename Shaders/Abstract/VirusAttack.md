@@ -10,7 +10,7 @@ All shaders have the same basic structure.
 Enjoy playing
 
 
-[![Thumbnail](VirusAttack_screenshot.png)](VirusAttack.fuse)
+![Screenshot](VirusAttack_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
  spike proteins - good target for vaccine - haha

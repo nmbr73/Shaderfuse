@@ -1,1 +1,0 @@
-[![ApollianWithATwist](ApollianWithATwist.png)](ApollianWithATwist.fuse)

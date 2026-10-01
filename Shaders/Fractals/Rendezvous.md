@@ -1,6 +1,5 @@
 A flight through a colorful fractal landscape that breathes and seems to be alive. An impressively compact code for the definition of the landscape and you don't necessarily need matrices to program a great camera flight, as you can see.
 
-![Rendezvous](https://user-images.githubusercontent.com/78935215/119050128-b74c7500-b9c1-11eb-84cc-9fe267e2432a.gif)
 
 Have fun
 
@@ -28,4 +27,5 @@ float Map( vec3 p )
 
 }
 ```
-[![Rendezvous](Rendezvous_screenshot.png)](Rendezvous.fuse)
+
+![Screenshot](Rendezvous_screenshot.png)

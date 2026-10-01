@@ -6,6 +6,5 @@ The standard settings for image size and depth have been replaced with this fuse
 
 Have fun playing
 
-![GrowingWeatheringRocks](https://user-images.githubusercontent.com/78935215/128998614-85759f48-e57a-4021-aebd-10a3bf5c138c.gif)
 
-[![GrowingWeatheringRocks](GrowingWeatheringRocks_screenshot.png)](GrowingWeatheringRocks.fuse)
+![Screenshot](GrowingWeatheringRocks_screenshot.png)

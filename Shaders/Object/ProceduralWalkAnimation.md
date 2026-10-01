@@ -21,8 +21,4 @@ In the original, the texture is fixed. In the fuse you can choose between a chan
 
 Have fun playing
 
-![ProceduralWalkAnimation](https://user-images.githubusercontent.com/78935215/121263523-05181700-c8b6-11eb-98f5-aa44d178ce23.gif)
-
-
-
-[![ProceduralWalkAnimation](ProceduralWalkAnimation_screenshot.png)](ProceduralWalkAnimation.fuse)
+![Screenshot](ProceduralWalkAnimation_screenshot.png)

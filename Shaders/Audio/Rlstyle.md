@@ -1,1 +1,2 @@
-[![Screenshot](Rlstyle_screenshot.png)](https://www.shadertoy.com/view/llXyzN "View on Shadertoy.com")
+
+![Screenshot](Rlstyle_screenshot.png)

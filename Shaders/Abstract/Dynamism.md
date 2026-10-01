@@ -4,4 +4,4 @@ Accidentally came across this beautiful shader while browsing older WSL posts. A
 Have fun playing
 
 
-[![Dynamism](Dynamism_screenshot.png)](Dynamism.fuse)
+![Screenshot](Dynamism_screenshot.png)

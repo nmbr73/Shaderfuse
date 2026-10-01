@@ -1,1 +1,0 @@
-[![Thumbnail](Rosace3C.png)](https://www.shadertoy.com/view/Ms3SzB "View on Shadertoy.com")

@@ -7,7 +7,4 @@ A total of 3 shader toys are combined in this shader fuse:
 
 Have fun playing
 
-![HappyBouncing](https://user-images.githubusercontent.com/78935215/147247710-5e0126ac-7252-4d47-8b03-96c461cf4564.gif)
-
-
-[![HappyBouncing](HappyBouncing_screenshot.png)](HappyBouncing.fuse)
+![Screenshot](HappyBouncing_screenshot.png)

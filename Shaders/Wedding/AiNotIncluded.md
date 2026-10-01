@@ -3,9 +3,7 @@ A texture can be loaded into the heart, either in the "original color" (check Te
 
 Have fun
 
-[![AiNotIncluded](https://github.com/nmbr73/Shaderfuse/assets/78935215/199aa93d-eed7-4a8a-88db-a108a5701b0a)](AiNotIncluded.md)
-
-[![Thumbnail](AiNotIncluded_screenshot.png)](AiNotIncluded.fuse)
+![Screenshot](AiNotIncluded_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 CC0: AI not included

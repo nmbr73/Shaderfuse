@@ -1,1 +1,0 @@
-[![Thumbnail](VideoFilters.png)](https://www.shadertoy.com/view/XsX3z8 "View on Shadertoy.com")

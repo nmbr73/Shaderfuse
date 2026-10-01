@@ -1,1 +1,2 @@
-[![Screenshot](ReactiveVoronoi_screenshot.png)](https://www.shadertoy.com/view/Ml3GDX "View on Shadertoy.com")
+
+![Screenshot](ReactiveVoronoi_screenshot.png)

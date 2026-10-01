@@ -1,8 +1,5 @@
-[![DullSkullPrologue](DullSkullPrologue.gif)](DullSkullPrologue.md) <br>
 
-
-
-[![Thumbnail](DullSkullPrologue_screenshot.png)](DullSkullPrologue.fuse)
+![Screenshot](DullSkullPrologue_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 ///// Studies of human anatomy /////

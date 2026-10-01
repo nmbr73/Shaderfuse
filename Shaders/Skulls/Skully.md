@@ -1,4 +1,3 @@
-[![Skully](Skully.gif)](Skully.md) <br>
 
 As you'd expect from monsterkodi, a really well-made shader. A somewhat unique programming style. The conversion was very time-consuming, but it was worth it.
 
@@ -20,7 +19,7 @@ The color parameters for the teeth and bones are set accordingly.
 Have fun playing
 
 
-[![Thumbnail](Skully_screenshot.png)](Skully.fuse)
+![Screenshot](Skully_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 I couldn't find neither teapot nor bunny :-)

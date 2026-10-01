@@ -7,6 +7,5 @@ https://www.youtube.com/watch?v=wKhv1nPb2lk
 
 Have fun playing
 
-![LearningReactionDiffusion](https://user-images.githubusercontent.com/78935215/126063449-f4ef9253-d228-4448-99cf-2c89cc3d6c87.gif)
 
-[![LearningReactionDiffusion](LearningReactionDiffusion_screenshot.png)](LearningReactionDiffusion.fuse)
+![Screenshot](LearningReactionDiffusion_screenshot.png)

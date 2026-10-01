@@ -15,7 +15,7 @@ __DEVICE__ inline mat3 mat3_add_mat3 (mat3 A, mat3 B) {
    return C;
    }
 ```
-![WindingMengerTunnel](https://user-images.githubusercontent.com/78935215/113430326-44b81380-93da-11eb-9581-0569c1567694.gif)
-[![WindingMengerTunnel](WindingMengerTunnel_screenshot.png)](WindingMengerTunnel.fuse)
+
+![Screenshot](WindingMengerTunnel_screenshot.png)
 
 Have fun playing

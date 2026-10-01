@@ -51,5 +51,4 @@ Please note that the limits have not yet been adjusted, i.e. the slider does not
 
 I hope you enjoy playing with this shader as much as I do.
 
-[![OtherWorlds](OtherWorlds_screenshot.png)](OtherWorlds.fuse)
-
+![Screenshot](OtherWorlds_screenshot.png)

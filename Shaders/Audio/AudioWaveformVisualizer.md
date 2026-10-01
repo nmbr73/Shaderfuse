@@ -1,1 +1,2 @@
-[![Screenshot](AudioWaveformVisualizer_screenshot.png)](https://www.shadertoy.com/view/wd3Bzl "View on Shadertoy.com")
+
+![Screenshot](AudioWaveformVisualizer_screenshot.png)

@@ -20,4 +20,4 @@ So much shader in so little code - really amazing.
 
 Have fun
 
-[![screenshot](ShareX_screenshot.png "ShareX.fuse in DaVinci Resolve")](ShareX.fuse)
+![Screenshot](ShareX_screenshot.png "ShareX.fuse in DaVinci Resolve")

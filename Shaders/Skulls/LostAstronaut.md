@@ -1,8 +1,5 @@
-[![LostAstronaut](LostAstronaut.gif)](LostAstronaut.md) <br>
 
-
-
-[![Thumbnail](LostAstronaut_screenshot.png)](LostAstronaut.fuse)
+![Screenshot](LostAstronaut_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 Derived and inspired by iq's modelling techniques and Shane's transparency works.

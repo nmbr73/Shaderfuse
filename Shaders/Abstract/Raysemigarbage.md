@@ -3,6 +3,6 @@ We have a raymarching function that can be set with the two parameters SampleCou
 The shader shows a texture (Image1) on a surface that can be distorted in the X and Y directions (sinus/cosinus). A second texture can be loaded for the horizon (sky) (Image2).
 Due to the many parameters, you can now understand the mode of action very well. No garbage, just a cute little shader :-)
 
-[![Raysemigarbage](Raysemigarbage_screenshot.png)](Raysemigarbage.fuse)
+![Screenshot](Raysemigarbage_screenshot.png)
 
 Have fun playing

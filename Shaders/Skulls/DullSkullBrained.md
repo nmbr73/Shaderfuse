@@ -1,11 +1,8 @@
-[![DullSkullBrained](DullSkullBrained.gif)](DullSkullBrained.md) <br>
-
 Another great skull shader by Kris Katur. To visualize the brain, a cube map is required, which is connected to the input of the fuse.
 
 Have fun playing!
 
-
-[![Thumbnail](DullSkullBrained_screenshot.png)](DullSkullBrained.fuse)
+![Screenshot](DullSkullBrained_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 In this shader, I revisit previous releases and added a brain to my skull.

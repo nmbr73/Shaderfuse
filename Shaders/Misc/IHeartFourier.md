@@ -12,15 +12,14 @@ An interesting Fourier series of 18 points results in a curved line. Here a hurd
   init(a,b,params);
 ```
 
-[![IHeartFourier](IHeartFourier_screenshot.png)](IHeartFourier.fuse)
+![Screenshot](IHeartFourier_screenshot.png)
 
 Original:
 
-![IHEartFourier](https://user-images.githubusercontent.com/78935215/112179345-e67d7a80-8bfa-11eb-9670-d338dfe01382.gif)
+![IHEartFourier](IHeartFourier_original.gif "Original")
 
 Counterfeit:
 
-![IHEartFourierJiPi](https://user-images.githubusercontent.com/78935215/112179449-feed9500-8bfa-11eb-923c-96984f7a8087.gif)
-
+![IHEartFourierJiPi](IHeartFourier.gif "JiPi Special")
 
 Have fun playing

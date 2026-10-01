@@ -1,1 +1,0 @@
-[![Thumbnail](StainedLights.png)](https://www.shadertoy.com/view/WlsSzM "View on Shadertoy.com")

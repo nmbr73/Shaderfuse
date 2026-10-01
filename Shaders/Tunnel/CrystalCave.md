@@ -1,9 +1,5 @@
-[![CrystalCave](CrystalCave.gif)
-](Tunnel/CrystalCave.md)
 
-
-
-[![Thumbnail](CrystalCave_screenshot.png)](CrystalCave.fuse)
+![Screenshot](CrystalCave_screenshot.png)
 
 ### Description of the Shader in Shadertoy:
 In Crystal Mountain

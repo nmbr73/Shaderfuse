@@ -9,6 +9,4 @@ With this fuse it is possible to try both variants. These can be adjusted by par
 
 Have fun playing
 
-![MightyMorphingPowerSphere2](https://user-images.githubusercontent.com/78935215/120659993-2e384200-c487-11eb-8918-f0f8957dc9d6.gif)
-
-[![MightyMorphingPowerSphere](MightyMorphingPowerSphere_screenshot.png)](MightyMorphingPowerSphere.fuse)
+![Screenshot](MightyMorphingPowerSphere_screenshot.png)

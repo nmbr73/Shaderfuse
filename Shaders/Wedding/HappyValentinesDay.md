@@ -3,6 +3,4 @@ The position of the moon can only be changed to a limited extent, constructing t
 
 Have fun playing
 
-[![HappyValentinesDay](https://user-images.githubusercontent.com/78935215/200161050-6006d9df-7a57-44bf-ae44-4d5b871c307c.gif)](HappyValentinesDay.fuse)
-
-[![Screenshot](HappyValentinesDay_screenshot.png)](https://www.shadertoy.com/view/XsVGzK "View on Shadertoy.com")
+![Screenshot](HappyValentinesDay_screenshot.png)

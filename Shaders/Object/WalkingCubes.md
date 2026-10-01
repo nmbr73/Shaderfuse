@@ -41,8 +41,6 @@ inline __host__ __device__ mat3 make_mat3( float A1, float B1, float C1, float A
 #endif
 ```
 
-![WalkingCubes](https://user-images.githubusercontent.com/78935215/114034649-a961eb00-987e-11eb-8be4-de55b8dd1e6c.gif)
-[![WalkingCubes](WalkingCubes_screenshot.png)](WalkingCubes.fuse)
-
+![Screenshot](WalkingCubes_screenshot.png)
 
 Have fun playing

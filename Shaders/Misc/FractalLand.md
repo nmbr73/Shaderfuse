@@ -1,6 +1,6 @@
 In the meantime this Fuse's output is pretty close to the original Shader and it also runs on Win/Mac, Metal/OpenCL/Cuda now.
 
-![screenshot](FractalLand_screenshot.png "FractalLand.fuse in DaVinci Resolve")
+![Screenshot](FractalLand_screenshot.png "FractalLand.fuse in DaVinci Resolve")
 
 Still some work left to be done:
 - investigate if and how to really substitute `texture` and `textureLod` function calls

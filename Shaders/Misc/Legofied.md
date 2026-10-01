@@ -1,6 +1,5 @@
 Here is a very simple and still very nice shader.
 
-[![Legofied](Legofied_screenshot.png)](Legofied.fuse)
-
+![Screenshot](Legofied_screenshot.png)
 
 Have fun playing

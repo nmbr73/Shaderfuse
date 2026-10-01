@@ -1,1 +1,2 @@
-[![Screenshot](ShadertoyAudioDisplay_screenshot.png)](https://www.shadertoy.com/view/MtVfWh "View on Shadertoy.com")
+
+![Screenshot](ShadertoyAudioDisplay_screenshot.png)

@@ -1,6 +1,6 @@
 A classic blob with a lot of deformations.
 
-[![screenshot](TorturedBlob_screenshot.png)](TorturedBlob.fuse)
+![Screenshot](TorturedBlob_screenshot.png)
 
 
 A nice example of the use of the mat3

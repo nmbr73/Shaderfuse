@@ -2,6 +2,4 @@ The drone from the science fiction film Oblivion. There are 5 scenes available t
 
 Have fun playing
 
-![Oblivion](https://user-images.githubusercontent.com/78935215/123615732-e0082b80-d805-11eb-9511-eefaadecb8be.gif)
-
-[![Oblivion](Oblivion_screenshot.png)](Oblivion.fuse)
+![Screenshot](Oblivion_screenshot.png)

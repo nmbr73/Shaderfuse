@@ -1,1 +1,2 @@
-[![Screenshot](JamSession_screenshot.png)](https://www.shadertoy.com/view/XdsyW4 "View on Shadertoy.com")
+
+![Screenshot](JamSession_screenshot.png)

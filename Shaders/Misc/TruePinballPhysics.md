@@ -5,5 +5,4 @@ Have fun playing
 
 Oh, in addition to the adjustable repetition time, there is also the restriction to 50 bounces for the length of a run. But that could be changed quickly.
 
-![TruePinballPhysics2](https://user-images.githubusercontent.com/78935215/116098822-a7d05980-a6ab-11eb-9e85-4ebd128ba09a.gif)
-[![TruePinballPhysics](TruePinballPhysics_screenshot.png)](TruePinballPhysics.fuse)
+![Screenshot](TruePinballPhysics_screenshot.png)

@@ -6,7 +6,4 @@ With the help of the parameters tmy1, tmy2 and tmy3 the individual switches of t
 
 Have fun playing
 
-
-[![HeartU2015](https://user-images.githubusercontent.com/78935215/199003640-74bd4e63-31d1-47ce-91ae-b156845575c6.gif)](HeartU2015.fuse)
-
-[![Screenshot](HeartU2015_screenshot.png)](https://www.shadertoy.com/view/lts3RX "View on Shadertoy.com")
+![Screenshot](HeartU2015_screenshot.png)
