@@ -7,10 +7,10 @@
 [Cartoon: La Linea Episode 10
 ](Misc/CartoonLaLineaEpisode10.md) by [Espeset](https://www.shadertoy.com/user/Espeset)
 
-#### Current Shader of the Week (25th of September 2026):
+#### Current Shader of the Week (9th of October 2026):
 
-[![The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.gif)](ShaderOfTheWeek/TheTetrisDimension.md) <br>
-[The Tetris Dimension](ShaderOfTheWeek/TheTetrisDimension.md) by [Hyeve](https://www.shadertoy.com/user/Hyeve)
+[![lunchbreak](ShaderOfTheWeek/Lunchbreak.gif)](ShaderOfTheWeek/Lunchbreak.md) <br>
+[lunchbreak](ShaderOfTheWeek/Lunchbreak.md) by [nabr](https://www.shadertoy.com/user/nabr)
 
 
 
