@@ -1,0 +1,649 @@
+--[[--
+TNTHTW
+
+Based on https://www.shadertoy.com/view/XsKcDG Erstellt von hisojarvi am 2018-04-08
+
+
+--]] --
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  })
+
+-----------------------------------
+-- Description of kernel parameters
+----------------TNTHTW---------------
+TNTHTWParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  float tuberadius;
+  float maxdepth;
+  float brightness;
+  float texangle;
+  float texdepth;
+  float curves[2];
+  int light_on;
+  float color[3];
+  int width;
+  int height;
+  float itime;
+  int compOrder;
+]]
+
+
+-- source of kernel
+TNTHTWKernel =
+    [[
+#define PI  3.14159f
+
+__DEVICE__ float distance2f(float2 pt1, float2 pt2)
+{
+  float2 v = pt2 - pt1;
+  return sqrt(dot(v,v));
+}
+
+
+// Defines how the tunnel curves
+__DEVICE__ float2 tubeCenterOffset(float t)
+{
+    float offx = 1.0f*_sinf(t/3.0f) + 2.0f*_cosf(3.0f/3.0f*t) + 2.0f*_cosf(t/17.0f);
+    float offy = 2.0f*_sinf(7.0f/27.0f*t)*_sinf(7.0f/27.0f*t) + 1.6f * _cosf(3.0f/17.0f*t) + 1.0f*_sinf(t/1.07f);
+    return 0.1f * to_float2(offx*1.0, offy*1.0);
+}
+
+__DEVICE__ float4 texMap(float angle, float depth, __TEXTURE2D__ iChannel0)
+{
+	return _tex2DVecN(iChannel0, angle/(2.50f*3.14159f), depth, 15);
+}
+
+__DEVICE__ float4 getTexture(float angle, float depth, __TEXTURE2D__ iChannel0)
+{
+    return texMap(angle*2.50f, depth, iChannel0);
+}
+
+__DEVICE__ float4 raymarch( float2 uv, float2 uvMax, __TEXTURE2D__ iChannel0, float itime, __CONSTANTREF__ TNTHTWParams *params)
+{
+    float speed = 2.0f;
+    float currentDepth = itime * speed;
+
+    float2 screenCenter = uvMax/2.0f;
+
+    float tubeRadius = params->tuberadius;
+    float2 cameraxy = tubeCenterOffset(currentDepth) * to_float2(params->curves[0],params->curves[1]);
+	float2 rayDirection = uv-screenCenter-cameraxy;
+
+    float fog = 0.0f;
+
+    float step = 0.001f;
+    float minDepth = 0.01f;
+    float maxDepth = params->maxdepth;
+    float depth = minDepth;
+    while(depth <= maxDepth)
+    {
+        float rayDepth = currentDepth + depth;
+        float2 tubeCenterInDepth = tubeCenterOffset(rayDepth);
+        float2 xy = cameraxy + rayDirection*depth;
+        if(distance2f(xy, tubeCenterInDepth) > tubeRadius)
+        {
+        	if(depth == minDepth)
+            {
+          		return to_float4(0.02f, 0.0f, 0.1f, 1.0f);
+            }
+            else {
+                float2 directionInDepth = xy-tubeCenterInDepth;
+                float angle = 2.0f*(PI/2.0f + _atan2f(directionInDepth.y, directionInDepth.x));
+                float relativeDepth = depth/maxDepth;
+                float brightness = 1.0f-relativeDepth;
+                brightness = _powf(brightness, params->brightness); // Make brightness decay faster
+
+			    if (params->light_on == 1)  fog = 1.0f/brightness * 0.5f;
+                else                        fog = brightness;
+
+                float4 tex = getTexture(angle*params->texangle, rayDepth*params->texdepth, iChannel0);
+                return tex*fog;
+            }
+        }
+        depth += step;
+    }
+
+    if (params->light_on == 1)return to_float4(01.0f, 01.0f, 01.0f, 1.0f);     //Hell
+	else                     return to_float4(0.0f, 0.0f, 0.0f, 1.0f);        //Dunkel
+}
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+    float C = _cosf(angle);
+  float S = _sinf(angle);
+
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+
+return uv;
+}
+
+//############################################################################################################################
+__KERNEL__ void TNTHTWKernel(__CONSTANTREF__ TNTHTWParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height)
+  {
+     //-----------------------
+     float2 fragCoord = to_float2(x, y);
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime*params->freq;
+     float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+    float scale = _fminf((float)iResolution.x,(float)iResolution.y);
+    float2 uv = fragCoord/scale;
+    float2 uvMax = iResolution/scale;
+
+	// Standardparameter
+    uv -=  to_float2( (params->center[0]-0.5f)*ratio, (params->center[1]-0.5f)); //*ratio*2.0f
+    uv *= params->scale;
+    float2 pivot = to_float2(((params->pivot[0]+0.0f)*ratio),(params->pivot[1]+0.0f)); //*ratio
+    uv = spin(uv, pivot, params->angle, 1.0f);
+
+    fragColor = raymarch(uv, uvMax, iChannel0, itime, params);
+    fragColor.w=1.0f;
+
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+function Create()
+--------------------------------------------
+ShaderFuse.begin_create()
+--------------------------------------------
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  --------------- TNTHTW ---------------
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "Center",
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+    })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",
+    IC_Visible          = false,
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	  INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+    })
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true,
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+  })
+
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+
+
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+
+
+self:BeginControlNest("Parameter", "_Parameter", true, {})
+  InLightOn = self:AddInput("Light On", "LightOn", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+
+  InTubeRadius = self:AddInput("TubeRadius", "TubeRadius", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.3,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InMaxDepth = self:AddInput("Max Depth", "MaxDepth", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 4.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InBrightness = self:AddInput("Brightness Fog", "Brightness", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.6,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InTexAngle = self:AddInput("Texture Angle", "TexAngle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InTexDepth = self:AddInput("Texture Depth", "TexDepth", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InCurves = self:AddInput("Curves","Curves", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 1.0,
+    INP_DefaultY = 1.0,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+
+ InRedCH = self:AddInput("Red", "RedCH", {
+    ICS_Name            = "Line Color",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.42,
+	IC_Visible          = false,
+    INP_MaxScale        = 0.5,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 0,
+  })
+  InGreenCH = self:AddInput("Green", "GreenCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.32,
+	IC_Visible          = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 1,
+  })
+  InBlueCH = self:AddInput("Blue", "BlueCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.12,
+	IC_Visible          = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 2,
+  })
+
+
+self:EndControlNest()
+
+--------------------------------------------
+
+  --   InLogoSw = self:AddInput("Logo", "LogoSw", {
+  --   LINKID_DataType = "Number",
+  --   INPID_InputControl = "CheckboxControl",
+	--   INP_Integer = true,
+  --   INP_DoNotifyChanged = true,
+  --   INP_Default         = 1,
+  --   IC_Visible          = true,
+  --   INP_External        = false,
+	--   INP_Passive         = true,
+  -- })
+
+
+--------------------------------------------
+ShaderFuse.end_create()
+--------------------------------------------
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Ground", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end
+
+
+-------------------------------------------------------------------
+--       NotifyChanged
+-------------------------------------------------------------------
+function NotifyChanged(inp, param, time)
+
+
+  if inp ~= nil and param ~= nil then
+
+    if inp == InCenter then
+        -- the center moved, reposition the axis according to the current offset
+        nCenterX = param.X
+        nCenterY = param.Y
+
+        InPivot:SetAttrs({
+            PCD_OffsetX = nCenterX - 0.5,
+            PCD_OffsetY = nCenterY - 0.5,
+            })
+
+        InAngle:SetAttrs({
+            PCD_OffsetX = (nCenterX - 0.5)/100,
+            PCD_OffsetY = (nCenterY - 0.5)/100,
+            })
+    end
+    if inp == InWidgets then
+      if param.Value == 1.0 then
+         InCenter:SetAttrs({ PC_Visible = false })
+         InAngle:SetAttrs({ PC_Visible = false })
+         InPivot:SetAttrs({ PC_Visible = false })
+         InScale:SetAttrs({ PC_Visible = false })
+      else
+         InCenter:SetAttrs({ PC_Visible = true })
+         InAngle:SetAttrs({ PC_Visible = true })
+         InPivot:SetAttrs({ PC_Visible = true })
+         InScale:SetAttrs({ PC_Visible = true })
+      end
+    end
+
+    if inp == InStop then
+      if param.Value == 1 then
+	     InActtime:SetAttrs({IC_Visible = true})
+	  else
+	     InActtime:SetAttrs({IC_Visible = false})
+	  end
+	end
+
+
+    -- if inp == InLogoSw then
+    --   if param.Value == 1 then
+    --     authorlogo:SetAttrs({IC_Visible = true})
+    --   else
+    --     authorlogo:SetAttrs({IC_Visible = false})
+	  --   end
+	  -- end
+  end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle = -InAngle:GetValue(req).Value/360*3.1415*2
+    local debug = InDebug:GetValue(req).Value
+    local scale = InScale:GetValue(req).Value
+    local freq = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+    local p = Pixel({R=0,G=0,B=0,A=0})
+
+      if (InImage1:GetValue(req) ~= nil) then
+         src1 = InImage1:GetValue(req)
+      else
+         src1 = Image(imgattrs)
+         src1:Fill(p)
+      end
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+    if req:IsPreCalc() then
+	   --print("\n######################### Precalc ##############################\n")
+	   local out = Image({IMG_Like = dst, IMG_NoData = true})
+       OutImage:Set(req, out)
+	   return
+	end
+
+    --StartStop
+    if InStop:GetValue(req).Value == 0 then
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   else
+	      _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	   end
+	end
+
+    acttime = _acttime / framerate
+
+
+   --Sep1:SetAttrs({LINKS_Name = "____________TNTHTW______________________",LBLC_LabelColor = 3,})
+
+    node = DVIPComputeNode(req, "TNTHTWKernel", TNTHTWKernel, "TNTHTWParams", TNTHTWParams)
+
+    if not pcall(function ()
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+		params.light_on    = InLightOn:GetValue(req).Value
+		params.tuberadius  = InTubeRadius:GetValue(req).Value
+		params.maxdepth    = InMaxDepth:GetValue(req).Value
+		params.brightness  = InBrightness:GetValue(req).Value
+		params.texangle    = InTexAngle:GetValue(req).Value * src1.DataWindow:Height()/src1.DataWindow:Width()
+		params.texdepth    = InTexDepth:GetValue(req).Value
+        params.curves      = {InCurves:GetValue(req).X,InCurves:GetValue(req).Y}
+        params.color       = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+
+        params.itime = acttime --req.Time / framerate
+
+        node:SetParamBlock(params)
+    end) then
+        params = node:GetParamBlock(TNTHTWParams)
+
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+		params.light_on    = InLightOn:GetValue(req).Value
+		params.tuberadius  = InTubeRadius:GetValue(req).Value
+		params.maxdepth    = InMaxDepth:GetValue(req).Value
+		params.brightness  = InBrightness:GetValue(req).Value
+		params.texangle    = InTexAngle:GetValue(req).Value * src1.DataWindow:Height()/src1.DataWindow:Width()
+		params.texdepth    = InTexDepth:GetValue(req).Value
+        params.curves      = {InCurves:GetValue(req).X,InCurves:GetValue(req).Y}
+        params.color       = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+
+        params.itime = acttime  --req.Time / framerate
+
+        node:SetParamBlock(params)
+
+    end
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Fehlerausgabe des DCTL
+    end
+
+    OutImage:Set(req, dst)
+end
+
+

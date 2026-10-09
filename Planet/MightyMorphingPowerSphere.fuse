@@ -1,0 +1,936 @@
+--[[--
+MightyMorphingPowerSphere
+
+    Based on https://www.shadertoy.com/view/MtGSzh a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT)
+    for use in DaFusion.
+
+    Shader created by Lallis
+
+
+--]] --
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  })
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+MightyMorphingPowerSphereParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  bool tex;
+  float look[2];
+  int surface;
+  float threshold[3];
+  bool invert;
+  bool phong;
+  float texscale[4];
+  float color[3];
+  float color2[3];
+  float alpha;
+  int width;
+  int height;
+  float itime;
+  int compOrder;
+]]
+
+
+-- source of kernel
+MightyMorphingPowerSphereKernel =
+[[
+//-----------------------
+//-------- mat3 ---------
+//-----------------------
+typedef struct  
+  {  
+	float3 r0, r1, r2;  
+  } mat3;  
+ 
+__DEVICE__  inline mat3 make_mat3( float A1, float B1, float C1, float A2, float B2, float C2, float A3, float B3, float C3 )  
+  {  
+	mat3 D;  
+	D.r0 = to_float3(A1,B1,C1);  
+	D.r1 = to_float3(A2,B2,C2);  
+	D.r2 = to_float3(A3,B3,C3);  
+	return D;  
+  }   
+  
+  
+__DEVICE__ inline float3 f3_multi_mat3( float3 A, mat3 B) {  
+  float3 C; 
+  
+  C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;  
+  C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;  
+  C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z; 
+  return C;
+ }
+  
+  
+__DEVICE__ mat3 mat3_multi_mat3( mat3 A, mat3 B)   //  __DEVICE__ inline mat3 multi( mat3 A, mat3 B)  
+{
+  float r[3][3];  
+  float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},  
+                   {A.r1.x, A.r1.y, A.r1.z},  
+                   {A.r2.x, A.r2.y, A.r2.z}};  
+  float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},  
+                   {B.r1.x, B.r1.y, B.r1.z},  
+                   {B.r2.x, B.r2.y, B.r2.z}};  
+     
+  for( int i = 0; i < 3; ++i)  
+  {  
+	  for( int j = 0; j < 3; ++j)  
+	  {  
+		  r[i][j] = 0.0f;  
+		  for( int k = 0; k < 3; ++k)  
+		  {  
+			r[i][j] = r[i][j] + a[i][k] * b[k][j];  
+		  }  
+	  }  
+  }  
+  mat3 R = make_mat3(r[0][0], r[0][1], r[0][2],   
+                     r[1][0], r[1][1], r[1][2], 
+					 r[2][0], r[2][1], r[2][2]);  
+  return R;  
+}  
+
+__DEVICE__ float fract_f(float A){return A - _floor(A);}
+__DEVICE__ float2 fract_f2(float2 A){return make_float2(A.x - _floor(A.x), A.y - _floor(A.y));}
+__DEVICE__ float3 fract_f3(float3 A){return make_float3(A.x - _floor(A.x), A.y - _floor(A.y), A.z - _floor(A.z));}
+__DEVICE__ float distance_f3(float3 pt1, float3 pt2){ float3 v = pt2 - pt1; return _sqrtf(dot(v,v));}
+#define lpowf _powf
+__DEVICE__ float3 pow_f3(float3 a, float3 b) {float3 r; r.x = lpowf(a.x,b.x); r.y = lpowf(a.y,b.y); r.z = lpowf(a.z,b.z); return r;}
+__DEVICE__ float3 exp_f3(float3 a) {return (to_float3(_expf(a.x), _expf(a.y),_expf(a.z)));}
+__DEVICE__ float3 sin_f3(float3 i) {float3 r; r.x = _sinf(i.x); r.y = _sinf(i.y); r.z = _sinf(i.z); return r;}
+
+#define swixyz(V) to_float3((V).x,(V).y,(V).z)
+
+  #define swixyy(V) to_float3((V).x,(V).y,(V).y)
+  #define swiyxy(V) to_float3((V).y,(V).x,(V).y)
+  #define swiyyx(V) to_float3((V).y,(V).y,(V).x)
+
+#define time itime
+__DEVICE__ mat3 rot(float3 ang)
+{
+	mat3 x = make_mat3(1.0f,0.0f,0.0f,0.0f,_cosf(ang.x),-_sinf(ang.x),0.0f,_sinf(ang.x),_cosf(ang.x));
+	mat3 y = make_mat3(_cosf(ang.y),0.0f,_sinf(ang.y),0.0f,1.0f,0.0f,-_sinf(ang.y),0.0f,_cosf(ang.y));
+	mat3 z = make_mat3(_cosf(ang.z),-_sinf(ang.z),0.0f,_sinf(ang.z),_cosf(ang.z),0.0f,0.0f,0.0f,1.0f);
+	return mat3_multi_mat3(mat3_multi_mat3(z,y),x);
+}
+
+__DEVICE__ float noise3D(float3 p)
+{
+	return fract_f(_sinf(dot(p ,make_float3(12.9898f,78.233f,12.7378f))) * 43758.5453f);
+}
+
+__DEVICE__ float smooth3D(float3 p)
+{
+    float3 f = fract_f3(p);
+    p = _floor(p);
+    f = f*f*(3.0f-2.0f*f);
+    
+	float p0 = noise3D(p);
+	float x = noise3D(p+make_float3(1.0f,0.0f,0.0f));
+	float y = noise3D(p+make_float3(0.0f,1.0f,0.0f));
+	float z = noise3D(p+make_float3(0.0f,0.0f,1.0f));
+	float xy = noise3D(p+make_float3(1.0f,1.0f,0.0f));
+	float xz = noise3D(p+make_float3(1.0f,0.0f,1.0f));
+	float yz = noise3D(p+make_float3(0.0f,1.0f,1.0f));
+	float xyz  = noise3D(p+1.0f);
+	
+    return _mix(	_mix(	_mix(p0, x,   f.x), 
+                         	_mix(y,  xy,  f.x), f.y), 
+                	_mix(	_mix(z,  xz,  f.x), 
+                            _mix(yz, xyz, f.x), f.y), f.z);
+}
+
+__DEVICE__ float fbm(float3 p)
+{
+ 	float f = 0.5000f*smooth3D(p*1.00f);
+    	  f+= 0.2500f*smooth3D(p*2.01f);
+    	  f+= 0.1250f*smooth3D(p*4.02f);
+    	  f+= 0.0625f*smooth3D(p*8.03f);
+    	  f/= 0.9375f;
+    return f;
+}
+__DEVICE__ float sphere( float3 rp, float3 c, float r )
+{
+    return distance_f3(rp, c) - r;
+}
+
+__DEVICE__ float map(float3 rp, float itime)
+{
+    rp = f3_multi_mat3(rp,rot(to_float3_s(time*0.25f)));
+    float d = sphere( rp, to_float3_s(0.0f), 1.0f+(fbm(rp*8.0f+time)*2.0f-1.0f)*1.0f);
+    return d;
+}
+
+__DEVICE__ float3 normal(float3 rp, float itime)
+{
+    float3 eps = make_float3( 0.002f ,0.0f,0.0f);
+	return normalize( make_float3(
+           map(rp+swixyy(eps),itime) - map(rp-swixyy(eps),itime),
+           map(rp+swiyxy(eps),itime) - map(rp-swiyxy(eps),itime),   //from iq
+           map(rp+swiyyx(eps),itime) - map(rp-swiyyx(eps),itime) ) );
+
+}
+
+__DEVICE__ float softShadow(float3 rp, float3 ld, float itime)
+{
+ 	float3 ro = rp;
+    float ldmax = 20.0f;
+    float td = 0.05f;
+    float res = 1.0f;
+    float d;
+    for(int i = 0; i < 256; i++)
+    {
+     	rp = ro + ld * td;
+        d = map( rp, itime );
+        if( d < 0.001f || td >= ldmax )
+        {
+         	break;   
+        }
+        res = _fminf(res,8.0f*d);
+        td += d*0.1f;
+    }
+    if( d < 0.001f )
+    {
+     	res = 0.0f;   
+    }
+   
+    return res;
+}  
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+  float C = _cosf(angle);
+  float S = _sinf(angle);
+   
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+   
+return uv;
+} 
+
+//############################################################################################################################
+__KERNEL__ void MightyMorphingPowerSphereKernel(__CONSTANTREF__ MightyMorphingPowerSphereParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height) 
+  {
+  
+     //-----------------------
+     float2 fragCoord = to_float2(x, y); 
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime * params->freq;
+	 float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+
+	float alpha = params->alpha;
+
+	float2 uv = fragCoord / iResolution;
+    float2 p = 2.0f*uv-1.0f;
+    p.x*=ratio;
+
+	// Standardparameter
+    p -=  to_float2( (params->center[0]-0.5f)*2.0f*ratio, (params->center[1]-0.5f)*2.0f);
+    p *= params->scale;
+    float2 pivot = to_float2(((params->pivot[0]-0.5f)*2.0f*ratio),(params->pivot[1]-0.5f)*2.0f);
+    p = spin(p, pivot*params->scale, params->angle, 1.0f);
+
+	float3 col = to_float3_s(0.0f);
+	if (params->invert) col = to_float3_s(1.0f);
+	
+    float2 m = (to_float2_v(params->look))*2.0f-1.0f;
+    
+    float3 cp = make_float3(0.0f,0.0f,-2.0f);
+    float3 rd = normalize( to_float3_aw(p,0.0f) - cp );
+    float3 ro = cp-make_float3(0.0f,0.0f,2.0f);
+    float3 rp;
+    
+    float3 ang = make_float3(-3.14f*m.y,3.14f*m.x,0.0f);
+    rd = f3_multi_mat3(rd,rot(ang));
+    ro = f3_multi_mat3(ro,rot(ang));
+    
+    float td = 0.1f;
+    float dmax = 8.0f;
+    float d;
+    float mind = 1000.0f;
+    
+    for( int i = 0; i < 512; i++ )
+    {
+        rp = ro+rd*td;
+        d = map(rp,itime);
+        mind = _fminf(mind,d);
+        if( d < 0.001f )
+            break;
+        td += d*0.1f;
+        if( td > dmax ) 
+        {
+            td = dmax;
+            break;
+        }
+    }
+    
+	float4 ts = to_float4_v(params->texscale);
+	
+	float3 keepo = to_float3_v(params->color);
+    
+	if (params->tex) keepo = swixyz(_tex2DVecN(iChannel0, uv.x*(ts.x+ts.y*_fabs(_sinf(time*ts.z)))+time*ts.w,uv.y*(ts.x+ts.y*_fabs(_sinf(time*ts.z)))+time*ts.w,15));
+
+    if( d < 0.001f )
+    {
+        float3 n = normal(rp,itime);
+        float3 l = normalize(make_float3(0.0f,0.1f,-1.0f));//*rot(make_float3(0.0f,0.0f,time));
+        float sha = softShadow( rp, l, itime );
+		
+		//##################### Wegoptimierung fehlerhafte Verwendung clamp #################################
+		//col = mix(vec3(0.05),keepo,clamp(0.0,1.0,smoothstep(1.0,0.0,2.0-length(rp)))); //Original Shadertoy
+        //col = _mix(to_float3_s(0.05f),keepo,clamp(0.0f,1.0f,smoothstep(1.0f,0.0f,2.0f-length(rp))));  // Open_CL optimiert es weg - Cuda nicht
+		
+		// Kontrolle
+		//col = _mix(to_float3_s(0.05f),keepo,clamp(0.0f,1.0f,2.0f-length(rp))); // führt zum Fehler, da clamp dann nicht wegoptimiert wird !
+
+
+		float3 th = to_float3_v(params->threshold);			
+				
+		col = _mix(to_float3_v(params->color2),keepo,smoothstep(th.x,th.y,th.z-length(rp))); // Final Bugfix
+		
+		if (params->surface == 1) col = _mix(to_float3_v(params->color2),keepo,smoothstep(th.x,th.y,th.z-length(rp))); // Variante1
+		//if (params->surface == 2) col = _mix(to_float3_s(0.05f),keepo,smoothstep(th.x,th.y,th.z-_sinf(length(rp)))); // Variante2
+		
+        //PHONG
+        if (params->phong)
+		{			
+			float3 v = normalize(ro-rp);
+			float3 h = normalize(l+v);
+			
+			float a = 128.0f;   
+			float kd = 0.33f;
+			float ks = 0.33f;
+			float ss = 0.33f;
+			
+			col*=_fmaxf(0.0f,dot(n,l))*kd+_fmaxf(0.0f,_powf(dot(n,h),a))*ks+sha*ss;
+		}	
+        col*=_fmaxf(0.0f,dot(n,l))*sha;
+		alpha = 1.0f;
+       
+    }
+    else
+    {
+        col += (keepo*_powf(dot(rd,make_float3(0.0f,0.0f,1.0f)),24.0f))*_expf(-mind+1.0f+_sinf(time));   
+    }
+    col = _mix(col,keepo*(_fmaxf(0.0f,1.0f-mind*8.0f)),_fminf(1.0f,length(rp)*0.025f));   
+    
+    col = clamp(col, 0.0f, 1.0f);
+    col = pow_f3(col, to_float3_s(0.45f));
+    
+    float f = 8.0f;
+    col = (1.0f/(1.0f+exp_f3(4.0f-f*col))-0.0003f)/(0.982f-0.018f);
+    
+	if (params->invert) col = 1.0f-col;
+    
+    p.x/=iResolution.x/iResolution.y;
+    col *= smoothstep( 1.325f, 0.825f, _fabs(p.x) );
+    col *= smoothstep( 1.325f, 0.825f, _fabs(p.y) );
+    
+    float dither = (noise3D(to_float3_aw(p,time))*2.0f-1.0f)*2.0f/256.0f;
+    col += dither;
+    fragColor = to_float4_aw(col,alpha);
+//fragColor = to_float4_aw(keepo,1.0);
+    _tex2DVec4Write(dst, x, y, fragColor); 
+  }
+}
+]]
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+function Create()
+--------------------------------------------
+ShaderFuse.begin_create() 
+--------------------------------------------
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  --------------- MightyMorphingPowerSphere ---------------
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+    })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "Center", 
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+    })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",    
+    IC_Visible          = false, 
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+    })    
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+    })
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true, 
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+  })
+
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	  INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+  
+  
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	IC_Visible       = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })   
+
+self:BeginControlNest("Parameter", "Par", true, {})
+	
+ InLook = self:AddInput("Look","Look", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged = false,
+    INP_DefaultX = 0.0,
+    INP_DefaultY = 0.0,
+    XF_XAxis = -1,
+    XF_YAxis = -1,
+    XF_XSize = 1,
+    XF_YSize = 1,
+    XF_Angle = 0,
+    XF_EdgeMode = "Black"
+    })
+	
+  Sep3 = self:AddInput("_________ Surface _________", "Separator3", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })	
+	
+  InSurface = self:AddInput("Modus Surface", "Surface", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+	IC_Visible       = false,
+	INP_MinAllowed = 0.0,
+    INP_MaxAllowed = 1.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Original", },
+    { CCS_AddString = "Variante1", },
+    { CCS_AddString = "not impl", },
+    CC_LabelPosition = "Horizontal",
+  })
+	
+  InThresholdMin = self:AddInput("Threshold Min", "ThresholdMin", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InThresholdMax = self:AddInput("Threshold Max", "ThresholdMax", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  InThresholdBias = self:AddInput("Threshold Bias", "ThresholdBias", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 2.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+	
+  InInvert = self:AddInput("Invert", "Invert", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })	
+  
+  InPhong = self:AddInput("Phong", "Phong", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External      = false,
+  })	
+	
+	
+  InTexScale1 = self:AddInput("TexScale1", "TexScale1", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.001,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    }) 	
+  InTexScale2 = self:AddInput("TexScale2", "TexScale2", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.01,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    }) 	
+  InTexScale3 = self:AddInput("TexScale3", "TexScale3", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.01,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    }) 	
+  InTexScale4 = self:AddInput("TexScale4", "TexScale4", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.001,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    }) 	
+
+ InRedCH = self:AddInput("Red", "RedCH", {
+    ICS_Name            = "Halo Color",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.8,
+    INP_MaxScale        = 0.5,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 0,
+  })
+  InGreenCH = self:AddInput("Green", "GreenCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.3,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 1,
+  })
+  InBlueCH = self:AddInput("Blue", "BlueCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.65,
+    IC_ControlGroup     = 1,
+    IC_ControlID        = 2,
+  })
+  InAlphaCH = self:AddInput("Alpha", "AlphaCH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 1.0,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 3,
+  })
+
+  
+  InRed2CH = self:AddInput("Red", "Red2CH", {
+    ICS_Name            = "Planet Color",
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.05,
+	IC_Visible          = true, 
+    INP_MaxScale        = 0.5,
+    CLRC_ShowWheel      = false,
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 0,
+  })
+  InGreen2CH = self:AddInput("Green", "Green2CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.05,
+	IC_Visible          = true, 
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 1,
+  })
+  InBlue2CH = self:AddInput("Blue", "Blue2CH", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "ColorControl",
+    INP_Default         = 0.05,
+	IC_Visible          = true, 
+    IC_ControlGroup     = 2,
+    IC_ControlID        = 2,
+  })
+
+
+self:EndControlNest() 
+
+InLogoSw = self:AddInput("Logo", "LogoSw", {
+  LINKID_DataType = "Number",
+  INPID_InputControl = "CheckboxControl",
+  INP_Integer = true,
+  INP_DoNotifyChanged = true,
+  INP_Default         = 1,
+  IC_Visible          = false, 
+  INP_External        = false,
+  INP_Passive         = true,
+})
+
+--------------------------------------------
+ ShaderFuse.end_create()
+--------------------------------------------
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+	--LINK_Visible = false,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+end 
+
+
+-------------------------------------------------------------------
+--       NotifyChanged
+-------------------------------------------------------------------
+function NotifyChanged(inp, param, time)
+
+
+  if inp ~= nil and param ~= nil then
+  
+    if inp == InCenter then
+        -- the center moved, reposition the axis according to the current offset
+        nCenterX = param.X
+        nCenterY = param.Y
+      
+        InPivot:SetAttrs({
+            PCD_OffsetX = nCenterX - 0.5,
+            PCD_OffsetY = nCenterY - 0.5,
+            })
+           
+        InAngle:SetAttrs({
+            PCD_OffsetX = (nCenterX - 0.5)/100,
+            PCD_OffsetY = (nCenterY - 0.5)/100,
+            })
+    end
+    if inp == InWidgets then  
+      if param.Value == 1.0 then
+         InCenter:SetAttrs({ PC_Visible = false })
+         InAngle:SetAttrs({ PC_Visible = false })
+         InPivot:SetAttrs({ PC_Visible = false })
+         InScale:SetAttrs({ PC_Visible = false })
+      else
+         InCenter:SetAttrs({ PC_Visible = true })
+         InAngle:SetAttrs({ PC_Visible = true })
+         InPivot:SetAttrs({ PC_Visible = true })
+         InScale:SetAttrs({ PC_Visible = true })
+      end
+    end
+	
+    if inp == InStop then  
+      if param.Value == 1 then
+	     InActtime:SetAttrs({IC_Visible = true})
+	  else
+	     InActtime:SetAttrs({IC_Visible = false})
+	  end
+	end  
+
+	if inp == InLogoSw then  
+	  if param.Value == 1 then
+		 --authorlogo:SetAttrs({IC_Visible = true})
+	  else
+		 --authorlogo:SetAttrs({IC_Visible = false})
+	  end
+	end 
+  end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle = -InAngle:GetValue(req).Value/360*3.1415*2
+    local debug = InDebug:GetValue(req).Value
+    local scale = InScale:GetValue(req).Value
+    local freq = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+   
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+   
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+    
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    
+	tex = false
+    if (InImage1:GetValue(req) ~= nil) then
+        src1 = InImage1:GetValue(req)
+		tex = true
+    else
+        src1 = Image(imgattrs)
+        src1:Fill(p)
+    end
+
+    if (tex) then
+		InRedCH:SetAttrs({IC_Visible = false})
+	else
+		InRedCH:SetAttrs({IC_Visible = true})
+	end
+
+
+    local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+    if req:IsPreCalc() then
+	   --print("\n######################### Precalc ##############################\n")
+	   local out = Image({IMG_Like = dst, IMG_NoData = true})
+       OutImage:Set(req, out)
+	   return
+	end
+
+
+
+    --StartStop	
+    if InStop:GetValue(req).Value == 0 then             
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   else
+	      _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	   end	
+	end
+
+    acttime = _acttime / framerate
+
+    
+    --Sep1:SetAttrs({LINKS_Name = "____________MightyMorphingPowerSphere______________________",LBLC_LabelColor = 3,})
+    
+    node = DVIPComputeNode(req, "MightyMorphingPowerSphereKernel", MightyMorphingPowerSphereKernel, "MightyMorphingPowerSphereParams", MightyMorphingPowerSphereParams)
+
+    if not pcall(function () 
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+        
+		params.tex         = tex
+        params.look        = {InLook:GetValue(req).X,InLook:GetValue(req).Y}
+		params.surface     = InSurface:GetValue(req).Value
+		params.threshold   = {InThresholdMin:GetValue(req).Value, InThresholdMax:GetValue(req).Value, InThresholdBias:GetValue(req).Value}
+        params.invert      = InInvert:GetValue(req).Value
+		params.phong       = InPhong:GetValue(req).Value
+		params.texscale    = {InTexScale1:GetValue(req).Value, InTexScale2:GetValue(req).Value, InTexScale3:GetValue(req).Value,InTexScale4:GetValue(req).Value}
+		params.color       = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+		params.alpha       = InAlphaCH:GetValue(req).Value
+		params.color2      = {InRed2CH:GetValue(req).Value, InGreen2CH:GetValue(req).Value, InBlue2CH:GetValue(req).Value}
+        
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+    
+        params.itime = acttime --req.Time / framerate
+    
+        node:SetParamBlock(params)
+    end) then
+        params = node:GetParamBlock(MightyMorphingPowerSphereParams)
+    
+        params.center[0] = center.X
+        params.center[1] = center.Y
+	    params.scale = 1/scale
+        params.angle = angle
+        params.pivot[0] = InPivot:GetValue(req).X
+        params.pivot[1] = InPivot:GetValue(req).Y
+        params.debug = debug
+        params.freq = freq
+
+		params.tex         = tex
+        params.look        = {InLook:GetValue(req).X,InLook:GetValue(req).Y}
+		params.surface     = InSurface:GetValue(req).Value
+		params.threshold   = {InThresholdMin:GetValue(req).Value, InThresholdMax:GetValue(req).Value, InThresholdBias:GetValue(req).Value}
+		params.invert      = InInvert:GetValue(req).Value
+		params.phong       = InPhong:GetValue(req).Value
+		params.texscale    = {InTexScale1:GetValue(req).Value, InTexScale2:GetValue(req).Value, InTexScale3:GetValue(req).Value,InTexScale4:GetValue(req).Value}
+        params.color       = {InRedCH:GetValue(req).Value, InGreenCH:GetValue(req).Value, InBlueCH:GetValue(req).Value}
+		params.alpha       = InAlphaCH:GetValue(req).Value
+		params.color2      = {InRed2CH:GetValue(req).Value, InGreen2CH:GetValue(req).Value, InBlue2CH:GetValue(req).Value}
+        
+        params.compOrder = src1:IsMask() and 1 or 15
+        params.width  = src1.DataWindow:Width()
+        params.height = src1.DataWindow:Height()
+        
+        params.itime = acttime  --req.Time / framerate
+    
+        node:SetParamBlock(params)
+    
+    end
+
+    node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+    node:AddInput("iChannel0", src1)
+    node:AddOutput("dst", dst)
+
+    local success = node:RunSession(req)
+    if not success then
+        dst = nil
+        dump(node:GetErrorLog()) -- Fehlerausgabe des DCTL
+    end
+
+    OutImage:Set(req, dst)
+	collectgarbage();
+end
+
+-- **/ "End of LUA CODE"
+
