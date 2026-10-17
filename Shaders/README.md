@@ -1,3 +1,4 @@
+![Diamond Dust](DiamondDustMkIi_320x180.gif)
 # Shaderfuse
 
 > [!attention] Does not work with the free versions of BMD's software anymore!

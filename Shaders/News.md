@@ -1,11 +1,9 @@
 # News / Featured
 
-#### My Current Shader of the Week (7th of August 2026):
+#### My Current Shader of the Week (17th of October 2026):
 
-[![Cartoon: La Linea Episode 10
-](Misc/CartoonLaLineaEpisode10.gif)](Misc/CartoonLaLineaEpisode10.md) <br>
-[Cartoon: La Linea Episode 10
-](Misc/CartoonLaLineaEpisode10.md) by [Espeset](https://www.shadertoy.com/user/Espeset)
+[![Baby Unicorn](Monster/BabyUnicorn.gif)](Monster/BabyUnicorn.md) <br>
+[Baby Unicorn](Monster/BabyUnicorn.md) by [Cotterzz](https://www.shadertoy.com/user/Cotterzz)
 
 #### Current Shader of the Week (9th of October 2026):
 
