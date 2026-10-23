@@ -813,7 +813,7 @@ function create_markdown_files(repositorypath)
 
     overview:write(
         ''
-      ..'<img src="../'..fuse.Category..'/'..fuse.Name..'.png" align="left" width="320 height="180" />'
+      ..'<img src="../'..fuse.Category..'/'..fuse.Name..'.png" align="left" width="320" height="180" />'
       ..'<strong><a href="../'..fuse.Category..'/'..fuse.Name..'/" style="font-size:larger; ">'..fuse.Name..'</a></strong> '..((not(fuse:hasErrors()) and fuse:isCompatible()) and '🍀' or '💥')..'<br />'
       )
     update_fuse_markdown_file(fuse)
