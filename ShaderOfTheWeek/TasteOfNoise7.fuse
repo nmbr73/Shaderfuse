@@ -1,0 +1,1071 @@
+--[[--/*
+
+    TasteOfNoise7.fuse
+
+    Based on https://www.shadertoy.com/view/NddSWs Erstellt von leon am 2021-10-14
+
+    V1 JiPi Recursiv BufferA Shadertoy
+
+
+*/--]]--
+
+-- "LUA CODE..." /**
+
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  })
+
+-----------------------------------
+
+-- **/ "End of LUA CODE"
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel
+-- // ------------------------------------------------------------------------
+
+GlobalParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float debug;
+  float scale;
+  float freq;
+  int width;
+  int height;
+  float itime;
+  int iframe;
+  bool tex;
+    
+  float astart;
+  float falloff;
+  int count;
+  float repetition;
+  float contrast;
+  
+  bool Alpha_Apply;
+  float alpha;
+  float alphathres;
+]]
+
+----------------BufferA---------------
+-- source of kernel
+BufferAKernel =
+    [[
+//Taste of Noise 7 https://www.shadertoy.com/view/NddSWs
+
+//-----------------------
+//-------- mat2 ---------
+//-----------------------
+typedef struct  
+  {  
+    float2 r0, r1;  
+  } mat2;  
+  
+__DEVICE__ inline mat2 make_mat2( float A, float B, float C, float D)  
+  {  
+    mat2 E;  
+    E.r0 = to_float2(A,B);  
+    E.r1 = to_float2(C,D);  
+    return E;  
+  } 
+
+__DEVICE__ inline float2 f2_multi_mat2( float2 A, mat2 B )  
+  {  
+	float2 C;  
+	C.x = A.x * B.r0.x + A.y * B.r0.y;  
+	C.y = A.x * B.r1.x + A.y * B.r1.y;  
+	return C;  
+  }
+
+__DEVICE__ float fract_f(float A){return A - _floor(A);}
+__DEVICE__ float2 fract_f2(float2 A){return make_float2(A.x - _floor(A.x), A.y - _floor(A.y));}
+__DEVICE__ float3 fract_f3(float3 A){return make_float3(A.x - _floor(A.x), A.y - _floor(A.y), A.z - _floor(A.z));}
+__DEVICE__ float3 abs_f3(float3 a) {return (to_float3(_fabs(a.x), _fabs(a.y),_fabs(a.z)));}
+__DEVICE__ float mod_f(float value, float divisor) {  return value - divisor * _floor(value / divisor);}
+__DEVICE__ float2 mod_f2(float2 value, float divisor) {return to_float2(mod_f(value.x, divisor),mod_f(value.y, divisor));}
+__DEVICE__ float3 mod_f3(float3 value, float divisor) {return to_float3(mod_f(value.x, divisor),mod_f(value.y, divisor),mod_f(value.z, divisor));}
+__DEVICE__ float3 cos_f3(float3 i) {float3 r; r.x = _cosf(i.x); r.y = _cosf(i.y); r.z = _cosf(i.z); return r;}
+
+#if defined(DEVICE_IS_OPENCL) || defined(DEVICE_IS_METAL)
+__DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+#endif
+
+
+#define swixy(V) to_float2((V).x,(V).y)
+#define swixz(V) to_float2((V).x,(V).z)
+#define swiyz(V) to_float2((V).y,(V).z)
+#define swiyx(V) to_float2((V).y,(V).x)
+
+#define swixyz(V) to_float3((V).x,(V).y,(V).z)
+#define swiyxz(V) to_float3((V).y,(V).x,(V).z)
+#define swizyx(V) to_float3((V).z,(V).y,(V).x)
+
+#define swiyxx(V) to_float3((V).y,(V).y,(V).x)
+#define swixyx(V) to_float3((V).x,(V).y,(V).x)
+#define swixxy(V) to_float3((V).x,(V).x,(V).y)
+
+  #define swixyy(V) to_float3((V).x,(V).y,(V).y)
+  #define swiyxy(V) to_float3((V).y,(V).x,(V).y)
+  #define swiyyx(V) to_float3((V).y,(V).y,(V).x)
+
+//############## Common #################
+
+// Dave Hoskins
+// https://www.shadertoy.com/view/4djSRW
+__DEVICE__ float hash13(float3 p3)
+{
+    p3  = fract_f3(p3 * 0.1031f);
+    p3 += dot(p3, swizyx(p3) + 31.32f);
+    return fract_f((p3.x + p3.y) * p3.z);
+}
+__DEVICE__ float3 hash33(float3 p3)
+{
+    p3 = fract_f3(p3 * make_float3(0.1031f, 0.1030f, 0.0973f));
+    p3 += dot(p3, swiyxz(p3)+33.33f);
+    return fract_f3((swixxy(p3) + swiyxx(p3))*swizyx(p3));
+}
+
+
+// Inigo Quilez
+// https://www.iquilezles.swiwww(org)/articles/distfunctions/distfunctions.htm
+__DEVICE__ float s_fminf( float d1, float d2, float k ) {
+    float h = clamp( 0.5f + 0.5f*(d2-d1)/k, 0.0f, 1.0f );
+    return _mix( d2, d1, h ) - k*h*(1.0f-h); }
+
+__DEVICE__ float smoothing(float d1, float d2, float k) { return clamp( 0.5f + 0.5f*(d2-d1)/k, 0.0f, 1.0f ); }
+
+__DEVICE__ float sdBox( float3 p, float3 b ) {
+  float3 q = abs_f3(p) - b;
+  return length(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f);
+}
+
+// rotation matrix
+__DEVICE__ mat2 rot(float a) { return make_mat2(_cosf(a),-_sinf(a),_sinf(a),_cosf(a)); }
+
+#define repeat(p,r) (mod_f3(p,r)-r/2.0f)
+
+//############## BufferA->A #################
+// taste of noise 7 by leon denise 2021/10/14
+// result of experimentation with organic patterns
+// using code from Inigo Quilez, David Hoskins and NuSan
+// licensed under hippie love conspiracy
+
+//-----------------------
+//-------- mat4 ---------
+//-----------------------
+//**** mat4 ****
+typedef struct  
+  {  
+  float4 r0, r1,r2, r3;  
+  } mat4; 
+
+__DEVICE__ inline mat4 make_mat4( float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13,   
+  float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33)  
+  {  
+  mat4 M;  
+  M.r0 = make_float4(m00, m01, m02, m03);  
+  M.r1 = make_float4(m10, m11, m12, m13);  
+  M.r2 = make_float4(m20, m21, m22, m23);  
+  M.r3 = make_float4(m30, m31, m32, m33);  
+  return M;  
+  } 
+    
+__DEVICE__ inline float4 mat4_multi_f4( mat4 B, float4 A)	 
+  {  
+  float4 C;  
+  C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x + A.w * B.r3.x;  
+  C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y + A.w * B.r3.y;  
+  C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z + A.w * B.r3.z;  
+  C.w = A.x * B.r0.w + A.y * B.r1.w + A.z * B.r2.w + A.w * B.r3.w;  
+  return C;  
+  } 
+
+
+__DEVICE__ mat4 contrastMatrix( float contrast )
+{
+	float t = ( 1.0 - contrast ) / 2.0;
+    
+    return make_mat4( contrast, 0, 0, 0,
+                 0, contrast, 0, 0,
+                 0, 0, contrast, 0,
+                 t, t, t, 1 );
+}
+
+
+// sdf
+__DEVICE__ float map(float3 p, float material, float rng, float itime,__CONSTANTREF__ GlobalParams *params)
+{
+    // time
+    float t = itime*1.0f + rng*0.9f;
+    
+	// domain repetition
+    float grid = params->repetition;//5.0f;
+    float3 cell = _floor(p/grid);
+    p = repeat(p,grid);
+    
+    float dp = length(p);
+    
+    // rotation parameter
+    float3 angle = make_float3(0.1f,-0.5f,0.1f)+dp*0.5f+p*0.1f+cell;
+    
+    float size = _sinf(rng*3.14f);
+    
+    float wave = _sinf(-dp*1.0f+t+hash13(cell)*6.28f)*0.5f;
+    
+    // kif
+    const int count = params->count;
+    float a = params->astart;//1.0f;
+    float scene = 1000.0f;
+    float shape = 1000.0f;
+    for (int index = 0; index < count; ++index)
+    {
+        
+        // fold
+        //swixz(p) = _fabs(swixz(p))-(0.5f+wave)*a;
+		p.x = _fabs(p.x)-(0.5f+wave)*a;
+		p.z = _fabs(p.z)-(0.5f+wave)*a;
+        
+        // rotate
+		float2 pxz = f2_multi_mat2(swixz(p) , rot(angle.y/a));
+		p.x=pxz.x;p.z=pxz.y;
+        float2 pyz = f2_multi_mat2(swiyz(p) , rot(angle.x/a));
+		p.y=pyz.x;p.z=pyz.y;
+		float2 pyx = f2_multi_mat2(swiyx(p) , rot(angle.z/a));
+		p.y=pyx.x;p.x=pyx.y;
+        
+        // sphere
+        shape = length(p)-0.2f*a*size;  // 0.2f !!
+        
+        // material blending
+        material = _mix(material, (float)(index), smoothing(shape, scene, 0.3f*a));
+        
+        // add
+        scene = s_fminf(scene, shape, 1.0f*a);
+        
+        // falloff
+        a /= params->falloff;//1.9f;
+    }
+        
+    return scene;
+}
+ 
+
+//############################################################################################################################
+__KERNEL__ void BufferAKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height)
+  {
+
+   //-----------------------
+     float2 fragCoord = to_float2(x+0.5f, y+0.5f); 
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime * params->freq;
+     float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+	
+	float contrast = params->contrast;//1.50;
+	
+	// global variable
+	float material;
+	float rng;
+
+
+    // reset color
+    fragColor = make_float4(0,0,0,1);
+    material = 0.0f;
+    
+    // camera coordinates
+    float2 uv = (fragCoord - iResolution * 0.5f) / iResolution.y;
+    float3 eye = make_float3(1,1,1.0f);
+    float3 at = make_float3(0,0,0);
+    float3 _z = normalize(at-eye);
+    float3 _x = normalize(cross(_z, make_float3(0,1,0)));
+    float3 _y = normalize(cross(_x, _z));
+    float3 ray = normalize((_z * 1.0f + uv.x * _x + uv.y * _y));
+    float3 pos = eye;
+    
+    // white noise
+    float3 seed = to_float3_aw(swixy(fragCoord), itime);
+    
+	if (params->tex)
+		rng = ( mat4_multi_f4(contrastMatrix( contrast) , _tex2DVecN(iChannel1,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15)) ).x;
+	else
+		rng = hash13(seed);
+    
+    // raymarch
+    const int steps = 20;
+    for (int index = steps; index > 0; --index)
+    {
+        // volume estimation
+        float dist = map(pos, material, rng, itime, params);
+        if (dist < 0.01f)
+        {
+            float shade = (float)(index)/(float)(steps);
+            
+            // compute normal by NuSan (https://www.shadertoy.com/view/3sBGzV)
+            float2 off=make_float2(0.001f,0);
+            float3 normal = normalize(map(pos, material, rng, itime, params)-make_float3(map(pos-swixyy(off), material, rng, itime, params), map(pos-swiyxy(off), material, rng, itime, params), map(pos-swiyyx(off), material, rng, itime, params)));
+            
+            // Inigo Quilez color palette (https://iquilezles.swiwww(org)/articles/palettes/palettes.htm)
+            float3 tint = to_float3_s(0.5f)+to_float3_s(0.5f)*cos_f3(make_float3(3,2,1)+material*0.5f+length(pos)*0.5f);
+            
+            // lighting
+            float ld = dot(reflect(ray, normal), make_float3(0,1,0))*0.5f+0.5f;
+            float3 light = make_float3(1.000f,0.502f,0.502f) * _powf(ld, 0.5f);
+            ld = dot(reflect(ray, normal), make_float3(0,0,-1))*0.5f+0.5f;
+            light += make_float3(0.400f,0.714f,0.145f) * _powf(ld, 0.5f)*0.5f;
+            
+            // pixel color
+            fragColor = to_float4_aw((tint + light) * _powf(shade, 1.0f),fragColor.w);
+            
+            break;
+        }
+        
+        // dithering
+        dist *= 0.9f + 0.1f * rng;
+        
+        // raymarch
+        pos += ray * dist;
+    }
+
+    // temporal buffer
+    fragColor = _fmaxf(fragColor, _tex2DVecN(iChannel0, fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15) - 0.01f);
+
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+----------------Image---------------
+-- source of kernel
+ImageKernel =
+    [[
+ 
+
+	__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect) {
+		float C = _cosf(angle);
+		float S = _sinf(angle);
+
+		uv -= center;
+		float x = uv.x;
+		uv.x = (x*aspect * C - uv.y * S);
+		uv.y = (x*aspect * S + uv.y * C);
+		uv += center;
+		return uv;
+	}
+
+
+//************************************************************************
+__KERNEL__ void ImageKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  if (x < params->width && y < params->height)
+  {
+
+    //-----------------------
+    float2 fragCoord = to_float2(x+0.5, y+0.5f);
+    float2 iResolution = to_float2(params->width, params->height);
+    float ratio = (float)params->width/(float)params->height;
+    float itime=params->itime*params->freq;
+    float4 fragColor = to_float4_s(0.0f);
+    //-----------------------
+	
+	//Functionality.......
+	
+    float2 uv = fragCoord/iResolution;
+	
+	// Standardparameter
+    uv-=0.5f;
+    uv *= params->scale;
+    uv -=  to_float2( (params->center[0]-1.0f), (params->center[1]-1.0f)); //*2.0f*ratio
+    float2 pivot = to_float2(((params->pivot[0]+0.0f)*ratio),(params->pivot[1]+0.0f));
+	float2 tmp = to_float2(pivot.x*params->scale*ratio+params->debug,pivot.y*params->scale+params->debug);
+	uv = spin(to_float2(uv.x*ratio,uv.y), pivot*params->scale, params->angle, 1.0f);
+	uv.x/=ratio;
+		
+	
+   //float2 uv = fragCoord / iResolution;
+   fragColor = _tex2DVecN( iChannel0, uv.x, uv.y, 15);
+
+   
+    
+    //fragColor = _fmaxf(fragColor, to_float4_s(0.0f));
+    //fragColor = pow_f4(fragColor, to_float4_s(0.4545f + dot(uvn,uvn)*1.0f));
+    //fragColor *= 1.0f - dot(uvn,uvn)*0.6f;
+    
+	if (fragColor.x < params->alphathres && fragColor.y < params->alphathres && fragColor.z < params->alphathres)
+		fragColor.w = params->alpha;
+
+    _tex2DVec4Write(dst, x, y, fragColor); 
+  }
+}
+]]
+
+-- "LUA CODE..." /**
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+	IC_Visible          = true,
+  })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "true",
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+	IC_Visible          = true,
+  })
+
+  InDebug = self:AddInput("Debug", "Debug", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinScale = 0.0,
+    --INP_MaxScale = 5.0,
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center = "Center",    
+    IC_Visible          = false, 
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+	  IC_Visible          = true,
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+  })
+
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+	IC_Visible          = true,
+  })
+
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	INP_Passive         = true,
+    INP_DoNotifyChanged = true,
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+	--IC_Visible          = false,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+  })
+  
+  InStop = self:AddInput("Stop", "Stop", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = true,
+    --INP_External        = false,
+  })
+  InStartStop = self:AddInput("", "StartStop", {
+    { MBTNC_AddButton = "Stop", MBTNCID_AddID = "StopAnimation", },
+    { MBTNC_AddButton = "Start", MBTNCID_AddID = "StartAnimation", },
+    INPID_DefaultID = "StartAnimation",
+    LINKID_DataType = "FuID",
+    INPID_InputControl = "MultiButtonIDControl",
+    ICD_Width = 1.0,
+    MBTNC_StretchToFit = true,
+    MBTNC_ForceButtons = true,
+    INP_DoNotifyChanged  = true,
+    IC_Visible = false,
+    --INP_External = false,
+  })
+  
+  
+  InActtime = self:AddInput("Acttime", "Acttime", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+	  IC_Visible          = false,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+  
+  InTimeoffset = self:AddInput("Timeoffset", "Timeoffset", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 0.0,
+    INP_MinScale = -10.0,
+	INP_MaxScale = 10.0,
+	--INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })   
+
+ 
+ self:BeginControlNest("Additional_Parameter", "Additional_Parameter", true, {})
+   InAStart = self:AddInput("A Start", "AStart", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 10.0,
+	--INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    }) 
+
+   InFalloff = self:AddInput("Falloff", "Falloff", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.9,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 10.0,
+	--INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+   InCount = self:AddInput("Count", "Count", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+	INP_Integer = true,
+    INP_Default = 4,
+    INP_MinScale = 0,
+	INP_MaxScale = 10,
+	--INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+   InRepetition = self:AddInput("Repetition", "Repetition", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 5.0,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 10.0,
+	--INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+   InContrast = self:AddInput("Contrast", "Contrast", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.5,
+    INP_MinScale = 0.0,
+	INP_MaxScale = 10.0,
+	--INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+    })
+
+
+ self:EndControlNest()  
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+	IC_Visible         = true,
+  })
+
+	InAlpha_Apply = self:AddInput("Apply Alpha", "Alpha_Apply", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "CheckboxControl",
+		INP_Integer = false,
+		INP_Default = 0,
+		ICD_Width = 1,
+		INP_DoNotifyChanged = true,
+	})
+	
+	InAlphaThres = self:AddInput("AlphaThres", "AlphaThres", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InAlpha = self:AddInput("Alpha", "Alpha", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+
+ InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+	{ CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	{ CCS_AddString  = "Image1", },
+    { CCS_AddString  = "1920x1080", },
+	{ CCS_AddString  = "1200x675", },
+	{ CCS_AddString  = "800x450", },
+	{ CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+  
+  	InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+--self:EndControlNest()
+
+self:AddControlPage("Image")
+  InGlobalIn = self:AddInput("Global In", "GlobalIn", {
+    LINKID_DataType     = "Number",
+  })
+  InGlobalOut = self:AddInput("Global Out", "GlobalOut", {
+    LINKID_DataType     = "Number",
+  })
+
+  ShaderFuse.end_create()
+
+------------------- In/Out -----------------
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+	LINK_Visible = false,
+    LINK_Main = 1,
+    INP_Required = false
+  })
+  InImage2 = self:AddInput("Image1", "Image1", {
+    LINKID_DataType = "Image",
+    LINK_Main = 2,
+    INP_Required = false
+  })
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+end
+
+function NotifyChanged(inp, param, time)
+	if inp ~= nil and param ~= nil then
+
+		if inp == InCenter then
+			-- the center moved, reposition the axis according to the current offset
+			nCenterX = param.X
+			nCenterY = param.Y
+
+			InPivot:SetAttrs({
+			PCD_OffsetX = nCenterX - 0.5,
+			PCD_OffsetY = nCenterY - 0.5,
+			})
+
+			InAngle:SetAttrs({
+			PCD_OffsetX = (nCenterX - 0.5)/100,
+			PCD_OffsetY = (nCenterY - 0.5)/100,
+		    })
+			
+		end
+		if inp == InWidgets then
+		  if param.Value == 1.0 then
+			 InCenter:SetAttrs({ PC_Visible = false })
+			 InAngle:SetAttrs({ PC_Visible = false })
+			 InPivot:SetAttrs({ PC_Visible = false })
+			 InScale:SetAttrs({ PC_Visible = false })
+		  else
+			 InCenter:SetAttrs({ PC_Visible = true })
+			 InAngle:SetAttrs({ PC_Visible = true })
+			 InPivot:SetAttrs({ PC_Visible = true })
+			 InScale:SetAttrs({ PC_Visible = true })
+		  end
+		end
+		
+		if inp == InSize then
+		  if param.Value == 1 then
+			 InWidth:SetAttrs({ IC_Visible = true })
+			 InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			 InWidth:SetAttrs({ IC_Visible = false })
+			 InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			 InWidth:SetSource(Number(1920),0,0)
+			 InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			 InWidth:SetSource(Number(1200),0,0)
+			 InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			 InWidth:SetSource(Number(800),0,0)
+			 InHeight:SetSource(Number(450),0,0)
+		  end
+ 	      if param.Value == 6 then --640x360
+		     InWidth:SetSource(Number(640),0,0)
+			 InHeight:SetSource(Number(360),0,0)
+		  end
+		end
+
+		if inp == InAlpha_Apply then
+			if param.Value == 0 then
+				InAlpha:SetAttrs({ IC_Visible = false, })
+				InAlphaThres:SetAttrs({ IC_Visible = false, })
+			else
+				InAlpha:SetAttrs({ IC_Visible = true, })
+			    InAlphaThres:SetAttrs({ IC_Visible = true, })
+			end
+		end
+
+		if inp == InStop then  
+		  if param.Value == 1 then
+			 InActtime:SetAttrs({IC_Visible = true})
+		  else
+			 InActtime:SetAttrs({IC_Visible = false})
+		  end
+		end  
+
+		if inp == InLogoSw then  
+		  if param.Value == 1 then
+			 --authorlogo:SetAttrs({IC_Visible = true})
+		  else
+			 --authorlogo:SetAttrs({IC_Visible = false})
+		  end
+		end  
+
+	end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+	    IMG_DeferAlloc = false,
+        }
+
+Image_Buff_Global = Image(ImgAttrs_Global)
+
+
+timestamp = 0
+startflag = true
+--------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle  = -InAngle:GetValue(req).Value/360*3.1415*2
+    local scale  = InScale:GetValue(req).Value
+    local freq   = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+	-- Imagesize and Depth
+    if (InSize:GetValue(req).Value > 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InImage2:GetValue(req) ~= nil) then
+			   Width = InImage2:GetValue(req).Width
+			   Height = InImage2:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+	if InDepth:GetValue(req).Value == 0 then
+		SourceDepth = 7
+	else
+	    SourceDepth = 8
+	end
+
+    if (startflag) then
+		InMyWidth = self:FindInput("Width")
+		InMyWidth:SetAttrs({ IC_Visible = false })
+		InMyHeight = self:FindInput("Height")
+		InMyHeight:SetAttrs({ IC_Visible = false })
+		InMyDepth = self:FindInput("Depth")
+		InMyDepth:SetAttrs({ IC_Visible = false })
+		startflag = false
+	end
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    src1 = Image(imgattrs)
+    src1:Fill(p)
+
+    tex = false
+	  if (InImage2:GetValue(req) ~= nil) then
+         src2 = InImage2:GetValue(req)
+		 tex = true
+      else
+         src2 = Image(imgattrs)
+         src2:Fill(p)
+      end
+
+
+    if (tex) then
+		InContrast:SetAttrs({ IC_Visible = true })
+	else	
+		InContrast:SetAttrs({ IC_Visible = false })
+    end
+
+    local dstA = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+	local dstI = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+	if req:IsPreCalc() then
+		 --print("\n######################### Precalc ##############################\n")
+		 local out = Image({IMG_Like = dstI, IMG_NoData = true})
+		 OutImage:Set(req, out)
+		 return
+	end
+	
+	    --StartStop	
+    if InStop:GetValue(req).Value == 0 then             
+	   _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   startstopsema = 1
+	else
+	   if startstopsema == 1 then
+	      InActtime:SetSource(Number(req.Time),0)
+	      startstopsema = 0
+	      _acttime = req.Time + InTimeoffset:GetValue(req).Value
+	   else
+	      _acttime = InActtime:GetValue(req).Value + InTimeoffset:GetValue(req).Value
+	   end	
+	end
+
+    acttime = _acttime / framerate
+	
+	
+
+    -------------------------- BufferA-Kernel----------------------------------------
+    local nodeName = self.Name
+    BufferAKernel = string.gsub(BufferAKernel, "BufferAKernel", nodeName)
+    nodeA = DVIPComputeNode(req, nodeName, BufferAKernel, "GlobalParams", GlobalParams)
+
+	--nodeA = DVIPComputeNode(req, "BufferAKernel", BufferAKernel, "GlobalParams", GlobalParams)
+
+	local params = {}
+	if not pcall(function ()
+
+		params.center = {center.X,center.Y}
+		params.scale  = 1/scale
+		params.debug  = InDebug:GetValue(req).Value
+		params.angle  = angle
+		params.pivot  = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq   = freq
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime  = acttime --req.Time / framerate
+		params.iframe = req.Time
+        params.tex    = tex
+        params.contrast = InContrast:GetValue(req).Value
+
+		params.astart = InAStart:GetValue(req).Value
+		params.falloff = InFalloff:GetValue(req).Value
+		params.count  = InCount:GetValue(req).Value
+		params.repetition = InRepetition:GetValue(req).Value
+
+		params.Alpha_Apply 	= InAlpha_Apply:GetValue(req).Value
+		params.alphathres   = InAlphaThres:GetValue(req).Value	
+		params.alpha 	    = InAlpha:GetValue(req).Value	
+
+		nodeA:SetParamBlock(params)
+    end) then
+
+		params = nodeA:GetParamBlock(GlobalParams)
+
+		params.center = {center.X,center.Y}
+		params.scale  = 1/scale
+		params.debug  = InDebug:GetValue(req).Value
+		params.angle  = angle
+		params.pivot  = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq   = freq
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime  = acttime --req.Time / framerate
+		params.iframe = req.Time
+		params.tex    = tex
+		params.contrast = InContrast:GetValue(req).Value
+		
+		params.astart = InAStart:GetValue(req).Value
+		params.falloff = InFalloff:GetValue(req).Value
+		params.count  = InCount:GetValue(req).Value
+		params.repetition = InRepetition:GetValue(req).Value
+
+		params.Alpha_Apply 	= InAlpha_Apply:GetValue(req).Value
+		params.alphathres   = InAlphaThres:GetValue(req).Value	
+		params.alpha 	    = InAlpha:GetValue(req).Value
+
+		nodeA:SetParamBlock(params)
+	end
+
+    nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+	--nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR, TEX_ADDRESS_MODE_CLAMP, TEX_NORMALIZED_COORDS_TRUE)
+
+    nodeA:AddInput("iChannel0", Image_Buff_Global)
+	nodeA:AddInput("iChannel1", src2)
+	--nodeA:AddInput("iChannel2", src3)
+	--nodeA:AddInput("iChannel3", src4)
+    nodeA:AddOutput("dst", dstA)
+
+
+    local success = nodeA:RunSession(req)
+    if not success then
+        dstA = nil
+        dump(nodeA:GetErrorLog())
+    end
+
+    Image_Buff_Global = dstA --Recursiv Image
+
+  -------------------------- ImageKernel----------------------------------------
+  --node = DVIPComputeNode(req, "ImageKernel", ImageKernel, "GlobalParams", GlobalParams)
+
+  ImageKernel = string.gsub(ImageKernel, "ImageKernel", "IK"..nodeName)
+  node = DVIPComputeNode(req, "IK"..nodeName, ImageKernel, "GlobalParams", GlobalParams)
+
+
+  node:SetParamBlock(params)
+
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR, TEX_ADDRESS_MODE_CLAMP, TEX_NORMALIZED_COORDS_TRUE)
+
+  node:AddInput("iChannel0", Image_Buff_Global)
+  --node:AddInput("iChannel1", src2)
+  --node:AddInput("iChannel2", src3)
+  --node:AddInput("iChannel3", src4)
+  node:AddOutput("dst", dstI)
+
+  local success = node:RunSession(req)
+  if not success then
+      dstI = nil
+      dump(node:GetErrorLog())
+  end
+
+  OutImage:Set(req, dstI)
+	collectgarbage();
+end
+
+
+-- **/ "End of LUA CODE"
+

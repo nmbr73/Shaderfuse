@@ -1,0 +1,1460 @@
+--[[--/*
+
+  TheDarkMarkHp.fuse
+
+  Based on https://www.shadertoy.com/view/ftS3zG a WebGL shader created by Yusef28.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  bool   SCATTERING;
+  bool   GlowEyes;
+  float  Color1[4];
+  float  Fov;
+  float  h;
+  float  Loop;
+  float  tdMax;
+  float  Baum1;
+  float  Baum2;
+  float  BOff;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+ #define fract_f3(A) fract(A)
+
+ #define sin_f2(i) sin(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define sin_f2(i) sin(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_CUDA)
+   #define radians(a) a * M_PI/180.0f
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: RGBA Noise Medium' to iChannel0
+
+
+
+
+
+//#define SCATTERING
+
+#define pi 3.14159265f
+#define R(p, a) p=_cosf(a)*p+_sinf(a)*to_float2(p.y, -p.x)
+#define hsv(h,s,v) _mix(to_float3_s(1.0f), clamp((abs_f3(fract_f3(h+to_float3(3.0f, 2.0f, 1.0f)/3.0f)*6.0f-3.0f)-1.0f), 0.0f, 1.0f), s)*v
+
+
+/* original noise
+__DEVICE__ float pn(float3 p) {
+   float3 i = _floor(p);
+   float4 a = dot(i, to_float3(1.0f, 57.0f, 21.0f)) + to_float4(0.0f, 57.0f, 21.0f, 78.0f);
+   float3 f = _cosf((p-i)*pi)*(-0.5f) + 0.5f;
+   a = _mix(_sinf(cos(a)*a), _sinf(cos(1.0f+a)*(1.0f+a)), f.x);
+   swi2(a,x,y) = _mix(swi2(a,x,z), swi2(a,y,w), f.y);
+   return _mix(a.x, a.y, f.z);
+}
+*/
+
+
+// iq's noise
+
+__DEVICE__ float hash(float2 p) {
+ return fract(_sinf(dot(p*0.05f, to_float2(14.52f, 76.38f)))*43256.2895f);
+}
+
+__DEVICE__ float3 hash13( float n )
+{
+    float3 m = n*to_float3(23.0f,41.0f,17.0f) + to_float3(9.0f,1.0f,31.0f);
+    return fract( m*fract( m*0.3183099f ) );
+}
+
+
+__DEVICE__ float pn( in float3 x, __TEXTURE2D__ iChannel0 )
+{
+  float3 p = _floor(x);
+  float3 f = fract_f3(x);
+  f = f*f*(3.0f-2.0f*f);
+  float2 uv = (swi2(p,x,y)+to_float2(37.0f,17.0f)*p.z) + swi2(f,x,y);
+  float2 rg = swi2(texture( iChannel0, (uv+ 0.5f)/256.0f),y,x);
+  return -1.0f+2.4f*_mix( rg.x, rg.y, f.z );
+}
+
+// Value Noise by Inigo Quilez - iq/2013
+// https://www.shadertoy.com/view/lsf3WH
+
+__DEVICE__ float2 random2(float2 st){
+    st = to_float2( dot(st,to_float2(127.1f,311.7f)),
+                    dot(st,to_float2(269.5f,183.3f)) );
+    return -1.0f + 2.0f*fract_f2(sin_f2(st)*43758.5453123f);
+}
+// Value Noise by Inigo Quilez - iq/2013
+// https://www.shadertoy.com/view/lsf3WH
+__DEVICE__ float noise(float2 st) {
+    float2 i = _floor(st);
+    float2 f = fract_f2(st);
+
+    float2 u = f*f*(3.0f-2.0f*f);
+
+    return _mix( _mix( dot( random2(i + to_float2(0.0f,0.0f) ), f - to_float2(0.0f,0.0f) ),
+                       dot( random2(i + to_float2(1.0f,0.0f) ), f - to_float2(1.0f,0.0f) ), u.x),
+                 _mix( dot( random2(i + to_float2(0.0f,1.0f) ), f - to_float2(0.0f,1.0f) ),
+                       dot( random2(i + to_float2(1.0f,1.0f) ), f - to_float2(1.0f,1.0f) ), u.x), u.y);
+}
+__DEVICE__ float fbm(float2 st)
+{
+    float f = noise(st)*1.0f;st*=2.02f;
+          f += noise(st)*0.5f;st*=2.04f;
+          f += noise(st)*0.25f;st*=2.03f;
+          f += noise(st)*0.125f;st*=2.04f;
+          f += noise(st)*0.0625f;///st*=2.01f;
+
+    return f;
+}
+
+__DEVICE__ float fpn(float3 p, __TEXTURE2D__ iChannel0) {
+   return pn(p*0.06125f, iChannel0)*0.5f + pn(p*0.125f, iChannel0)*0.25f + pn(p*0.25f, iChannel0)*0.125f;
+}
+
+#define FAR 55.0f
+__DEVICE__ float sdCappedCylinder( float3 p, float h, float r ){
+  float2 d = abs_f2(to_float2(length(swi2(p,x,z)),p.y)) - to_float2(h,r);
+  return _fminf(_fmaxf(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f)));
+}
+__DEVICE__ float smin( float a, float b, float k ){
+    float h = clamp( 0.5f + 0.5f * (b - a) / k, 0.0f, 1.0f );
+    return _mix( b, a, h ) - k * h * (1.0f - h);
+}
+__DEVICE__ float smax( float a, float b, float k ){
+    float h = clamp( 0.5f + 0.5f * (a - b) / k, 0.0f, 1.0f );
+    return _mix( b, a, h ) + k * h * (1.0f - h);
+}
+
+// https://www.shadertoy.com/view/tl23RK
+__DEVICE__ float sdCappedTorus(in float3 p, in float2 sc, in float ra, in float rb)
+{
+    p.x = _fabs(p.x);
+    float k = (sc.y*p.x>sc.x*p.y) ? dot(swi2(p,x,y),sc) : length(swi2(p,x,y));
+    return _sqrtf( dot(p,p) + ra*ra - 2.0f*ra*k ) - rb;
+}
+__DEVICE__ float knochen(float3 p, float3 xyz, float3 dim, float th, float phi, float ga, float spiegel, float r){
+
+    float3 sp = p - xyz;
+    sp.x = _fabs(sp.x) - spiegel;
+
+    float cs = _cosf(th), si = _sinf(th);
+    swi2S(sp,y,z, mul_f2_mat2(swi2(sp,y,z) , to_mat2(cs, si, -si, cs)));
+
+    cs = _cosf(phi), si = _sinf(phi);
+    swi2S(sp,x,z, mul_f2_mat2(swi2(sp,x,z) , to_mat2(cs, si, -si, cs)));
+
+    cs = _cosf(ga), si = _sinf(ga);
+    swi2S(sp,x,y, mul_f2_mat2(swi2(sp,x,y) , to_mat2(cs, si, -si, cs)));
+
+    sp = abs_f3(sp) - dim;
+    return _fminf(_fmaxf(sp.x, _fmaxf(sp.y, sp.z)), 0.0f) + length(_fmaxf(sp, to_float3_s(0.0f))) - r;
+}
+
+__DEVICE__ float sdCircleCircle( in float3 p, in int n, float zeichen){
+    float a0 = (float)(n) / radians(360.0f);
+    float a = round(_atan2f(p.z, p.x) * a0) / a0;
+    float3 sp = p - to_float3(_cosf(a), 0.0f, _sinf(a));
+
+    float cs = _cosf(a), si = _sinf(a);//erste versuch!!!!
+    swi2S(sp,x,z, mul_f2_mat2(swi2(sp,x,z) , to_mat2(cs, si, -si, cs)));
+
+    cs = _cosf(0.3f*zeichen), si = _sinf(0.3f*zeichen);//erste versuch!!!!
+    swi2S(sp,x,y, mul_f2_mat2(swi2(sp,x,y) , to_mat2(cs, si, -si, cs)));
+
+    sp = abs_f3(sp) - to_float3(0.1f + _cosf(sp.y*8.0f)*0.03f, 0.19f, 0.07f + _cosf(sp.y*6.0f+ 1.4f)*0.05f*zeichen);
+    return _fminf(_fmaxf(sp.x, _fmaxf(sp.y, sp.z)), 0.0f) + length(_fmaxf(sp, to_float3_s(0.0f))) - 0.02f;
+    //return sdCappedCylinder(sp, 0.05f, 0.06f) - 0.05f;
+}
+
+__DEVICE__ float noiseTex( in float3 x, __TEXTURE2D__ iChannel0 )
+{
+
+  float3 i = _floor(x);
+  float3 f = fract_f3(x);
+  f = f*f*(3.0f-2.0f*f);
+  float2 uv = (swi2(i,x,y)+to_float2(37.0f,17.0f)*i.z) + swi2(f,x,y);
+  float2 rg = swi2(texture( iChannel0, (uv+0.5f)/256.0f),y,x);
+  return _mix( rg.x, rg.y, f.z );
+
+}
+
+
+__DEVICE__ float snake(float3 pos)
+{
+      //the max distance so this is a blank world before
+      //I start adding in torus
+      float alle = 100.0f;
+      //theta, sin and cos for rotation
+      float th, si, cs;
+      float3 p; //tmp position
+
+     //Snake going through eye hole because that's edgy
+     //translate pos
+     p=pos+to_float3(0.3f,0.0f,0.3f);
+     th = 1.14f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+
+     //th = 1.14f;
+     //cs = _cosf(th), si = _sinf(th);
+     //swi2(p,x,y) = mat2(cs, si, -si, cs)*swi2(p,x,y);
+
+     th = 1.14f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,y,z)));
+
+     // an is like how long the torus is out of pi = 100% , or something
+     float an = 1.9f;
+     //c is how that is applied to the torus
+     float2 c = to_float2(_sinf(an),_cosf(an));
+     // make torus (position, length, outer radius, inner radius
+     float tmp = sdCappedTorus(p, c, 0.2f, 0.1f);
+     //add it in
+     alle = _fminf(alle, tmp);
+
+     //Snake going through mouth because that's edgy
+     //translate pos
+     p=pos+to_float3(0.15f,0.29f,0.5f);
+     th = -1.0f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+
+     th = -0.4f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,y, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,y)));
+
+     th = 2.4f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,y,z)));
+
+     // an is like how long the torus is out of pi = 100% , or something
+     an = 3.0f;
+     //c is how that is applied to the torus
+     c = to_float2(_sinf(an),_cosf(an));
+     // make torus (position, length, outer radius, inner radius
+     tmp = sdCappedTorus(p, c, 0.25f, 0.08f);
+     //add it in
+     alle = _fminf(alle, tmp);
+
+     //Snake going through eye hole because that's edgy
+     //translate pos
+     p=pos+to_float3(-0.25f,0.85f,0.2f);
+     th = -0.4f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+
+     th = -0.6f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,y, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,y)));
+
+     th = 1.5f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,y,z)));
+
+     // an is like how long the torus is out of pi = 100% , or something
+     an = 2.0f;
+     //c is how that is applied to the torus
+     c = to_float2(_sinf(an),_cosf(an));
+     // make torus (position, length, outer radius, inner radius
+     tmp = sdCappedTorus(p, c, 0.29f, 0.06f);
+     //add it in
+     alle = _fminf(alle, tmp);
+
+
+     //Tail (h)whip
+     //translate pos
+     p=pos+to_float3(-0.35f,1.1f,0.3f);
+     th = 3.8f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+
+     th = 0.0f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,y, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,y)));
+
+     th = 1.5f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,y,z)));
+
+     // an is like how long the torus is out of pi = 100% , or something
+     an = 1.9f;
+     //c is how that is applied to the torus
+     c = to_float2(_sinf(an),_cosf(an));
+     // make torus (position, length, outer radius, inner radius
+     tmp = sdCappedTorus(p, c, 0.25f, 0.03f);
+     //add it in
+     alle = _fminf(alle, tmp);
+
+     pos.y+=0.05f;
+     //Upper Body
+     //translate pos
+     p=pos+to_float3(-0.5f,0.3f,0.27f);
+     th = 1.2f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+
+     th = 3.0f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,y, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,y)));
+
+     th = -0.1f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,y,z)));
+
+     // an is like how long the torus is out of pi = 100% , or something
+     an = 2.4f;
+     //c is how that is applied to the torus
+     c = to_float2(_sinf(an),_cosf(an));
+     // make torus (position, length, outer radius, inner radius
+     tmp = sdCappedTorus(p, c, 0.19f, 0.1f);
+     //add it in
+     alle = _fminf(alle, tmp);
+
+     //Neck Head
+     //translate pos
+     p=pos+to_float3(-0.5f, -0.03f, 0.53f);
+     th = 1.6f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+
+     th = -0.7f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,y, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,y)));
+
+     th = 0.3f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,y,z)));
+
+     // an is like how long the torus is out of pi = 100% , or something
+     an = 1.2f;
+     //c is how that is applied to the torus
+     c = to_float2(_sinf(an),_cosf(an));
+     // make torus (position, length, outer radius, inner radius
+     tmp = sdCappedTorus(p, c, 0.2f, 0.12f);
+     //add it in
+     alle = smin(alle, tmp, 0.07f);
+
+     pos*=0.9f;
+     th = 0.0f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(pos,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(pos,y,z)));
+
+     //shere for head
+     p=pos+to_float3(-0.47f, -0.17f, 0.52f);
+
+     th = -0.2f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+     tmp = length(p)-0.25f;
+     alle = smin(alle, tmp,0.03f);
+
+
+     //shaping the head with minus sheres
+     p=pos+to_float3(-0.5f, -0.1f, 0.59f);
+
+     th = -0.1f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+     p.x = _fabs(p.x)-0.13f;
+     tmp = length(p)-0.218f;
+     alle = smax(alle, -tmp, 0.05f);
+
+     p=pos+to_float3(-0.5f, -0.28f, 0.7f);
+     tmp = length(p)-0.03f;
+     alle = smin(alle, tmp, 0.05f);
+
+
+     //shaping the head with minus sheres
+     p=pos+to_float3(-0.5f, -0.1f, 0.5f);
+
+     th = -0.1f;
+     cs = _cosf(th), si = _sinf(th);
+     swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+     tmp = length(p)-0.2f;
+     alle = smax(alle, -tmp, 0.05f);
+
+    //jaw
+    p=pos;
+    th = -0.14f;
+    p.y+=_sinf(p.z*30.0f-0.6f)/40.0f;
+    cs = _cosf(th), si = _sinf(th);
+    swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+    tmp = knochen(p, to_float3(0.4f, 0.26f, -0.65f), to_float3(0.08f, 0.01f, 0.14f), -1.2f, -0.35f, -0.0f, 0.0f, 0.0f);
+    alle = smin(alle, tmp, 0.1f);
+
+    //teeth / zhane
+    //upper
+    p=pos;
+    th = -0.17f;
+    cs = _cosf(th), si = _sinf(th);
+    swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+
+    tmp = knochen(p, to_float3(0.38f, 0.22f, -0.78f), to_float3(0.005f, 0.04f, 0.005f), -0.0f, -0.0f, -0.0f, 0.04f, 0.0f);
+    alle = smin(alle, tmp, 0.01f);
+    //lower
+    p=pos;
+    th = -0.17f;
+    cs = _cosf(th), si = _sinf(th);
+    swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+    tmp = knochen(p, to_float3(0.38f, 0.22f, -0.7f), to_float3(0.005f, 0.05f, 0.005f), -0.0f, -0.0f, -0.0f, 0.04f, 0.0f);
+    alle = smin(alle, tmp, 0.01f);
+
+    return alle;
+}
+__DEVICE__ float map(float3 p, float2 iResolution, float4 iMouse, bool GlowEyes, float iTime, inout float4 *objID, inout float *glow, __TEXTURE2D__ iChannel0 ){
+
+    float PosX, PosY;
+    PosX = 3.14f - iMouse.x/iResolution.x*8.0f + 1.5f;//0.2f*2.0f*(rechts - links);
+    PosY = -0.3f - iMouse.y/iResolution.y*8.0f + 1.5f;
+
+    p.z+=1.0f;
+    float cs = _cosf(PosX), si = _sinf(PosX);
+    //swi2(p,x,y) = mat2(cs, si, -si, cs)*swi2(p,x,y);
+    swi2S(p,x,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,x,z)));
+    cs = _cosf(PosY), si = _sinf(PosY);
+    swi2S(p,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,y,z)));
+
+    p*=0.6f;
+    p.y-=0.2f;
+
+    float3 sp = p;
+    float k = length(sp*to_float3(1.0f, 0.95f, 0.9f)) - 0.5f;
+    float alle = k;
+
+    //schadel unten schneiden
+    sp = p;
+    k = length(sp - to_float3(0.0f, -0.9f, -0.5f)) - 0.7f;
+    alle = smax(alle, -k, 0.09f);
+
+    //schadel seite
+    sp = p;
+    sp.x = _fabs(sp.x) - 0.65f;
+    k = length(sp - to_float3(0.0f, -0.05f, -0.28f)) - 0.3f;
+    alle = smax(alle, -k, 0.09f);
+
+
+    //oben augen knochen
+    sp = p;
+    k = knochen(p, to_float3(0.0f, 0.0f + _cosf(_fabs(sp.x)*8.0f + 5.0f)*0.05f - 0.04f , -0.48f - _cosf(_fabs(sp.x)*8.0f + 5.8f)*0.05f),
+                to_float3(0.12f, 0.005f, 0.005f),
+                0.0f, 0.0f, 0.0f, 0.14f, 0.04f);
+    alle = smin(alle, k, 0.09f);
+
+
+    //oberest knochen
+    sp = p;
+    k = knochen(p, to_float3(0.0f, 0.15f, -0.22f), to_float3(0.005f, 0.005f, 0.25f),
+                -0.5f, 0.0f, 0.0f, 0.28f, 0.03f);
+    alle = smin(alle, k, 0.09f);
+
+    //augen seit knochen
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.15f , -0.48f), to_float3(0.005f, 0.08f, 0.02f),
+                0.0f, 0.0f, 0.1f, 0.3f, 0.01f);
+    alle = smin(alle, k, 0.07f);
+
+    //wangen knochen vor
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.3f, -0.45f), to_float3(0.13f, 0.06f, 0.05f),
+                -0.3f, -0.1f, -0.2f, 0.15f, 0.03f);
+    alle = smin(alle, k, 0.1f);
+
+    //wangen knochen seit
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.33f, -0.32f),
+                to_float3(0.007f, 0.02f-_cosf(sp.z*8.0f + 1.7f-_cosf(sp.z*20.0f + 1.7f))*0.01f, 0.16f),
+                0.0f, 0.1f, 0.0f, 0.32f + _cosf(sp.z*8.0f + 2.0f)*0.09f,
+                0.03f + _cosf(sp.z*8.0f + 4.7f)*0.015f);
+    alle = smin(alle, k, 0.05f);
+
+    float zahnNum = 12.0f;
+    //cyl oben
+    sp = p - to_float3(0.0f, -0.43f, -0.4f);
+    k = sdCappedCylinder(sp, 0.17
+                         + _cosf(sp.y*12.0f -5.3f)*0.05
+                         + _fabs(_cosf(_atan2f(sp.z,sp.x)*zahnNum - 0.8f))*0.01
+                         , 0.06f - _fabs(_cosf(_atan2f(sp.z,sp.x)*zahnNum - 0.8f))*0.02f);
+    alle = smin(alle, k, 0.08f);
+
+    //oben zhan
+    sp = p - to_float3(0.0f, -0.51f, -0.41f);
+    cs = _cosf(0.33f), si = _sinf(0.33f);//erste versuch!!!!
+    swi2S(sp,x,z, mul_f2_mat2(swi2(sp,x,z),to_mat2(cs, si, -si, cs)));
+    k = sdCircleCircle(sp*5.4f, 24, 1.0f);
+    float zahn = k;
+
+    //augen loche
+    sp = p;
+    sp.x = _fabs(sp.x) - 0.16f;
+    float loche = length(sp - to_float3(0.0f, -0.14f, -0.4f)) - 0.16f;
+    alle = smax(alle, -loche, 0.07f);
+
+    //gluende augen
+    if(GlowEyes)
+    {
+      sp = p;
+      sp.x = _fabs(sp.x) - 0.16f;
+      float augen = length(sp - to_float3(0.0f, -0.22f, -0.65f)) - 0.04f;
+      alle = _fminf(alle, augen);
+    }
+    //nase
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.23f, -0.51f), to_float3(0.03f, 0.09f, 0.08f), -0.3f, 0.0f, 0.3f, 0.0f, 0.04f);
+    alle = smin(alle, k, 0.07f);
+
+    //nase scheiden
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.25f, -0.54f), to_float3(0.022f, 0.08f, 0.07f),
+                -0.35f, 0.0f, 0.3f, 0.0f, 0.03f);
+    alle = smax(alle, -k, 0.04f);
+
+    //nase linie
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.25f, -0.5f), to_float3(0.001f, 0.12f, 0.07f),
+                -0.35f, 0.0f, 0.0f, 0.0f, 0.005f);
+    alle = smin(alle, k, 0.03f);
+
+    //KEIFER / JAW
+
+    PosY = 0.4f;
+    cs = _cosf(PosY), si = _sinf(PosY);
+    swi2S(p,y,z, mul_mat2_f2(to_mat2(cs, si, -si, cs),swi2(p,y,z)));
+    p.y-=0.08f;
+    //wangen knochen zu keifer
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.54f, -0.28f - _cosf(_fabs(sp.y)*12.0f + 3.0f)*0.06f),
+                to_float3(0.001f, 0.14f, 0.1f),
+                0.0f, -0.45f, -0.25f, 0.32f, 0.01f);
+    alle = smin(alle, k, 0.05f);
+
+    //keifer
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.69f, -0.34f), to_float3(0.012f, 0.04f, 0.22f),
+                -0.3f, -0.5f, 0.0f, 0.22f, 0.03f);
+    alle = smin(alle, k, 0.09f);
+
+    //kinn
+    sp = p;
+    k = knochen(p, to_float3(0.0f, -0.74f, -0.53f), to_float3(0.05f, 0.04f, 0.015f),
+                0.0f, 0.0f, 0.0f, 0.0f, 0.03f);
+    alle = smin(alle, k, 0.09f);
+
+
+    //cyl unten
+    sp = p - to_float3(0.0f, -0.68f, -0.42f);
+    k = sdCappedCylinder(sp, 0.15
+                         + _cosf(sp.y*12.0f - 1.5f)*0.03
+                         + _fabs(_cosf(_atan2f(sp.z,sp.x)*zahnNum - 0.8f))*0.01
+                         , 0.08f - _fabs(_cosf(_atan2f(sp.z,sp.x)*zahnNum - 0.8f))*0.01f);
+    alle = smin(alle, k, 0.06f);
+
+
+    //unten zahn
+    sp = p - to_float3(0.0f, -0.58f, -0.4f);
+    cs = _cosf(0.33f), si = _sinf(0.33f);//erste versuch!!!!
+    swi2S(sp,x,z, mul_f2_mat2(swi2(sp,x,z), to_mat2(cs, si, -si, cs)));
+
+    k = sdCircleCircle(sp*5.6f, 24, -1.0f);
+    zahn = _fminf(zahn, k);
+
+    *objID = to_float4(zahn-0.05f, alle, 0, 0);
+    alle =  smin(zahn,alle, 0.09f);
+
+    float ball_of_subtraction = length(p-to_float3(0.0f, -0.32f, -0.2f))-0.34f;
+    alle = _fmaxf(alle, -ball_of_subtraction);
+
+    //if(_fminf(augen, alle) == augen){
+    alle = _fminf(alle, snake(p));
+    alle += fpn(p*100.0f+iTime*10.0f, iChannel0) * (0.03f+0.03f*_sinf(iTime));
+
+    *glow += _fabs(_fmaxf(0.0001f,(0.0001f/(0.0075f*_powf((alle),0.7f - 0.2f*_sinf(iTime))))));//* (0.5f-augen*1.5f);
+    //}
+    return alle;
+}
+
+__DEVICE__ float augenMap(float3 p, float alle, inout float *glow2){
+
+    float PosX, PosY;
+    //PosX = 3.14f;// - iMouse.x/iResolution.x*8.0f + 1.5f;//0.2f*2.0f*(rechts - links);
+    //PosY = -0.3f;// - iMouse.y/iResolution.y*8.0f + 1.5f;
+
+    //p.z+=1.0f;
+
+    //float alle = 100.0f;
+    p*=0.8f;
+    //p.y-=0.2f;
+    //gluende augen
+    float3 sp = p;
+    //sp.x = _fabs(sp.x) -1.2f;
+    float augen = length(sp - to_float3(-1.2f, 0.2f, 5.94f)) - 0.1f;
+    alle = _fminf(alle, augen);
+    if(_fminf(augen, alle) == augen){
+        *glow2 += _fabs(_fmaxf(0.0001f,(0.00005f/(0.005f*_powf((augen),1.0f)))));//* (0.5f-augen*1.5f);
+    }
+
+    //snake eye
+    sp=p+to_float3(1.3f, -0.41f, 0.51f);
+    sp.x = _fabs(sp.x)-0.15f;
+    float tmp = length(sp)-0.001f;
+    if(_fminf(tmp,alle) == tmp){
+      *glow2 += _fabs(_fmaxf(0.0001f,(0.00005f/(0.005f*_powf((tmp),1.0f)))))/4.0f;//* (0.5f-augen*1.5f);
+    }
+    alle = _fminf(alle, tmp);
+
+    return alle;
+}
+
+
+
+/*
+__DEVICE__ float3 g(float3 p) {
+   float2 e = to_float2(0.0001f, 0.0f);
+   return normalize(to_float3(f(p+swi3(e,x,y,y)) - f(p-swi3(e,x,y,y)),f(p+swi3(e,y,x,y)) - f(p-swi3(e,y,x,y)),f(p+swi3(e,y,y,x)) - f(p-swi3(e,y,y,x))));
+}
+*/
+
+__KERNEL__ void TheDarkMarkHpFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   SCATTERING = params->SCATTERING;
+  bool   GlowEyes = params->GlowEyes;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float  Fov = params->Fov;
+  float  h = params->h;
+  float  Loop = params->Loop;
+  float  tdMax = params->tdMax;
+  float  Baum1 = params->Baum1;
+  float  Baum2 = params->Baum2;
+  float  BOff = params->BOff;
+
+  // --------
+
+   float glow  = 0.0f;
+   float glow2 = 0.0f;
+
+   float4 objID = to_float4_s(0.0f);
+
+
+
+   // p: position on the ray
+   // d: direction of the ray
+   float3 p = to_float3(0.0f,0.0f,2.0f);
+   float3 d = to_float3_aw((fragCoord/(0.5f*iResolution)-1.0f)*to_float2(iResolution.x/iResolution.y,1.0f), 0.0f) - p;
+   d = normalize(d);
+   float2 uv = (fragCoord-iResolution*0.5f)/iResolution.y;
+   // ld, td: local, total density
+   // w: weighting factor
+   float ld=0.0f, td=0.0f;
+   float w=0.0f;
+
+   // total color
+   float3 tc = to_float3_s(0.0f);
+
+   // i: 0 <= i <= 1.
+   // r: length of the ray
+   // l: distance function
+   float r=0.0f, l=0.0f, b=0.0f;
+
+   // rm loop
+   for (float i=0.0f; (i<1.0f); i+=1.0f/Loop) {
+       //break if you either
+       //get through all the loop calls, the total density is 95%  or more Y
+       // or both
+       //don't break only if both conditions are not met Y
+       if(!((i<1.0f) && (td < tdMax))) //0.95f
+          break;
+       // evaluate distance function
+       //l for length to point
+
+       //why take only 50% of the length?Y
+       l = map(p, iResolution, iMouse, GlowEyes, iTime, &objID, &glow, iChannel0) * 0.55f;
+
+
+       //const float h = 0.025f;
+
+       // check whether we are close enough (step)
+       // compute local density and weighting factor
+       //if distance to point "l" is less than h, (step(h, l) would be the opposite Y
+       //h - l meaning difference between threshold and length
+       //that equals the "local density"
+       // otherwise local density = 0
+       //local density is relative to the threshhold 0.05.
+       //l will always be less than h, based on the step condition,
+
+       ld = (h - l) * step(l, h);
+
+       //total density
+       //density will be like how dark solid(colored in) the cloud is Y
+       //td will always be less than 0.95f based on the break condition
+       w = (1.0f - td) * ld;
+
+       //accumulate color and density
+       tc += w; // * hsv(w, 1.0f, 1.0f); // * hsv(w*3.0f-0.5f, 1.0f-w*20.0f, 1.0f);
+       td += w;
+
+       td += 1.0f/200.0f;
+
+       // enforce minimum stepsize
+       l = _fmaxf(l, 0.003f);
+
+       // step forward
+       p += l*d;
+       r += l;
+   }
+
+
+   float3 lookAt = to_float3(0.0f, -1.0f, 0.0f);
+   float3 campos = lookAt + to_float3(0.0f, 0.0f, -4.0f);
+
+
+
+     //swi2S(lookAt,x,y, swi2(lookAt,x,y) + path(lookAt.z));
+     //swi2S(campos,x,y, swi2(campos,x,y) + path(campSos.z));
+     //
+     //swi2S(light1.x,y, swi2(light1,x,y) + path(light1.z));
+     //swi2S(light2,x,y, swi2(light2,x,y) + path(light2.z));
+     //I've ommitted adding path to the lights because it seems redundant
+     //although it does make a difference somehow.
+
+
+   float FOV = 3.14f/Fov;//3.0f;//is a bit more than one so multiplying this by right and up in ray
+   //direction increases those vector components (x and y) so it kinda stretches the screen
+   //so you can see more.
+   float3 forward = normalize(lookAt - campos);
+   float3 right = normalize(to_float3(forward.z, 0.0f, 0.0f));//don't really need -forward.x?
+                 //pretty cool using forward.z as the x component in this vector
+   float3 up = cross(forward, right);
+
+
+   float3 rd = normalize(forward + FOV*right*uv.x + FOV*up*uv.y);
+   //swi2(rd,x,y)*=rot(iTime);
+   //swi2(rd,y,z)*=rot(-1.8f);
+
+
+    float t = 0.0f, dt;
+    for(int i = 0;i<128; i++)
+    {
+        dt = augenMap(campos + rd*t,td, &glow2);
+        if(dt<0.005f || t > 150.0f){break;}
+
+        t += dt*0.75f;
+    }
+
+   if (SCATTERING)
+     // simple scattering approximation
+     tc *= 1.0f / _expf( ld * 0.4f ) * 1.5f;
+
+
+   float2 st = (fragCoord-iResolution*0.5f)/iResolution.y;
+   float3 sky = to_float3_s(0.0f);
+   sky = _mix(to_float3(0.0f,0.1f,0.0f),sky, uv.y);
+   sky += to_float3_s(step(0.99f,hash(fragCoord/10.0f)));
+
+   st.x/=2.0f;
+   st.x+=iTime/16.0f;
+   float3 skyGrad = _mix(to_float3(0.0f, 0.0f, 0.2f),to_float3(0.2f,0.7f,0.3f),uv.y*2.0f);
+   float cloud = 0.04f+fbm(st*4.0f+fbm(st*2.0f)/2.0f)*(noise(st));
+   sky = _mix(sky, to_float3_s(6.0f)+skyGrad, clamp(cloud,0.0f, 1.0f ));
+
+
+   //sky += fpn(swi3(uv,x,y,x)+iTime*10.0f);
+   float3 col  = _mix(tc*swi3(Color1,x,y,z) + 0.2f + glow/800.0f + glow2, sky, 1.0f-tc.x);
+   //gamma
+   col = pow_f3(col,to_float3_s(1.5f));
+
+   uv.x*=0.95f;
+   uv.y*=1.2f;
+   float baumen = 1.0f-smoothstep(0.8f+BOff, 0.85f+BOff, length(uv)-fbm(to_float2(_atan2f(uv.y/uv.x, 1.0f)*Baum2,length(uv))+_sinf(iTime/5.0f))/Baum1);
+   col *= baumen;
+   //vignette
+   uv = fragCoord/iResolution;
+   uv *=  1.0f - swi2(uv,y,x);
+   float vig = uv.x*uv.y * 15.0f; // multiply with sth for intensity
+
+   vig = _powf(vig, 0.15f); // change pow for modifying the extend of the  vignette
+
+   fragColor = to_float4_aw(col*vig,1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InSCATTERINGCheckbox = self:AddInput("SCATTERING", "SCATTERING", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InGlowEyesCheckbox = self:AddInput("GlowEyes", "GlowEyes", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  self:BeginControlNest("Color1", "Color1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor1ColorR = self:AddInput("Red",   "Color1Red",   { INP_Default  = 0.3, IC_ControlID = 0, attrs})
+    InColor1ColorG = self:AddInput("Green", "Color1Green", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InColor1ColorB = self:AddInput("Blue",  "Color1Blue",  { INP_Default  = 0.37, IC_ControlID = 2, attrs})
+    InColor1ColorA = self:AddInput("Alpha", "Color1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InFovSlider = self:AddInput("Fov", "Fov", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.0,
+      })
+
+  InhSlider = self:AddInput("h", "h", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.025,
+      })
+
+  InLoopSlider = self:AddInput("Loop", "Loop", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 256.0,
+          INP_Default        = 64.0,
+      })
+
+  IntdMaxSlider = self:AddInput("tdMax", "tdMax", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.95,
+      })
+
+  InBaum1Slider = self:AddInput("Baum1", "Baum1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 5.0,
+      })
+
+  InBaum2Slider = self:AddInput("Baum2", "Baum2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 9.0,
+      })
+
+  InBOffSlider = self:AddInput("BOff", "BOff", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "TheDarkMarkHpFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.SCATTERING = InSCATTERINGCheckbox:GetValue(req).Value
+  params.GlowEyes = InGlowEyesCheckbox:GetValue(req).Value
+  params.Color1 = {
+    InColor1ColorR:GetValue(req).Value,
+    InColor1ColorG:GetValue(req).Value,
+    InColor1ColorB:GetValue(req).Value,InColor1ColorA:GetValue(req).Value
+  }
+  params.Fov = InFovSlider:GetValue(req).Value
+  params.h = InhSlider:GetValue(req).Value
+  params.Loop = InLoopSlider:GetValue(req).Value
+  params.tdMax = IntdMaxSlider:GetValue(req).Value
+  params.Baum1 = InBaum1Slider:GetValue(req).Value
+  params.Baum2 = InBaum2Slider:GetValue(req).Value
+  params.BOff = InBOffSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

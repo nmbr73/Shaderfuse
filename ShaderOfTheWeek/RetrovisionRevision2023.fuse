@@ -1,0 +1,1472 @@
+--[[--/*
+
+  RetrovisionRevision2023.fuse
+
+  Based on https://www.shadertoy.com/view/DdVSzR a WebGL shader created by dean_the_coder.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  float  ViewOffsetXY[2];
+  float  ViewOffsetZ;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+ #define fract_f4(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define sin_f3(i) sin(i)
+ #define sin_f4(i) sin(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+ #define refract_f3(I,N,eta) refract(I,N,eta)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define fract_f4(A) to_float4(fract((A).x),fract((A).y),fract((A).z),fract((A).w))
+ #define mod_f(a,b) _fmod(a,b)
+ #define sin_f3(i) sin(i)
+ #define sin_f4(i) sin(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+__DEVICE__ float3 refract_f3(float3 I, float3 N, float eta) {
+   float dotNI = dot(N, I);
+   float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+   if (k < 0.0f) {
+      return to_float3_s(0.0f);
+   }
+   return eta * I - (eta * dotNI * _sqrtf(k)) * N; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+ }
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define fract_f4(A) to_float4(fract((A).x),fract((A).y),fract((A).z),fract((A).w))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define sin_f3(i) to_float3( _sinf((i).x), _sinf((i).y), _sinf((i).z))
+ #define sin_f4(i) to_float4( _sinf((i).x), _sinf((i).y), _sinf((i).z), _sinf((i).w))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+ __DEVICE__ float3 refract_f3(float3 I, float3 N, float eta) {
+    float dotNI = dot(N, I);
+    float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+    if (k < 0.0f) {
+      return to_float3_s(0.0f);
+    }
+    return eta * I - (eta * dotNI * _sqrtf(k)) * N; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+ }
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+// 'RetroVision' dean_the_coder (Twitter: @deanthecoder)
+// https://www.shadertoy.com/view/DdVSzR
+// https://demozoo.org/graphics/322475/
+//
+// Processed by 'GLSL Shader Shrinker'
+// (https://github.com/deanthecoder/GLSLShaderShrinker)
+//
+// Based on my entry for the 4Kb Executable Graphics compo at Revision 2023.
+//
+// Thanks to Evvvvil, Flopine, Nusan, BigWings, Iq, Shane,
+// totetmatt, Blackle, Dave Hoskins, byt3_m3chanic, tater,
+// and a bunch of others for sharing their time and knowledge!
+
+// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0f Unported License
+
+#define MIN_DIST       0.0002f
+#define START_DIST     1.0f
+#define MAX_STEPS     75.0f
+#define MAX_RDIST      5.0f
+#define MAX_RSTEPS    32.0f
+#define SHADOW_STEPS  20.0f
+
+#define LIGHT_RGB  to_float3(2, 1.32f, 1.16f)
+#define R  iResolution
+#define Z0  0 //_fminf(iTime, 0.0f)
+#define I0  0 //_fminf(iFrame, 0)
+#define sat(x)  clamp(x, 0.0f, 1.0f)
+#define S(a, b, c)  smoothstep(a, b, c)
+#define S01(a)  S(0.0f, 1.0f, a)
+
+//bool hitGlass;
+struct Hit {
+  float d;
+  int id;
+  float3 p;
+};
+
+__DEVICE__ void U(inout struct Hit *h, float d, int id, float3 p) { if (d < (*h).d) (*h).d = d, (*h).id = id, (*h).p = p; }
+
+__DEVICE__ float min2(float2 v) { return _fminf(v.x, v.y); }
+
+__DEVICE__ float max2(float2 v) { return _fmaxf(v.x, v.y); }
+
+__DEVICE__ float max3(float3 v) { return _fmaxf(v.x, _fmaxf(v.y, v.z)); }
+
+__DEVICE__ float dot3(float3 v) { return dot(v, v); }
+
+__DEVICE__ float sum2(float2 v) { return dot(v, to_float2_s(1)); }
+
+///////////////////////////////////////////////////////////////////////////////
+__DEVICE__ float h31(float3 p3) {
+  p3 = fract_f3(p3 * 0.1031f);
+  p3 += dot(p3, swi3(p3,y,z,x) + 333.3456f);
+  return fract(sum2(swi2(p3,x,y)) * p3.z);
+}
+
+__DEVICE__ float h21(float2 p) { return h31(swi3(p,x,y,x)); }
+
+__DEVICE__ float n31(float3 p) {
+  // Thanks Shane - https://www.shadertoy.com/view/lstGRB
+  const float3 s = to_float3(7, 157, 113);
+  float3 ip = _floor(p);
+  p = fract_f3(p);
+  p = p * p * (3.0f - 2.0f * p);
+  float4 h = to_float4(0, s.y, s.z, sum2(swi2(s,y,z))) + dot(ip, s);
+  h = _mix(fract_f4(sin_f4(h) * 43758.545f), fract_f4(sin_f4(h + s.x) * 43758.545f), p.x);
+  swi2S(h,x,y, _mix(swi2(h,x,z), swi2(h,y,w), p.y));
+  return _mix(h.x, h.y, p.z);
+}
+
+// roughness: (0.0f, 1.0], default: 0.5
+// Returns unsigned noise [0.0, 1.0]
+__DEVICE__ float fbm(float3 p, int octaves, float roughness) {
+  float sum = 0.0f,
+        amp = 1.0f,
+        tot = 0.0f;
+  roughness = sat(roughness);
+  while (octaves-- > 0) {
+    sum += amp * n31(p);
+    tot += amp;
+    amp *= roughness;
+    p *= 2.0f;
+  }
+  return sum / tot;
+}
+
+__DEVICE__ float3 randomPos(float seed) {
+  float4 s = to_float4(seed, 0, 1, 2);
+  return to_float3(h21(swi2(s,x,y)), h21(swi2(s,x,z)), h21(swi2(s,x,w))) * 100.0f + 100.0f;
+}
+
+// Returns unsigned noise [0.0, 1.0]
+__DEVICE__ float fbmDistorted(float3 p, int octaves, float roughness, float distortion) {
+  p += (to_float3(n31(p + randomPos(0.0f)), n31(p + randomPos(1.0f)), n31(p + randomPos(2.0f))) * 2.0f - 1.0f) * distortion;
+  return fbm(p, octaves, roughness);
+}
+
+// vec3: detail(/octaves), dimension(/inverse contrast), lacunarity
+// Returns signed noise.
+__DEVICE__ float musgraveFbm(float3 p, float octaves, float dimension, float lacunarity) {
+  float sum = 0.0f,
+        amp = 1.0f;
+  float pwMul = _powf(lacunarity, -dimension);
+  while (octaves-- > 0.0f) {
+    float n = n31(p) * 2.0f - 1.0f;
+    sum += n * amp;
+    amp *= pwMul;
+    p *= lacunarity;
+  }
+  return sum;
+}
+
+// Wave noise along X axis.
+__DEVICE__ float3 waveFbmX(float3 p, float distort, int detail, float detailScale, float roughness) {
+  float n = p.x * 20.0f;
+  n += distort != 0.0f ? distort * fbm(p * detailScale, detail, roughness) : 0.0f;
+  return to_float3(_sinf(n) * 0.5f + 0.5f, p.y, p.z);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Math
+// Smooth _fminf()
+__DEVICE__ float smin(float a, float b, float k) {
+  float h = sat(0.5f + 0.5f * (b - a) / k);
+  return _mix(b, a, h) - k * h * (1.0f - h);
+}
+
+__DEVICE__ float remap01(float f, float in1, float in2) { return sat((f - in1) / (in2 - in1)); }
+
+///////////////////////////////////////////////////////////////////////////////
+// Space manipulation.
+__DEVICE__ mat2 rot(float a) {
+  float c = _cosf(a),
+        s = _sinf(a);
+  return to_mat2(c, s, -s, c);
+}
+
+__DEVICE__ float3 dx(float3 p, float e) {
+  p.x += e;
+  return p;
+}
+
+__DEVICE__ float3 dy(float3 p, float e) {
+  p.y += e;
+  return p;
+}
+
+__DEVICE__ float3 dz(float3 p, float e) {
+  p.z += e;
+  return p;
+}
+
+// Return _fabs(p.x) with offset.
+__DEVICE__ float3 ax(float3 p, float d) { return to_float3(_fabs(p.x) - d, p.y, p.z); }
+
+// Return _fabs(p.y) with offset.
+__DEVICE__ float3 ay(float3 p, float d) { return to_float3(p.x, _fabs(p.y) - d, p.z); }
+
+// Return _fabs(p.z) with offset.
+__DEVICE__ float3 az(float3 p, float d) { return to_float3(p.x, p.y, _fabs(p.z) - d); }
+
+// Polar/circular repeat.
+__DEVICE__ float3 opModPolar(float3 p, float n, float o) {
+  float angle = 3.141f / n,
+            a = mod_f(_atan2f(p.x, p.y) + angle + o, 2.0f * angle) - angle;
+  swi2S(p,x,y, length(swi2(p,x,y)) * to_float2(_cosf(a), _sinf(a)));
+  return p;
+}
+
+// Convert 2D sdf into 3D sdf.
+__DEVICE__ float insulate(float3 p, float sdf2d) {
+  float dp = p.x; // distance to plane
+  return _sqrtf(dp * dp + sdf2d * sdf2d);
+}
+
+// Bend space along the x axis.
+__DEVICE__ float3 bend(float3 p, float k) {
+  float c = _cosf(k * p.x);
+  float s = _sinf(k * p.x);
+  swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , to_mat2(c, s, -s, c)));
+  return p;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SDFs
+__DEVICE__ float box(float3 p, float3 b) {
+  float3 q = abs_f3(p) - b;
+  return length(_fmaxf(q, to_float3_s(0.0f))) + _fminf(max3(q), 0.0f);
+}
+
+__DEVICE__ float box2d(float2 p, float2 b) {
+  float2 q = abs_f2(p) - b;
+  return length(_fmaxf(q, to_float2_s(0.0f))) + _fminf(max2(q), 0.0f);
+}
+
+__DEVICE__ float cyl(float3 p, float2 hr) {
+  float2 d = abs_f2(to_float2(length(swi2(p,x,y)), p.z)) - hr;
+  return _fminf(_fmaxf(d.x, d.y), 0.0f) + length(_fmaxf(d, to_float2_s(0.0f)));
+}
+
+__DEVICE__ float cap(float3 p, float h, float r) {
+  p.x -= clamp(p.x, 0.0f, h);
+  return length(p) - r;
+}
+
+__DEVICE__ float tor(float3 p, float2 t) {
+  float2 q = to_float2(length(swi2(p,x,y)) - t.x, p.z);
+  return length(q) - t.y;
+}
+
+__DEVICE__ float arc(float3 p, float l, float a) {
+  float2 sc = to_float2(_sinf(a), _cosf(a));
+  float ra = 0.5f * l / a;
+  p.x -= ra;
+  float2 q = swi2(p,x,y) - 2.0f * sc * _fmaxf(0.0f, dot(sc, swi2(p,x,y)));
+  float u = _fabs(ra) - length(q);
+  float d2 = (q.y < 0.0f) ? dot(q + to_float2(ra, 0.0f), q + to_float2(ra, 0.0f)) : u * u;
+  float s = sign_f(a);
+  return _sqrtf(d2 + p.z * p.z);
+}
+
+__DEVICE__ float hex3D(float3 p, float2 h) {
+  const float3 k = to_float3(-0.8660254f, 0.5f, 0.57735f);
+  p = abs_f3(p);
+  swi2S(p,z,y, swi2(p,z,y) - 2.0f * _fminf(dot(swi2(k,x,y), swi2(p,z,y)), 0.0f) * swi2(k,x,y));
+  float2 d = to_float2(length(swi2(p,z,y) - to_float2(clamp(p.z, -k.z * h.x, k.z * h.x), h.x)) * sign_f(p.y - h.x), p.x - h.y);
+  return _fminf(max2(d), 0.0f) + length(_fmaxf(d, to_float2_s(0.0f)));
+}
+
+__DEVICE__ float3 rayDir(float3 ro, float2 uv) {
+  float3 f = normalize(-ro),
+       r = normalize(cross(to_float3(0, 1, 0), f));
+  return normalize(f + r * uv.x + cross(f, r) * uv.y);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Environment/textures/materials.
+__DEVICE__ float3 skyCol(float y) {
+    return pow_f3(to_float3_s(_fmaxf(1.0f - y * 0.5f, 0.0f)), to_float3(6, 3, 1.5f)) * to_float3(1, 0.7f, 0.6f);
+}
+
+// Sky with clouds.
+__DEVICE__ float3 sky(float3 rd) {
+  return skyCol(rd.y);
+}
+
+__DEVICE__ float fakeEnv(float3 n) {
+  // Thanks Blackle.
+  return length(sin_f3(n * 2.5f) * 0.5f + 0.5f) * 0.8f;
+}
+
+// Wood material. Returns rgb, depth
+__DEVICE__ float4 matWood(float3 p) {
+
+  float n1 = fbmDistorted(p * to_float3(1, 0.15f, 0.15f) * 8.0f, 8, 0.5f, 1.12f);
+  n1 = _mix(n1, 1.0f, 0.2f);
+  float n2 = musgraveFbm(to_float3_s(n1 * 4.6f), 8.0f, 0.0f, 2.5f);
+  float n3 = _mix(n2, n1, 0.85f);
+  float3 q = waveFbmX(p * to_float3(0.01f, 0.15f, 0.15f), 0.4f, 3, 3.0f, 3.0f);
+  float dirt = 1.0f - musgraveFbm(q, 15.0f, 0.26f, 2.4f) * 0.4f;
+  float grain = 1.0f - S(0.2f, 1.0f, musgraveFbm(p * to_float3(500, 6, 1), 2.0f, 2.0f, 2.5f)) * 0.2f;
+  n3 *= dirt * grain;
+  float3 c1 = to_float3(0.032f, 0.012f, 0.004f);
+  float3 c2 = to_float3(0.25f, 0.11f, 0.037f);
+  float3 c3 = to_float3(0.52f, 0.32f, 0.19f);
+  float depth = grain * n3;
+  float3 col = _mix(c1, c2, remap01(n3, 0.185f, 0.565f));
+  col = _mix(col, c3, remap01(n3, 0.565f, 1.0f));
+  return to_float4_aw(col, depth);
+}
+
+#define SKY_ID  0
+#define PLANK_ID  1
+#define CAM_WOOD_ID  2
+#define LEATHER_ID  3
+#define LENS_COLOR_BACK_ID  4
+#define BELOW_ARE_REFLECTIVE  5
+#define BRASS_ID  6
+#define DARKER_BRASS_ID  7
+#define GLASS_ID  8
+#define INLAY_ID  9
+
+__DEVICE__ float screw(float3 p) {
+  swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , rot(0.6f)));
+  return cyl(p, to_float2(0.02f, 0.01f * S(0.001f, 0.003f, _fabs(p.x))));
+}
+
+__DEVICE__ float nutCap(float3 p) { return _fminf(cap(p, 0.02f, 0.015f), hex3D(p, to_float2_s(0.02f))); }
+
+__DEVICE__ float knob(float3 p, float r, float w) {
+  p.z = _fabs(p.z + w);
+  float l = length(swi2(p,x,y)),
+        a = _atan2f(p.y, p.x);
+  float d = l - r;
+  d += S(0.8f, 1.0f, _sinf(a * 400.0f * r)) * 0.002f * S(1.5f, 0.5f, p.z / w);
+  p.z -= w;
+  d = smin(d, p.z, -0.01f);
+  r *= 0.7f;
+  d = _fminf(d, tor(p, to_float2(r, r * 0.1f)));
+  p.z -= w * 3.0f;
+  d = smin(_fminf(d, l - r), p.z, -0.01f);
+  r *= 0.85f;
+  d = smin(d, tor(p, to_float2(r, r * 0.05f)), 0.01f);
+  return _fminf(d, length(p) - r * 0.2f);
+}
+
+__DEVICE__ float s(float3 p) {
+  p = dy(dx(swi3(p,z,y,x), 0.04f), 0.08f);
+  swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , rot(-0.4f)));
+  p.y = p.x < 1.0f ? p.y : -p.y;
+  p.x = _fabs(p.x);
+  swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , rot(-0.707f)));
+  return arc(p, 0.18f, 0.85f);
+}
+
+__DEVICE__ struct Hit sdf(float3 p, bool hitGlass) {
+  p.y -= 0.1f;
+
+  // Planks.
+  float3 q = p + to_float3(0, 1.5f, 0), v3;
+  swi2S(q,x,z, mul_f2_mat2(swi2(q,x,z) , rot(0.15f)));
+  float f = _floor(q.x);
+  q.x = fract(q.x) - 0.5f;
+  q = bend(q, 0.1f * n31(p * 0.5f));
+  float d = box(q, to_float3(0.485f, 0.5f, 99));
+  q = p * 0.016f;
+  q.z += f;
+
+  struct Hit h = {d, PLANK_ID, q};
+
+  // Camera front box.
+  p.y += 0.15f;
+  f = 0.85f - step(0.0f, p.y) * (1.0f - _cosf(p.z)) * 0.6f;
+  v3 = to_float3(0.45f, f, 0.64f);
+  d = box(p, v3 - 0.044f) - 0.044f;
+  q = dx(p, -0.83f);
+  d = smin(d, -box(q, v3 - 0.06f), -0.1f);
+  U(&h, d * 0.95f, CAM_WOOD_ID, p);
+
+  // Front box top brass pattern.
+  d = box2d(swi2(p,x,z), to_float2(0.23f, 0.5f));
+  d = _fmaxf(d, 0.17f - length(swi2(az(ax(p, 0.24f), 0.52f),x,z)));
+  d = _fabs(d) - 0.005f;
+  f = p.y - f - 0.01f;
+  d = smin(d, f, -0.01f);
+  f -= _fabs(_sinf(_atan2f(p.z, p.x) * 14.0f)) * 0.006f * S(0.07f, 0.09f, length(swi2(p,x,z)));
+  d = _fminf(d, box2d(swi2(p,x,z), to_float2(0.07f, 0.28f)) - 0.03f);
+  d = smin(d, f, -0.005f);
+  U(&h, d, BRASS_ID, p);
+
+  // Front box inlay.
+  q.x += 0.78f;
+  d = box(q, v3 - 0.08f) - 0.02f;
+  U(&h, d * 0.94f, INLAY_ID, p);
+
+  // Front box nuts.
+  v3 = dx(q, -0.41f);
+  v3 = az(ay(v3, 0.65f), 0.53f);
+  swi2S(v3,y,z, mul_f2_mat2(swi2(v3,y,z) , rot(0.5f)));
+  d = nutCap(v3);
+  d = _fminf(d, s(dx(v3, 0.017f)));
+  U(&h, d, BRASS_ID, p);
+
+  // Camera back box.
+  swi3S(q,z,x,y, bend(swi3(p,z,x,y), 0.2f));
+  q.x += 0.7f;
+  v3 = to_float3(0.2405f, 0.9f, 0.6505f);
+  d = smin(box(q, v3) - 0.02f, box(q, to_float3(0.18f, 0.98f, 0.46f)), 0.025f);
+  d -= S(0.0f, 1.0f, _fabs(f)) * 0.001f;
+  U(&h, d, LEATHER_ID, q);
+
+  // Back box dials.
+  q.y -= 0.885f;
+  d = box(ay(q, 0.014f), to_float3(0.265f, -0.002f, 0.675f));
+  d = _fminf(d, knob(swi3(p,x,z,y) + to_float3(0.65f, 0.38f, -1.025f), 0.1f, 0.01f));
+
+  // Strap bolt.
+  d = _fminf(d, cyl(p + to_float3(0.5f, -0.73f, 0), to_float2(0.04f - 0.008f * S(0.0f, 0.02f, p.z + 0.82f), 0.85f)));
+
+  // Side focus wheel.
+  d = _fminf(d, knob(dz(p - to_float3(0.05f, -0.1f, 0), 0.67f), 0.25f, 0.01f));
+  U(&h, d, BRASS_ID, p);
+
+  // Main lens barrel.
+  q = dy(ax(p, 0.0f), 0.2f);
+  float l = length(swi2(q,y,z));
+  f = S(0.0f, 0.01f, p.x - 0.62f);
+  f -= S(0.06f, 0.0f, _fabs(p.x - 0.69f)) * 0.2f * _fabs(_sinf(_atan2f(q.y, q.z) * 60.0f));
+  d = _fmaxf(l - 0.3f + 0.01f * f, 0.23f - l);
+  d = _fmaxf(d, q.x - 0.75f);
+  U(&h, d, DARKER_BRASS_ID, p);
+  q.x -= 0.756f;
+  d = _fminf(d, tor(swi3(q,z,y,x), to_float2(0.21f + 0.096f * step(0.25f, l), 0)));
+  U(&h, d, BRASS_ID, p);
+
+  // Lens inside.
+  d = _fmaxf(l - 0.2f, 0.15f - l);
+  d = _fmaxf(d, q.x + 0.16f);
+  U(&h, d, DARKER_BRASS_ID, p);
+  d = _fminf(d, q.x + 0.2f);
+  d = _fmaxf(d, l - 0.25f);
+  U(&h, d, LENS_COLOR_BACK_ID, p);
+
+  // Lens screws.
+  d = screw(dx(opModPolar(swi3(q,z,y,x), 6.0f, 0.3f), -0.255f)) + 0.012f;
+  U(&h, d, BRASS_ID, p);
+
+  // Lens.
+  if (!hitGlass) {
+    q = dx(q, 1.04f);
+    d = _fmaxf(length(q) - 1.0f, l - 0.21f);
+    U(&h, d, GLASS_ID, q);
+  }
+
+  // Main lens brass surround.
+  q = dy(dx(p, -0.466f), 0.2f);
+  v3 = q;
+  l = length(swi2(q,y,z));
+  d = l - 0.44f;
+  float a = _atan2f(q.y, q.z);
+  f = tor(swi3(q,z,y,x), to_float2(0.3f, 0.03f - 0.0005f * _fabs(_sinf(a * 50.0f)))); // Weld ring.
+  q = ay(az(q, 0.3f), 0.3f);
+  d = _fminf(d, length(swi2(q,y,z)) - 0.1f);
+  f = _fminf(f, _fmaxf(insulate(q, d) - 0.008f, _fabs(q.x) - 0.006f));
+  a = _sinf(a * 8.0f) * 0.015f;
+  l -= 0.39f;
+  f = _fminf(f, insulate(v3, _fabs(l) - _fabs(a)) - 0.0011f); // Intertwines.
+  f = _fminf(f, nutCap(q - 0.03f));
+  U(&h, f, BRASS_ID, p);
+  d = _fmaxf(d + 0.01f, _fabs(q.x) - 0.0005f);
+  U(&h, d, DARKER_BRASS_ID, p);
+
+  // View lens barrel.
+  q = dy(dx(swi3(p,z,y,x), 0.26f), -0.5f);
+  l = length(swi2(q,x,y));
+  d = _fabs(l - 0.13f) + 0.005f;
+  d = _fmaxf(d, _fabs(q.z) - 0.6f);
+  U(&h, d, BRASS_ID, p);
+  d = _fmaxf(l - 0.11f, _fabs(q.z) - 0.46f);
+  U(&h, d, LENS_COLOR_BACK_ID, q);
+  if (!hitGlass) {
+    d = _fmaxf(length(q) - 0.56f, l - 0.115f);
+    U(&h, d, GLASS_ID, q);
+  }
+
+  h.d -= 0.01f;
+  return h;
+}
+
+__DEVICE__ float3 N(float3 p, float t, bool hitGlass) {
+  float h = t * 0.1f;
+  float3 n = to_float3_s(0);
+  for (int i = I0; i < 4; i++) {
+    float3 e = 0.005773f * (2.0f * to_float3(((i + 3) >> 1) & 1, (i >> 1) & 1, i & 1) - 1.0f);
+    n += e * sdf(p + e * h, hitGlass).d;
+  }
+
+  return normalize(n);
+}
+
+__DEVICE__ float shadow(float3 p, float3 lp, float3 ld, float3 n, bool hitGlass) {
+  // Quick abort if light is behind the normal.
+  if (dot(ld, n) < -0.1f) return 0.0f;
+  float s = 1.0f,
+        t = 0.002f, d;
+  for (float i = Z0; i < SHADOW_STEPS; i++) {
+    d = sdf(t * ld + p, hitGlass).d;
+    s = _fminf(s, 2.5f * d / t); // tweak sharpness.
+    t += _fmaxf(0.01f, d);
+    if (s < 0.01f) break;
+  }
+
+  return sat(s);
+}
+
+// Quick 2-level ambient occlusion.
+__DEVICE__ float ao(float3 p, float3 n, float2 h, bool hitGlass) {
+  float2 ao;
+//  for (int i = I0; i < 2; i++)
+  ao.x = sdf(h.x * n + p, hitGlass).d;
+  ao.y = sdf(h.y * n + p, hitGlass).d;
+
+  return sat(min2(ao / h));
+}
+
+// Sub-surface scattering. (Thanks Evvvvil)
+__DEVICE__ float sss(float3 p, float3 ld, float h, bool hitGlass) { return S01(sdf(h * ld + p, hitGlass).d / h); }
+
+__DEVICE__ float3 lights(float3 p, float3 ro, float3 rd, float3 n, struct Hit h, bool hitGlass) {
+  if (h.id == SKY_ID) return sky(rd);
+  float3 lp = to_float3(6, 6, 7),
+        ld = normalize(lp - p),
+        c = to_float3_s(0.06f);
+  float spe = 10.0f,
+        shine = 3.0f;
+
+  if (h.id == PLANK_ID) {
+        float4 m = matWood(h.p * 3.2f);
+        c = swi3(m,x,y,z) * 0.3f;
+        n += (m.w - 0.5f) * 0.15f;
+    spe = 10.0f;
+  }
+  else {
+        float g = musgraveFbm(p * to_float3(700, 70, 70), 2.0f, 1.0f, 0.5f);
+        if (h.id == CAM_WOOD_ID) {
+            c = to_float3(0.15f, 0.1f, 0.1f);
+            n += g * 0.015f;
+            shine = 5.0f;
+            spe = 33.0f;
+        } else if (h.id == INLAY_ID) {
+            c = to_float3(0.7f, 0.7f, 0.6f);
+            n += g * 0.01f;
+            shine = 1.0f;
+        }
+        else {
+            if (h.id == BRASS_ID)
+                c = to_float3(0.7f, 0.6f, 0.2f);
+            else if (h.id == DARKER_BRASS_ID)
+                c = to_float3(0.35f, 0.3f, 0.1f);
+            else shine = 1.0f;
+            c *= 0.7f + 0.3f * n31(p * to_float3(300, 25, 25));
+        }
+    }
+
+  float3 l = sat(to_float3(dot(ld, n),  // Key light.
+                           dot(-1.0f*swi2(ld,x,z), swi2(n,x,z)),  // Reverse light.
+                           n.y // Sky light.
+                          ));
+
+  l *= fakeEnv(ld * 8.0f);
+  swi2S(l,x,y, 0.1f + 0.9f * swi2(l,x,y)); // Diffuse.
+  swi2S(l,y,z, swi2(l,y,z) * 0.1f + 0.9f * ao(p, n, to_float2(0.2f, 1), hitGlass)); // Ambient occlusion.
+  l *= to_float3(1.0f, 0.03f, 0.3f); // Light contributions (key, reverse, sky).
+  l.x += _powf(sat(dot(normalize(ld - rd), n)), spe) * shine; // Specular (Blinn-Phong)
+  l.x *= 0.3f + 0.7f * S(3.5f, 1.8f, length(swi2(p,x,z)));
+
+
+
+  l.x *= 0.05f + 0.95f * shadow(p, lp, ld, n, hitGlass); // Shadow.
+  l.x *= 0.2f + 0.8f * S(2.8f, 2.0f, length(swi2(p,x,z))); // Spotlight.
+  l.x *= dot(lp, lp) / (5.0f + dot(lp - p, lp - p)); // Light falloff
+  float fre = S(0.7f, 1.0f, 1.0f + dot(rd, n)) * 0.02f;
+  float3 sky = skyCol(1.0f);
+  float3 col = _mix((sum2(swi2(l,x,y)) * LIGHT_RGB + l.z * sky) * c, sky, fre);
+
+  // Distance Fog.
+  float fg = 1.0f - _expf(dot3(p - ro) * -0.001f);
+
+  return _mix(to_float3(0.06f, 0.04f, 0.04f), col, 1.0f - sat(fg));
+}
+
+__DEVICE__ float3 march(float3 ro, float3 rd, inout bool *hitGlass) {
+  // March the scene.
+  float3 p = ro;
+  float d = START_DIST, i;
+  struct Hit h;
+  float3 n,
+       col = to_float3_s(0),
+       glassP = col, glassN;
+  *hitGlass = false;
+  for (i = Z0; i < MAX_STEPS; i++) {
+    h = sdf(p, *hitGlass);
+    if (_fabs(h.d) < MIN_DIST * d) {
+      if (!*hitGlass && h.id == GLASS_ID) {
+        *hitGlass = true;
+        glassP = p;
+        glassN = normalize(h.p);
+        float3 v = normalize(refract_f3(rd, glassN, 0.65f));
+        p += v * _fminf(sdf(p + v * 0.02f, *hitGlass).d, 0.02f);
+        col += 0.003f;
+        continue;
+      }
+      break;
+    }
+
+    d += h.d;
+    p += h.d * rd;
+  }
+
+  col += lights(p, ro, rd, n = N(p, d, *hitGlass), h, *hitGlass);
+  if (h.id > BELOW_ARE_REFLECTIVE || *hitGlass) {
+    if (*hitGlass) {
+      p = glassP;
+      n = glassN;
+      col += to_float3(10, 7, 10) * 100.0f * _powf(sat(dot(normalize(to_float3(8.86f, 4, 8) - rd), n)), 50.0f);
+      col += to_float3(1, 1, 2.5f) * 0.02f * S(0.0f, 0.01f, _powf(sat(dot(normalize(to_float3(8.86f, 4.38f, 10) - rd), n)), 35.0f) * 200.0f);
+      col += to_float3(10, 7, 10) * 50.0f * _powf(sat(dot(normalize(to_float3(8.86f, -4, -7) - rd), n)), 50.0f);
+    }
+
+    // We hit a reflective surface, so march reflection.
+    rd = reflect(rd, n);
+    p += n * 0.01f;
+    ro = p;
+    d = 0.01f;
+    for (i = Z0; i < MAX_RSTEPS; i++) {
+      if (d > MAX_RDIST) {
+        h.id = SKY_ID;
+        break;
+      }
+
+      h = sdf(p, *hitGlass);
+      if (_fabs(h.d) < MIN_DIST * d) break;
+      d += h.d;
+      p += h.d * rd;
+    }
+
+    // Add a hint of the reflected color.
+    col = col + (1.0f - col) * 0.03f * lights(p, ro, rd, N(p, d, *hitGlass), h, *hitGlass);
+  }
+
+  return pow_f3(_fmaxf(to_float3_s(0), col), to_float3_s(0.45f));
+}
+
+
+__DEVICE__ float thc(float a, float b) {
+    return _tanhf(a * _cosf(b)) / _tanhf(a);
+}
+
+__DEVICE__ float ths(float a, float b) {
+    return _tanhf(a * _sinf(b)) / _tanhf(a);
+}
+
+__KERNEL__ void RetrovisionRevision2023Fuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fc   = to_float2(fusion_x,fusion_y);
+
+
+  float2 ViewOffsetXY = to_float2(params->ViewOffsetXY[0], params->ViewOffsetXY[1]);
+  float  ViewOffsetZ = params->ViewOffsetZ;
+
+  // --------
+
+
+
+
+
+  bool hitGlass;
+
+  float2 uv = (fc - 0.5f * R) / R.y;
+  float3 ro = to_float3(1.85f + _sinf(iTime * 0.2f) * 0.2f, 1.3f, -1.2f);
+
+
+    float2 m = swi2(iMouse,x,y)/iResolution;
+    float time = 0.25f * iTime;
+    ro = to_float3(2.0f * thc(5.0f,time), _mix(0.5f, 2.0f, 0.5f + 0.5f * thc(3.0f, 1.5f * time)), 2.0f * ths(5.0f,time));
+    //ro = to_float3(LevelX * thc(LevelXTHC,time), _mix(LevelYMix1, LevelYMix2, 0.5f + 0.5f * thc(LevelYTHC, 1.5f * time)), LevelZ * ths(LevelZTHS,time));
+
+    ro += to_float3_aw(ViewOffsetXY, ViewOffsetZ); //
+
+    swi2S(ro,y,z, mul_f2_mat2(swi2(ro,y,z) , rot(-m.y*3.14f+1.0f)));
+    swi2S(ro,x,z, mul_f2_mat2(swi2(ro,x,z) , rot(-m.x*6.2831f)));
+
+
+  float3 col = march(ro, rayDir(ro, uv), &hitGlass);
+
+  // Vignette.
+  col *= 1.0f - 0.5f * dot(uv, uv);
+
+  // Grain
+  col += (h21(fc) - 0.5f) / 50.0f;
+  fragColor = to_float4_aw(col, 1);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InViewOffsetXYPoint = self:AddInput("ViewOffsetXY", "ViewOffsetXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewOffsetZSlider = self:AddInput("ViewOffsetZ", "ViewOffsetZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -20.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 0.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 52), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    { CCS_AddString = "BufferC", },
+    { CCS_AddString = "BufferD", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+      { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+      { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+      CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	{ CCS_AddString  = "int8", },
+	{ CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = false
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+  Image_Buff_GlobalC = Image(ImgAttrs_Global)
+  Image_Buff_GlobalD = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstC = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstD = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstI = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "RetrovisionRevision2023Fuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "RetrovisionRevision2023Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.ViewOffsetXY = {InViewOffsetXYPoint:GetValue(req).X,InViewOffsetXYPoint:GetValue(req).Y}
+  params.ViewOffsetZ = InViewOffsetZSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+    
+    
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+        node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",Image_Buff_GlobalC)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",Image_Buff_GlobalD)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "RetrovisionRevision2023Fuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeB:AddInput("iChannel1", Image_Buff_GlobalD)  -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+    
+
+    -------------------------- BufferC-Kernel----------------------------------------
+    local nodeC = DVIPComputeNode(req,
+      "RetrovisionRevision2023Fuse__Buffer_C", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeC:SetParamBlock(params)
+
+    --nodeC:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeC)
+
+    nodeC:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeC:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeC:AddOutput("dst", dstC)
+
+    local success = nodeC:RunSession(req)
+    if not success then
+      dstC = nil
+      dump(nodeC:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalC = dstC --Recursiv Image	
+
+
+    -------------------------- BufferD-Kernel----------------------------------------
+    local nodeD = DVIPComputeNode(req,
+      "RetrovisionRevision2023Fuse__Buffer_D", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeD:SetParamBlock(params)
+
+    --nodeD:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeD)
+
+    nodeD:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    nodeD:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeD:AddOutput("dst", dstD)
+
+    local success = nodeD:RunSession(req)
+    if not success then
+      dstD = nil
+      dump(nodeD:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalD = dstD --Recursiv Image	
+
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "RetrovisionRevision2023Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    node:AddInput("iChannel1", iChannel0)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+    if (InDebugImage:GetValue(req).Value == 3) then OutImage:Set(req, Image_Buff_GlobalC) end
+    if (InDebugImage:GetValue(req).Value == 4) then OutImage:Set(req, Image_Buff_GlobalD) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+    
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
