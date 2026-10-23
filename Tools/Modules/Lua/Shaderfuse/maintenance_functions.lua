@@ -750,6 +750,8 @@ function create_markdown_files(repositorypath)
   overview:write('# Shaders\n\n')
   readme:write('# Shaders\n\n')
 
+  readme:write('![ZenGarden](ShaderfusesSand2.gif)\n\n')
+
   local readme_cat=nil
   local currentCategory=''
   local boom=0
