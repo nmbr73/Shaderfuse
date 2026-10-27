@@ -7,10 +7,10 @@
 [![Baby Unicorn](Monster/BabyUnicorn.gif)](Monster/BabyUnicorn.md) <br>
 [Baby Unicorn](Monster/BabyUnicorn.md) by [Cotterzz](https://www.shadertoy.com/user/Cotterzz)
 
-### Current Shader of the Week (9th of October 2026):
+### Current Shader of the Week (27th of October 2026):
 
-[![lunchbreak](ShaderOfTheWeek/Lunchbreak.gif)](ShaderOfTheWeek/Lunchbreak.md) <br>
-[lunchbreak](ShaderOfTheWeek/Lunchbreak.md) by [nabr](https://www.shadertoy.com/user/nabr)
+[![Another day, another glowmarcher](ShaderOfTheWeek/AnotherDayAnotherGlowmarcher.gif)](ShaderOfTheWeek/AnotherDayAnotherGlowmarcher.md) <br>
+[Another day, another glowmarcher](ShaderOfTheWeek/AnotherDayAnotherGlowmarcher.md) by [mrange](https://www.shadertoy.com/user/mrange)
 
 ## A new Category: Monster
 
