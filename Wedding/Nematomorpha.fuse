@@ -1,0 +1,558 @@
+--[[--/*
+
+  Nematomorpha.fuse
+
+  Based on https://www.shadertoy.com/view/ltdfR7 a WebGL shader created by PianiGiani
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  Color[4];
+  float  factor;
+  float  WobbleFkt1;
+  float  WobbleFkt2;
+  float  Point1[2];
+  float  Point2[2];
+  float  Size1;
+  float  Size2;
+  bool   AlphaOn;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+  #else
+
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define distance_f2( p1, p2) distance(p1, p2)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define distance_f2(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+#define nTime (iTime*0.5f)+1000.0f // speed
+
+__DEVICE__ float DDot(float2 p1,float2 p2, float Size1, float Size2) {
+    //return 1.3f-(distance_f2(p1,p2)*300.0f);
+    return Size1-(distance_f2(p1,p2)*Size2);//300.0f);
+}
+
+__DEVICE__ float Wobble(float i,float factor, float iTime) {
+    float wob1 = _sinf((i+nTime+i+i)*10.0f)/10.0f+_sinf(nTime/3.0f)/85.0f+_sinf(nTime/5.0f)/85.0f;
+    float wob2 = _sinf((i+nTime+i+i)*10.0f)/10.0f+_sinf((i+nTime)*3.0f)*0.5f+_sinf((i+nTime)*5.0f)*0.4f;
+    return _mix(wob2,wob1,factor);
+}
+
+__DEVICE__ float Curv(float i,float ii, float iTime) {
+    return(_cosf((nTime/3.0f)+ii+ii)*(_sinf((i*ii+i)*(i+6.0f))/(7.0f*_atan2f(nTime/3.0f,1.0f))));
+}
+
+__KERNEL__ void NematomorphaJipiFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 Color = to_float4(params->Color[0], params->Color[1], params->Color[2], params->Color[3]);
+  float  factor = params->factor;
+  float  WobbleFkt1 = params->WobbleFkt1;
+  float  WobbleFkt2 = params->WobbleFkt2;
+  float2 Point1 = to_float2(params->Point1[0], params->Point1[1]);
+  float2 Point2 = to_float2(params->Point2[0], params->Point2[1]);
+  float  Size1 = params->Size1;
+  float  Size2 = params->Size2;
+  bool   AlphaOn = params->AlphaOn;
+
+  // --------
+
+    // Normalized pixel coordinates (from 0 to 1)
+    float2 uv = fragCoord/iResolution;
+
+    //float factor = 0.3f;
+    float ii=1.0f+(_sinf(nTime/20.0f));
+    float3 col1=to_float3_s(0.0f);
+
+    for (float i=0.00f; i<= 1.05f;i+=0.004f) {
+
+       float2 cc = to_float2(i+Curv(i,i+_sinf(iTime+ii),iTime)*WobbleFkt1, (Wobble(i,factor,iTime)+Curv(i,ii,iTime)*WobbleFkt2));//4.0f));
+       float col = DDot(uv, (cc * (to_float2(1.0f,factor)+Point2)) + to_float2(0.0f,0.5f) + Point1, Size1, Size2 );
+       float3 col2 = to_float3(col * ii, col*(_sinf(i)+0.5f),col*(_sinf(ii)+0.5f));
+       col1 = _fmaxf(col2,col1);
+    }
+
+    col1   = clamp(col1, 0.0f, 1.0f);
+    float alpha = (col1.x > 0.0f && col1.y > 0.0f && col1.z > 0.0f) ? 1.0f : 0.0f;
+    fragColor = to_float4_aw(col1 + (swi3(Color,x,y,z)-0.5f)*alpha, (AlphaOn == 1) ? alpha : Color.w);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+    -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  self:BeginControlNest("Color", "Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorColorR = self:AddInput("Red",   "ColorRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColorColorG = self:AddInput("Green", "ColorGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InColorColorB = self:AddInput("Blue",  "ColorBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InColorColorA = self:AddInput("Alpha", "ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InfactorSlider = self:AddInput("factor", "factor", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -3.0,
+      INP_MaxScale       = 3.0,
+      INP_Default        = 0.3,
+  })
+
+  InWobbleFkt1Slider = self:AddInput("WobbleFkt1", "WobbleFkt1", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  InWobbleFkt2Slider = self:AddInput("WobbleFkt2", "WobbleFkt2", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -1.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  InPoint1Point = self:AddInput("Point1", "Point1", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InPoint2Point = self:AddInput("Point2", "Point2", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InSize1Slider = self:AddInput("Size1", "Size1", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.3,
+  })
+
+  InSize2Slider = self:AddInput("Size2", "Size2", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1000.0,
+      INP_Default        = 300.0,
+  })
+
+  InAlphaOnCheckbox = self:AddInput("AlphaOn", "AlphaOn", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+
+  Sep3 = self:AddInput(string.rep("_", 102), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	  IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ShaderFuse.end_create()
+
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+
+  node = DVIPComputeNode(req,
+    "NematomorphaJipiFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.Color = {
+    InColorColorR:GetValue(req).Value,
+    InColorColorG:GetValue(req).Value,
+    InColorColorB:GetValue(req).Value,InColorColorA:GetValue(req).Value
+  }
+  params.factor = InfactorSlider:GetValue(req).Value
+  params.WobbleFkt1 = InWobbleFkt1Slider:GetValue(req).Value
+  params.WobbleFkt2 = InWobbleFkt2Slider:GetValue(req).Value
+  params.Point1 = {InPoint1Point:GetValue(req).X,InPoint1Point:GetValue(req).Y}
+  params.Point2 = {InPoint2Point:GetValue(req).X,InPoint2Point:GetValue(req).Y}
+  params.Size1 = InSize1Slider:GetValue(req).Value
+  params.Size2 = InSize2Slider:GetValue(req).Value
+  params.AlphaOn = InAlphaOnCheckbox:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    
+  node:AddOutput("dst", dst)
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
+
+

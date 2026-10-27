@@ -1,0 +1,1038 @@
+--[[--/*
+
+    Spilled.fuse
+
+    Based on https://www.shadertoy.com/view/MsGSRd Erstellt von flockaroo am 2016-06-15
+
+    V1 JiPi Recursiv BufferA Shadertoy
+    V2 JiPi Corrected mat2-Function and added reflect-Function to run under OpenCL
+    V3 Tida added some modifiers, change code for learning, added blending
+    V4 Cleanup - added Reset - added Noise
+	V5 Changes for Installer
+
+*/--]]--
+
+-- "LUA CODE..." /**
+
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+-- local dctlfuse_infourl     = 'https://www.steakunderwater.com/wesuckless/viewtopic.php?f=45&t=4597'
+
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = true,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  --REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  REG_NoPreCalcProcess   = true,  -- call Process for precalc requests (instead of PreCalcProcess)
+  })
+
+-----------------------------------
+
+-- **/ "End of LUA CODE"
+
+GlobalParams =
+[[
+  float center[2];
+  float angle;
+  float pivot[2];
+  float coordscor[2];
+  float scale;
+  float freq;
+  int width;
+  int height;
+  float itime;
+  int iframe;
+  bool startpicture;
+  bool noise;
+  bool reset;
+
+	float Structure;
+	float Reflection;
+	float SampleSize;
+	float X_Shift;
+	float Y_Shift;
+
+	float Blend01;
+	float Blend02;
+	float Blend03;
+	float Brightness;
+	float Drift;
+
+	float Alpha_Show;
+	float Alpha_Apply;
+	float Alpha_Red;
+	float Alpha_Green;
+	float Alpha_Blue;
+
+	float Alpha_Low;
+	float Alpha_High;
+	float Alpha_Contrast;
+	float Alpha_Pivot;
+
+]]
+
+----------------BufferA---------------
+-- source of kernel
+BufferAKernel =
+    [[
+//-----------------------
+//-------- mat2 ---------
+//-----------------------
+ typedef struct
+  {
+  float2 r0, r1;
+  } mat2;
+
+ __DEVICE__ inline mat2 make_mat2( float2 A, float2 B)
+  {
+  mat2 C;
+  C.r0 = A;
+  C.r1 = B;
+  return C;
+  }
+
+ __DEVICE__ inline mat2 make_mat2_2( float A, float B, float C, float D)
+  {
+  mat2 E;
+  E.r0 = to_float2(A,B);
+  E.r1 = to_float2(C,D);
+  return E;
+  }
+
+  __DEVICE__ inline float2 mat2_multi_f2( mat2 B, float2 A)
+  {
+  float2 C;
+  C.x = A.x * B.r0.x + A.y * B.r0.y;
+  C.y = A.x * B.r1.x + A.y * B.r1.y;
+  return C;
+  }
+
+
+__DEVICE__ float fractf(float A){return A - _floor(A);}
+
+
+// created by florian berger (flockaroo) - 2016
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0f Unported License.
+
+// single pass CFD
+// ---------------
+// this is some "computational flockarooid dynamics" ;)
+// the self-advection is done purely rotational on all scales.
+// therefore i dont need any divergence-free velocity field.
+// with stochastic sampling i get the proper "mean values" of rotations
+// over time for higher order scales.
+//
+// try changing "RotNum" for different accuracies of rotation calculation
+// for even RotNum uncomment the line #define SUPPORT_EVEN_ROTNUM
+
+
+__DEVICE__ float randS(float2 uv)
+{
+    //return fractf(_sinf(dot(x,to_float2(52.127f, 61.2871f))) * 521.582f); //hash21
+    return fractf(_sinf(dot(uv, to_float2(12.9898, 78.233))) * 43758.5453);
+}
+
+
+__DEVICE__ float getRot(float2 pos, float2 b, float2 Res, __TEXTURE2D__ iChannel0, float ang, float RotNum)
+{
+    float an =1.0f;
+	//mat2 m = make_mat2_2(_cosf(ang*an),_sinf(ang*an),-_sinf(ang*an),_cosf(ang*an));
+	mat2 m = make_mat2_2(cos(ang),sin(ang),-sin(ang),cos(ang));
+
+    float2 p = b;
+    float rot=0.0f;
+    for(int i=0.0f;i<5.0f;i++)
+    {
+        rot+=dot(to_float2(_tex2DVecN(iChannel0,fractf((pos.x+p.x)/Res.x),fractf((pos.y+p.y)/Res.y),15).x,_tex2DVecN(iChannel0,fractf((pos.x+p.x)/Res.x),fractf((pos.y+p.y)/Res.y),15).y)-to_float2_s(0.5f),to_float2(p.y,p.x)*to_float2(1,-1));
+        p = mat2_multi_f2(m , p);
+    }
+    return rot/(float)(RotNum)/dot(b,b);
+}
+
+
+__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect)
+{
+  float C = cos(angle);
+  float S = sin(angle);
+
+  uv -= center;
+  float x = uv.x;
+  uv.x = (x*aspect * C - uv.y * S);
+  uv.y = (x*aspect * S + uv.y * C);
+  uv += center;
+
+return uv;
+}
+
+
+//############################################################################################################################
+__KERNEL__ void BufferAKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  //---------------------------------------
+  if (x < params->width && y < params->height)
+  {
+
+    //-----------------------
+     float2 fragCoord = to_float2(x, y);
+     float2 iResolution = to_float2(params->width, params->height);
+     float ratio = (float)params->width/(float)params->height;
+     float itime=params->itime*params->freq;
+     float4 fragColor = to_float4_s(0.0f);
+     //-----------------------
+
+    //Functionality.......
+    float2 Res = iResolution;
+
+	float RotNum = 5.0f;
+	float ang  = (2.0f*3.1415926535f/(float)(RotNum));
+	float an = params->Drift*2.0f;
+
+    //mat2 m = make_mat2_2(_cosf(ang*an),_sinf(ang*an),-_sinf(ang*an),_cosf(ang*an));
+	mat2 m = make_mat2_2(cos(ang*an),sin(ang*an),-sin(ang*an),cos(ang*an));
+    //mat2 mh = make_mat2_2(cos(ang*0.5f),sin(ang*0.5f),-sin(ang*0.5f),cosf(ang*0.5f));
+
+    float2 pos = to_float2(fragCoord.x+0.5f,fragCoord.y+0.5f);
+
+	float rnd = 0.0f;
+    if (params->noise)
+          rnd = randS(to_float2((float)(params->iframe)/Res.x, 0.5/Res.y));
+
+	//rnd = _tex2DVecN(iChannel3,(float)(params->iframe)/Res.x, 0.5/Res.y, 15).x - 0.5f; //Noisepattern
+
+
+    float2 b = to_float2(cos(ang*rnd),sin(ang*rnd));
+    float2 v=to_float2_s(0);
+    float bbMax=0.7f*Res.y; bbMax*=bbMax;
+    for(int j=0.0f;j<20.00f;j++)
+    {
+        if ( dot(b,b) > bbMax ) break;
+        float2 p = b;
+        for(int i=0;i<5;i++)
+        {
+           //float2 mhb = mat2_multi_f2(mh , b); //Even RotNums
+		   //v+=swiyx(p)*getRot(pos+p,-mhb); //Original
+
+		   v+= to_float2(p.y,p.x)*getRot(pos+p,b,Res*params->Structure*2.0f,iChannel0,ang, RotNum)*params->freq;
+
+		   p = mat2_multi_f2(m , p);
+        }
+        b*=2.0f;
+    }
+
+    fragColor=_tex2DVecN(iChannel0,fractf((pos.x+v.x*-1*2.0f*params->X_Shift*2.0f)/Res.x),fractf((pos.y+v.y*1*2.0f*params->Y_Shift*2.0f)/Res.y),15);
+
+	// add a little "motor" the center
+    float2 scr=(fragCoord/Res)*2.0f-to_float2_s(1.0f);
+	fragColor += to_float4_aw(to_float3_aw((0.01f*2.0f*params->SampleSize*to_float2(scr.x,scr.y) / (dot(scr,scr)/0.1f+0.3f)),0.0f),0.0f);
+
+
+	if (params->Blend01 >0.0f)fragColor = _mix(fragColor,_tex2DVecN(iChannel1,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15),params->Blend01);
+	if (params->Blend02 >0.0f) fragColor = _mix(fragColor,_tex2DVecN(iChannel2,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15),params->Blend02);
+	if (params->Blend03 >0.0f)fragColor = _mix(fragColor,_tex2DVecN(iChannel3,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15),params->Blend03);
+
+
+    if ((params->startpicture && params->iframe <= 4.0f) || (params->reset))
+		fragColor = _tex2DVecN(iChannel1,fragCoord.x/iResolution.x,fragCoord.y/iResolution.y,15);
+
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+----------------Image---------------
+-- source of kernel
+ImageKernel =
+    [[
+__DEVICE__ float3 reflectf3(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+
+__DEVICE__ float getVal(float2 uv, __TEXTURE2D__ iChannel0)
+{
+    return length(to_float3(_tex2DVecN(iChannel0,uv.x,uv.y,15).x,_tex2DVecN(iChannel0,uv.x,uv.y,15).y,_tex2DVecN(iChannel0,uv.x,uv.y,15).z));
+}
+
+__DEVICE__ float2 getGrad(float2 uv,float delta, __TEXTURE2D__ iChannel0)
+{
+    float2 d=to_float2(delta,0);
+    return to_float2(
+        getVal(uv+to_float2(d.x,d.y),iChannel0)-getVal(uv-to_float2(d.x,d.y),iChannel0),
+        getVal(uv+to_float2(d.y,d.x),iChannel0)-getVal(uv-to_float2(d.y,d.x),iChannel0)
+    )/delta;
+}
+	__DEVICE__ float2 spin(float2 uv, float2 center, float angle, float aspect) {
+		float C = _cosf(angle);
+		float S = _sinf(angle);
+
+		uv -= center;
+		float x = uv.x;
+		uv.x = (x*aspect * C - uv.y * S);
+		uv.y = (x*aspect * S + uv.y * C);
+		uv += center;
+		return uv;
+	}
+
+	__DEVICE__ inline float pow1f(float x, float y) {
+		float ret = _powf(x,y);
+		if (isnan(ret)) {
+			ret = 0.0001f;
+		}
+		return ret;
+	}
+
+	__DEVICE__ float contrast_curve( float ch_low, float ch_high, float ch_in, float contrast, float pivot) {
+		float ch_out = 0.0f;
+		float q = 2.0f / (1.0f - contrast) - 1.0f;
+		if (ch_in < 0.0f) {ch_out = ch_low;}
+		if (ch_in > 1.0f) {ch_out = ch_high;}
+
+		if (ch_in <= pivot && ch_in >= 0.0f) {	ch_out =         pow1f(ch_in    , q) / pow1f(pivot        , q - 1.0f)  * (ch_high - ch_low) + ch_low; }
+		if (ch_in >  pivot && ch_in <= 1.0f) {	ch_out = (1.0f - pow1f(1.0f - ch_in , q) / pow1f(1.0f - pivot , q - 1.0f)) * (ch_high - ch_low) + ch_low; }
+
+		return ch_out;
+	}
+
+//************************************************************************
+__KERNEL__ void ImageKernel(__CONSTANTREF__ GlobalParams *params, __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ dst)
+{
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+  if (x < params->width && y < params->height)
+  {
+
+    //-----------------------
+    float2 fragCoord = to_float2(x, y);
+    float2 iResolution = to_float2(params->width, params->height);
+    float ratio = (float)params->width/(float)params->height;
+    float itime=params->itime*params->freq;
+    float4 fragColor = to_float4_s(0.0f);
+    //-----------------------
+	float2 uv = (fragCoord - 0.5f*iResolution)/iResolution.y;
+	//uv = fragCoord / iResolution;
+	uv -=  to_float2( (params->center[0]-0.5f)*ratio, (params->center[1]-0.5f));
+	uv = uv / (float)params->scale;
+	float2 Pivot = to_float2(((params->pivot[0]-0.5f)*ratio),(params->pivot[1]-0.5f));
+	uv = spin(uv, Pivot, params->angle, 1.0f);
+
+	uv = to_float2(uv.x/ratio+0.5f,uv.y+0.5f);
+
+    float3 n = to_float3_aw(getGrad(uv,1.0f/iResolution.y,iChannel0),150.0f);
+    n=normalize(n);
+    fragColor=to_float4_aw(n,1);
+    float3 light = normalize(to_float3(1,1,2));
+    float diff=_clampf(dot(n,light),0.5f,1.0f)*params->Brightness*2.0f*0.62f/0.5f;
+    float spec=_clampf(dot(reflectf3(light,n),to_float3(0,0,-1)),0.0f,1.0f);
+    spec=_powf(spec,36.0f)*2.5f*params->Reflection*2.0f;
+      //spec=0.0f;
+	fragColor = _tex2DVecN(iChannel0,uv.x,uv.y,15)*to_float4_s(diff)+to_float4_s(spec);
+	fragColor.w = 1.0f;
+
+
+	if (params->Blend01 >0.0f)fragColor = _mix(fragColor,_tex2DVecN(iChannel1,uv.x,uv.y,15),params->Blend01*params->Blend01);
+	if (params->Blend02 >0.0f) fragColor = _mix(fragColor,_tex2DVecN(iChannel2,uv.x,uv.y,15),params->Blend02*params->Blend02);
+	if (params->Blend03 >0.0f)fragColor = _mix(fragColor,_tex2DVecN(iChannel3,uv.x,uv.y,15),params->Blend03*params->Blend03);
+
+	float luma;
+	float alpha;
+	luma = (fragColor.x * params->Alpha_Red + fragColor.y * params->Alpha_Green + fragColor.z * params->Alpha_Blue);
+	alpha = contrast_curve(params->Alpha_Low , params->Alpha_High, luma, params->Alpha_Contrast , params->Alpha_Pivot);
+	if (params->Alpha_Apply) fragColor.w = alpha;
+
+	if (params->Alpha_Show > 0.0f && params->Alpha_Apply) {
+		fragColor = to_float4(alpha,alpha,alpha,1.0f);
+	}
+
+    _tex2DVec4Write(dst, x, y, fragColor);
+  }
+}
+]]
+
+-- "LUA CODE..." /**
+
+-------------------------------------------------------------------
+--       Create
+-------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ------------------- In/Out -----------------
+
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+	  LINK_Visible = false,
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  InImage2 = self:AddInput("Image1", "Image1", {
+    LINKID_DataType = "Image",
+    LINK_Main = 2,
+    INP_Required = false
+  })
+
+  InImage3 = self:AddInput("Image2", "Image2", {
+    LINKID_DataType = "Image",
+    LINK_Main = 3,
+    INP_Required = false
+  })
+
+  InImage4 = self:AddInput("Image3", "Image3", {
+    LINKID_DataType = "Image",
+    LINK_Main = 4,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+  Sep1 = self:AddInput(string.rep("_", 52), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+  InCenter = self:AddInput("Center", "Center", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    INP_DoNotifyChanged = true,
+	  IC_Visible          = true,
+  })
+
+  InScale = self:AddInput("Scale", "Scale", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    --INPID_PreviewControl = "RectangleControl",
+    RCD_LockAspect     = 1,
+    RC_DoLockAspect    = true,
+    RCID_Center        = "true",
+    INP_Default = 1.0,
+    INP_MinAllowed = 0.1,
+    INP_MaxAllowed = 5.0,
+	  IC_Visible          = true,
+  })
+
+  InAngle = self:AddInput("Angle", "Angle", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ScrewControl",
+    INPID_PreviewControl = "AngleControl",
+    --INP_MinAllowed =   0.0,
+    INP_MinScale = 0.0,
+	  INP_MaxScale = 360.0,
+    INP_Default = 0.0,
+    ACID_Center = "Center",
+	  IC_Visible          = true,
+    --PC_GrabPriority = 1 -- give this a higher priority than the rectangle
+  })
+
+  InPivot = self:AddInput("Pivot", "Pivot", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INPID_PreviewControl = "CrosshairControl",
+    CHC_Style = "DiagonalCross",
+    PC_GrabPriority = -1,
+	  IC_Visible          = true,
+  })
+
+  InWidgets = self:AddInput("On-Screen Widgets", "OnScreen Widgets", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "MultiButtonControl",
+    INP_Default = 0,
+    INP_Integer = true,
+    INP_External        = false,
+	  INP_Passive         = true,
+    INP_DoNotifyChanged = true,
+    MBTNC_ForceButtons = true,
+    MBTNC_StretchToFit = true,
+    { MBTNC_AddButton = "Show", },
+    { MBTNC_AddButton = "Hide", },
+	--IC_Visible          = false,
+  })
+
+  InFrequency = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default = 1.0,
+    --INP_MinAllowed = -1.0,
+    --INP_MaxAllowed = 1.0,
+  })
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType    = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External       = false,
+    INP_Passive        = true,
+	  IC_Visible         = true,
+  })
+
+
+  Reset = self:AddInput("Reset", "_Reset", {
+    INPID_InputControl  = "ButtonControl",
+	  INP_DoNotifyChanged = true,
+    INP_External        = false,
+    IC_Visible          = true,
+    BTNCS_Execute       = "fusion.CacheManager:Purge()",
+  })
+
+  InResetclick = self:AddInput("Resetclick", "Resetclick", {
+    LINKID_DataType     = "Number",
+	--INPID_InputControl = "SliderControl",
+    INPID_InputControl  = "CheckboxControl",
+	  INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 0,
+    IC_Visible          = false,
+    INP_External        = false,
+  })
+
+  self:BeginControlNest("Parameter", "_Parameter", true, {})
+
+  InStartpicture = self:AddInput("Startpicture (Image1)", "Startpicture", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	  INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = true,
+    INP_External        = false,
+  })
+
+  InNoise = self:AddInput("Noise", "Noise", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+	  INP_Integer = true,
+    INP_DoNotifyChanged = true,
+    INP_Default         = 1,
+    IC_Visible          = true,
+    INP_External        = false,
+  })
+
+  --------------------------------------------
+
+	InStructure = self:AddInput("Structure", "Structure", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InDrift = self:AddInput("Drift", "Drift", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InX_Shift = self:AddInput("X_Shift", "X_Shift", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InY_Shift = self:AddInput("Y_Shift", "Y_Shift", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InReflection = self:AddInput("Reflection", "Reflection", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InBrightness = self:AddInput("Brightness", "Brightness", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+  Sep2 = self:AddInput(string.rep("_", 52), "Separator2", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+	InBlend01 = self:AddInput("Blend01", "Blend01", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InBlend02 = self:AddInput("Blend02", "Blend02", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InBlend03 = self:AddInput("Blend03", "Blend03", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.0,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+	})
+
+	InSampleSize = self:AddInput("Sample Size", "SampleSize", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 0.5,
+		INP_MinScale 		= 0.0,
+		INP_MaxScale 		= 1.0,
+		INP_Integer = false,
+	})
+
+  Sep1 = self:AddInput(string.rep("_", 100), "Separator1", {
+    LINKID_DataType = "Text",
+    INPID_InputControl = "LabelControl",
+    INP_External = false,
+    INP_Passive = true,
+  })
+
+	InAlpha_Apply = self:AddInput("Apply Alpha", "Alpha_Apply", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "CheckboxControl",
+		INP_Integer = false,
+		INP_Default = 0,
+		ICD_Width = 1,
+		INP_DoNotifyChanged = true,
+	})
+
+	InAlpha_Red = self:AddInput("Channel", "Alpha_Red", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.2126,
+		IC_ControlGroup = 1,
+		IC_ControlID = 0,
+	})
+
+	InAlpha_Green = self:AddInput("Alpha Green", "Alpha_Green", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.7152,
+		IC_ControlGroup = 1,
+		IC_ControlID = 1,
+	})
+
+	InAlpha_Blue = self:AddInput("Alpha Blue", "Alpha_Blue", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.0722,
+		IC_ControlGroup = 1,
+		IC_ControlID = 2,
+	})
+
+	InAlpha_Low = self:AddInput("Low", "Alpha_Low", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "SliderControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.0,
+	})
+
+	InAlpha_High = self:AddInput("High", "Alpha_High", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "SliderControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 1.0,
+	})
+
+	InAlpha_Contrast = self:AddInput("Contrast", "Alpha_Contrast", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "SliderControl",
+		INP_MinScale = -0.95,
+		INP_MaxScale = 0.95,
+		INP_Default  = 0.0,
+	})
+
+	InAlpha_Pivot = self:AddInput("Pivot", "Alpha_Pivot", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "SliderControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.5,
+	})
+
+	InAlpha_Show = self:AddInput("Show", "Alpha_Show", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "CheckboxControl",
+		INP_Integer = false,
+		INP_Default = 0,
+		ICD_Width = 1,
+		INP_DoNotifyChanged = true,
+	})
+
+
+  self:EndControlNest()
+
+  -- if dctlfuse_author=='JiPi' then
+  --   sw_visible = true
+  -- else
+  --   sw_visible = false
+  -- end
+  --   InLogoSw = self:AddInput("Logo", "LogoSw", {
+  --     LINKID_DataType = "Number",
+  --     INPID_InputControl = "CheckboxControl",
+  --     INP_Integer = true,
+  --     INP_DoNotifyChanged = true,
+  --     INP_Default         = 1,
+  --     IC_Visible          = sw_visible,
+  --     INP_External        = false,
+  --     INP_Passive         = true,
+  --   })
+
+  --------------------------------------------
+   ShaderFuse.end_create()
+  --------------------------------------------
+
+end
+
+function NotifyChanged(inp, param, time)
+	if inp ~= nil and param ~= nil then
+
+		if inp == InCenter then
+			-- the center moved, reposition the axis according to the current offset
+			nCenterX = param.X
+			nCenterY = param.Y
+
+			InPivot:SetAttrs({
+			PCD_OffsetX = nCenterX - 0.5,
+			PCD_OffsetY = nCenterY - 0.5,
+			})
+
+			InAngle:SetAttrs({
+			PCD_OffsetX = (nCenterX - 0.5)/100,
+			PCD_OffsetY = (nCenterY - 0.5)/100,
+		})
+		end
+		if inp == InWidgets then
+		  if param.Value == 1.0 then
+			 InCenter:SetAttrs({ PC_Visible = false })
+			 InAngle:SetAttrs({ PC_Visible = false })
+			 InPivot:SetAttrs({ PC_Visible = false })
+			 InScale:SetAttrs({ PC_Visible = false })
+		  else
+			 InCenter:SetAttrs({ PC_Visible = true })
+			 InAngle:SetAttrs({ PC_Visible = true })
+			 InPivot:SetAttrs({ PC_Visible = true })
+			 InScale:SetAttrs({ PC_Visible = true })
+		  end
+		end
+
+
+		if inp == InAlpha_Apply then
+			InAlpha_Red:SetAttrs({ IC_Visible = true, })
+			InAlpha_Low:SetAttrs({ IC_Visible = true, })
+			InAlpha_High:SetAttrs({ IC_Visible = true, })
+			InAlpha_Contrast:SetAttrs({ IC_Visible = true, })
+			InAlpha_Pivot:SetAttrs({ IC_Visible = true, })
+			InAlpha_Show:SetAttrs({ IC_Visible = true, })
+
+			if param.Value == 0 then
+				InAlpha_Red:SetAttrs({ IC_Visible = false, })
+				InAlpha_Low:SetAttrs({ IC_Visible = false, })
+				InAlpha_High:SetAttrs({ IC_Visible = false, })
+				InAlpha_Contrast:SetAttrs({ IC_Visible = false, })
+				InAlpha_Pivot:SetAttrs({ IC_Visible = false, })
+				InAlpha_Show:SetAttrs({ IC_Visible = false, })
+			end
+		end
+
+    if inp == Reset then
+      if param.Value == 1 then
+        InResetclick:SetSource(Number(1),0,0)
+      end
+		end
+
+    -- if inp == InLogoSw then
+    --   if param.Value == 1 then
+    --   authorlogo:SetAttrs({IC_Visible = true})
+    --   else
+    --   authorlogo:SetAttrs({IC_Visible = false})
+    --   end
+    -- end
+
+	end
+end
+
+-------------------------------------------------------------------
+--       Process
+-------------------------------------------------------------------
+ImgAttrs_Global = {
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+	    IMG_DeferAlloc = false,
+        }
+
+Image_Buff_Global = Image(ImgAttrs_Global)
+
+
+timestamp = 0
+--------------------------------------------------------------------
+function Process(req)
+    local center = InCenter:GetValue(req)
+    local angle  = -InAngle:GetValue(req).Value/360*3.1415*2
+    local scale  = InScale:GetValue(req).Value
+    local freq   = InFrequency:GetValue(req).Value
+    local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+
+--Zeitmessung
+
+if (req.Time == 0) then
+   timestamp = os.clock()
+end
+
+
+if (req.Time == 200) then
+   --print ("TimeFFT:", os.clock()-timestamp)
+end
+
+
+    --This creates an image for us to work on.
+    local imgattrs = {
+        IMG_Document = self.Comp,
+        { IMG_Channel = "Red", },
+        { IMG_Channel = "Green", },
+        { IMG_Channel = "Blue", },
+        { IMG_Channel = "Alpha", },
+        IMG_Width = Width,
+        IMG_Height = Height,
+        IMG_XScale = XAspect,
+        IMG_YScale = YAspect,
+        IMAT_OriginalWidth = realwidth,
+        IMAT_OriginalHeight = realheight,
+        IMG_Quality = not req:IsQuick(),
+        IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+        }
+
+    if not req:IsStampOnly() then
+        imgattrs.IMG_ProxyScale = 1
+    end
+
+    if SourceDepth ~= 0 then
+        imgattrs.IMG_Depth = SourceDepth
+    end
+
+    local p = Pixel({R=0,G=0,B=0,A=0})
+    src1 = Image(imgattrs)
+    src1:Fill(p)
+
+	  if (InImage2:GetValue(req) ~= nil) then
+         src2 = InImage2:GetValue(req)
+      else
+         src2 = Image(imgattrs)
+         src2:Fill(p)
+      end
+      if (InImage3:GetValue(req) ~= nil) then
+         src3 = InImage3:GetValue(req)
+      else
+         src3 = Image(imgattrs)
+         src3:Fill(p)
+      end
+      if (InImage4:GetValue(req) ~= nil) then
+         src4 = InImage4:GetValue(req)
+      else
+         src4 = Image(imgattrs)
+         src4:Fill(p)
+      end
+
+
+    local dstA = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+	local dstI = Image {IMG_Like = src1, IMG_DeferAlloc = true}
+
+
+	if req:IsPreCalc() then
+		 --print("\n######################### Precalc ##############################\n")
+		 local out = Image({IMG_Like = dstI, IMG_NoData = true})
+		 OutImage:Set(req, out)
+		 return
+	end
+
+    -------------------------- BufferA-Kernel----------------------------------------
+    local nodeName = self.Name
+    BufferAKernel = string.gsub(BufferAKernel, "BufferAKernel", nodeName)
+    nodeA = DVIPComputeNode(req, nodeName, BufferAKernel, "GlobalParams", GlobalParams)
+
+	--nodeA = DVIPComputeNode(req, "BufferAKernel", BufferAKernel, "GlobalParams", GlobalParams)
+
+	local params = {}
+	if not pcall(function ()
+
+		params.center = {center.X,center.Y}
+		params.scale = 1/scale
+		params.angle = angle
+		params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq = freq
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime = req.Time / framerate
+		params.iframe = req.Time
+		params.startpicture = InStartpicture:GetValue(req).Value
+		params.noise = InNoise:GetValue(req).Value
+		params.reset = InResetclick:GetValue(req).Value
+
+		params.Blend01  	= InBlend01:GetValue(req).Value
+		params.Blend02  	= InBlend02:GetValue(req).Value
+		params.Blend03  	= InBlend03:GetValue(req).Value
+		params.Brightness = InBrightness:GetValue(req).Value
+		params.Drift  		= InDrift:GetValue(req).Value
+
+		params.Structure  = InStructure:GetValue(req).Value
+		params.Reflection = InReflection:GetValue(req).Value
+		params.SampleSize = InSampleSize:GetValue(req).Value
+		params.X_Shift  	= InX_Shift:GetValue(req).Value
+		params.Y_Shift  	= InY_Shift:GetValue(req).Value
+
+		params.Alpha_Apply 	= InAlpha_Apply:GetValue(req).Value
+		params.Alpha_Show 	= InAlpha_Show:GetValue(req).Value
+		params.Alpha_Red 	= InAlpha_Red:GetValue(req).Value
+		params.Alpha_Green 	= InAlpha_Green:GetValue(req).Value
+		params.Alpha_Blue 	= InAlpha_Blue:GetValue(req).Value
+
+		params.Alpha_Low 	= InAlpha_Low:GetValue(req).Value
+		params.Alpha_High 	= InAlpha_High:GetValue(req).Value
+		params.Alpha_Contrast = InAlpha_Contrast:GetValue(req).Value
+		params.Alpha_Pivot 	= InAlpha_Pivot:GetValue(req).Value
+
+		nodeA:SetParamBlock(params)
+    end) then
+
+		params = nodeA:GetParamBlock(GlobalParams)
+
+		params.center = {center.X,center.Y}
+		params.scale = 1/scale
+		params.angle = angle
+		params.pivot = {InPivot:GetValue(req).X,InPivot:GetValue(req).Y}
+		params.freq = freq
+		params.width  = src1.DataWindow:Width()
+		params.height = src1.DataWindow:Height()
+		params.itime = req.Time / framerate
+		params.iframe = req.Time
+		params.startpicture = InStartpicture:GetValue(req).Value
+		params.noise = InNoise:GetValue(req).Value
+		params.reset = InResetclick:GetValue(req).Value
+
+		params.Blend01  	= InBlend01:GetValue(req).Value
+		params.Blend02  	= InBlend02:GetValue(req).Value
+		params.Blend03  	= InBlend03:GetValue(req).Value
+		params.Brightness   = InBrightness:GetValue(req).Value
+		params.Drift  		= InDrift:GetValue(req).Value
+
+		params.Structure    = InStructure:GetValue(req).Value
+		params.Reflection   = InReflection:GetValue(req).Value
+		params.SampleSize   = InSampleSize:GetValue(req).Value
+		params.X_Shift  	= InX_Shift:GetValue(req).Value
+		params.Y_Shift  	= InY_Shift:GetValue(req).Value
+
+		params.Alpha_Apply 	= InAlpha_Apply:GetValue(req).Value
+		params.Alpha_Show 	= InAlpha_Show:GetValue(req).Value
+		params.Alpha_Red 	= InAlpha_Red:GetValue(req).Value
+		params.Alpha_Green 	= InAlpha_Green:GetValue(req).Value
+		params.Alpha_Blue 	= InAlpha_Blue:GetValue(req).Value
+
+		params.Alpha_Low 	= InAlpha_Low:GetValue(req).Value
+		params.Alpha_High 	= InAlpha_High:GetValue(req).Value
+		params.Alpha_Contrast = InAlpha_Contrast:GetValue(req).Value
+		params.Alpha_Pivot 	= InAlpha_Pivot:GetValue(req).Value
+
+		nodeA:SetParamBlock(params)
+	end
+
+    nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+    nodeA:AddInput("iChannel0", Image_Buff_Global)
+	  nodeA:AddInput("iChannel1", src2)
+	  nodeA:AddInput("iChannel2", src3)
+	  nodeA:AddInput("iChannel3", src4)
+    nodeA:AddOutput("dst", dstA)
+
+
+    local success = nodeA:RunSession(req)
+    if not success then
+        dstA = nil
+        dump(nodeA:GetErrorLog())
+    end
+
+    Image_Buff_Global = dstA --Recursiv Image
+
+
+    if (InResetclick:GetValue(req).Value == 1) then
+       InResetclick:SetSource(Number(0),0,0)
+    end
+
+  -------------------------- ImageKernel----------------------------------------
+  --node = DVIPComputeNode(req, "ImageKernel", ImageKernel, "GlobalParams", GlobalParams)
+
+  ImageKernel = string.gsub(ImageKernel, "ImageKernel", "IK"..nodeName)
+  node = DVIPComputeNode(req, "IK"..nodeName, ImageKernel, "GlobalParams", GlobalParams)
+
+
+  node:SetParamBlock(params)
+
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+
+  node:AddInput("iChannel0", Image_Buff_Global)
+  node:AddInput("iChannel1", src2)
+  node:AddInput("iChannel2", src3)
+  node:AddInput("iChannel3", src4)
+  node:AddOutput("dst", dstI)
+
+  local success = node:RunSession(req)
+  if not success then
+      dstI = nil
+      dump(node:GetErrorLog())
+  end
+
+  OutImage:Set(req, dstI)
+	collectgarbage();
+end
+
+
+-- **/ "End of LUA CODE"

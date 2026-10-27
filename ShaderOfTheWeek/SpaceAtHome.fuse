@@ -1,0 +1,3964 @@
+--[[--/*
+
+  SpaceAtHome.fuse
+
+  Based on https://www.shadertoy.com/view/MXS3zy a WebGL shader created by lz.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   Reset;
+  int    N_CHAIRS;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat4 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float4x4 mat4;
+
+  __DEVICE__ inline mat4 to_mat4( float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
+  {
+    return mat4(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p);
+  }
+
+  __DEVICE__ inline mat4 to_mat4_f4( float4 a, float4 b, float4 c, float4 d ) { return mat4(a,b,c,d); }
+  __DEVICE__ inline float4 mul_mat4_f4( mat4 B, float4 A) { return (B*A); }
+  __DEVICE__ inline mat4 mul_mat4_mat4( mat4 A, mat4 B) { return (A*B); }
+
+#else
+
+  typedef struct { float4 r0; float4 r1; float4 r2; float4 r3; } mat4;
+
+  __DEVICE__ inline mat4 to_mat4( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
+  {
+    mat4 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c; t.r0.w = d;
+    t.r1.x = e; t.r1.y = f; t.r1.z = g; t.r1.w = h;
+    t.r2.x = i; t.r2.y = j; t.r2.z = k; t.r2.w = l;
+    t.r3.x = m; t.r3.y = n; t.r3.z = o; t.r3.w = p;
+    return t;
+  }
+
+__DEVICE__ inline mat4 to_mat4_f4( float4 A, float4 B, float4 C, float4 D)
+  {
+    mat4 _ret;
+    _ret.r0 = A;
+    _ret.r1 = B;
+    _ret.r2 = C;
+    _ret.r3 = D;
+    return _ret;
+  }
+
+__DEVICE__ inline float4 mul_mat4_f4( mat4 B, float4 A)
+  {
+    float4 C;
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x + A.w * B.r3.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y + A.w * B.r3.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z + A.w * B.r3.z;
+    C.w = A.x * B.r0.w + A.y * B.r1.w + A.z * B.r2.w + A.w * B.r3.w;
+    return C;
+}
+
+__DEVICE__ inline mat4 mul_mat4_mat4( mat4 B, mat4 A)
+{
+
+  float r[4][4];
+  float a[4][4] = {{A.r0.x, A.r0.y, A.r0.z, A.r0.w},
+                   {A.r1.x, A.r1.y, A.r1.z, A.r1.w},
+                   {A.r2.x, A.r2.y, A.r2.z, A.r2.w},
+                   {A.r3.x, A.r3.y, A.r3.z, A.r3.w}};
+  float b[4][4] = {{B.r0.x, B.r0.y, B.r0.z, B.r0.w},
+                   {B.r1.x, B.r1.y, B.r1.z, B.r1.w},
+                   {B.r2.x, B.r2.y, B.r2.z, B.r2.w},
+                   {B.r3.x, B.r3.y, B.r3.z, B.r3.w}};
+
+  for( int i = 0; i < 4; ++i)
+  {
+   for( int j = 0; j < 4; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 4; ++k)
+     {
+     r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat4 R = to_mat4(r[0][0], r[0][1], r[0][2], r[0][3],
+                   r[1][0], r[1][1], r[1][2], r[1][3],
+                   r[2][0], r[2][1], r[2][2], r[2][3],
+                   r[3][0], r[3][1], r[3][2], r[3][3]);
+  return R;
+}
+#endif // end of mat4 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+ #define fract_f3(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define cos_f3(i) cos(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define mix_f2(v,i,m) mix(v,i,m)
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+    #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+    #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+    #define mod_f(a,b) _fmod(a,b)
+    #define cos_f3(i) cos(i)
+    #define abs_f2(a) fabs(a)
+    #define abs_f3(a) fabs(a)
+    #define mix_f2(v,i,m) mix(v,i,m)
+    #define sign_f(a) sign(a)
+    #define pow_f3(a,b) pow(a,b)
+    
+    //#define make_float2(a) to_float2((a).x, (a).y)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define cos_f3(i) to_float3( _cosf((i).x), _cosf((i).y), _cosf((i).z))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define mix_f2(v,i,m) to_float2(_mix((v).x,(i).x,(m).x),_mix((v).y,(i).y,(m).y))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+#define to_float4_f2f2(A,B) to_float4((A).x,(A).y,(B).x,(B).y ) // or is there some to_float_..() for that?!? - No - that is missing in DCTL :-) but now we have "one"
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+
+
+#define MAX_DISTANCE 1000.0f
+#define FAR 300.0f
+#define MAX_ITER 164.0f
+#define MAX_SH_ITER 64.0f
+
+#define CROSS_SECTION_FACTOR 5.0f
+
+#define T_EPS 0.0001f
+#define TS_EPS 0.001f
+
+#define N_EPS 0.0001f
+#define NS_EPS 0.01f
+
+#define RAD_45 0.785398163f
+
+#define PI 3.14159265f
+#define PI2 6.2831853f
+
+#define GEOM_BOUNDING_CIRCLE 75.0f
+#define GEOM_BOUNDING_CIRCLE_SQR 5625.0f
+#define GEOM_BOUNDING_SHADOW_CIRCLE 100.0f
+#define GEOM_BOUNDING_SHADOW_CIRCLE_SQR 10000.0f
+#define FLOOR_BOUNDING_CIRCLE_SQR 28900.0f
+#define FLOOR_BOUNDING_CIRCLE 160.0f
+#define FLOOR_LEVEL -29.5f
+
+//#define DEBUG_HIT
+#define DEBUG_CIRCULAR_MOTION
+//#define ANIM_TIME (iMouse.x/6.0f)
+#define ANIM_TIME (iMouse.z>0.0f?iMouse.x/6.0f:iTime)
+//#define ANIM_TIME iTime
+#define DOWNSAMPLE_SHADOWS
+
+#define ROT2(_alpha) to_mat2(_cosf(_alpha), _sinf(_alpha), -_sinf(_alpha), _cosf(_alpha))
+#define Ryz(_alpha) to_mat4(1.0f, 0.0f, 0.0f, 0.0f, \
+                            0.0f, _cosf(_alpha), _sinf(_alpha), 0.0f, \
+                            0.0f, -_sinf(_alpha), _cosf(_alpha), 0.0f, \
+                            0.0f, 0.0f, 0.0f, 1.0f)
+
+#define CAMERA_SETUP(_uv) float3 o = swi3(TF3(ORIG_SEQ),x,y,z);                   \
+                          float4 trg = TF3(LOOKAT_SEQ);                   \
+                          float3 d = normalize(to_float3_aw((_uv + half_pixel)*_tanf(trg.w), -1.0f)); \
+                          d = lookAt(o, d, swi3(trg,x,y,z));
+
+// packing closed unit interval values to uint
+#define PACK_CUI_VALUES
+
+#define PACK_CUI3_TO_UINT(_a, _b, _c)                    \
+        uint packed_uint = (uint)(_a * 255.0f);          \
+        packed_uint += ((uint)(_b * 255.0f) << 8);       \
+        packed_uint += ((uint)(_c * 127.0f) << 16);
+
+#define UNPACK_UINT_TO_CUI3(_packed_val)                   \
+        uint packed_uint = (uint)(_packed_val);              \
+        float3 unpacked_cui3;                                \
+        unpacked_cui3.x = (float)(packed_uint % 256u) / 255.0f; \
+        packed_uint /= 256u;                                \
+        unpacked_cui3.y = (float)(packed_uint % 256u) / 255.0f; \
+        packed_uint /= 256u;                                \
+        unpacked_cui3.z = (float)(packed_uint % 128u) / 127.0f;
+
+#define Rxz(_alpha) to_mat4(_cosf(_alpha), 0.0f, _sinf(_alpha), 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -_sinf(_alpha), 0.0f, _cosf(_alpha), 0.0f, 0.0f, 0.0f, 0.0f, 1.0f)
+
+
+#define ANIM_T(_t, _e, _p) (smoothstep(_p - _e, _p, _t) - smoothstep(_p, _p + _e, _t))
+#define ANIM_T_CF(_t, _p, _e0, _e1, _cf0, _cf1) (_cf0 * smoothstep(_p - _e0, _p, _t) - _cf1 * smoothstep(_p, _p + _e1, _t))
+#define PULSE_T(_t, _e, _pa, _pb) (smoothstep(_pa - _e, _pa, _t) - smoothstep(_pb, _pb + _e, _t))
+#define ASYM_PULSE_T(_t, _ea, _pa, _eb, _pb) (smoothstep(_pa - _ea, _pa, _t) - smoothstep(_pb, _pb + _eb, _t))
+
+#define ANIM_SEQ 150.0f
+
+// aspect ratios
+#define WIDE_SCREEN_AR 0.5625f
+#define ULTRA_WIDE_SCREEN_AR 0.428571f
+#define SUPER_WIDE_SCREEN_AR 0.28125f
+#define ASPECT_RATIO WIDE_SCREEN_AR
+
+//
+
+#define TRACE_NO_FLAG 0
+#define TRACE_FLOOR_FLAG 1
+
+#define TRACE_TABLE_FRAME_FLAG 2
+#define TRACE_TABLE_TOP_FLAG 4
+// sum of previous two
+#define TRACE_TABLE_FLAG 6
+
+#define TRACE_CHAIR_BASE_FLAG 8
+#define TRACE_CHAIR_BCK_LEG_FLAG 16
+#define TRACE_CHAIR_FRNT_LEG_FLAG 32
+#define TRACE_CHAIR_BACK_FLAG 64
+#define TRACE_CHAIR_FRAME_FLAG 128
+#define TRACE_CHAIR_CUSHION_FLAG 256
+// sum of previous six
+#define TRACE_CHAIRS_FLAG 504
+
+#define TRACE_LAPTOP_BASE_FLAG 512
+#define TRACE_LAPTOP_SCREEN_FLAG 1024
+// sum of prevoius two
+#define TRACE_LAPTOP_FLAG 1536
+
+#define TRACE_ALL TRACE_FLOOR_FLAG | TRACE_TABLE_FLAG | TRACE_CHAIRS_FLAG | TRACE_LAPTOP_FLAG
+#define TRACE_NO_FLOOR TRACE_TABLE_FLAG | TRACE_CHAIRS_FLAG | TRACE_LAPTOP_FLAG
+#define TRACE_TABLE_LAPTOP TRACE_TABLE_FLAG | TRACE_LAPTOP_FLAG
+#define TRACE_CHAIR_UPPER TRACE_CHAIR_BACK_FLAG | TRACE_CHAIR_FRAME_FLAG | TRACE_CHAIR_BCK_LEG_FLAG
+#define TRACE_CHAIR_UPPER_W_CUSHION TRACE_CHAIR_UPPER | TRACE_CHAIR_CUSHION_FLAG
+
+// colors
+
+//#define N_CHAIRS 5
+
+#define DEFAULT_MTL 0
+#define FLOOR_MTL 1
+#define TABLE_FRAME_MTL 2
+#define TABLE_TOP_MTL 3
+#define CHAIR_BASE_MTL 4
+#define CHAIR_BCK_LEG_MTL 5
+#define CHAIR_FRNT_LEG_MTL 6
+#define CHAIR_BACK_MTL 7
+#define CHAIR_FRAME_MTL 8
+#define CHAIR_CUSHION_MTL 9
+#define LAPTOP_BASE_MTL 10
+#define LAPTOP_SCREEN_MTL 11
+
+#define LAPTOP_MTL LAPTOP_BASE_MTL
+
+#define is_metal_mtl(_mtl) (_mtl == CHAIR_FRAME_MTL || _mtl == TABLE_FRAME_MTL)
+
+#define TF0(crd) texture(iChannel0, (make_float2((crd).x,(crd).y)+0.5f)/iResolution)
+#define TF1(crd) texture(iChannel1, (make_float2((crd).x,(crd).y)+0.5f)/iResolution)
+#define TF2(crd) texture(iChannel2, (make_float2((crd).x,(crd).y)+0.5f)/iResolution)
+#define TF3(crd) texture(iChannel3, (make_float2((crd).x,(crd).y)+0.5f)/iResolution)
+//#define TF(ch, crd) texelFetch(ch, crd, 0)
+//#define TF(ch, crd) texture(ch, (make_float2(crd)+0.5f)/iResolution)
+#define TF(ch, crd) texture(ch, (make_float2((crd).x, (crd).y)+0.5f)/iResolution)
+
+// CONTROL ZONE - CTRL_ZONE first rows
+#define CTRL_ZONE 50
+#define FPS_DATA to_int2(0,0)
+#define RES_DATA to_int2(1,0)
+
+#define CAMERA_SETUP_ROW 3
+#define ORIG_SEQ_ROW 1
+#define ORIG_SEQ to_int2(0, ORIG_SEQ_ROW)
+#define ORIG_SEQ_1 to_int2(1, ORIG_SEQ_ROW)
+#define ORIG_SEQ_2 to_int2(4, ORIG_SEQ_ROW)
+#define ORIG_SEQ_3 to_int2(7, ORIG_SEQ_ROW)
+
+#define LOOKAT_SEQ to_int2(0, 3)
+
+// Lights
+#define N_LIGHTS 2
+#define LIGHT_0 4
+#define LIGHT_1 5
+
+// light position/direction and type (directional/point)
+#define LIGHT_GEO 0
+// rgb, intensity
+#define LIGHT_PROP 1
+
+#define LAPTOP_H_DIMS to_int2(0, 10)
+
+#define LAPTOP_BASE_TRF_0 to_int2(0, 11)
+#define LAPTOP_BASE_TRF_1 to_int2(1, 11)
+#define LAPTOP_BASE_TRF_2 to_int2(2, 11)
+#define LAPTOP_BASE_TRF_3 to_int2(3, 11)
+
+#define LAPTOP_SCRN_TRF_0 to_int2(4, 11)
+#define LAPTOP_SCRN_TRF_1 to_int2(5, 11)
+#define LAPTOP_SCRN_TRF_2 to_int2(6, 11)
+#define LAPTOP_SCRN_TRF_3 to_int2(7, 11)
+
+#define LAPTOP_KEY_ANIM to_int2(0, 12)
+
+#define CHAIR_ROT 13
+
+#define GEOM_SHADOW_MAP 20
+// not used
+#define GEOM_NORM_MAP 21
+#define GEOM_AO_MAP 22
+
+
+__DEVICE__ inline mat4 to_mat4_n( float A)
+  {
+  mat4 D;
+  D.r0 = to_float4(A,0.0f,0.0f,0.0f);
+  D.r1 = to_float4(0.0f,A,0.0f,0.0f);
+  D.r2 = to_float4(0.0f,0.0f,A,0.0f);
+  D.r3 = to_float4(0.0f,0.0f,0.0f,A);
+  return D;
+  }
+
+// global variables
+// global casting direction accessible from 'everywhere'
+
+const float bvh_margin = 1.0f;
+
+__DEVICE__ int getNormMap(in int _mtl) {
+    int mtl = (_mtl >= LAPTOP_MTL && _mtl != LAPTOP_SCREEN_MTL) ? LAPTOP_MTL : _mtl;
+    return (1 << (mtl - 1));
+}
+__DEVICE__ mat2 rot2D(in float _a) {
+    return to_mat2(_cosf(_a), _sinf(_a), -_sinf(_a), _cosf(_a));
+}
+
+__DEVICE__ mat3 rotY(in float _a) {
+    return to_mat3(_cosf(_a),  0.0f, _sinf(_a),
+                   0.0f,       1.0f, 0.0f,
+                  -_sinf(_a), 0.0f, _cosf(_a));
+}
+
+__DEVICE__ mat3 rotX(in float _a) {
+    return to_mat3(1.0f,       0.0f, 0.0f,
+                   0.0f, _cosf(_a),  _sinf(_a),
+                   0.0f, -_sinf(_a), _cosf(_a));
+}
+
+
+
+__DEVICE__ float3 getCameraTarget(in float _t) {
+    const float a1 = 20.0f;
+    const float a2 = 80.0f;
+    const float a3 = 107.0f;
+    const float a4 = 112.0f;
+    const float a5 = 130.0f;
+    const float a6 = ANIM_SEQ;
+    
+    float atime = _t;
+
+    float3 target = to_float3(0.0f, 5.0f, 0.0f);
+    float cf;
+    if (atime < a1) {
+        cf = atime / a1;
+        target = _mix(target, to_float3(11.6f, 6.77f, 9.13f), smoothstep(0.4f, 0.6f, cf));
+    }
+    else if (atime < a2) {
+        cf = (atime - a1) / (a2 - a1);
+        target = _mix(to_float3(11.6f, 6.77f, 9.13f), to_float3(-7.0f, -11.0f, -36.0f),
+                      smoothstep(0.15f, 0.21f, cf));
+        target = _mix(target, to_float3(-21.0f, -3.3f, 43.4f), smoothstep(0.34f, 0.39f, cf));
+        float3 tanchor = to_float3(10.0f, 0.0f, 0.0f);
+        float ta = -cf * PI2 * 8.0f;
+        swi2S(tanchor,x,z, mul_f2_mat2(swi2(tanchor,x,z) , ROT2(ta)));
+        target = _mix(target, to_float3(-67.0f, -1.0f, -3.5f) + tanchor, smoothstep(0.4f, 0.43f, cf));
+
+        target.y = _mix(target.y, -30.0f, PULSE_T(cf, 0.03f, 0.57f, 0.6f));
+        swi2S(target,x,z, _mix(swi2(target,x,z), to_float2(-16.0f, -49.0f), smoothstep(0.62f, 0.64f, cf)));
+        target = _mix(target, to_float3(0.0f, -12.0f, -19.0f), smoothstep(0.75f, 0.8f, cf));
+        target = _mix(target, to_float3(-22.7f, -14.0f, -31.8f), smoothstep(0.8f, 0.83f, cf));
+        target = _mix(target, to_float3(-0.0f, -20.0f, 10.37f), smoothstep(0.84f, 0.9f, cf));
+        target = _mix(target, to_float3(0.0f, -10.0f, 0.0f), smoothstep(0.9f, 0.95f, cf));
+    }
+    else if (atime < a3) {
+        cf = (atime - a2) / (a3 - a2);
+        target = to_float3(0.0f, -10.0f, 0.0f);
+        float circ_targ = PULSE_T(cf, 0.1f, 0.2f, 0.6f);
+        float circ_r = 60.0f*(cf - 0.2f)/0.6f;
+        swi2S(target,x,z, _mix(swi2(target,x,z), circ_r * to_float2(_cosf(cf*PI2*4.0f),_sinf(cf*PI2*4.0f)), circ_targ));
+        target.y = target.y + ANIM_T_CF(cf, 0.4f, 0.3f, 0.3f, 30.0f, 10.0f);
+        target = _mix(target, to_float3(0.0f, 5.0f, 0.0f), smoothstep(0.75f, 0.85f, cf));
+    }
+    else if (atime < a4) {
+        cf = (atime - a3) / (a4 - a3);
+        target = _mix(to_float3(0.0f, 5.0f, 0.0f), to_float3(12.0f, 8.0f, 7.0f), smoothstep(0.0f, 1.0f, _sqrtf(cf)));
+    }
+    else if (atime < a5) {
+        cf = (atime - a4) / (a5 - a4);
+        target = to_float3(12.0f, 8.0f, 7.0f);
+        target.x += _cosf(cf * PI2) * smoothstep(0.0f, 1.0f, cf);
+        target.z += 0.3f*_cosf(cf * PI * 0.5f) * smoothstep(0.0f, 1.0f, cf);
+        target.y += 0.5f*_sinf(cf * PI2 * 0.5f) * smoothstep(0.0f, 1.0f, cf);
+    }
+    else if (atime < a6) {
+        cf = (atime - a5) / (a6 - a5);
+        target = to_float3(13.0f, 8.0f, 7.0f);
+    }
+    else { // sequence of stills
+        int sti_time = (int)(mod_f(atime, 60.0f) / 10.0f);
+        target = _mix(target, to_float3(0.0f, 5.0f, 0.0f), (float)(sti_time == 0));
+        target = _mix(target, to_float3(-14.7f, -12.3f, -29.44f), (float)(sti_time == 1));
+        target = _mix(target, to_float3(13.21f, 7.0f, 3.75f), (float)(sti_time == 2));
+        target = _mix(target, to_float3(-0.3f, -28.0f, 25.0f), (float)(sti_time == 3));
+        target = _mix(target, to_float3(20.51f, 4.0f, 1.04f), (float)(sti_time == 4));
+        target = _mix(target, to_float3(37.0f, -22.0f, -42.0f), (float)(sti_time == 5));
+    }
+    return target;
+}
+
+__DEVICE__ float3 getCameraPosition(in float _t) {
+    const float a1 = 20.0f;
+    const float a2 = 80.0f;
+    const float a3 = 107.0f;
+    const float a4 = 112.0f;
+    const float a5 = 130.0f;
+    const float a6 = ANIM_SEQ;
+    
+    float dist = 90.0f;
+    float3 p;
+    swi2S(p,x,z, dist * to_float2(-1.0f, 0.0f));
+    p.y = 70.0f;
+    float cf;
+    float atime = _t;
+
+    float2 ranchor = to_float2_s(0.0f);
+    if (_t < a1) {
+        cf = atime / a1;
+        dist = 120.0f - cf * 40.0f;
+        swi2S(p,x,z, mul_mat2_f2(ROT2(cf * PI2) , to_float2(dist, 0.0f)));
+        p.y = 90.0f - ANIM_T_CF(cf, 0.5f, 0.5f, 0.45f, 50.0f, 30.0f);
+    }
+    else if (atime < a2) {
+        cf = (atime - a1) / (a2 - a1);
+        ranchor = _mix(ranchor, to_float2(30.0f, -50.0f), ANIM_T(cf, 0.2f, 0.2f));
+        ranchor = _mix(ranchor, to_float2(200.0f, 70.0f), ASYM_PULSE_T(cf, 0.2f, 0.7f, 0.1f, 0.71f));
+        dist = 80.0f;
+        dist = _mix(dist, 80.0f, ANIM_T(cf, 0.2f, 0.2f));
+        dist = _mix(dist, 120.0f, ANIM_T(cf, 0.1f, 0.75f));
+        dist = _mix(dist, 60.0f, smoothstep(0.75f, 0.78f, cf));
+        dist = _mix(dist, 70.0f, smoothstep(0.78f, 0.82f, cf));
+        //dist = _mix(dist, 30.0f, ANIM_T(cf, 0.05f, 0.88f));
+        swi2S(p,x,z, mul_mat2_f2(ROT2(cf * PI2 * 3.0f) , (to_float2(dist, 0.0f) - ranchor)));
+        p.y = _mix(70.0f, 0.0f, smoothstep(0.0f, 0.3f, cf));
+        p.y = _mix(p.y, -20.0f, smoothstep(0.6f, 0.7f, cf));
+        p.y = _mix(p.y, 5.0f, smoothstep(0.85f, 0.9f, cf));
+    }
+    else if (atime < a3) {
+        cf = (atime - a2) / (a3 - a2);
+        float rcf = 1.0f - (1.0f-cf)*(1.0f-cf);
+        dist = 70.0f;
+        dist = _mix(dist, 100.0f, smoothstep(0.0f, 0.2f, cf));
+        dist = _mix(dist, 32.0f, smoothstep(0.6f, 0.9f, cf));
+        ranchor = 10.0f*to_float2(_cosf(cf*PI2), _sinf(cf*PI2)) * PULSE_T(rcf, 0.1f, 0.2f, 0.8f);
+        swi2S(p,x,z, mul_mat2_f2(ROT2(rcf * PI2 * 2.0f) , to_float2(dist, 0.0f) - ranchor));
+        p.y = _mix(5.0f, 40.0f, smoothstep(0.0f, 0.2f, cf));
+        //p.y = _mix(p.y, _sinf(cf*PI2*2.0f)*5.0f, PULSE_T(cf, 0.1f, 0.3f, 0.7f));
+        p.y = _mix(p.y, 10.0f, smoothstep(0.8f, 0.9f, rcf));
+    }
+    else if (atime < a4) {
+        cf = (atime - a3) / (a4 - a3);
+        cf = smoothstep(0.0f, 1.0f, cf);
+        dist = 32.0f;
+        dist = _mix(dist, 24.0f, smoothstep(0.2f, 1.0f, cf));
+        swi2S(p,x,z, mul_mat2_f2(ROT2(cf * PI2 * 0.2f) , dist * to_float2(1.0f, 0.0f)));
+        p.y = _mix(10.0f, 18.0f, smoothstep(0.0f, 1.0f, cf));
+    }
+    else if (atime < a5) {
+        cf = (atime - a4) / (a5 - a4);
+        dist = 24.0f - ANIM_T_CF(cf, 0.7f, 0.7f, 0.3f, 14.0f, 10.0f);
+        swi2S(p,x,z, dist * to_float2(0.309017f, 0.951057f));
+        p.y = _mix(18.0f, 24.0f, ANIM_T(cf, 0.5f, 0.5f));
+    }
+    else if (atime < a6) {
+        cf = (atime - a5) / (a6 - a5);
+        swi2S(p,x,z, 20.0f * to_float2(0.309017f, 0.951057f));
+        swi2S(p,x,z, _mix(swi2(p,x,z), to_float2(-20.0f, 10.951057f), smoothstep(0.1f, 0.9f, cf)));
+        p.y = 18.0f;
+    }
+    else {
+        int sti_time = (int)(mod_f(atime, 60.0f) / 10.0f);
+        p = _mix(p, to_float3(20.0f, 48.0f, 130.0f),  (float)(sti_time == 0));
+        p = _mix(p, to_float3(-120.0f, 35.0f, 20.0f), (float)(sti_time == 1));
+        p = _mix(p, to_float3(23.21f, 17.0f, 23.75f), (float)(sti_time == 2));
+        p = _mix(p, to_float3(20.0f, -25.0f, -65.0f), (float)(sti_time == 3));
+        p = _mix(p, to_float3(37.93f, 9.0f, -2.0f),   (float)(sti_time == 4));
+        p = _mix(p, to_float3(57.0f, -15.0f, -62.0f), (float)(sti_time == 5));
+    }
+
+    return p;
+}
+
+
+
+__DEVICE__ float dot2(in float2 v ) { return dot(v,v); }
+__DEVICE__ float sdTrapezoid( in float2 p, in float r1, float r2, float he )
+{
+    float2 k1 = to_float2(r2,he);
+    float2 k2 = to_float2(r2-r1,2.0f*he);
+    p.x = _fabs(p.x);
+    float2 ca = to_float2(p.x-_fminf(p.x,(p.y<0.0f)?r1:r2), _fabs(p.y)-he);
+    float2 cb = p - k1 + k2*clamp( dot(k1-p,k2)/dot2(k2), 0.0f, 1.0f );
+    float s = (cb.x<0.0f && ca.y<0.0f) ? -1.0f : 1.0f;
+    return s*_sqrtf( _fminf(dot2(ca),dot2(cb)) );
+}
+
+__DEVICE__ float sdSegment( in float2 p, in float2 a, in float2 b )
+{
+    float2 pa = p-a, ba = b-a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0f, 1.0f );
+    return length( pa - ba*h );
+}
+
+__DEVICE__ float sdBox( in float2 p, in float2 b )
+{
+    float2 d = abs_f2(p)-b;
+    return length(_fmaxf(d,to_float2_s(0.0f))) + _fminf(_fmaxf(d.x,d.y),0.0f);
+}
+
+__DEVICE__ float sdBox_f3( float3 p, float3 b )
+{
+  float3 q = abs_f3(p) - b;
+  return length(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f);
+}
+
+__DEVICE__ float smoothstep_c2( float x )
+{
+  return clamp(x*x*x*(x*(x*6.0f-15.0f)+10.0f), 0.0f, 1.0f);
+}
+
+// smooth
+__DEVICE__ float sdUnionSmooth( float a, float b, float k )
+{
+    float h = _fmaxf( k-_fabs(a-b), 0.0f )/k;
+    return _fminf( a, b ) - h*h*k*0.25f;
+}
+
+
+// x - radius, y - x length
+__DEVICE__ float sdCylX(in float3 _p, in float2 _lr)
+{
+    return _fmaxf(length(swi2(_p,y,z)) - _lr.x, _fabs(_p.x) - _lr.y);
+}
+
+__DEVICE__ float sdCapsule( float2 p, float h, float r )
+{
+  p.y -= clamp( p.y, 0.0f, h );
+  return length( p ) - r;
+}
+
+__DEVICE__ float sdCapsuleZExtrusion(float3 _p, float _h, float _r, float _d)
+{
+    float gzy = sdCapsule(swi2(_p,y,z), _h, _r);
+    return _fmaxf(gzy, _fabs(_p.x) - _d);
+}
+
+// bounded - not exact
+__DEVICE__ float sdTrapezoid_rl(in float2 _p, in float2 _tb, in float4 _vrl, in float2 _rl)
+{
+    float fc0 = _p.y - _tb.x;
+    float fc1 = -_p.y - _tb.y;
+    float fc2 = -(dot(_p, normalize(swi2(_vrl,x,y))) + _rl.x);
+    float fc3 = -(dot(_p, normalize(swi2(_vrl,z,w))) + _rl.y);
+
+    return _fmaxf(_fmaxf(_fmaxf(fc0, fc1), fc2), fc3);
+}
+
+__DEVICE__ float smin( float a, float b, float k )
+{
+    float h = clamp( 0.5f+0.5f*(b-a)/k, 0.0f, 1.0f );
+    return _mix( b, a, h ) - k*h*(1.0f-h);
+}
+
+__DEVICE__ float smax(in float _f1, in float _f2, in float _k)
+{
+  float df = _f1 - _f2;
+  return 0.5f * (_f1 + _f2 + _sqrtf(df * df + _k));
+}
+
+// y - axis cylinder
+__DEVICE__ float sdCylinder(in float3 _p, in float _r, in float _h) {
+    float rf = length(swi2(_p,x,z)) - _r;
+    return _fmaxf(rf, _fabs(_p.y) - _h);
+}
+
+#define sdPlane(_p, _v) dot(_p, _v)
+#define sdCircle(_p, _r) (length(_p) - _r)
+
+__DEVICE__ bool inBox(in float2 _uv, in float4 _box)
+{
+   float2 v = step(swi2(_box,x,y), _uv) - step(swi2(_box,x,y) + swi2(_box,z,w), _uv);
+   return (bool)(v.x * v.y);
+}
+
+__DEVICE__ float in_box(in float2 _uv, in float4 _box)
+{
+   float2 v = step(swi2(_box,x,y), _uv) - step(swi2(_box,x,y) + swi2(_box,z,w), _uv);
+   return (v.x * v.y);
+}
+
+
+#define sdMorph(_a, _b, _f) _mix(_a, _b, _f)
+#define sdUnion(_f1, _f2) _fminf(_f1, _f2)
+#define sdIntersect(_f1, _f2) _fmaxf(_f1, _f2)
+#define isHit(_trace_res, _eps) (step(_fabs(_trace_res.y), _trace_res.x * _eps))
+
+__DEVICE__ float sdEllipsoid( float3 p, float3 r )
+{
+  float k0 = length(p/r);
+  float k1 = length(p/(r*r));
+  return k0*(k0-1.0f)/k1;
+}
+
+__DEVICE__ float sdCappedCylinder( float3 p, float h, float r )
+{
+  float2 d = abs_f2(to_float2(length(swi2(p,x,z)),p.y)) - to_float2(r,h);
+  return _fminf(_fmaxf(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f)));
+}
+
+__DEVICE__ float sdBoxBound(in float2 p, in float2 sides)
+{
+    float2 q = abs_f2(p) - sides;
+    return _fmaxf(q.x, q.y);
+}
+
+
+__DEVICE__ float sdBoxBound_f3(in float3 p, in float3 sides)
+{
+    float3 q = abs_f3(p) - sides;
+    return _fmaxf(_fmaxf(q.x, q.y), q.z);
+}
+
+__DEVICE__ float spiralSdf(in float2 _uv, in float _b, in float _ths, in float _the )
+{
+    float th = _atan2f(_uv.y, _uv.x);
+    float r = length(_uv);
+
+    float n = _floor((r - th * _b)/(PI2 * _b));
+
+    float th0 = clamp((PI2 * n + th), _ths, _the);
+    float th1 = clamp((PI2 * (n + 1.0f) + th), _ths, _the);
+
+    float r0 = th0 * _b;
+    float r1 = th1 * _b;
+
+    float2  p0 = r0 * to_float2(_cosf(th0), _sinf(th0));
+    float2  p1 = r1 * to_float2(_cosf(th1), _sinf(th1));
+
+    float f = _fminf(dot(_uv - p0, _uv - p0), dot(_uv - p1, _uv - p1));
+
+    return _sqrtf(f);
+}
+
+__DEVICE__ float spiralWrapSDF(in float2 _uv, in float _hx)
+{
+    float b = _fmaxf(0.36f, 0.0f);
+    float th_end = _fabs(8.8f);
+
+    float2 e0 = to_float2(_hx, 0.0f) + b * th_end * to_float2(_cosf(th_end), _sinf(th_end));
+    float2 e1 = to_float2(-_hx, 0.0f) - b * th_end * to_float2(_cosf(th_end), _sinf(th_end));
+
+
+    float2 st = to_float2((_fabs(_uv.x) - _hx), sign_f(_uv.x)*_uv.y);
+    float f = spiralSdf(st, b, -0.5f, th_end);
+
+    float f2 = sdSegment(_uv, e0, e1);
+
+    return _fminf(f, f2);
+}
+
+// returns (distance from center of sections, radius, angle, ID)
+__DEVICE__ float4 sdAngularPattern(in float2 _uv, in float _N, in float _phase)
+{
+  float alpha = _phase + _atan2f(_uv.y, _uv.x);
+  float r = length(_uv);
+  float2 uvec = to_float2(_cosf(-PI/_N), _sinf(-PI/_N));
+  alpha = _mix(alpha, -PI-(PI-alpha), step(0.0f, alpha));
+
+  float ialpha = _floor((-alpha / PI2) * _N) / _N;
+  float falpha = -mod_f(_fabs(alpha), PI2/_N);
+
+  return to_float4(0.0f, r, falpha, ialpha);
+}
+
+__DEVICE__ float hash(in float x)
+{
+  return fract(5313.235f * mod_f(x, 0.75182f) * mod_f(x, 0.1242f));
+}
+
+__DEVICE__ float hash_f2(in float2 st) {
+    return fract(_sinf(dot(swi2(st,x,y),
+                 to_float2(113.9928f,1178.243f)))
+                 * 4358.5475123f);
+}
+
+__DEVICE__ float noise(in float s)
+{
+  float i = _floor(s);
+  float f = fract(s);
+
+  return _mix(hash(i), hash(i + 1.0f), f * f* (3.0f - 2.0f * f));
+}
+
+//
+__DEVICE__ float3 lookAt(in float3 _o, in float3 _d, in float3 _t) {
+    float3 d = normalize(_o - _t);
+    float3 r = normalize(cross(d, to_float3(0.0f, 1.0f, 0.0f))); // fix if needed
+    float3 u = normalize(cross(r, d));
+
+    return mul_mat3_f3(to_mat3_f3(r, u, d) , _d);
+}
+//
+// CHAIR SDF
+
+// half lengths of chair frame w1, w2, depth and height from _floor (all in halfs)
+const float4 h_ch_frame = {9.0f, 8.0f, 8.0f, 6.75f};
+
+__DEVICE__ float frame_base(in float3 _p) {
+    float3 fbase_dims = swi3(h_ch_frame,x,y,z) + to_float3_s(0.5f);
+    float fbase = sdTrapezoid(swi2(_p,x,z), h_ch_frame.x, h_ch_frame.y, h_ch_frame.z);
+    float fcut = sdTrapezoid(swi2(_p,x,z), fbase_dims.x, fbase_dims.y, fbase_dims.z);
+    float f = sdBox(to_float2(_fabs(fbase), _p.y), to_float2(0.6f, 1.25f));
+    fcut = length(to_float2(_fabs(fcut), _p.y + 1.0f)) - 0.15f;
+    return sdIntersect(f, -fcut);
+}
+
+__DEVICE__ float front_legs(in float3 _p) {
+    float3 op = _p;
+    op = to_float3(_fabs(op.x), op.y, op.z) -
+         to_float3(h_ch_frame.x, -1.25f, -h_ch_frame.z);
+
+    float fb = sdBox_f3(op, to_float3(0.8f, 2.25f, 0.8f));
+
+    op = to_float3(_fabs(_p.x), _p.y, _p.z) -
+         to_float3(h_ch_frame.x - 0.1f, -h_ch_frame.w - 1.25f, -h_ch_frame.z + 0.1f);
+
+    float h_frmw = 2.0f * h_ch_frame.w;
+    float ipleg = clamp((_p.y + 2.0f + h_frmw)/h_frmw, 0.0f, 1.0f);
+
+    // morphing coefficient
+    float ipmorph = smoothstep_c2((_p.y + 3.0f)/2.0f);
+
+    // add leg curvature
+    swi2S(op,x,z, swi2(op,x,z) - 0.75f*to_float2(-1.0f, 1.0f) * _sinf(ipleg * 6.28f));
+
+    // modify radius from bottom to top
+    float rad = _mix(0.4f, 1.5f, ipleg);
+    float fl = sdCylinder(op, rad, h_ch_frame.w);
+
+    // plane cuts
+    float fp1 = -op.x - 0.5f;
+    float fp2 = op.z - 0.5f;
+    fl = _fmaxf(max(fp1, fp2), fl);
+
+    // rotate 45 deg
+    float z_offset = _mix(0.5f, 1.2f, ipleg);
+    swi2S(op,x,z, mul_mat2_f2(rot2D(RAD_45) , swi2(op,x,z)));
+    swi2S(op,x,y, mul_mat2_f2(rot2D(0.075f) , swi2(op,x,y)));
+    float fcut = sdCylinder(to_float3(op.x - 0.5f, op.y + 1.0f, _fabs(op.z) - z_offset), 0.1f, h_ch_frame.w*0.825f);
+
+    float fmix = sdMorph(sdIntersect(0.66f*fl, -fcut), fb, ipmorph); // morphing
+    return fmix;
+}
+
+__DEVICE__ float back_legs(in float3 _p) {
+    float3 op = _p;
+
+    // this is the height from the base (y = zero) level to the floor.
+    float h_base = 2.0f*h_ch_frame.w + 1.25f;
+    op = to_float3(_fabs(_p.x), _p.y, _p.z) -
+         to_float3(h_ch_frame.y + 0.2f, -h_ch_frame.w - 1.25f, h_ch_frame.z - 0.1f);
+
+    // one at the bottom of the leg and zero at the top of the leg.
+    float ip_hbase = 1.0f - clamp(((_p.y + h_base)/(2.0f*h_ch_frame.w)), 0.0f, 1.0f);
+
+    swi2S(op,x,z, swi2(op,x,z) - to_float2(0.3f, 1.7f)*ip_hbase*ip_hbase);
+    swi2S(op,x,z, mul_f2_mat2(swi2(op,x,z) , rot2D((-1.0f-(ip_hbase))*0.1f)));
+
+    float fl = sdBox_f3(op, to_float3(0.7f, h_ch_frame.w, 0.8f));
+
+    op.y = _p.y;
+
+    float fl2 = sdBox_f3(op + to_float3(0.0f, 1.0f, 0.0f), to_float3(0.7f, 1.0f, 0.8f));
+
+    // upper extension of the legs
+    op = to_float3(_fabs(_p.x), _p.y, _p.z) -
+         to_float3(h_ch_frame.y + 0.2f, 0.0f, h_ch_frame.z - 0.1f);
+
+    swi2S(op,x,z, mul_f2_mat2(swi2(op,x,z) , rot2D((-1.0f-(ip_hbase))*0.1f)));
+    swi2S(op,y,z, mul_f2_mat2(swi2(op,y,z) , rot2D(0.11f*smoothstep_c2(op.y*0.25f))));
+    float ful = sdBox(to_float2(op.x,
+                sdUnionSmooth(sdCircle(swi2(op,y,z) - to_float2(20.0f, 0.5f), 0.2f),
+                sdSegment(swi2(op,y,z), to_float2_s(0.0f), to_float2(20.0f, 0.0f)), 0.5f)), to_float2(0.7f, 0.8f));
+
+    return sdUnion(sdUnion(fl, fl2), ful);
+}
+
+__DEVICE__ float cushion(in float3 _p) {
+    float3 op = to_float3(_p.x, _p.y - 2.0f, _p.z + 1.0f);
+    float ip_cr = clamp((op.y + 1.25f) * 0.25f, 0.0f, 1.0f);
+    float r = _mix(0.35f, 0.9f, ip_cr);
+
+    // cushion size coefficient
+    float cf = 0.78f + 0.15f*ANIM_T_CF(ip_cr, 0.2f, 0.2f, 0.85f, 1.0f, 3.0f);
+
+    // slight lateral variations
+    // Only on highest LOD.
+    op.x += 0.1f*_sinf(op.z) + 0.025f*(_sinf(op.z*2.0f + 11.345f));
+    op.z += 0.05f*_cosf(_p.x)*_cosf(_p.x*0.25f);
+
+    //
+    float3 params = swi3(h_ch_frame,x,y,z);
+    params -= r;
+    params *= (cf);
+    float fbase = sdTrapezoid(swi2(op,x,z), params.x, params.y, params.z);
+
+    // h_factor can be 1 on low LOD.
+    float h_factor = _cosf(op.z*0.1f);
+    float2 q = _fmaxf(to_float2(0.5f*fbase - r, _fabs(op.y) - h_factor*h_factor + r*0.5f), to_float2_s(0.0f));
+    float f = length(q) - r;
+    return f;
+}
+
+// back seat base coordinates
+__DEVICE__ float4 back_coordinates(const float3 _p) {
+    float3 op = to_float3(_p.x, _p.y - 5.0f, _p.z + 15.0f);
+    swi2S(op,y,z, mul_f2_mat2(swi2(op,y,z) , rot2D(0.11f*smoothstep_c2((op.y+4.0f)*0.25f))));
+
+    // The seat back geometry is placed on a cylinder, and the
+    // fourth parameter is the distance to this cylinder.
+    return to_float4_aw(op, sdCircle(swi2(op,x,z), 24.6f));
+}
+
+__DEVICE__ float back(const float3 _p) {
+    float4 op = back_coordinates(_p);
+
+    // bottom back panel
+    // the last parameter is the depth,height of the bottom panel
+    float f_lateral2 = sdCircle(to_float2(op.x, op.z - 0.3f), 24.6f);
+    float f = sdBox(to_float2(op.w, op.y), to_float2(0.4f, 1.0f)) - 0.1f;
+
+    op.y = _p.y - 19.25f;
+    float rc = 0.5f;
+    float cw = 0.7f * step(0.0f, op.y) * smoothstep(0.0f, 1.0f, (5.0f - _fabs(op.x))/5.0f);
+    float fup = sdBox(to_float2(op.w, op.y), to_float2(0.1f, 0.75f + cw)) - rc;
+    fup = sdUnionSmooth(fup, sdCircle(to_float2(f_lateral2, op.y-cw-0.7f), 0.5f), 0.1f);
+    f = sdUnion(f, fup);
+
+    // second parameter is the cut vector.
+    float f_cut = sdPlane(to_float2(_fabs(op.x), op.z), (to_float2(3.0f, -1.0f)));
+    f = sdIntersect(f, f_cut);
+
+    return f;
+}
+
+//
+__DEVICE__ float back_sketch(in float3 _p, in bool _normal) {
+    float4 op = back_coordinates(_p);
+
+    // center coordinates of chair back.
+    float3 chp = to_float3(_p.x, _p.y - 10.92f, _p.z - 10.0f);
+    float2 quart_p = abs_f2(swi2(chp,y,x)) - to_float2(3.025f, 4.33f);
+    quart_p = mul_f2_mat2(quart_p , rot2D(4.8f));
+    float f_sketch = spiralSdf(swi2(quart_p,y,x), 0.575f, 1.2f, 8.2f);
+    f_sketch = sdUnion(f_sketch, _fabs(sdCircle(to_float2(_fabs(chp.x) - 7.0f, chp.y), 7.0f)));
+    f_sketch = sdUnion(f_sketch, _fabs(sdCircle(to_float2(_fabs(chp.x) - 7.4f, chp.y), 5.0f)));
+
+    float f_cap = sdBox(to_float2(op.w, chp.y), to_float2(0.1f, 7.0f));
+    float f = sdIntersect(f_cap, sdBox(to_float2(f_sketch, chp.z), to_float2(0.15f, 8.0f)));
+
+    // there is a repetition here, since the next two lines are
+    // identical to the cut in back
+    float f_cut = sdPlane(to_float2(_fabs(op.x), op.z), (to_float2(3.0f, -1.0f)));
+    f = sdIntersect(f, f_cut);
+
+    return f;
+}
+
+__DEVICE__ float2 chair_sdf(in float3 _p, int _trace_flags, in bool _normal, in bool _mtl) {
+    float f;
+    float fbs = (bool)(_trace_flags & TRACE_CHAIR_BASE_FLAG) ? frame_base(_p) : FAR;
+    float ffl = (bool)(_trace_flags & TRACE_CHAIR_FRNT_LEG_FLAG) ? front_legs(_p) : FAR;
+    float fbl = (bool)(_trace_flags & TRACE_CHAIR_BCK_LEG_FLAG) ? back_legs(_p) : FAR;
+    float fc =  (bool)(_trace_flags & TRACE_CHAIR_CUSHION_FLAG) ? cushion(_p) : FAR;
+    float fb =  (bool)(_trace_flags & TRACE_CHAIR_BACK_FLAG) ? back(_p) : FAR;
+    float fsk = (bool)(_trace_flags & TRACE_CHAIR_FRAME_FLAG) ? back_sketch(_p, _normal) : FAR;
+
+    f = sdUnion(sdUnion(ffl, fbs), fbl);
+    f = sdUnion(f, fc);
+    f = sdUnion(f, fb);
+    f = sdUnion(f, fsk);
+
+    // request for material
+    float m = 0.0f;
+    if (_mtl) {
+        m += (float)(CHAIR_BASE_MTL)    *(float)(f == fbs);
+        m += (float)(CHAIR_BCK_LEG_MTL) *(float)(f == fbl);
+        m += (float)(CHAIR_FRNT_LEG_MTL)*(float)(f == ffl);
+        m += (float)(CHAIR_CUSHION_MTL) *(float)(f == fc);
+        m += (float)(CHAIR_BACK_MTL)    *(float)(f == fb);
+        m += (float)(CHAIR_FRAME_MTL)   *(float)(f == fsk);
+    }
+
+    return to_float2(f, m);
+}
+
+// laptop
+//
+__DEVICE__ float laptop_screen(in float3 _op, in float4 _dims, bool _norm, mat4 scrTrf, float scrRndSide )
+{
+    float3 opc = swi3((mul_mat4_f4(scrTrf , to_float4_aw(_op, 1.0f))),x,y,z);
+
+    // screen
+    float r = 0.5f; // side rounds
+    float gs = sdBox(swi2(opc,x,z), swi2(_dims,x,z) - to_float2_s(r)) - r;
+
+    // on normal calculation this radius must be constant for all the samples.
+
+    //_mix(step(0.0f, opc.y), scrRndSide, (float)(_norm)); //??????????????????????????????????????????????????
+
+    r = 0.075f * scrRndSide; // top rounds
+    float2 q = _fmaxf(to_float2(gs + r, _fabs(opc.y) - 0.5f * 0.25f + r), to_float2_s(0.0f));
+    gs = length(q) - r;
+    return gs;
+}
+
+__DEVICE__ mat4 transpose( mat4 inMatrix) {
+    float4 i0 = inMatrix.r0;
+    float4 i1 = inMatrix.r1;
+    float4 i2 = inMatrix.r2;
+    float4 i3 = inMatrix.r3;
+
+    mat4 outMatrix = to_mat4_f4(
+                               to_float4(i0.x, i1.x, i2.x, i3.x),
+                               to_float4(i0.y, i1.y, i2.y, i3.y),
+                               to_float4(i0.z, i1.z, i2.z, i3.z),
+                               to_float4(i0.w, i1.w, i2.w, i3.w)
+                               );
+    return outMatrix;
+}
+
+__DEVICE__ float2 laptop(in float3 _p, in float4 _dims, int _trace_flags, bool _norm, bool _mtl, mat4 lpTrf, float3 g_dir, mat4 scrTrf, float scrRndSide)
+{
+    float4 dims = _dims;
+    // --- origin location of the geometry
+    float3 op = _p;
+    float3 opc = to_float3_s(0.0f); // helper coordinates
+    // the transforms for laptop and screen must be initialized
+    // earlier.
+    op = swi3((mul_mat4_f4(lpTrf , to_float4_aw(op, 1.0f))),x,y,z);
+
+    //float dgeom = length(_p - targetOrigin) - 5.0f;
+
+    float g = FAR;
+    float gpc = MAX_DISTANCE;
+    float gl = MAX_DISTANCE;
+    // bottom (keboard) plane
+    if ((bool)(_trace_flags & TRACE_LAPTOP_BASE_FLAG)) {
+        float r = 0.5f;
+        g = sdBox_f3(op, swi3(dims,x,y,z) - to_float3(r, 0.0f, r));
+        g -= r;
+        g = _fmaxf(g, op.y - 0.5f * r) - 0.01f;
+
+        // front cut - no need on low LOD.
+        float3 opc = op - to_float3(0.0f, dims.y, dims.z + r);
+        swi2S(opc,y,z, swi2(opc,y,z) * 0.707f + to_float2(opc.z, -opc.y) * 0.707f);
+        float gc = sdBox_f3(opc, to_float3(1.0f, 0.25f, 0.25f)) - 0.25f;
+
+        g = _fmaxf(g, -gc);
+
+        // back cut
+        opc = op - to_float3(0.0f, dims.y, -dims.z);
+        gc = sdBox_f3(opc, to_float3(11.0f*0.5f, 0.5f * 1.5f, 0.25f));
+        g = _fmaxf(g, -gc);
+
+        // pins don't draw on low LOD
+        opc = to_float3(_fabs(op.x), op.y,op.z) - to_float3(dims.x - 1.5f, 0.0f, -dims.z + 0.25f);
+        g = _fminf(g, sdCylX(opc, to_float2(0.125f, 0.8f)));
+
+        // jacks should be filtered according to sides;
+        float3 right = swi3(transpose(lpTrf).r0,x,y,z);
+        float side = sign_f(dot(right, g_dir));
+        // left side jacks - no need on low LOD or shadows.
+
+        // don't model if we're looking the other way
+        if (_mtl || side < 0.0f)
+        {
+            // power
+            gpc = sdCapsuleZExtrusion(op - to_float3(dims.x, 0.0f, -dims.z + 1.075f), 0.75f, 0.12f, 0.05f);
+
+            // usb-c
+            opc = op - to_float3(dims.x, 0.0f, -dims.z + 2.7f);
+            gl = sdCapsuleZExtrusion(to_float3_aw(swi2(opc,x,y), _fabs(opc.z)) - (to_float3(0.0f, 0.0f, 0.175f)), 0.33f, 0.1f, 0.262f);
+            // headsets/mic
+            opc = op - to_float3(dims.x, 0.0f, -dims.z + 3.7f);
+            gl = _fminf(gl, _fmaxf(length(swi2(opc,z,y)) - 0.137f, _fabs(opc.x) - 0.3f));
+        //
+        }
+
+        // right side jacks - no need on low LOD or shadows.
+        if (_mtl || side > 0.0f)
+        {
+            opc = op - to_float3(-dims.x, 0.0f, -dims.z + 2.675f);
+
+            gl = _fminf(gl, sdCapsuleZExtrusion(opc, 1.0f, 0.1f, 0.262f));
+
+            opc = op - to_float3(-dims.x, 0.0f, -dims.z + 1.9f);
+            gl = _fminf(gl, sdCapsuleZExtrusion(opc, 0.33f, 0.1f, 0.262f));
+
+            opc = op - to_float3(-dims.x, 0.05f,  -dims.z + 1.25f);
+            float gct = _fmaxf(sdBox(swi2(opc,z,y), to_float2(0.3f, 0.05f)), _fabs(opc.x) - 0.3f) - 0.075f;
+            opc = op - to_float3(-dims.x, -0.1f, -dims.z + 1.25f);
+            gct = _fminf(gct,
+                  _fmaxf(sdTrapezoid_rl(swi2(opc,z,y), to_float2_s(0.075f), to_float4(1.0f, 1.0f, -1.0f, 1.0f), to_float2_s(0.21f)), _fabs(opc.x) - 0.3f));
+            gl = _fminf(gct, gl);
+        }
+    }
+    // screen
+
+    // screen rotation
+    opc = swi3((mul_mat4_f4(scrTrf , to_float4_aw(op, 1.0f))),x,y,z);
+
+    float gs = (bool)(_trace_flags & TRACE_LAPTOP_SCREEN_FLAG) ? laptop_screen(op, dims, _norm, scrTrf, scrRndSide) : FAR;
+
+    // connecting panel -- attached to screen
+    float3 opp = opc - to_float3(0.0f, -0.25f, -dims.z + 0.125f);
+
+    mat4 tmtx  = to_mat4_n(1.0f);
+    mat4 opTrf = to_mat4_n(1.0f);
+
+    opTrf = Ryz(-0.1f);
+    opTrf = mul_mat4_mat4(opTrf, tmtx);
+    opTrf = mul_mat4_mat4(tmtx , opTrf);
+
+    opp = swi3((mul_mat4_f4(opTrf , to_float4_aw(opp, 1.0f))),x,y,z);
+
+    float gp = sdBox_f3(opp, to_float3(dims.x - 1.5f, 0.25f, 0.05f));
+    float gps = sdUnionSmooth(gs, gp, 0.1f);
+    float gf = _fmaxf(_fmaxf(_fminf(gps, g), -gl), -gpc);
+
+    float mtl = 0.0f;
+
+    if (_mtl)
+    {
+        // Works here, but won't work for organics (where smooth min and max are used)
+        // In the latter case maybe steps with epsilons will work.
+        mtl += (float)(LAPTOP_BASE_MTL)   * (float)(g == gf);
+        mtl += (float)(LAPTOP_SCREEN_MTL) * (float)(gs == gf);
+        mtl += (float)(LAPTOP_MTL + 2)    * (float)(gp == gf);
+        mtl += (float)(LAPTOP_MTL + 3)    * (float)(-gl == gf);
+        mtl += (float)(LAPTOP_MTL + 4)    * (float)(-gpc == gf);
+    }
+
+    return to_float2(gf, mtl);
+}
+
+__DEVICE__ float2 sdLaptop(in float3 _p, in __TEXTURE2D__ _s, in int _trace_flags, in bool _normal, in bool _mtl, float2 iResolution, inout mat4 *lpTrf, float3 g_dir, inout mat4 *scrTrf, float scrRndSide) {
+
+
+    float3 op = _p;
+    float4 dims = TF(_s, LAPTOP_H_DIMS);
+
+    //prepareLaptopTransform(lpTrf, scrTrf);
+    *lpTrf = to_mat4_f4(TF(_s, LAPTOP_BASE_TRF_0), TF(_s, LAPTOP_BASE_TRF_1),
+                        TF(_s, LAPTOP_BASE_TRF_2), TF(_s, LAPTOP_BASE_TRF_3));
+
+    *scrTrf = to_mat4_f4(TF(_s, LAPTOP_SCRN_TRF_0), TF(_s, LAPTOP_SCRN_TRF_1),
+                         TF(_s, LAPTOP_SCRN_TRF_2), TF(_s, LAPTOP_SCRN_TRF_3));
+
+    // bounding volume
+    float4 opb = to_float4_aw(op, 1.0f);
+    float3 bvh_size = swi3(dims,x,y,z) + to_float3_s(bvh_margin);
+    opb = mul_mat4_f4(*lpTrf , opb);
+    float f_bound = -MAX_DISTANCE;
+    if (!_normal && !_mtl) {
+        f_bound = sdBox_f3(swi3(opb,x,y,z), bvh_size);
+        f_bound = sdUnion(f_bound,
+                          sdBox_f3(swi3(mul_mat4_f4(*scrTrf , opb),x,y,z), bvh_size));
+    }
+
+    float2 flp = laptop(op, TF(_s, LAPTOP_H_DIMS), _trace_flags, _normal, _mtl, *lpTrf, g_dir, *scrTrf, scrRndSide);
+
+    return flp;
+}
+//
+
+// TABLE
+__DEVICE__ float hLowBeam(in float2 _uv, in float _r, in float _h, in float _v)
+{
+    float f = _fabs(length(_uv) - _r);
+    float2 v2 = normalize(to_float2(-_v, _r - _h));
+
+    // clamp the arc
+    float fup = _uv.x;
+    float fv = dot(to_float2(-v2.y, v2.x), _uv);
+
+    f = _fmaxf(_fmaxf(fup, f), fv);
+
+    return f;
+}
+// _param.x -- table radius, _param.y -- table height
+__DEVICE__ float lowTableProfileSDF(in float2 _uv, in float3 _param, in bool _norm)
+{
+    float v = 0.75f * _param.x;
+    float h = _param.y * 0.2f;
+    float r = (h * h + v * v) / (2.0f * h);
+
+    float fh = hLowBeam(_uv - to_float2(0.0f, -_param.x - r + h), r, h, v);
+    float fv = hLowBeam(swi2(_uv,y,x) - swi2(to_float2(-_param.x - r + h, 0.0f),y,x), r, h, v);
+    //float fv = vLowBeam(_uv - to_float2(-_param.y - r + h, 0.0f), r, h, v);
+
+    //float fb = sdSegment(_uv, to_float2(0.0f, 0.0f), to_float2(-_param.x, 0.0f));
+    float fb = sdBoxBound(_uv + to_float2(_param.x * 0.5f, 0.0f), to_float2(_param.x*0.46f, 0.0f));
+
+    float2 p = to_float2(-v, -_param.x);
+
+    float2 bc = 0.5f * (p + swi2(p,y,x));
+    float fc = _fabs(length(_uv - bc) - 0.4975f*(length(p - swi2(p,y,x)) + 0.0f));
+    fc = _fmaxf(fc, dot(_uv - bc, normalize(to_float2(1.0f, 1.4f))));
+    fc = _fmaxf(fc, dot(_uv - bc, normalize(to_float2(1.4f, 1.0f))));
+
+    float ang = 1.414f;
+    float2 ruv = mul_mat2_f2(to_mat2(_cosf(ang), _sinf(ang), -_sinf(ang), _cosf(ang)) , (_uv + to_float2(16.5f, 15.0f)));
+    // very expensive. Think about an LOD.
+    float fsp = spiralWrapSDF(ruv, 4.3f);
+
+    float f = smin(fc, _fminf(_fminf(fh, fv), fb), 0.1f);
+    f = _fminf(f, fsp);
+
+    f = _fabs(f) - _param.z;
+
+    //f = fv;
+    return f;
+}
+
+__DEVICE__ float tableTop(in float3 _p)
+{
+    float3 op = _p - to_float3(0.0f, 1.5f, 0.0f);
+
+    float fa = sdBoxBound_f3(to_float3(_fabs(op.x), op.y - 0.5f, (op.z)), to_float3(26.0f, 0.5f, 4.0f));
+    float fb = sdBoxBound_f3(to_float3(op.x, op.y - 0.5f, _fabs(op.z)) - to_float3(0.0f, 0.0f, 15.4f), to_float3(4.0f, 0.5f, 10.8f));
+
+    op -= to_float3(0.0f, 1.0f, 0.0f);
+    float op_xz_len = length(swi2(op,x,z));
+    float2 q = to_float2(op_xz_len - 30.0f, op.y);
+    q = abs_f2(q) - to_float2(0.5f, 1.0f);
+
+    op -= to_float3(0.0f, 1.0f, 0.0f);
+    float dxz = op_xz_len - 31.0f;
+    float r = 0.25f * sign_f(op.y + 0.5f);
+    float f = length(_fmaxf(to_float2(dxz + r, _fabs(op.y) - 0.5f + r), to_float2_s(0.0f))) - r;
+
+    return _fminf(_fminf(fa, fb), _fminf(f, _fmaxf(q.x, q.y)));
+}
+
+__DEVICE__ float tableMidBottom(in float3 _p, in float _h, in float _th, in float _tv)
+{
+    float3 op = _p - to_float3(0.0f, -_h + 1.0f, 0.0f);
+    float len_op_xz = length(swi2(op,x,z));
+    // bound cylinder
+    float2 q = to_float2(len_op_xz - 1.0f, _fabs(op.y) -_h);
+    float fc = _fmaxf(q.x, q.y);
+
+    // limited repitition of central ellipsoid.
+    float sh = _h * 0.75f;
+    float3 qp = op;
+    qp.y = op.y - sh*clamp(round(op.y/sh),-1.0f,1.0f);
+    float fe = sdEllipsoid(qp, to_float3(2.0f, 1.0f, 2.0f));
+
+
+    float fcyl = sdCappedCylinder(to_float3(op.x, _fabs(_fabs(op.y) - _h*0.35f) - _h*0.25f, op.z), 1.0f, 1.5f);
+
+    // Torus
+    float2  qt = to_float2(len_op_xz - 1.5f, _fabs(_fabs(op.y) - _h*0.35f) - _h*0.2f);
+    float ftor = length(qt) - 0.25f;
+    fcyl = smax(fcyl, -ftor, 0.3f);
+
+    // Torus 2
+    float2 qt2 = to_float2(len_op_xz - 1.1f, _fabs(op.y) - 1.75f);
+    float ftor2 = length(qt2) - 0.2f;
+    fcyl = smin(fcyl, ftor2, 0.1f);
+
+    fe = smin(fcyl, fe, 0.1f);
+
+    // legs
+    float3 lop = op;
+    lop.y -= 0.25f;
+    swi2S(lop,x,z, mul_f2_mat2(swi2(lop,x,z) , to_mat2(_cosf(PI*0.25f), _sinf(PI*0.25f), -_sinf(PI*0.25f), _cosf(PI*0.25f))));
+    swi2S(lop,x,z, abs_f2(swi2(lop,x,z)));
+    lop -= to_float3(_tv * 0.62f, -_th * 0.695f, _tv * 0.62f);
+    float fleg = sdEllipsoid(lop, to_float3(2.5f, 1.5f, 2.5f));
+    fc = _fminf(fleg, fc);
+
+    return _fminf(fc, fe);
+}
+
+__DEVICE__ float tableFrame(in float3 _p, in bool _norm) {
+    float3 op = _p - to_float3(0.0f, -0.0f, 0.0f);
+    op.x = -_fabs(op.x);
+    op.z = -_fabs(op.z);
+
+    // the min/max is to apply the sdf to both z and x simultaneously
+    // and thus save a rather heavy call.
+    float dxy = lowTableProfileSDF(to_float2(_fminf(op.x, op.z), op.y), to_float3(25.0f, 27.0f, 0.4f), _norm);
+    //float dxz = lowTableProfileSDF(swi2(op,z,y), to_float3(25.0f, 27.0f, 0.4f), _norm);
+    float d = _fmaxf((dxy) - 0.2f, (_fabs(_fmaxf(op.z, op.x)) - 0.6f));
+
+    // Because the xz space is separated into 4 quad-regions, we fix the step
+    // (instead of fixing the SDF) so that we won't cross regions by much.
+    // We don't need to use maxStep.
+    float maxStep = 0.7f * (_fminf(_fabs(_p.x), _fabs(_p.z)) + 1.0f);
+    //d = _fminf(d, _fmaxf((dxz) - 0.2f, (_fabs(op.x) - 0.6f)));
+    d = _fminf(maxStep, d);
+
+    // the parameter should be fixed.
+    float dmid = tableMidBottom(_p, 27.0f * 0.8f * 0.5f, 27.0f, 25.0f);
+
+    return _fminf(dmid, d);
+}
+__DEVICE__ float2 table(in float3 _p, in int _trace_flags, in bool _norm, in bool _mtl)
+{
+    float3 op = _p;
+
+    float dframe = (bool)(_trace_flags & TRACE_TABLE_FRAME_FLAG) ? tableFrame(_p, _norm) : FAR;
+    float dtop = (bool)(_trace_flags & TRACE_TABLE_TOP_FLAG) ? tableTop(_p) : FAR;
+    float d = _fminf(dtop, dframe);
+
+    float fmtl = 0.0f;
+
+    if (_mtl)
+    {
+        fmtl += (float)(d == dtop) * (float)(TABLE_TOP_MTL);
+        fmtl += (float)(d != dtop) * (float)(TABLE_FRAME_MTL);
+    }
+
+    return to_float2(d, fmtl);
+}
+
+__DEVICE__ float2 sdfTable(in float3 _p, in int _trace_flags, in bool _norm, in bool _mtl)
+{
+    // bounding volume
+    float f_bound = (!_norm && !_mtl) ?
+                    sdCylinder(_p - to_float3(0.0f, -12.0f, 0.0f), 32.0f, 18.0f) : -FAR;
+
+    return (f_bound > T_EPS) ? to_float2(f_bound + 0.5f, TABLE_TOP_MTL)
+                             : table(_p, _trace_flags, _norm, _mtl);
+}
+
+// END TABLE
+
+//
+// CHAIR SDF
+
+// chair
+
+__DEVICE__ float2 chairs(in float3 _p, in __TEXTURE2D__ _ch, int _trace_flags, in bool _normal, in bool _mtl, float2 iResolution, int N_CHAIRS) {
+    const float n_legs = (float)(N_CHAIRS);
+    float4 fAng = sdAngularPattern(swi2(_p,x,z), n_legs, 0.0f);
+    int chId = (int)(fAng.w*n_legs);
+
+    float2 trp = fAng.y*to_float2(_cosf(fAng.z), _sinf(fAng.z));
+    float d_hash = 20.0f * hash(fAng.w + 14.0f);
+    float r_hash = hash(fAng.w + 20.0f);
+    float2 loc = (40.0f + d_hash)*to_float2(_cosf(-PI/n_legs), _sinf(-PI/n_legs));
+
+    float3 op = to_float3(trp.x, _p.y, trp.y) - to_float3(loc.x, -14.55f, loc.y);
+
+    // length to section.
+    // this can be calculated more precisely if we have direction
+    // but on the other hand, it works always, while analytic intersection
+    // would work only for the closest.
+    float2 v0 = to_float2(1.0f, 0.0f);
+    float2 v1 = to_float2(_cosf(PI2/n_legs), _sinf(PI2/n_legs));
+    //float d0 = length(_p.x * v0.y - _p.y * v0.x);
+    //float d1 = length(_p.x * v1.y - _p.y * v1.x);
+    float d0 = _fabs(_p.x * v0.y - _p.y * v0.x);
+    float d1 = _fabs(_p.x * v1.y - _p.y * v1.x);
+
+    // chair rotation
+    float rotAng = 0.0f;// = TF(_ch, to_int2(chId/4, CHAIR_ROT))[chId % 4];
+
+    if(chId % 4 == 0) rotAng = TF(_ch, to_int2(chId/4, CHAIR_ROT)).x;
+    if(chId % 4 == 1) rotAng = TF(_ch, to_int2(chId/4, CHAIR_ROT)).y;
+    if(chId % 4 == 2) rotAng = TF(_ch, to_int2(chId/4, CHAIR_ROT)).z;
+    if(chId % 4 == 3) rotAng = TF(_ch, to_int2(chId/4, CHAIR_ROT)).w;
+
+    swi2S(op,x,z, mul_f2_mat2(swi2(op,x,z) , rot2D(rotAng)));
+
+    // chair bounding volume
+    bool trace_pass = !_normal && !_mtl;
+    float f_bound = -FAR;
+    f_bound = trace_pass ?
+              sdBox_f3(op - to_float3(0.0f, -h_ch_frame.w, -2.0f), to_float3(h_ch_frame.x + 3.0f, h_ch_frame.w + 5.0f, h_ch_frame.y + 1.0f)) : -FAR;
+    f_bound = trace_pass ? sdUnion(f_bound, sdBox_f3(op - to_float3(0.0f, 0.0f, h_ch_frame.y + 1.0f), to_float3(h_ch_frame.x + 1.0f, 23.0f, 4.0f))) : -FAR;
+
+    float2 f_chair = (f_bound > 0.01f) ? to_float2(f_bound + 0.5f, DEFAULT_MTL) : chair_sdf(op, _trace_flags, _normal, _mtl);
+
+    // the cross section factor is a safe margin distance for crossing
+    // patterned boundary
+    f_chair.x = sdUnion(f_chair.x, sdUnion(d0, d1) + CROSS_SECTION_FACTOR);
+    return f_chair;
+}
+
+__DEVICE__ float2 sdFloor(in float3 _p) {
+    return to_float2(_p.y - (FLOOR_LEVEL), (float)(FLOOR_MTL));
+}
+
+__DEVICE__ float rayXFloor(in float _oy, in float _dy) {
+    if (_dy > T_EPS)
+        return FAR;
+    return (FLOOR_LEVEL - _oy) / _dy;
+}
+
+__DEVICE__ float2 map(in float3 _p, int _trace_flags, in __TEXTURE2D__ _ch, in bool _normal, in bool _mtl, float2 iResolution, inout mat4 *lpTrf, float3 g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS)
+{
+   int trace_flags = _trace_flags;
+   float2 ft  = (bool)(trace_flags & TRACE_TABLE_FLAG) ? sdfTable(_p, _trace_flags, _normal, _mtl) : to_float2(FAR, 0.0f);
+   float2 fch = (bool)(trace_flags & TRACE_CHAIRS_FLAG) ? chairs(_p, _ch, _trace_flags, _normal, _mtl, iResolution, N_CHAIRS) : to_float2(FAR, 0.0f);
+   //vec2 ffl = (bool)(trace_flags & TRACE_FLOOR_FLAG) ? sdFloor(_p) : to_float2(FAR, 0.0f);
+   float2 flp = (bool)(trace_flags & TRACE_LAPTOP_FLAG) ? sdLaptop(_p, _ch, _trace_flags, _normal, _mtl, iResolution, lpTrf, g_dir, scrTrf, scrRndSide) : to_float2(FAR, 0.0f);
+
+   float f;
+   f = fch.x;
+   f = sdUnion(f, ft.x);
+   //f = sdUnion(f, ffl.x);
+   f = sdUnion(f, flp.x);
+
+   float2 rf = to_float2(f, 0.0f);
+
+   if (_mtl)
+   {
+       rf.y += (float)(f == ft.x) * ft.y;
+       rf.y += (float)(f == fch.x) * fch.y;
+       //rf.y += (float)(f == ffl.x) * ffl.y;
+       rf.y += (float)(f == flp.x) * flp.y;
+   }
+
+   return rf;
+}
+
+__DEVICE__ float2 trace(in float3 _o, in float3 _d, int _trace_flags,
+    in __TEXTURE2D__ _ch, const float _iter, const float _far, const float _eps, float2 iResolution, inout mat4 *lpTrf, inout float3 *g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS) {
+    float t = 0.0f;
+    float mint = 10.0f;
+    float2 res = to_float2_s(10.0f);
+    *g_dir = _d;
+    int trace_flags = _trace_flags;
+    for (float fi = 0.0f; fi < _iter; fi++) {
+        float3 p = _o + _d * t;
+
+        mint = map(p, _trace_flags, _ch, false, false, iResolution, lpTrf, *g_dir, scrTrf, scrRndSide, N_CHAIRS).x;
+
+        if (_fabs(mint) < t * _eps || t > _far || p.y < FLOOR_LEVEL)
+            break;
+        if (dot(normalize(swi2(p,x,z)), swi2(_d,x,z)) > 0.0f
+            && dot(swi2(p,x,z), swi2(p,x,z)) > GEOM_BOUNDING_CIRCLE_SQR)
+            break;
+
+        t += mint;
+    }
+
+    return to_float2(t, mint);
+}
+
+__DEVICE__ float dFdx(float value, float2 fragCoord, float2 iResolution)
+{
+   return ( value*fragCoord.x / iResolution.x );
+}
+__DEVICE__ float dFdy(float value, float2 fragCoord, float2 iResolution)
+{
+   return ( value*fragCoord.y / iResolution.y );
+}
+
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Texture: Wood' to iChannel0
+// Connect Buffer A 'Texture: Font 1' to iChannel1
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel2
+// Connect Buffer A 'Texture: Audio' to iChannel3
+
+
+
+// Control and texture buffer.
+// Camera sequence, laptop sequence, laptop animation and lighting are defined here.
+
+#define _0 to_float2(0.0f, 12.0f)
+#define _1 to_float2(1.0f, 12.0f)
+#define _2 to_float2(2.0f, 12.0f)
+#define _3 to_float2(3.0f, 12.0f)
+#define _4 to_float2(4.0f, 12.0f)
+#define _5 to_float2(5.0f, 12.0f)
+#define _6 to_float2(6.0f, 12.0f)
+#define _7 to_float2(7.0f, 12.0f)
+#define _8 to_float2(8.0f, 12.0f)
+#define _9 to_float2(9.0f, 12.0f)
+
+#define _P to_float2(0.0f, 10.0f)
+#define _Q to_float2(1.0f, 10.0f)
+#define _R to_float2(2.0f, 10.0f)
+#define _S to_float2(3.0f, 10.0f)
+#define _T to_float2(4.0f, 10.0f)
+#define _U to_float2(5.0f, 10.0f)
+#define _V to_float2(6.0f, 10.0f)
+#define _W to_float2(7.0f, 10.0f)
+#define _X to_float2(8.0f, 10.0f)
+#define _Y to_float2(9.0f, 10.0f)
+#define _Z to_float2(10.0f, 10.0f)
+#define _A to_float2(1.0f, 11.0f)
+#define _B to_float2(2.0f, 11.0f)
+#define _C to_float2(3.0f, 11.0f)
+#define _D to_float2(4.0f, 11.0f)
+#define _E to_float2(5.0f, 11.0f)
+#define _F to_float2(6.0f, 11.0f)
+#define _G to_float2(7.0f, 11.0f)
+#define _H to_float2(8.0f, 11.0f)
+#define _I to_float2(9.0f, 11.0f)
+#define _J to_float2(10.0f, 11.0f)
+#define _K to_float2(11.0f, 11.0f)
+#define _L to_float2(12.0f, 11.0f)
+#define _M to_float2(13.0f, 11.0f)
+#define _N to_float2(14.0f, 11.0f)
+#define _O to_float2(15.0f, 11.0f)
+
+#define _AT to_float2(0.0f, 11.0f)
+
+#define _EXM    to_float2(1.0f, 13.0f)
+#define _DQT    to_float2(2.0f, 13.0f)
+#define _SHARP  to_float2(3.0f, 13.0f)
+#define _DLR    to_float2(4.0f, 13.0f)
+#define _PRC    to_float2(5.0f, 13.0f)
+#define _AND    to_float2(6.0f, 13.0f)
+#define _QT     to_float2(7.0f, 13.0f)
+#define _OPN_RND_BRCK to_float2(8.0f, 13.0f)
+#define _CLS_RND_BRCK to_float2(9.0f, 13.0f)
+#define _STAR   to_float2(10.0f, 13.0f)
+#define _PLUS   to_float2(11.0f, 13.0f)
+#define _COMMA  to_float2(12.0f, 13.0f)
+#define _DASH   to_float2(13.0f, 13.0f)
+#define _DOT    to_float2(14.0f, 13.0f)
+#define _SLASH  to_float2(15.0f, 13.0f)
+
+#define _CLN  to_float2(10.0f, 12.0f)
+#define _SCLN to_float2(11.0f, 12.0f)
+#define _LST  to_float2(12.0f, 12.0f)
+#define _EQ   to_float2(13.0f, 12.0f)
+#define _GRT  to_float2(14.0f, 12.0f)
+#define _QM   to_float2(15.0f, 12.0f)
+
+#define _OPN_SQR_BRCK to_float2(11.0f, 10.0f)
+#define _BSLASH       to_float2(12.0f, 10.0f)
+#define _CLS_SQR_BRCK to_float2(13.0f, 10.0f)
+#define _CIRCUMFLEX   to_float2(14.0f, 10.0f)
+#define _LOW_DASH     to_float2(15.0f, 10.0f)
+
+#define _OPN_PRN_BRCK to_float2(11.0f, 8.0f)
+#define _PIPE         to_float2(12.0f, 8.0f)
+#define _CLS_PRN_BRCK to_float2(13.0f, 8.0f)
+#define _TILDA        to_float2(14.0f, 8.0f)
+
+#define _BCKTICK      to_float2(0.0f, 9.0f)
+
+#define _a to_float2(4.0f,3.0f)
+
+#define tx(_x, _y, _ch)  (float)(iigrid.x == _x && iigrid.y == _y) * texture(iChannel1, 0.0625f * (_ch + cgrid)).x
+#define txs(_x, _y, _ch) (float)(iigrid.x == _x && iigrid.y == _y) * texture(iChannel1, 0.0625f * (_ch + sgrid)).x
+#define txn(_x, _y, _ch) (float)(iigrid.x == _x && iigrid.y == _y) * texture(iChannel1, 0.0625f * (_ch + ngrid)).x
+
+#define tx_custom(_x, _y, _ch, _v) (float)(iigrid.x == _x && iigrid.y == _y) * texture(iChannel1, 0.0625f * (_ch + _v)).x
+
+#define normUV(_uv, _pln) clamp((_uv - swi2(_pln,x,y))/(swi2(_pln,z,w)), to_float2_s(0.01f), to_float2_s(0.99f))
+
+#define ATF(_crd, _pos, _val) if (_crd.x == _pos.x && _crd.y == _pos.y) { col = _val; }
+
+// VISUALIZATION on LAPTOP
+
+
+//const float inv_hexh = 1.15470053837f;
+
+//https://iquilezles.org/articles/palettes/
+#define CL(_id, _noise)  0.5f + 0.5f*cos_f3(6.28f * (_noise * to_float3(0.2f, 0.8f, 0.4f) + to_float3(2.3f, 1.8f, 6.1f) * to_float3_s(hash(_id))));
+
+__DEVICE__ float4 hexgrid(in float2 _uv)
+{
+  const float2 vhex = normalize(to_float2(1.0f, 0.5f));
+  const float2 hexGrid = to_float2(3.0f, _sqrtf(3.0f));
+
+  float4 res;
+  float2 a = mod_f(_uv + 0.5f * hexGrid, hexGrid) - 0.5f * hexGrid;
+  float2 b = mod_f(_uv, hexGrid) - hexGrid * 0.5f;
+
+  float2 fa = to_float2(dot(abs_f2(a), vhex), _fabs(a.y));
+  float2 fb = to_float2(dot(abs_f2(b), vhex), _fabs(b.y));
+
+  float ma = _fmaxf(fa.x, fa.y);
+  float mb = _fmaxf(fb.x, fb.y);
+
+  float2 bord;
+  float2 id;
+
+  if (ma < mb)
+  {
+    bord = fa;
+    id = _floor((_uv + 0.5f * hexGrid) / hexGrid);
+  }
+  else
+  {
+    bord = fb;
+    id = _floor(_uv/hexGrid) + to_float2(123.0f, 273.0f);
+  }
+
+  res.x = _fminf(ma, mb);
+  res.y = _fminf(1.0f - bord.x, 1.0f - bord.y);
+  swi2S(res,z,w, id);
+
+  return res;
+}
+
+__DEVICE__ float4 hexThreeGrid(in float2 _uv, in float _t, float iTime) {
+    const float hexh = 0.8660254037f; // = _sqrtf(3) / 2;
+
+    float2 uv = 2.0f*_uv - 1.0f;
+    float gr_size = 4.0f;
+    float4 hgrid = hexgrid(uv*gr_size);
+    float gid = hgrid.z * 1000.0f + hgrid.w;
+
+    float3 col1;
+    col1 = CL(gid, noise(0.97f*iTime + 131.2f));
+    col1 *= (0.3f + 0.5f * smoothstep(0.0f, 0.4f, hgrid.y));
+    //col1 *= ((0.5f + 0.5f * _cosf(6.28f * 3.0f * hgrid.x)));
+
+    float4 hgrid2 = hexgrid((uv + to_float2(0.5f, hexh)) * gr_size);
+    float gid2 = hgrid2.z * 1923.0f + hgrid2.w;
+    float3 col2 = CL(gid2, noise(_t*0.95f + 113.1f));
+    col2 *= (0.3f + 0.5f * smoothstep(0.0f, 0.4f, hgrid2.y));
+    //col2 *= ((0.5f + 0.5f * _cosf(6.28f * 3.0f * hgrid2.x)));
+    float3 col = _mix(col2, col1, 0.5f );
+
+    //
+    col = 1.0f*pow_f3(col, to_float3_s(1.8f));
+    return to_float4_aw(col, 1.0f);
+}
+
+///////
+
+__DEVICE__ float roundBox(in float2 _uv, in float4 _dims, in float _r)
+{
+    return sdBox(_uv - 0.5f * (2.0f*swi2(_dims,x,y) + swi2(_dims,z,w)), swi2(_dims,z,w) * (0.5f - 2.0f*_r)) - _r;
+}
+
+__DEVICE__ float4 keyboardLayout(in float2 _uv, in float _ratio, float2 fragCoord, float2 iResolution, __TEXTURE2D__ iChannel1 )
+{
+
+    float2 grid = _uv * to_float2(15.0f, 6.0f) - to_float2(0.4f, 0.0f);
+    float2 igrid = _floor(grid);
+
+    grid.x -= 0.0f * step(igrid.y, 4.5f) + 0.3f * step(igrid.y, 3.5f) + 0.3f * step(igrid.y, 2.5f)
+            + 0.5f * step(igrid.y, 1.5f) + 0.3f * step(igrid.y, 0.5f);
+
+    igrid = _floor(grid);
+    float2 fgrid = fract_f2(grid);
+    float2 cgrid = normUV(fgrid, to_float4(0.25f, 0.25f, 0.5f, 0.5f)); // center (Letters)
+    float2 sgrid = normUV(fgrid, to_float4(0.3f, 0.175f, 0.4f, 0.4f)); // south
+    float2 ngrid = normUV(fgrid, to_float4(0.3f, 0.5f, 0.4f, 0.4f)); // north
+
+    float2 nlgrid = normUV(fgrid, to_float4(0.35f, 0.5f, 0.3f, 0.3f));
+
+    int2 iigrid = to_int2_cfloat(igrid);
+
+    float4 col = to_float4(0.1f, 0.0f, 0.0f, 0.0f);
+    float fb = roundBox(fgrid, to_float4_f2f2(to_float2_s(0.03f), to_float2_s(0.97f)), 0.05f);
+    float fk = roundBox(_uv, to_float4_f2f2(to_float2_s(0.001f), to_float2_s(0.999f)), 0.01f);
+
+    float fkey = 0.0f;
+
+    // digits
+    for (int id = 1; id <= 10; id++)
+        fkey += txs(id, 4, to_float2((float)(id % 10), 12.0f));
+    // symbols above digits
+    fkey += txn(1,4,_EXM) + txn(2,4,_AT) + txn(3,4,_SHARP) + txn(4,4,_DLR) + txn(5,4,_PRC) +
+            txn(6,4,_CIRCUMFLEX) + txn(7,4,_AND) + txn(8,4,_STAR) +
+            txn(9,4,_OPN_RND_BRCK) + txn(10,4,_CLS_RND_BRCK);
+    fkey += txn(12,4,_PLUS) + txs(12,4,_EQ);
+
+    fkey += txs(0,4,_BCKTICK) + txn(0,4,_TILDA) + txs(11,4,_DASH) + txn(11,4,_DASH);
+    fkey += txs(11,3,_OPN_SQR_BRCK) + txn(11,3,_OPN_PRN_BRCK) +
+            txs(12,3,_CLS_SQR_BRCK) + txn(12,3,_CLS_PRN_BRCK);
+    fkey += txs(13,3,_BSLASH) + txn(13,3,_PIPE);
+    fkey += txs(10,2,_SCLN) + txn(10,2,_CLN) + txs(11,2,_QT) + tx_custom(11,2,_DQT, nlgrid);
+
+    fkey += txs(8,1,_COMMA) + txn(8,1,_LST) + txs(9,1,_DOT) + txn(9,1,_GRT);
+    fkey += txs(10,1,_SLASH) + txn(10,1,_QM);
+
+    // QWERTY
+    fkey += tx(1,3,_Q) + tx(2,3, _W) + tx(3,3,_E) + tx(4,3,_R) + tx(5,3,_T) + tx(6,3,_Y);
+    fkey += tx(7,3,_U) + tx(8,3, _I) + tx(9,3,_O) + tx(10,3,_P);
+    fkey += tx(1,2,_A) + tx(2,2, _B) + tx(3,2,_D) + tx(4,2,_F) + tx(5,2,_G) + tx(6,2,_H);
+    fkey += tx(7,2,_J) + tx(8,2, _K) + tx(9,2,_L);
+    fkey += tx(1,1,_Z) + tx(2,1, _X) + tx(3,1, _C) + tx(4,1,_V) + tx(5,1,_B) + tx(6,1,_N) + tx(7,1,_M);
+
+    float ikey = (float)(iigrid.y == 4 && (iigrid.x >= 0 && iigrid.x <= 12));
+    ikey += (float)(iigrid.y == 3 && (iigrid.x >= 1 && iigrid.x <= 13));
+    ikey += (float)(iigrid.y == 2 && (iigrid.x >= 1 && iigrid.x <= 11));
+    ikey += (float)(iigrid.y == 1 && (iigrid.x >= 1 && iigrid.x <= 10));
+
+    float in_key = (float)(iigrid.y == 4) +
+                14.0f * (float)(iigrid.y == 3) +
+                27.0f * (float)(iigrid.y == 2) +
+                38.0f * (float)(iigrid.y == 1) + igrid.x;
+
+    col.x += fkey*2.0f;
+    fb = 1.0f - smoothstep(0.0f, 0.05f, fb);
+    fk = 1.0f - smoothstep(0.0f, 0.02f, -fk);
+    swi2S(col,y,z, -1.0f*(to_float2(dFdx(fb, fragCoord, iResolution), dFdy(fb, fragCoord, iResolution))) * ikey - to_float2(dFdx(fk, fragCoord, iResolution), dFdy(fk, fragCoord, iResolution)));
+    col.w = ikey * in_key;
+
+    return (col);
+}
+
+__DEVICE__ float4 keyboardTexture(in float2 _uv, in float _ratio, float2 fragCoord, float2 iResolution, __TEXTURE2D__ iChannel1)
+{
+    float4 frame = to_float4_aw(to_float3_s(0.9f), 0.0f);
+    float4 col = frame;
+
+    const float4 keyboard = to_float4(0.115f, 0.432f, 0.77f, 0.486f);
+    const float4 trackpad = to_float4(0.2767f, 0.026f, 0.446f, 0.3636f);
+
+    float ftrack = roundBox(_uv, trackpad, 0.02f);
+    float fkeys = roundBox(_uv, keyboard, 0.02f);
+
+    if (inBox(abs_f2(to_float2(0.5f, 0.0f) - _uv), to_float4(0.38f, 0.462f, 0.115f, 0.436f)))
+    {
+        float2 grid = _uv * (_fmaxf(iResolution.x, iResolution.y) * 0.1f);
+        grid.y *= _ratio;
+        float f = smoothstep(0.05f, 0.15f, length(fract_f2(grid) - to_float2_s(0.5f)));
+        //col = _mix(to_float4_aw(to_float3_s(0.1f), 0.0f), frame, f);
+    }
+
+    float ftr = 1.0f - smoothstep(0.0f, 0.005f, -roundBox(_uv, to_float4_f2f2(swi2(trackpad,x,y) + to_float2_s(0.0001f), swi2(trackpad,z,w) - to_float2_s(0.001f)), 0.025f));
+    swi2S(col,y,z, -1.0f*to_float2(dFdx(ftr, fragCoord, iResolution), dFdy(ftr, fragCoord, iResolution)));
+    col.w = 0.5f*step(ftrack, 0.0f);
+
+    if (step(fkeys, 0.0f) > 0.5f)
+    {
+        col = keyboardLayout(normUV(_uv, keyboard), iResolution.x/iResolution.y, fragCoord, iResolution, iChannel1);
+    }
+
+    // trackpad
+    col.x = _mix(col.x, ((0.77f) + 0.1f*smoothstep(0.0f, 0.001f, -ftrack)), step(ftrack, 0.0f));
+
+    return col;
+}
+
+__DEVICE__ float key_press_sequence(const float _time) {
+    // key press sequence
+    float t120 = mod_f(_time, 120.0f);
+    float t180 = mod_f(_time, 180.0f);
+    const float hit_start = 0.0f;
+    float press_rate = 1.5f+0.1f*noise(t180);
+    // 47 keys added.
+    // 10% top row, 50% letters, 5% ></ and 35% no key is pressed
+    float key_hash = hash(_floor(t180 * press_rate));
+    int key = 1 + (int)(13.0f * key_hash * step(key_hash, 0.1f) + // top row
+                       (13.0f + 30.0f * key_hash) * (step(0.1f, key_hash) - step(0.6f, key_hash)) +
+                       (43.0f + 4.0f * key_hash) * (step(0.6f, key_hash) - step(0.65f, key_hash)) +
+                       50.0f * step(0.65f, key_hash));
+
+    return (float)(key);
+}
+
+__DEVICE__ float func(in float2 _uv, in float3 _params, in float _tf) {
+    float lower = _params.x*_powf(_fabs(_uv.x), 1.0f/_fabs(_uv.x+0.01f));
+    //float upper = _params.y - _params.z * _uv.x * _uv.x;
+    float upper = _params.y - _atan2f(_params.z*_uv.x*_uv.x, 1.0f);
+
+    float f = smoothstep(lower, lower+0.3f,_uv.y) *
+              smoothstep(_uv.y - 0.2f, _uv.y, upper);
+
+    f += (0.75f + _tf)*ANIM_T(_uv.y, 0.05f, upper) * step(lower, upper);
+
+    return f;
+    //return step(lower, _uv.y) * step(_uv.y, upper);
+}
+
+__DEVICE__ float4 welcome_visualization(in float2 _ruv, in float2 crd, in float _r, float iTime, __TEXTURE2D__ iChannel3) {
+    float2 uvScale = to_float2(_r, 1.0f);
+
+    float2 _uv = uvScale * (_ruv * 2.0f - 1.0f);
+    float4 slens = to_float4(0.6f, 1.2f, 1.2f, 0.0f);
+    slens.w = 2.0f * _r - dot(to_float3_s(1.0f), swi3(slens,x,y,z));
+    float time = iTime;
+    float s1 = in_box(_uv, to_float4(-_r, -1.0f, slens.x, 2.0f));
+    float s2 = in_box(_uv, to_float4(-_r + slens.x, -1.0f, slens.y, 2.0f));
+    float s3 = in_box(_uv, to_float4(-_r + dot(to_float2_s(1.0f), swi2(slens,x,y)), -1.0f, slens.z, 2.0f));
+    float s4 = in_box(_uv, to_float4(-_r + dot(to_float3_s(1.0f), swi3(slens,x,y,z)), -1.0f, slens.w, 2.0f));
+
+    float3 c1 = to_float3(1.0f, 0.0f, 0.75f);
+    float3 c2 = to_float3(0.0f, 1.0f, 0.1f);
+    float3 c3 = to_float3(0.0f, 0.0f, 1.0f);
+    float3 c4 = to_float3(0.75f, 0.0f, 1.0f);
+    float xtime = mod_f(time, 5.0f);
+
+    float grad = _uv.y * 0.5f + 0.5f;
+    grad *= 0.75f;
+    float circ_mask = _powf(length(_uv)/_sqrtf(_r * _r + 1.0f), 2.0f);
+    float bsx = ANIM_T(_uv.x, 0.01f, -_r + slens.x) +
+                ANIM_T(_uv.x, 0.01f, -_r + slens.x + slens.y) +
+                ANIM_T(_uv.x, 0.01f, -_r + slens.x + slens.y + slens.z);
+    float2 icell_y = to_float2(_floor(_uv.y * 10.0f), fract(_uv.y * 10.0f));
+
+    //int  ycell_id = (int)(icell_y) + 10;
+    int  ycell_id = (int)(icell_y.x) + 10; // ?????????????????
+
+    float bsy = 1.0f-PULSE_T(icell_y.y, 0.1f, 0.1f, 1.0f - 0.1f);
+
+    float amp_x = _floor((100.0f*_ruv.x))*0.01f;
+    float f_amp_x = fract(100.0f*_ruv.x);
+
+    float key_pressed = key_press_sequence(time);
+
+    int2 key_ij = to_int2((int)(key_pressed) / 12, (int)(key_pressed) % 12);
+    float key_y_hit = (float)(key_ij.y == ycell_id - 7);
+    float f_key = (float)(key_ij.x == 0) * s1 * key_y_hit;
+    f_key += (float)(key_ij.x == 1) * s2 * key_y_hit;
+    f_key += (float)(key_ij.x == 2) * s3 * key_y_hit;
+    f_key += (float)(key_ij.x == 3) * s4 * key_y_hit;
+    f_key *= step(key_pressed, 49.0f);
+
+    float samp = 0.0f;
+    const float krn = 3.0f;
+    for (float eq_step = -krn; eq_step <= krn; eq_step++)
+        samp += texture(iChannel3, to_float2(_floor((100.0f*_ruv.x) + eq_step)*0.01f, 0.0f)).x;
+    samp /= (2.0f*krn + 1.0f);
+    samp *= 0.5f;
+
+    float amp = 0.5f * texture(iChannel3, to_float2(amp_x, 0.0f)).x;
+
+    float tf = ANIM_T(xtime, 0.1f, _uv.x*0.5f+_r) * step(0.0f, _uv.y);
+
+    float2 fg1 = 1.8f*(_uv - to_float2(-1.6f, -1.6f));
+    float2 fg2 = 1.9f*(_uv - to_float2(-0.6f, -2.1f));
+    float2 fg3 = 2.4f*(_uv - to_float2(0.6f, -2.3f));
+    float2 fg4 = 2.2f*(_uv - to_float2(1.5f, -1.85f));
+
+    float f1 = func(fg1, to_float3(2.6f, 4.0f, 1.0f), tf);
+    float f2 = func(fg2, to_float3(2.5f, 4.9f, 0.4f), tf);
+    float f3 = func(fg3, to_float3(3.8f, 6.4f, 0.3f), tf);
+    float f4 = func(fg4, to_float3(2.6f, 4.4f, 0.3f), tf);
+
+    float scaled_y = smoothstep(0.3f, 0.5f, _uv.y*0.5f + 0.5f);
+    float scy = _uv.y*0.5f + 0.5f;
+    scaled_y += 2.0f*smoothstep(amp-0.1f, amp, _uv.y + 0.2f);
+    float scaled_x = PULSE_T(f_amp_x, 0.1f, 0.1f, 0.9f);
+
+    float3 col;
+
+    col = to_float3_s(bsx*0.25f + 0.5f*bsy*grad) + (c1 * s1 + c2 * s2 + c3 * s3 + c4 * s4) * circ_mask;
+    col += 0.75f*(f1 * c1 + f2 * c2 + f3*c3 + f4*c4);
+
+    col = _mix(col*1.0f, scaled_x*scaled_y*to_float3_s(1.0f)*step(_uv.y+0.2f, amp)*f3*f4, 0.25f);
+    col = _mix(col*1.0f, scaled_x*scaled_y*to_float3_s(1.0f)*step(_uv.y+0.2f, amp)*f2*f3, 0.25f);
+    col = _mix(col*1.0f, scaled_x*scaled_y*to_float3_s(1.0f)*step(_uv.y+0.2f, amp)*f1*f2, 0.25f);
+
+    col = _mix(col, to_float3(1.0f, 0.9f, 0.8f) * (0.6f + amp), ANIM_T(_uv.y - 0.3f - 0.3f*noise(_uv.x + iTime*0.35f), 0.02f, samp));
+
+    col += to_float3(0.1f, 0.8f, 0.4f) * 0.5f * (1.0f - smoothstep(0.0f, 0.7f, length(_uv - to_float2(-0.75f, 0.2f))));
+    col += to_float3(0.1f, 0.6f, 0.9f) * 0.75f * (1.0f - smoothstep(0.0f, 0.7f, dot(_uv - to_float2(0.7f, 0.0f),_uv - to_float2(0.7f, 0.0f) ) ) );
+
+    float fc = (1.0f-smoothstep(0.0f, 0.0005f, dot(_uv - to_float2(-1.5f, 0.75f), _uv - to_float2(-1.5f, 0.75f))));
+    fc += 1.0f-smoothstep(0.0f, 0.0005f, dot(_uv - to_float2(-0.6f, 0.55f), _uv - to_float2(-0.6f, 0.55f)));
+    fc += 1.0f-smoothstep(0.0f, 0.0005f, dot(_uv - to_float2(0.5f, 0.75f), _uv - to_float2(0.5f, 0.75f)));
+    fc += 1.0f-smoothstep(0.0f, 0.0005f, dot(_uv - to_float2(1.3f, 0.75f), _uv - to_float2(1.3f, 0.75f)));
+    //fc *= s2*(0.1f+noise(iTime));
+    fc = clamp(fc, 0.0f, 1.0f);
+
+    col += 0.5f*to_float3_s(fc);
+
+    col *= (1.0f + 0.5f*f_key);
+
+    col /= (col + to_float3_s(1.0f));
+    col = 1.5f*pow_f3(col, to_float3_s(1.5f));
+    //col = to_float3_aw(step(_uv.y, amp));
+    //col = to_float3_s(0.0f);
+    //col.x = _uv.x;
+    //col.y = _uv.y;
+    return to_float4_aw(col, 1.0f);
+}
+
+__DEVICE__ float4 screenTexture(in float2 _uv, in float _scrRatio, in float2 _crd, float iTime, __TEXTURE2D__ iChannel3)
+{
+    bool inFrame = inBox(_uv, to_float4(0.02f, 0.025f, 0.96f, 0.95f));
+    float f = sdBox(_uv - to_float2_s(0.5f), to_float2(0.46f, 0.45f)) - 0.02f;
+    float4 col = to_float4(1.0f, 0.0f, 0.0f, 1.0f);
+
+    float4 frameCol = clamp(_mix(to_float4(0.05f, 0.05f, 0.05f, 0.0f), to_float4(0.15f, 0.15f, 0.15f, 0.0f), _sqrtf(f/0.02f)), 0.0f, 1.0f);
+    float2 st = _uv * 2.0f - to_float2_s(1.0f);
+    st.x /= _scrRatio;
+    float4 chex = _mix(frameCol, hexThreeGrid(_uv, iTime, iTime), step(f, 0.0f));
+    float4 cwlc = _mix(frameCol, welcome_visualization(_uv, _crd, _scrRatio, iTime, iChannel3), step(f, 0.0f));
+
+    col = _mix(chex, cwlc, PULSE_T(iTime, 1.0f, 23.0f, 24.0f) +
+               PULSE_T(iTime, 1.0f, 109.0f, 148.0f) +
+               step(ANIM_SEQ, iTime)*PULSE_T(mod_f(iTime, 37.0f), 1.0f, 15.0f, 29.0f));
+    col = _mix(col, to_float4_aw(to_float3_s(0.05f), 0.0f), step(sdBox(_uv - to_float2(0.5f, 0.05f), to_float2(1.0f, 0.05f)), 0.0f));
+
+    return col;
+}
+
+
+__DEVICE__ void getCamera(in float2 _uv, in float2 _muv, out float3 *_o, out float4 *_t, float iTime, float4 iMouse) {
+
+    float fov = 0.5f;
+    float atime = ANIM_TIME;
+
+#ifndef DEBUG_HIT
+#ifdef DEBUG_CIRCULAR_MOTION
+    *_o = getCameraPosition(atime);
+    *_t = to_float4_aw(getCameraTarget(atime), fov);
+#endif // circular motion
+#else
+    {
+    #ifdef DEBUG_CIRCULAR_MOTION
+        *_o = to_float3(0.0f, 30.0f, -190.0f);
+        *_t = to_float4(/*getCameraPosition(atime)*/0.0f, 0.0f, 20.0f, fov);
+    #else
+        *_o = to_float3(75.0f, 25.0f, -75.0f);
+        *_o = mul_mat3_f3(rotX(_muv.y) , mul_mat3_f3(rotY(_muv.x*2.0f) , _o));
+        *_t = to_float4(0.0f, 5.0f, 1.0f, fov);
+    #endif
+    }
+#endif
+}
+
+__DEVICE__ void prepareLaptopTransform(out mat4 *_mainTrf, out mat4 *_screenTrf, float iTime, float4 iMouse) {
+    float3 targetOrigin = to_float3(10.0f, 4.5f, 10.0f);//to_float3(16.0f, 5.0f, 12.0f);
+    float2 screenRot = to_float2_s(0.0f);
+
+    // laptop screen.
+    float l_anim_t = mod_f(ANIM_TIME, ANIM_SEQ);
+    screenRot.y = _mix(-PI,0.1f*PI, smoothstep(4.0f, 10.0f, l_anim_t));
+    screenRot.y = _mix(screenRot.y, -PI*0.2f, smoothstep(133.0f,136.0f, l_anim_t));
+    screenRot.y = _mix(screenRot.y, -PI, smoothstep(140.0f, 143.0f, l_anim_t));
+    screenRot.x = 0.4f*PULSE_T(l_anim_t, 5.0f, 12.6f, 105.0f);
+    screenRot.x = _mix(screenRot.x, 0.5f, smoothstep(140.0f, 145.0f, l_anim_t));
+    targetOrigin += to_float3(-4.0f, 0.0f, 10.0f) * PULSE_T(l_anim_t, 4.0f, 10.5f, 105.5f);
+
+    *_mainTrf = to_mat4_n(1.0f);
+    *_mainTrf = mul_mat4_mat4(*_mainTrf, Rxz(screenRot.x*1.57f));
+    //(*_mainTrf)[3].xyz -= targetOrigin;
+    swi3S((*_mainTrf).r3,x,y,z, swi3((*_mainTrf).r3,x,y,z) - targetOrigin);
+
+    mat4 tmtx = to_mat4_n(1.0f);
+    // this is the screen offset relative to center of the laptop
+    float3 scrOff = to_float3(0.0f, 0.175f, 9.75f *0.5f - 0.125f);
+    // the rotation anchor may differs from the screen attachment.
+    swi3S(tmtx.r3,x,y,z, scrOff - to_float3(0.0f, 0.15f, 0.0f));
+    *_screenTrf = Ryz(clamp(1.45f + 1.5f*screenRot.y, 0.0f, 2.2f));
+    *_screenTrf = mul_mat4_mat4(*_screenTrf, tmtx);
+    //tmtx[3].xyz -= 2.0f*scrOff;
+    swi3S(tmtx.r3,x,y,z, swi3(tmtx.r3,x,y,z) - 2.0f*scrOff);
+
+    *_screenTrf = mul_mat4_mat4(tmtx , *_screenTrf);
+}
+
+__KERNEL__ void SpaceAtHomeFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2,  __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   Reset = params->Reset;
+  int    N_CHAIRS = params->N_CHAIRS;
+  // --------
+
+    fragCoord+=0.5f;
+
+    float2 uv = (2.0f*fragCoord - iResolution)/(iResolution.y);
+    float2 muv = (2.0f*swi2(iMouse,x,y) - iResolution)/(iResolution.y);
+
+    float2 ruv = fragCoord / iResolution.y;
+    float scrRatio = iResolution.x / iResolution.y;
+    float lpWidth = scrRatio * 0.5f;
+    const float lpRatio = 0.6965386f; // this is a constant of a laptop --> width to height ratio.
+    float lpHeight = lpWidth * lpRatio;
+    float2 keyStart = to_float2(0.5f*scrRatio - lpWidth, 1.0f - lpHeight);
+    float2 scrStart = to_float2(lpWidth, 1.0f - lpHeight);
+    float4 col = to_float4_aw(to_float3_s(0.5f), 0.0f);
+    float fps;
+    float wide_screen_mode = WIDE_SCREEN_AR;
+    float4 prev_res = TF2(RES_DATA);
+    float4 fps_data = TF2(FPS_DATA);
+    float res_changed = 1.0f;
+
+    if (inBox(ruv, to_float4(keyStart.x, keyStart.y, lpWidth, lpHeight)))
+    {
+        col = keyboardTexture((ruv - keyStart)/to_float2(lpWidth, lpHeight), lpRatio, fragCoord, iResolution, iChannel1);
+        //col = to_float4_aw(_floor(5.0f*ruv/to_float2(lpWidth, lpHeight)) / 5.0f, 0.0f, 1.0f);
+    }
+    else if (inBox(ruv, to_float4(scrStart.x, scrStart.y, lpWidth, lpHeight)))
+    {
+        col = screenTexture((ruv - scrStart)/to_float2(lpWidth, lpHeight), scrRatio, fragCoord, iTime, iChannel3);
+        //col = to_float4(0.0f, _floor(5.0f*(ruv - to_float2(lpWidth, 0.0f))/to_float2(lpWidth, lpHeight))/5.0f, 1.0f);
+    }
+
+    // CONTROL ZONE
+    int2 crd = to_int2_cfloat(fragCoord);
+    if (crd.y < CTRL_ZONE && (iFrame == 0 || Reset)) {
+        // mapping of casting shadows materials.
+        // DEFAULT_MTL, FLOOR_MTL, TABLE_FRAME_MTL, TABLE_TOP_MTL
+        ATF(crd, to_int2(0, GEOM_SHADOW_MAP), to_float4(TRACE_NO_FLAG, TRACE_NO_FLOOR, TRACE_TABLE_LAPTOP,TRACE_TABLE_LAPTOP));
+        // CHAIR_BASE_MTL, CHAIR_BCK_LEG_MTL, CHAIR_FRNT_LEG_MTL, CHAIR_BACK_MTL
+        ATF(crd, to_int2(1, GEOM_SHADOW_MAP), to_float4(TRACE_CHAIR_UPPER_W_CUSHION | TRACE_TABLE_TOP_FLAG, TRACE_CHAIR_UPPER_W_CUSHION | TRACE_TABLE_TOP_FLAG, TRACE_CHAIR_UPPER_W_CUSHION | TRACE_TABLE_TOP_FLAG, TRACE_NO_FLAG));
+        // CHAIR_FRAME_MTL, CHAIR_CUSHION_MTL, LAPTOP_BASE_MTL, LAPTOP_SCREEN_MTL
+        ATF(crd, to_int2(2, GEOM_SHADOW_MAP), to_float4(TRACE_NO_FLAG, TRACE_TABLE_LAPTOP | TRACE_CHAIR_UPPER, TRACE_LAPTOP_SCREEN_FLAG, TRACE_NO_FLAG/* | TRACE_TABLE_TOP_FLAG*/));
+
+        // mapping of AO
+        // DEFAULT_MTL, FLOOR_MTL, TABLE_FRAME_MTL, TABLE_TOP_MTL
+        ATF(crd, to_int2(0, GEOM_AO_MAP), to_float4(TRACE_NO_FLAG, TRACE_NO_FLAG, TRACE_TABLE_FLAG,TRACE_TABLE_LAPTOP));
+        // CHAIR_BASE_MTL, CHAIR_BCK_LEG_MTL, CHAIR_FRNT_LEG_MTL, CHAIR_BACK_MTL
+        ATF(crd, to_int2(1, GEOM_AO_MAP), to_float4(TRACE_CHAIRS_FLAG, TRACE_CHAIRS_FLAG, TRACE_CHAIRS_FLAG, TRACE_CHAIRS_FLAG));
+        // CHAIR_FRAME_MTL, CHAIR_CUSHION_MTL, LAPTOP_BASE_MTL, LAPTOP_SCREEN_MTL
+        ATF(crd, to_int2(2, GEOM_AO_MAP), to_float4(TRACE_CHAIRS_FLAG, TRACE_CHAIRS_FLAG, TRACE_LAPTOP_FLAG, TRACE_LAPTOP_FLAG/* | TRACE_TABLE_TOP_FLAG*/));
+
+        ATF(crd, to_int2(0, CHAIR_ROT), to_float4(-0.9f*PI -PI/1.1f, 1.0f -PI/1.1f, PI/3.0f -PI/1.1f, PI/4.0f -PI/1.1f + + PI/1.8f));
+        ATF(crd, to_int2(1, CHAIR_ROT), to_float4(PI/4.0f -PI/1.1f,0.0f, 0.0f, 0.0f));
+
+
+    }
+    else if (crd.y < CTRL_ZONE) {
+        float4 ctrl = TF2(crd);
+        col = ctrl;
+        // LIGHTS
+
+        float t_light_cycle = mod_f(ANIM_TIME, ANIM_SEQ);
+        float l0_i = PULSE_T(t_light_cycle, 4.0f, 5.0f, ANIM_SEQ-5.0f);
+        float l1_i = PULSE_T(t_light_cycle, 3.0f, 25.0f, ANIM_SEQ-3.0f);
+        float3  l2_= normalize(to_float3(0.0f, -0.5f, 1.0f));
+        float l2_i = ASYM_PULSE_T(t_light_cycle, 10.0f, 10.5f, 12.0f, 56.0f);
+
+        if (ANIM_TIME > ANIM_SEQ) {
+            t_light_cycle = mod_f(ANIM_TIME, 10.0f);
+            l0_i = PULSE_T(t_light_cycle, 2.0f, 2.0f, 8.0f);
+            l1_i = PULSE_T(t_light_cycle, 2.5f, 2.5f, 7.5f);
+        }
+
+        l1_i *= 1.2f;
+
+        ATF(crd, to_int2(LIGHT_GEO, LIGHT_0), to_float4(-10, 70.0f, 10.0f, 1.0f));
+        ATF(crd, to_int2(LIGHT_PROP, LIGHT_0), to_float4(1,0.956863f,0.898039f,600.0f*l0_i));
+
+        ATF(crd, to_int2(LIGHT_GEO, LIGHT_1), to_float4(30.0f, 70.0f, -150.0f, 1.0f));
+        ATF(crd, to_int2(LIGHT_PROP, LIGHT_1), to_float4(1,0.839216f,0.666667f, 800.0f*l1_i));
+
+        // LAPTOP
+        ATF(crd, LAPTOP_H_DIMS, 0.5f * to_float4(14.0f, 0.5f, 9.75f, 0.0f));
+        ATF(crd, LAPTOP_KEY_ANIM, to_float4(key_press_sequence(iTime), 0,0,0));
+
+        mat4 lpTrf    = to_mat4_n(1.0f);
+        mat4 lpScrTrf = to_mat4_n(1.0f);
+
+        prepareLaptopTransform(&lpTrf, &lpScrTrf, iTime, iMouse);
+
+        ATF(crd, LAPTOP_BASE_TRF_0, lpTrf.r0);
+        ATF(crd, LAPTOP_BASE_TRF_1, lpTrf.r1);
+        ATF(crd, LAPTOP_BASE_TRF_2, lpTrf.r2);
+        ATF(crd, LAPTOP_BASE_TRF_3, lpTrf.r3);
+
+        ATF(crd, LAPTOP_SCRN_TRF_0, lpScrTrf.r0);
+        ATF(crd, LAPTOP_SCRN_TRF_1, lpScrTrf.r1);
+        ATF(crd, LAPTOP_SCRN_TRF_2, lpScrTrf.r2);
+        ATF(crd, LAPTOP_SCRN_TRF_3, lpScrTrf.r3);
+
+        // CAMERA
+        if (crd.y <= CAMERA_SETUP_ROW) {
+            float3 o;
+            float4 t;
+            getCamera(uv, muv, &o, &t, iTime, iMouse);
+            ATF(crd, ORIG_SEQ, to_float4_aw(o, 1.0f));
+            ATF(crd, LOOKAT_SEQ, t);
+        }
+
+        // FPS
+        //ATF(crd, RES_DATA, to_float4(iResolution, 0.0f, 0.0f));
+        if (iFrame % 20 == 1) {
+          fps = 20.0f / (iTime - fps_data.x);
+          ATF(crd, FPS_DATA, to_float4(iTime, fps, iResolution.y, 0.0f));
+        }
+    }
+
+    fragColor = (col);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer B                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer B 'Previsualization: Buffer A' to iChannel3
+
+union A2F
+ {
+   float3  F;    //32bit float
+   float  A[3];  //32bit Array
+ };
+
+
+__DEVICE__ float3 norm_forward(in float3 _p, in int _trace_flags, in float _eps, in float _f, in bool _use_f, float2 iResolution, inout mat4 *lpTrf, float3 g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS, __TEXTURE2D__ iChannel3) {
+    float2 e = to_float2(_eps, 0.0f);
+    //float3 n;
+    union A2F n;
+    #define ZERO 0 //(_fminf(iFrame,0)) // non-constant zero
+    //for (int i = ZERO; i < 3 && iFrame > 0; i++) {
+    for (int i = ZERO; i < 3 ; i++) {
+        n.A[i] = map(_p + to_float3(i == 0, i == 1, i == 2)*_eps, _trace_flags, iChannel3, true, false, iResolution, lpTrf, g_dir, scrTrf, scrRndSide, N_CHAIRS).x - _f;
+    }
+
+    return n.F;
+}
+
+
+__KERNEL__ void SpaceAtHomeFuse__Buffer_B(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  int    N_CHAIRS = params->N_CHAIRS;
+  // --------
+
+    fragCoord+=0.5f;
+
+    float3 g_dir = to_float3_s(0.0f);
+    mat4 lpTrf  = to_mat4_n(1.0f);
+    mat4 scrTrf = to_mat4_n(1.0f);
+    float scrRndSide = 1.0f;
+
+    float2 uv = (2.0f*fragCoord - iResolution)/(iResolution.y);
+    float2 muv = (2.0f*swi2(iMouse,x,y) - iResolution)/(iResolution.y);
+    float scr_resolution = iResolution.x / iResolution.y;
+    float half_pixel = 1.0f/iResolution.y;
+    //float3 col;
+    float2 raycast = to_float2(0.0f, FAR);
+    float3 norm = to_float3_s(0.0f);
+    //float fmtl = 0.0f;
+    //float2 lshadows;
+    float n_eps = N_EPS;
+
+    // camera setup - defining o, d, trg (look at)
+    CAMERA_SETUP(uv)
+
+    float iter = MAX_ITER;
+    float far = FAR;
+
+    int trace_flags = (sign_f(d.y) < 0.0f) ? TRACE_ALL : TRACE_NO_FLOOR;
+    raycast = trace(o, d, trace_flags, iChannel3, iter, far, T_EPS, iResolution, &lpTrf, &g_dir, &scrTrf, scrRndSide, N_CHAIRS);
+
+    if ((bool)(isHit(raycast, T_EPS))) {
+        int i_mtl = (int)(map(o + raycast.x * d, trace_flags, iChannel3, false, true, iResolution, &lpTrf, g_dir, &scrTrf, scrRndSide, N_CHAIRS).y);
+        n_eps = _mix(N_EPS*10.0f, T_EPS, (float)(i_mtl == LAPTOP_SCREEN_MTL));
+        norm = norm_forward(o + raycast.x * d, getNormMap(i_mtl), n_eps,raycast.y, !is_metal_mtl(i_mtl), iResolution, &lpTrf,  g_dir, &scrTrf, scrRndSide, N_CHAIRS, iChannel3);
+    }
+
+    fragColor = to_float4(raycast.x * (float)(isHit(raycast, T_EPS)),norm.x,norm.y,norm.z);
+
+    //fragColor = to_float4(raycast.x, raycast.y, 0.0f,0.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer C                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer C 'Previsualization: Buffer B' to iChannel0
+// Connect Buffer C 'Previsualization: Buffer A' to iChannel3
+
+
+__DEVICE__ float array2XYZW( float4 input, int mtl) {
+
+  float ret = 0.0f;
+
+  if(mtl % 4 == 0) ret = input.x;
+  if(mtl % 4 == 1) ret = input.y;
+  if(mtl % 4 == 2) ret = input.z;
+  if(mtl % 4 == 3) ret = input.w;
+
+  return ret;
+}
+
+
+__DEVICE__ int getShadowMap(int _mtl, float _y, float2 iResolution, __TEXTURE2D__ iChannel3) {
+    int mtl = min(_mtl, LAPTOP_SCREEN_MTL);
+    int _trace_flag = (_mtl == TABLE_TOP_MTL && _y > 2.5f) ?
+                      //TRACE_LAPTOP_FLAG : (int)(TF3(to_int2(mtl/4,GEOM_SHADOW_MAP))[mtl % 4]);
+                      TRACE_LAPTOP_FLAG : (int)(array2XYZW(TF3(to_int2(mtl/4,GEOM_SHADOW_MAP)),mtl));
+
+    return _trace_flag;
+}
+
+__DEVICE__ int getAoMap(int _mtl, float2 iResolution, __TEXTURE2D__ iChannel3) {
+    int mtl = min(_mtl, LAPTOP_SCREEN_MTL);
+    //return (int)(TF3(to_int2(mtl/4,GEOM_AO_MAP))[mtl % 4]);
+    return (int)(array2XYZW(TF3(to_int2(mtl/4,GEOM_AO_MAP)),mtl));
+}
+
+__DEVICE__ float2 trace_sh(in float3 _o, in float3 _d, int _trace_flags, const float _fov,
+    in __TEXTURE2D__ _ch, const float _iter, const float _far, const float _eps, float2 iResolution, inout mat4 *lpTrf, inout float3 *g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS) {
+    float t = 0.0f;
+    float mint = 10.0f;
+    float2 res = to_float2_s(10.0f);
+    float cf = (_fov * 2.0f) / iResolution.y; // cone tracing
+    *g_dir = _d;
+
+    for (float fi = 0.0f; fi < _iter; fi++) {
+        float3 p = _o + _d * t;
+
+        mint = map(p, _trace_flags, _ch, false, false, iResolution, lpTrf, *g_dir, scrTrf, scrRndSide, N_CHAIRS).x;
+
+        if (_fabs(mint) < t * (_eps + cf) || t > _far)
+            break;
+        if (dot(normalize(swi2(p,x,z)), swi2(_d,x,z)) > 0.0f
+            && dot(swi2(p,x,z), swi2(p,x,z)) > GEOM_BOUNDING_CIRCLE_SQR)
+            break;
+
+        t += mint;
+    }
+
+    return to_float2(t, mint);
+}
+
+union A2F2
+ {
+   float2  F;    //32bit float
+   float  A[2];  //32bit Array
+ };
+
+__DEVICE__ float2 calcShadow(in float3 _p, int i_mtl, float2 iResolution, inout mat4 *lpTrf, inout float3 *g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS, __TEXTURE2D__ iChannel3) {
+    //float2 lshadows = to_float2_s(0.0f);
+    union A2F2 lshadows;
+    lshadows.F = to_float2_s(0.0f);
+
+    for (int il = 0; il < N_LIGHTS; il++) {
+        float4 lgeo = TF3(to_int2(LIGHT_GEO, LIGHT_0 + il));
+
+        float3 ldir = normalize(swi3(lgeo,x,y,z) - _p);
+        float2 sh_ray = trace_sh(_p + ldir*0.001f, ldir, getShadowMap(i_mtl, _p.y, iResolution, iChannel3), 0.5f, iChannel3, MAX_ITER, 0.5f*FAR, TS_EPS, iResolution, lpTrf, g_dir, scrTrf, scrRndSide, N_CHAIRS);
+        float sh_cf = _mix(isHit(sh_ray, TS_EPS + 0.5f), 0.5f * isHit(sh_ray, TS_EPS + 0.5f), _powf(smoothstep(0.0f, 1.0f, sh_ray.x/75.0f), 4.0f));
+        lshadows.A[il] = sh_cf;
+    }
+
+    return lshadows.F;
+}
+
+//https://www.shadertoy.com/view/4sSfzK
+__DEVICE__ float CalcAO(in float3 _p, in float3 _n, in int _mtl, float2 iResolution, inout mat4 *lpTrf, inout float3 *g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS, __TEXTURE2D__ iChannel3) {
+    float v0 = 0.276f;
+    float v1 = 0.133f;
+    float v2 = 0.179f;
+    float v3 = 0.080f;
+    float v4 = 0.772f;
+
+    float ao = 0.0f;
+    float s = 1.0f;
+    #define ZERO 0 //(float)(_fminf(iFrame,0)) // non-constant zero
+  for (float i = ZERO; i < 5.0f; ++i)
+  {
+    float off = v0 + v1 * i / 6.0f;
+    float t = map(_n * off + _p, getAoMap(_mtl, iResolution, iChannel3), iChannel3, false, false, iResolution, lpTrf, *g_dir, scrTrf, scrRndSide, N_CHAIRS).x;
+    ao += (off - t) * s;
+    s *= v2;
+  }
+
+    ao = _mix(1.0f, smoothstep(0.0f, 1.0f, 1.0f - v3 * 20.0f * ao), v4);
+    return ao;
+}
+
+__DEVICE__ bool computeHitParamsFromRaycast(in float4 _raycast, in float2 _uv, out float3 *_p, out float3 *_d, out float3 *_n, out int *_mtl, float2 iResolution, inout mat4 *lpTrf, float3 g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS, __TEXTURE2D__ iChannel3) {
+    float half_pixel = 1.0f/iResolution.y;
+
+    CAMERA_SETUP(_uv)
+    *_d = d;
+
+    float iter = MAX_SH_ITER;
+    float far = FAR;
+    bool hitGeom = _raycast.x > T_EPS;
+
+    if (hitGeom) {
+        *_mtl = (int)(map(o + _raycast.x * d, TRACE_NO_FLOOR, iChannel3, false, true, iResolution, lpTrf, g_dir, scrTrf, scrRndSide, N_CHAIRS).y);
+        *_n = normalize(swi3(_raycast,y,z,w));
+        *_p = o + _raycast.x * d;
+    }
+
+    float tfloor = rayXFloor(o.y, d.y);
+    if (tfloor > 0.0f && !hitGeom && tfloor < FAR) {
+        *_mtl = FLOOR_MTL;
+        *_n = to_float3(0.0f, 1.0f, 0.0f);
+        *_p = o + tfloor * d;
+        hitGeom = true;
+    }
+
+    return hitGeom;
+}
+
+__KERNEL__ void SpaceAtHomeFuse__Buffer_C(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   Reset = params->Reset;
+  int    N_CHAIRS = params->N_CHAIRS;
+  // --------
+
+    fragCoord+=0.5f;
+
+    float3 g_dir;
+    mat4 lpTrf  = to_mat4_n(1.0f);
+    mat4 scrTrf = to_mat4_n(1.0f);
+    float scrRndSide = 1.0f;
+
+    float2 uv = (2.0f*fragCoord - iResolution)/(iResolution.y);
+    float2 muv = (2.0f*swi2(iMouse,x,y) - iResolution)/(iResolution.y);
+    float2 ruv = fragCoord/iResolution;
+    float scr_resolution = iResolution.x / iResolution.y;
+
+    float3 n, p, d;
+    float4 raycast = _tex2DVecN(iChannel0,ruv.x,ruv.y,15);
+    int i_mtl = TRACE_NO_FLAG;
+    float2 shadow; // entry for each light
+    float ao = 1.0f; // ambient occlusion
+    bool hitGeom = false;
+
+#ifdef DOWNSAMPLE_SHADOWS
+    float2 quad_ruv = ruv * 2.0f;
+    float2 quad_uv;
+    if (quad_ruv.x < 1.0f && quad_ruv.y < 1.0f) { // lower left quadrant
+        float4 q_raycast = _tex2DVecN(iChannel0,quad_ruv.x,quad_ruv.y,15);
+        quad_ruv.x *= scr_resolution;
+        quad_uv = quad_ruv * 2.0f - to_float2(scr_resolution, 1.0f);
+        hitGeom = computeHitParamsFromRaycast(q_raycast, quad_uv, &p, &d, &n, &i_mtl, iResolution, &lpTrf, g_dir, &scrTrf, scrRndSide, N_CHAIRS, iChannel3);
+    }
+#else
+    hitGeom = computeHitParamsFromRaycast(raycast, uv, &p, &d, &n, &i_mtl, iResolution, &lpTrf, g_dir, &scrTrf, scrRndSide, N_CHAIRS, iChannel3);
+#endif
+
+    if (hitGeom && dot(swi2(p,x,z), swi2(p,x,z)) < FLOOR_BOUNDING_CIRCLE_SQR) {
+        shadow = calcShadow(p, i_mtl, iResolution, &lpTrf, &g_dir, &scrTrf, scrRndSide, N_CHAIRS, iChannel3);
+        ao = (i_mtl == FLOOR_MTL) ? 1.0f : CalcAO(p, n, i_mtl, iResolution, &lpTrf, &g_dir, &scrTrf, scrRndSide, N_CHAIRS, iChannel3);
+    }
+
+#ifdef PACK_CUI_VALUES
+    // Packing is done to reduce compilation time by saving more work
+    // on Buffer D and freeing the Image buffer.
+
+    // packing closed unit interval to uint. Because we
+    // eventually pass the packed values as floats and precision is
+    // on the lower end, shadow passed first. The shadow values are packed
+    // to 255 bit values and ambient occlusion to 127 bit.
+    PACK_CUI3_TO_UINT(shadow.x, shadow.y, ao);
+    float4 clr = to_float4((float)(packed_uint), 0,0,0);
+#else
+    float4 clr = to_float4(ao, shadow.x, shadow.y, 0.0f);
+#endif
+
+    fragColor = clr;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer D                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer D 'Previsualization: Buffer B' to iChannel0
+// Connect Buffer D 'Previsualization: Buffer C' to iChannel1
+// Connect Buffer D 'Previsualization: Buffer A' to iChannel3
+
+
+
+
+__DEVICE__ float getReflectionHit(in float3 _p, in float3 _d, in float3 _n, in int _mtl, in float _scr_res, out float *_rfl_mtl, float2 iResolution, inout mat4 *lpTrf, inout float3 *g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS, __TEXTURE2D__ iChannel3) {
+
+    float3 rfl_dir = normalize(reflect(_d, _n));
+    int rfl_trace_flag = TRACE_NO_FLAG;
+
+    float rfar = 12.0f;
+    if (_mtl == FLOOR_MTL) {
+        rfar = 40.0f;
+        rfl_trace_flag = TRACE_TABLE_FLAG | TRACE_CHAIRS_FLAG;
+    }
+    else if ((_mtl == TABLE_TOP_MTL && _n.y > 0.9f) || _mtl >= LAPTOP_MTL) {
+        rfl_trace_flag = TRACE_LAPTOP_FLAG;
+    }
+    if (_mtl == LAPTOP_BASE_MTL && _n.y > 0.75f)
+    {
+        rfl_dir = to_float3(0.0f, 1.0f, 0.0f); // emissive light from screen.
+        swi2S(rfl_dir,x,z, 0.25f*(0.5f - to_float2(hash(_p.x), hash(_p.z))));
+        rfl_dir = normalize(rfl_dir);
+    }
+
+    //
+    const float TR_EPS = T_EPS * 10.0f;
+    rfar = _fminf(rfar / _fmaxf(dot(rfl_dir, _n), 0.001f), FAR);
+    float2 rfl_trace = trace(_p + TR_EPS * rfl_dir, rfl_dir, rfl_trace_flag, iChannel3, 64.0f, rfar, TR_EPS, iResolution, lpTrf, g_dir, scrTrf, scrRndSide, N_CHAIRS);
+
+    float trace_t = 0.0f;
+    *_rfl_mtl = (float)(DEFAULT_MTL);
+
+    if ((bool)(isHit(rfl_trace, TR_EPS))) {
+         trace_t = rfl_trace.x;
+         float3 rp = _p + (trace_t + T_EPS) * rfl_dir;
+         *_rfl_mtl = (map(rp, rfl_trace_flag, iChannel3, false, true, iResolution, lpTrf, *g_dir, scrTrf, scrRndSide, N_CHAIRS).y);
+    }
+
+    return trace_t;
+}
+
+#ifdef WIE_C
+__DEVICE__ bool computeHitParamsFromRaycast(in float4 _raycast, in float2 _uv, out float3 *_p, out float3 *_d, out float3 *_n, out int *_mtl, float2 iResolution, inout mat4 *lpTrf, float3 g_dir, inout mat4 *scrTrf, float scrRndSide) {
+    float half_pixel = 1.0f/iResolution.y;
+
+    CAMERA_SETUP(_uv)
+    _d = d;
+
+    float iter = MAX_SH_ITER;
+    float far = FAR;
+    bool hitGeom = _raycast.x > T_EPS;
+
+    if (hitGeom) {
+        _mtl = (int)(map(o + _raycast.x * d, TRACE_NO_FLOOR, iChannel3, false, true, iResolution, lpTrf, g_dir, scrTrf, scrRndSide).y);
+            _n = normalize(swi3(_raycast,y,z,w));
+            _p = o + _raycast.x * d;
+    }
+
+    float tfloor = rayXFloor(o.y, d.y);
+    if (tfloor > 0.0f && !hitGeom && tfloor < FAR) {
+        _mtl = FLOOR_MTL;
+        _n = to_float3(0.0f, 1.0f, 0.0f);
+        _p = o + tfloor * d;
+        hitGeom = true;
+    }
+
+    return hitGeom;
+}
+#endif
+
+__KERNEL__ void SpaceAtHomeFuse__Buffer_D(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2,  __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  int    N_CHAIRS = params->N_CHAIRS;
+
+  // --------
+
+    fragCoord+=0.5f;
+
+    float3 g_dir = to_float3_s(0.0f);
+    mat4 lpTrf  = to_mat4_n(1.0f);
+    mat4 scrTrf = to_mat4_n(1.0f);
+    float scrRndSide = 1.0f;
+
+    float2 uv = (2.0f*fragCoord - iResolution)/(iResolution.y);
+    float2 ruv = fragCoord/iResolution;
+    float scr_resolution = iResolution.x / iResolution.y;
+
+    float3 n= to_float3_s(0.0f), p= to_float3_s(0.0f), d= to_float3_s(0.0f);
+    float4 raycast = _tex2DVecN(iChannel0,ruv.x,ruv.y,15);
+    float4 sec_cast = TF1(to_int2_cfloat(fragCoord)); // pass through
+    int i_mtl = TRACE_NO_FLAG;
+    float rfl_trace_t = 0.0f;
+    bool hitGeom = false;
+    float rfl_mtl = 0.0f;
+
+    hitGeom = computeHitParamsFromRaycast(raycast, uv, &p, &d, &n, &i_mtl, iResolution, &lpTrf, g_dir, &scrTrf, scrRndSide, N_CHAIRS, iChannel3);
+
+    if (hitGeom && dot(swi2(p,x,z), swi2(p,x,z)) < FLOOR_BOUNDING_CIRCLE_SQR) {
+        rfl_trace_t = getReflectionHit(p, d, n, i_mtl, scr_resolution, &rfl_mtl, iResolution, &lpTrf, &g_dir, &scrTrf, scrRndSide, N_CHAIRS, iChannel3);
+    }
+
+#ifdef PACK_CUI_VALUES
+    float4 clr = to_float4(sec_cast.x, (float)(i_mtl), rfl_mtl, rfl_trace_t);
+#else
+    float4 clr = to_float4_aw(swi3(sec_cast,x,y,z), rfl_trace_t);
+#endif
+
+    fragColor = clr;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer B' to iChannel0
+// Connect Image 'Previsualization: Buffer D' to iChannel1
+// Connect Image 'Texture: Wood' to iChannel2
+// Connect Image 'Previsualization: Buffer A' to iChannel3
+
+
+__DEVICE__ const float MAX_KRN_SIZE = 1.0f;
+
+////
+__DEVICE__ float3 laplace(in float _dist, in float3 _val, in __TEXTURE2D__ _ch, in float2 _uv, in float2 _eps)
+{
+
+  float krnSize = _floor(smoothstep(0.35f, 1.0f, _dist) * MAX_KRN_SIZE);
+  float3 scol = to_float3_s(0.0f);
+  float sw = 0.0f;
+  float w = 0.0f;
+  for (int i = -(int)(krnSize); i <= (int)(krnSize); i++)
+  {
+      for (int j = -(int)(krnSize); j <= (int)(krnSize); j++)
+      {
+         float3 ncol = swi3(texture(_ch, _uv + _eps * to_float2(i, j)),x,y,z);
+         w = 1.0f;
+         sw += w;
+         scol += w * ncol;
+      }
+  }
+
+  scol /= sw;
+
+  float3 res = _mix(_val, scol, krnSize/MAX_KRN_SIZE);
+
+  return scol;
+}
+
+////
+__DEVICE__ float3 laplace_packed(in float _dist, in float3 _val, in __TEXTURE2D__ _ch, in int2 _crd, float2 iResolution)
+{
+  float krnSize = _floor(smoothstep(0.35f, 1.0f, _dist) * MAX_KRN_SIZE);
+  float3 scol = to_float3_s(0.0f);
+  float sw = 0.0f;
+  float w = 0.0f;
+  for (int i = -(int)(krnSize); i <= (int)(krnSize); i++)
+  {
+      for (int j = -(int)(krnSize); j <= (int)(krnSize); j++)
+      {
+         float nv = TF(_ch, _crd + to_int2(i, j)).x;
+         UNPACK_UINT_TO_CUI3(nv)
+         w = 1.0f;
+         sw += w;
+         scol += w * unpacked_cui3;
+      }
+  }
+
+  scol /= sw;
+
+  float3 res = _mix(_val, scol, krnSize/MAX_KRN_SIZE);
+
+  return scol;
+}
+
+__DEVICE__ float2 toUV(in float4 _plane, in float2 _p, in float2 _reverse, in float4 _txcrd)
+{
+    float2 tx = ((_p - swi2(_plane,x,y)) / swi2(_plane,z,w)); // 0 - 1 range
+    tx = mix_f2(tx, to_float2_s(1.0f) - tx, _reverse); // reverse axes if needed
+    return swi2(_txcrd,x,y) + tx * swi2(_txcrd,z,w); // convert to texture coordinates
+}
+
+// https://iquilezles.org/articles/normalsSDF/
+__DEVICE__ float3 calcNormal( in float3 pos, in int _trace_flag, in float _eps, float2 iResolution, inout mat4 *lpTrf, float3 g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS, __TEXTURE2D__ iChannel3 ) // for function f(p)
+{
+    float h = _eps;
+    #define ZERO 0 //(_fminf(iFrame,0)) // non-constant zero
+    float3 n = to_float3_s(0.0f);
+    for( int i=ZERO; i<4; i++ )
+    {
+        float3 e = 0.5773f*(2.0f*to_float3((((i+3)>>1)&1),((i>>1)&1),(i&1))-1.0f);
+        n += e*map(pos+e*h, _trace_flag, iChannel3, true, false, iResolution, lpTrf, g_dir, scrTrf, scrRndSide, N_CHAIRS).x;
+    }
+    return normalize(n);
+}
+
+__DEVICE__ float4 triplanar(in float3 p, in float3 scale, in float3 _w, __TEXTURE2D__ iChannel2)
+{
+  float4 dx = texture(iChannel2, swi2(p,y,z)*swi2(scale,y,z));
+  float4 dy = texture(iChannel2, swi2(p,z,x)*swi2(scale,z,x));
+  float4 dz = texture(iChannel2, swi2(p,x,y)*swi2(scale,x,y));
+
+  return dx * _w.x + dy *_w.y + dz * _w.z;
+}
+
+__DEVICE__ float3 render_floor(in float3 _p, in float _t, inout float3 *_n, float2 fragCoord, float2 iResolution, __TEXTURE2D__ iChannel2) {
+    float2 st = swi2(_p,z,x);
+    float mx = 0.4f;
+    //float dp = smoothstep(0.0f, 1.0f, length(fwidth(_p)));
+    float dp = smoothstep(0.0f, 1.0f, length((_p)));
+    float mscl = 0.1f - 0.1f * dp;
+    st.x *= mx;
+    float my = 0.03f + 0.05f * hash(_floor(st.x) + 28.2f);
+    st.y *= my;
+    st.y += hash(_floor(st.x));
+    float2 fst = fract_f2(st);
+    float2 vst = smoothstep(to_float2_s(0.0f), mscl * to_float2(mx, my), fst) - smoothstep(to_float2_s(1.0f) - to_float2(mx, my)*mscl, to_float2_s(1.0f), fst);
+
+    // bump map the floor.
+    float3 dx = to_float3(0.0f, 2.0f*dFdx(vst.x, fragCoord, iResolution), 1.0f);
+    float3 dy = to_float3(1.0f, 2.0f*dFdy(vst.y, fragCoord, iResolution), 0.0f);
+    float3 n = normalize(cross(dx, dy));
+    *_n = _mix(n, *_n, dp);
+
+    float3 clr = (to_float3(1.0f, 1.0f, 0.8f) - to_float3(0.12f, 0.12f, 0.05f)*hash_f2(_floor(st)));
+    clr = _mix(0.5f*clr, clr, vst.x * vst.y);
+    clr = _mix(clr, swi3(texture(iChannel2, fract_f2(st*0.1f)),x,y,z), 0.5f);
+
+    // fade out
+    float rst = length(swi2(_p,x,z));
+    float ast = mod_f(PI + _atan2f(_p.z, _p.x), PI2);
+    clr = _mix(clr, 0.0f * clr, smoothstep(130.0f, 160.0f, rst));
+
+    return clr;
+}
+
+__DEVICE__ float3 render_laptop(in float3 _p, in float3 _n, in float3 _d, in float _tdist, in int _mtl, in float _scrRatio, out float4 *_mtlParams, inout mat4 *lpTrf, inout mat4 *scrTrf, float2 iResolution, __TEXTURE2D__ iChannel3)   {
+
+    float4 dims = TF3(LAPTOP_H_DIMS);
+    const float lpWidth = 0.5f;
+    const float lpRatio = 0.6965386f; // This is laptop ratio
+    float lpHeight = lpRatio * lpWidth * _scrRatio;
+
+    float3 frame = to_float3_s(0.55f);
+    float3 ldir = normalize((_d));
+
+    // roughness, metalness, emmissive
+    *_mtlParams = to_float4(0.15f, 1.0f, 0.0f, 0.0f);
+
+    float3 col = frame;
+    *lpTrf  = to_mat4_f4(TF3(LAPTOP_BASE_TRF_0), TF3(LAPTOP_BASE_TRF_1),
+                         TF3(LAPTOP_BASE_TRF_2), TF3(LAPTOP_BASE_TRF_3));
+
+    *scrTrf = to_mat4_f4(TF3(LAPTOP_SCRN_TRF_0), TF3(LAPTOP_SCRN_TRF_1),
+                         TF3(LAPTOP_SCRN_TRF_2), TF3(LAPTOP_SCRN_TRF_3));
+
+    float4 on = (mul_mat4_f4(*lpTrf , to_float4_aw(_n, 0.0f)));
+    float3 op = swi3((mul_mat4_f4(*lpTrf , to_float4_aw(_p, 1.0f))),x,y,z);
+
+    if (_mtl == LAPTOP_MTL && on.y > 0.99f) // keyboard and trackpad
+    {
+      col = to_float3(1.0f, 0.0f, 0.0f) * dot(-ldir, _n);
+      float2 tx = toUV(to_float4_f2f2(-1.0f*swi2(dims,x,z), 2.0f*swi2(dims,x,z)), swi2(op,x,z), to_float2(1.0f, 1.0f), to_float4(0.001f, 1.0f-lpHeight, lpWidth - 0.001f, lpHeight));
+
+      float2 tuv = toUV(to_float4_f2f2(-1.0f*swi2(dims,x,z), 2.0f*swi2(dims,x,z)), swi2(op,x,z), to_float2(1.0f, 1.0f), to_float4(0.0f, 0.0f, 1.0f, 1.0f));
+
+      // speaker section
+      float speakers = (float)(inBox(abs_f2(to_float2(0.5f, 0.0f) - tuv), to_float4(0.38f, 0.462f, 0.115f, 0.436f)));
+      tuv.x *= dims.x/dims.z;
+      //float dtuv = length(fwidth(tuv));
+      float dtuv = length((tuv));
+      float2 grid = tuv * (iResolution.y) * 0.075f;
+      float f_speakers = smoothstep(0.05f, 0.18f, length(fract_f2(grid) - to_float2_s(0.5f)));
+
+      f_speakers = _mix(f_speakers, 0.9f, smoothstep(0.001f, 0.005f, dtuv));
+
+      float4 clr = _tex2DVecN(iChannel3,tx.x,tx.y,15);
+
+      float3 tn = swi3((mul_mat4_f4(transpose(*lpTrf) , to_float4_aw(normalize(to_float3(clr.y, 0.0001f, clr.z)), 0.0f))),x,y,z);
+      // sin phi angle
+      float sin_phi = (_fabs(_d.y)/length(_d));
+      float f_phi_dir = smoothstep(0.0f, 1.0f, 1.0f - _fabs(sin_phi - 0.5f));
+      float f_btn_border = smoothstep(0.0f, 0.01f,length(swi2(clr,y,z)));
+      // button light
+      float f_button = step(1.0f, clr.w);
+      float lf = _fmaxf(1.0f,4.0f*noise(clr.w*sin_phi*0.5f + 30.0f)*f_phi_dir*f_button);
+      // trackpad and button light
+      float lf_key_press = (float)((int)(clr.w) == (int)(TF3(LAPTOP_KEY_ANIM).x));
+
+      // color - pressed button highlight color
+      col = to_float3_s(clr.x) - (1.0f - f_btn_border)*0.2f*lf_key_press;
+      //col += clr.rrr * (f_button);
+      col += 0.25f*_fmaxf(dot(tn, _d), 0.0f)*step(0.5f, clr.w)*lf*(1.0f-lf_key_press*f_btn_border);
+      col = _mix(col, col * f_speakers, speakers);
+
+      float button_light = _mix(0.0f, 0.1f, 1.0f-smoothstep(0.0f, 50.0f, _tdist));
+      *_mtlParams = to_float4(0.1f*f_button, (1.0f-f_button), button_light * f_btn_border * f_button, 0.0f);
+      col = _mix(col, 0.25f*col, smoothstep(0.0f, 0.05f, dtuv) * f_button);
+    }
+    else if (_mtl == (LAPTOP_SCREEN_MTL) && (mul_mat4_f4(*scrTrf , on)).y < -0.9f) // screen
+    {
+        col = to_float3(1.0f, 1.0f, 1.0f);
+        float2 tx = toUV(to_float4_f2f2(-1.0f*swi2(dims,x,z), 2.0f*swi2(dims,x,z)), swi2((mul_mat4_f4(*scrTrf , to_float4_aw(op, 1.0f))),x,z), to_float2(1.0f, 0.0f), to_float4(lpWidth, 1.0f-lpHeight, lpWidth, lpHeight));
+
+        float4 scrCol = _tex2DVecN(iChannel3,tx.x,tx.y,15);
+        swi3S(scrCol,x,y,z, swi3(scrCol,x,y,z) - swi3(scrCol,x,y,z) * (1.0f - scrCol.w));
+        col = swi3(scrCol,x,y,z);
+        swi3S(*_mtlParams,x,y,z, to_float3(0.001f, 0.0f, 1.0f * scrCol.w));
+        //col = swi3((0.5f * *scrTrf * on + to_float4_s(0.5f)),x,y,z);
+    }
+    else if (_mtl == (LAPTOP_MTL + 3)) // panel
+    {
+        col = to_float3_s(0.3f);
+    }
+    else if (_mtl == (LAPTOP_MTL + 4)) // jacks
+    {
+        float3 c = op - to_float3(dims.x, 0.0f, -dims.z + 1.075f + 0.14f);
+        float fc = sdCapsule(swi2(c,y,z), 0.5f, 0.025f);
+        float fp = 1.0f - (length(swi2(fract_f3((c + to_float3(0.0f, 0.4f, 0.25f)) * 9.0f),y,z) - to_float2_s(0.5f)) - 0.2f);
+        col = _mix(col, 0.5f*col, (1.0f - smoothstep(0.0f, 0.08f, fc)));
+        col += (1.0f - smoothstep(0.0f, 0.02f, fc)) * _powf(fp, 64.0f) * to_float3(1.0f, 1.0f, 0.2f);
+    }
+
+    if (_mtl == (LAPTOP_MTL + 2) && (mul_mat4_f4(*scrTrf , on)).z > 0.8f) // the low normal direction is to account for blending
+    {
+        col = to_float3_s(0.3f);
+    }
+
+    return (col);
+}
+
+__DEVICE__ float cushion_pattern(in float2 _st) {
+    float2 grid0 = _st * to_float2(1.0f, 1.0f);
+    float2 grid1 = grid0;
+    grid0.x += noise(grid0.y*0.5f + grid0.x)*0.3f;
+    grid1.x += noise(grid0.y*0.3f + 3.0f*grid0.x + 2.0f)*0.5f;
+    float2 fgrid0 = fract_f2(grid0);
+    float2 fgrid1 = fract_f2(grid1);
+
+    float f = PULSE_T(fgrid0.x, 0.15f, 0.4f, 0.6f);
+    f = _fmaxf(f, PULSE_T(fgrid1.x, 0.1f, 0.3f, 0.4f));
+    return f;
+}
+__DEVICE__ float3 render_cushion(in float3 _p, in float3 _n, in float3 _w, int N_CHAIRS, float2 iResolution, __TEXTURE2D__ iChannel3) {
+    const float n_legs = (float)(N_CHAIRS);
+    float4 fAng = sdAngularPattern(swi2(_p,x,z), n_legs, 0.0f);
+    int chId = (int)(fAng.w*n_legs);
+
+    float2 trp = fAng.y*to_float2(_cosf(fAng.z), _sinf(fAng.z));
+
+    float3 op = to_float3(trp.x, _p.y, trp.y);
+
+    float rotAng = 0.0f;// = TF(iChannel3, to_int2(chId/4, CHAIR_ROT))[chId % 4];
+
+    if(chId % 4 == 0) rotAng = TF(iChannel3, to_int2(chId/4, CHAIR_ROT)).x;
+    if(chId % 4 == 1) rotAng = TF(iChannel3, to_int2(chId/4, CHAIR_ROT)).y;
+    if(chId % 4 == 2) rotAng = TF(iChannel3, to_int2(chId/4, CHAIR_ROT)).z;
+    if(chId % 4 == 3) rotAng = TF(iChannel3, to_int2(chId/4, CHAIR_ROT)).w;
+
+    swi2S(op,x,z, mul_f2_mat2(swi2(op,x,z) , rot2D(rotAng)));
+
+    float dz = _fmaxf(cushion_pattern(swi2(op,x,y)), cushion_pattern(swi2(op,y,x)));
+    float dy = _fmaxf(cushion_pattern(swi2(op,z,x)), cushion_pattern(swi2(op,x,z)));
+    float dx = _fmaxf(cushion_pattern(swi2(op,z,y)), cushion_pattern(swi2(op,y,z)));
+
+    float3 col = _mix(to_float3_s(1.5f), to_float3_s(0.9f), (dx * _w.x + dy *_w.y + dz * _w.z));
+    //float dpxz = length(fwidth(swi2(_p,x,z)));
+    float dpxz = length((swi2(_p,x,z)));
+    col = _mix(col, to_float3_s(1.1f), smoothstep(0.0f, 1.0f, dpxz));
+    return col;
+    //return to_float3_s(0.9f);
+}
+
+struct MtlParams {
+    float roughness; // reflectance
+    float metalness;
+    float ao; //
+    float3  norm;
+    float3  fresnel_0;
+    float emissive;
+    float3  clr;
+    float3  p;
+    float t; // debug;
+};
+
+__DEVICE__ float3 light_shade(float3 _p, float3 _d, float3 _n, in int _il, float _lshadow, struct MtlParams _params, struct MtlParams _rflParams, float2 iResolution, __TEXTURE2D__ iChannel3) {
+    float4 lgeo  = TF3(to_int2(LIGHT_GEO, _il));
+    float4 lprop = TF3(to_int2(LIGHT_PROP, _il));
+
+    float3 ldir = (swi3(lgeo,x,y,z) - _p);
+    float3 nldir = _mix(normalize(swi3(lgeo,x,y,z)), normalize(ldir), lgeo.w);
+
+    float3 rfldir = (swi3(lgeo,x,y,z) - _rflParams.p);
+    float3 nrfldir = _mix(normalize(swi3(lgeo,x,y,z)), normalize(rfldir), lgeo.w);
+
+    float intensity = _mix(lprop.w, lprop.w / _powf(0.1f*length(ldir), 2.0f), lgeo.w);
+    intensity = _fmaxf(0.0f, intensity - _lshadow * (1.0f + length(_rflParams.norm)/(1.0f + 0.05f*_rflParams.t)));
+    float3 h = normalize(-_d + nldir);
+    float3  ns = swi3(_params.norm,x,y,z); // norm for specular light.
+    float nh = _fmaxf(dot(ns, h), 0.0f);
+    float nv = _fmaxf(dot(ns, -_d), 0.0f);
+    float nl = _fmaxf(dot(ns, nldir), 0.0f);
+    float ndl = _fmaxf(dot(_n, nldir), 0.0f);
+    float hv = _fmaxf(dot(h, -_d), 0.0f);
+    float hl = _fmaxf(dot(h, nldir), 0.0f);
+
+    // cook torrance
+    // Normal alignment
+    float a = _params.roughness * _params.roughness;
+    float a2 = a * a;
+    float N = a/(PI*_powf(nh*nh*(a-1.0f) + 1.0f, 2.0f));
+
+    // Geometrical occlusion
+    //float k = 0.125f * _powf(_params.roughness + 1.0f, 2.0f);
+    float k = 0.5f * a;
+    float gOut = nv / (nv * (1.0f - k) + k);
+    float gIn = nl / (nl * (1.0f - k) + k);
+
+    // Fresnel shlick approximation
+    //vec3 specClr = _mix(to_float3_s(0.4f), _params.clr, _params.metalness);
+    //specClr = to_float3_s(0.6f);
+    float3 specClr = _params.fresnel_0;
+    float3 light_clr = swi3(lprop,x,y,z)  + _rflParams.clr * _rflParams.emissive;
+    //specClr = _mix(specClr, _mix(_params.swi3(rflClr,x,y,z), specClr, 1.0f - hv), _params.rflClr.w);
+
+    float3 fshlick = specClr + (1.0f - specClr) * _powf(1.0f - hl, 5.0f);
+    float spec_denom = 4.0f * nv * nl + T_EPS;
+    float3 spec = (1.0f - _lshadow) * N * gIn * gOut * fshlick / spec_denom;
+
+    // reflection
+    float rfl_nl = (1.0f-_lshadow)*_fmaxf(dot(_rflParams.norm, nrfldir), 0.1f);
+    spec += fshlick * rfl_nl * _rflParams.clr / PI;
+
+    float3 diffuse = (light_clr) * (1.0f-fshlick) * _params.ao * _params.clr / PI;
+    //return to_float3_aw(intensity);
+    //intensity = _fminf(intensity, 1.0f);
+    // remove emissive from per light computation
+    return (spec * hl + diffuse * (ndl) ) * intensity;
+    //return (spec * hl) * intensity;
+    //return to_float3(clamp(N, 0.0f, 1.0f));
+    //return clamp(spec * hl * intensity, 0.0f, 1.0f) + diffuse * nl * intensity;
+}
+
+// This is the color on reflection.
+// Basically the same function with some simplifications to
+// improve the compilation on windows.
+__DEVICE__ void get_rfl_mtl_color(in float3 _p, in float3 _n, in float3 _d, in int _mtl, in float _t, in float _scr_res, inout struct MtlParams *_params, inout mat4 *lpTrf, inout mat4 *scrTrf, float2 iResolution, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3) {
+    float3 base_col = to_float3_s(0.0f);
+    bool isMetalFrameMtl = is_metal_mtl(_mtl);
+    (*_params).roughness = 0.9f;
+    (*_params).metalness = 0.0f;
+    (*_params).emissive = 0.0f;
+    (*_params).fresnel_0 = to_float3_s(0.02f);
+    (*_params).norm = _n;
+
+    // Because we use triplanar projection multiple times
+    // compute it here and use everywhere.
+    float3  nw = to_float3_s(0.0f); // weights
+    float3  n2 = _n * _n;
+    float sw = n2.x + n2.y + n2.z;
+    nw.x = n2.x/sw;
+    nw.y = n2.y/sw;
+    nw.z = n2.z/sw;
+
+    float3 wood_mtl = swi3(triplanar(_p, to_float3(0.01f, 0.1f, 0.01f), nw, iChannel2),x,y,z);
+    float3 wood_ch_mtl = swi3(triplanar(_p, to_float3_s(0.1f), nw, iChannel2),x,y,z);
+    if (_mtl == CHAIR_CUSHION_MTL) {
+        base_col = to_float3_s(1.1f);
+        (*_params).roughness = 0.99f;
+        (*_params).fresnel_0 = to_float3_s(0.02f);
+    }
+    else if (isMetalFrameMtl) {
+        base_col = to_float3(0.84f, 0.5f, 0.3f) * length(wood_ch_mtl);
+        (*_params).roughness = (_mtl == CHAIR_FRAME_MTL) ? 0.275f : 0.2f;
+        (*_params).metalness = 1.0f;
+        (*_params).fresnel_0 = 0.5f*base_col;
+    }
+    else if (_mtl == TABLE_TOP_MTL) {
+        base_col = 0.2f*wood_mtl;
+        (*_params).roughness = 0.99f;
+        (*_params).fresnel_0 = to_float3_s(0.0f);
+    }
+    else if (_mtl == CHAIR_BCK_LEG_MTL || _mtl == CHAIR_FRNT_LEG_MTL) {
+        base_col = 2.0f*wood_ch_mtl;
+        (*_params).roughness = 0.25f;
+        (*_params).fresnel_0 = to_float3_s(0.1f);
+    }
+    else if (_mtl == CHAIR_BASE_MTL) {
+        base_col = 1.2f*wood_ch_mtl;
+        (*_params).roughness = 0.35f;
+        (*_params).fresnel_0 = to_float3_s(0.35f); // substitue with different parts
+    }
+    else if (_mtl == CHAIR_BACK_MTL) {
+        base_col = 1.2f*wood_ch_mtl;
+        (*_params).roughness = 0.05f;
+        (*_params).fresnel_0 = to_float3_s(0.35f); // substitue with different parts
+    }
+    else if (_mtl >= LAPTOP_MTL) {
+        float4 mtl = to_float4_s(0.0f);
+        base_col = render_laptop(_p, _n, _d, _t, _mtl, _scr_res, &mtl, lpTrf, scrTrf, iResolution, iChannel3);
+        (*_params).roughness = mtl.x;
+        (*_params).metalness = mtl.y;
+        (*_params).emissive = mtl.z;
+        (*_params).fresnel_0 = to_float3_s(0.25f);
+    }
+
+    (*_params).clr = base_col;
+}
+
+__DEVICE__ void get_mtl_color(in float3 _p, in float3 _n, in float3 _d, in int _mtl, in float _t, in float _scr_res, inout struct MtlParams *_params, inout mat4 *lpTrf, inout mat4 *scrTrf, int N_CHAIRS, float2 iResolution, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3) {
+    float3 base_col = to_float3_s(0.0f);
+    bool isMetalFrameMtl = is_metal_mtl(_mtl);
+    (*_params).roughness = 0.9f;
+    (*_params).metalness = 0.0f;
+    (*_params).fresnel_0 = to_float3_s(0.02f);
+    (*_params).norm = _n;
+
+    // Because we use triplanar projection multiple times
+    // compute it here and use everywhere.
+    float3  nw = to_float3_s(0.0f); // weights
+    float3  n2 = _n * _n;
+    float sw = n2.x + n2.y + n2.z;
+    nw.x = n2.x/sw;
+    nw.y = n2.y/sw;
+    nw.z = n2.z/sw;
+
+    float3 wood_mtl = swi3(triplanar(_p, to_float3(0.01f, 0.1f, 0.01f), nw, iChannel2),x,y,z);
+    float3 wood_ch_mtl = swi3(triplanar(_p, to_float3_s(0.1f), nw, iChannel2),x,y,z);
+    if (_mtl == CHAIR_CUSHION_MTL) {
+        base_col = render_cushion(_p, _n * _n, nw, N_CHAIRS, iResolution, iChannel3);
+        (*_params).roughness = 0.99f;
+        (*_params).fresnel_0 = to_float3_s(0.02f);
+    }
+    else if (isMetalFrameMtl) {
+        base_col = to_float3(0.84f, 0.5f, 0.3f) * length(wood_ch_mtl);
+        (*_params).roughness = 0.2f;
+        (*_params).metalness = 1.0f;
+        (*_params).fresnel_0 = 0.5f*base_col;
+    }
+    else if (_mtl == TABLE_TOP_MTL) {
+        base_col = wood_mtl;
+        (*_params).roughness = 0.1f + 0.5f*clamp((1.0f - length(base_col)), 0.0f, 1.0f);
+        (*_params).fresnel_0 = to_float3_s(0.35f);
+    }
+    else if (_mtl == CHAIR_BCK_LEG_MTL || _mtl == CHAIR_FRNT_LEG_MTL) {
+        base_col = 2.0f*wood_ch_mtl;
+        (*_params).roughness = 0.25f;
+        (*_params).fresnel_0 = to_float3_s(0.1f);
+    }
+    else if (_mtl == CHAIR_BASE_MTL) {
+        base_col = 1.2f*wood_ch_mtl;
+        (*_params).roughness = 0.35f;
+        (*_params).fresnel_0 = to_float3_s(0.35f); // substitue with different parts
+    }
+    else if (_mtl == CHAIR_BACK_MTL) {
+        base_col = 1.2f*wood_ch_mtl;
+        (*_params).roughness = 0.05f;
+        (*_params).fresnel_0 = to_float3_s(0.35f); // substitue with different parts
+    }
+    else if (_mtl >= LAPTOP_MTL) {
+        float4 mtl;
+        base_col = render_laptop(_p, _n, _d, _t, _mtl, _scr_res, &mtl, lpTrf, scrTrf, iResolution, iChannel3);
+        (*_params).roughness = mtl.x;
+        (*_params).metalness = mtl.y;
+        (*_params).emissive = mtl.z;
+        (*_params).fresnel_0 = to_float3_s(0.25f);
+    }
+
+    (*_params).clr = base_col;
+}
+
+__DEVICE__ struct MtlParams getReflectionClr(in float _t, in float3 _p, in float3 _d, in float3 _n, in int _mtl, in int _rfl_mtl, in float _scr_res, float2 iResolution, inout mat4 *lpTrf, float3 g_dir, inout mat4 *scrTrf, float scrRndSide, int N_CHAIRS, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3) {
+
+    float3 rfl_dir = normalize(reflect(_d, _n));
+    int rfl_trace_flag = TRACE_NO_FLAG;
+    float eps = N_EPS;
+
+    if (_mtl == FLOOR_MTL) {
+        rfl_trace_flag = TRACE_TABLE_FLAG | TRACE_CHAIRS_FLAG;
+    }
+    else if ((_mtl == TABLE_TOP_MTL && _n.y > 0.9f) || _mtl >= LAPTOP_MTL) {
+        rfl_trace_flag = TRACE_LAPTOP_FLAG;
+    }
+    if (_mtl == LAPTOP_BASE_MTL && _n.y > 0.75f)
+    {
+        rfl_dir = to_float3(0.0f, 1.0f, 0.0f); // emissive light from screen.
+        swi2S(rfl_dir,x,z, 0.25f*(0.5f - to_float2(hash(_p.x), hash(_p.z))));
+        rfl_dir = normalize(rfl_dir);
+    }
+
+    float3 rp = _p + (_t + T_EPS) * rfl_dir;
+#ifdef PACK_CUI_VALUES
+    int i_rfl_mtl = _rfl_mtl;
+#else
+    int i_rfl_mtl = (int)(map(rp, rfl_trace_flag, iChannel3, false, true, iResolution, lpTrf, g_dir, scrTrf, scrRndSide, N_CHAIRS).y);
+#endif
+    eps -= 0.9f * N_EPS * (float)(i_rfl_mtl == LAPTOP_SCREEN_MTL);
+    struct MtlParams params = {0.0f, 0.0f, 0.0f, to_float3_s(0.0f), to_float3_s(0.0f), 0.0f, to_float3_s(0.0f), to_float3_s(0.0f), 0.0f};
+    //params.norm = norm_forward(rp, rfl_trace_flag, eps);
+    params.norm = calcNormal(rp, rfl_trace_flag, eps, iResolution, lpTrf, g_dir, scrTrf, scrRndSide, N_CHAIRS, iChannel3);
+    params.p = rp;
+    params.t = _t;
+
+     get_rfl_mtl_color(rp, params.norm, rfl_dir, i_rfl_mtl, _t, _scr_res, &params, lpTrf, scrTrf, iResolution, iChannel2, iChannel3);
+
+    return params;
+}
+
+__DEVICE__ float3 render_floor_high(in float3 _o, in float3 _d, in float _tract_t, float2 _lshadows, in struct MtlParams _rflParams, float2 fragCoord, float2 iResolution, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3)
+{
+
+    union A2F2 _lshadowstmp;
+    _lshadowstmp.F = _lshadows;
+
+    float3 p = _o + _d * _tract_t;
+    float3 n = to_float3(0.0f, 1.0f, 0.0f);
+    struct MtlParams params = {0.0f, 0.0f, 0.0f, to_float3_s(0.0f), to_float3_s(0.0f), 0.0f, to_float3_s(0.0f), to_float3_s(0.0f), 0.0f};
+
+    float3 base_col = render_floor(p, _tract_t, &n, fragCoord, iResolution, iChannel2);
+    params.metalness = 0.0f;
+    params.roughness = 0.3f + 0.7f*clamp((1.0f - length(base_col)), 0.0f, 1.0f);
+    params.fresnel_0 = to_float3_s(0.2f);
+    params.clr = base_col;
+    params.ao = 1.0f;
+
+    float3 col = to_float3_s(0.0f);
+    for (int il = LIGHT_0; il < LIGHT_0 + N_LIGHTS; il++) {
+        col += light_shade(p, _d, n, il, _lshadowstmp.A[il - LIGHT_0], params, _rflParams, iResolution, iChannel3);
+    }
+
+    return (col);
+}
+
+__DEVICE__ float3 render(in float _ao, in float3 _o, in float3 _d, in float3 _n, in int _mtl, in float _tract_t,  float2 _lshadows,
+                         const float _scr_res, in struct MtlParams _rflParams, out float3 *_emissive,
+                         inout mat4 *lpTrf, inout mat4 *scrTrf, int N_CHAIRS,
+                         float2 iResolution, __TEXTURE2D__ iChannel2, __TEXTURE2D__ iChannel3) {
+    union A2F2 _lshadowstmp;
+    _lshadowstmp.F = _lshadows;
+
+    float3 p = _o + _d * _tract_t;
+
+    float3 col;
+    float3 n = _n;
+    int i_mtl = _mtl;
+    float3 base_col = to_float3_s(1.0f);//m_cls[i_mtl];
+    struct MtlParams params = {0.0f, 0.0f, 0.0f, to_float3_s(0.0f), to_float3_s(0.0f), 0.0f, to_float3_s(0.0f), to_float3_s(0.0f), 0.0f};
+    params.roughness = 0.1f;
+    params.metalness = 0.5f;
+
+    params.ao = _ao;
+    get_mtl_color(p, n, _d, _mtl, _tract_t, _scr_res, &params, lpTrf, scrTrf, N_CHAIRS, iResolution, iChannel2, iChannel3);
+
+    col = to_float3_s(0.0f);
+    for (int il = LIGHT_0; il < LIGHT_0 + N_LIGHTS; il++) {
+        col += light_shade(p, _d, n, il, _lshadowstmp.A[il - LIGHT_0], params, _rflParams, iResolution, iChannel3);
+    }
+
+    *_emissive = params.clr * params.emissive;
+
+    return (col);
+}
+
+__DEVICE__ float4 nan_inf( float4 Q)
+{
+
+    if (isnan(Q.x) )         Q.x = 0.0f;
+    if (isnan(Q.y) )         Q.y = 0.0f;
+    if (isnan(Q.z) )         Q.z = 0.0f;
+    if (isnan(Q.w) )         Q.w = 0.0f;
+    
+    if (isinf(Q.x) == -1.0f) Q.x = 0.0f;
+    if (isinf(Q.y) == -1.0f) Q.y = 0.0f;
+    if (isinf(Q.z) == -1.0f) Q.z = 0.0f;
+    if (isinf(Q.w) == -1.0f) Q.w = 0.0f;
+
+    if (isinf(Q.x) == 1.0f) Q.x = 0.0f;
+    if (isinf(Q.y) == 1.0f) Q.y = 0.0f;
+    if (isinf(Q.z) == 1.0f) Q.z = 0.0f;
+    if (isinf(Q.w) == 1.0f) Q.w = 0.0f;
+
+    return Q;
+}
+
+
+__KERNEL__ void SpaceAtHomeFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2,  __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   Reset = params->Reset;
+  int    N_CHAIRS = params->N_CHAIRS;
+
+  // --------
+
+    mat2 dummy1;
+    mat3 dummy2;
+    mat4 dummy3;
+
+    float3 g_dir = to_float3_s(0.0f);
+    mat4 lpTrf  = to_mat4_n(1.0f);
+    mat4 scrTrf = to_mat4_n(1.0f);
+    float scrRndSide = 1.0f;
+
+    float2 uv = (2.0f*fragCoord - iResolution)/(iResolution.y);
+    float2 muv = (2.0f*swi2(iMouse,x,y) - iResolution)/(iResolution.y);
+    float2 ruv = fragCoord/iResolution;
+    float scr_resolution = iResolution.x / iResolution.y;
+
+    float full_pixel = 2.0f/iResolution.y;
+    float half_pixel = 0.5f * full_pixel;
+    float quad_pixel = 0.5f * half_pixel;
+
+    float3 col = to_float3_s(0.0f);
+    float3 n = to_float3_s(0.0f);
+    float4 raycast = _tex2DVecN(iChannel0,ruv.x,ruv.y,15);
+    float4 sec_cast = TF1(to_int2_cfloat(fragCoord));
+    float2 shadow; // entry for each light
+    float ao = 0.0f; // ambient occlusion
+    int i_mtl = DEFAULT_MTL;
+    int i_rfl_mtl = DEFAULT_MTL;
+#ifdef DOWNSAMPLE_SHADOWS
+
+#ifndef PACK_CUI_VALUES
+    swi3S(sec_cast,x,y,z, swi3(texture(iChannel1, ruv * 0.5f),x,y,z));
+    swi3S(sec_cast,x,y,z, laplace(1.0f, swi3(sec_cast,x,y,z), iChannel1, ruv * 0.5f, to_float2(scr_resolution * 0.5f, 0.5f)/iResolution.y));
+    shadow = swi2(sec_cast,y,z);
+    ao = sec_cast.x;
+#else
+    sec_cast.x = TF1(to_int2_cfloat(fragCoord * 0.5f)).x;
+    UNPACK_UINT_TO_CUI3(sec_cast.x)
+    swi3S(unpacked_cui3,x,y,z, laplace_packed(1.0f, swi3(unpacked_cui3,x,y,z), iChannel1, to_int2_cfloat(fragCoord * 0.5f), iResolution));
+    shadow = swi2(unpacked_cui3,x,y);
+    ao = unpacked_cui3.z;
+    i_mtl = (int)(sec_cast.y);
+    i_rfl_mtl = (int)(sec_cast.z);
+
+#endif // PACK_CUI_VALUES
+
+#endif
+
+    float tfloor = 0.0f;
+    float3 emit_col = to_float3_s(0.0f);
+    float3 p = to_float3_s(0.0f);
+    float dot_p_xz = 0.0f;
+    struct MtlParams rflParams = {0.0f, 0.0f, 0.0f, to_float3_s(0.0f), to_float3_s(0.0f), 0.0f, to_float3_s(0.0f), to_float3_s(0.0f), 0.0f};
+    bool hitGeom = raycast.x > T_EPS;
+
+    // camera setup - defining o, d, trg (look at)
+    CAMERA_SETUP(uv)
+
+    float iter = MAX_SH_ITER;
+    float far = FAR;
+
+    if (hitGeom) {
+#ifndef PACK_CUI_VALUES
+        i_mtl = (int)(map(o + raycast.x * d, TRACE_NO_FLOOR, iChannel3, false, true, iResolution, &lpTrf, g_dir, &scrTrf, scrRndSide, N_CHAIRS).y);
+#endif
+            n = normalize(swi3(raycast,y,z,w));
+            p = o + raycast.x * d;
+    }
+
+    tfloor = rayXFloor(o.y, d.y);
+    if (tfloor > 0.0f && !hitGeom && tfloor < FAR) {
+        i_mtl = FLOOR_MTL;
+        n = to_float3(0.0f, 1.0f, 0.0f);
+        p = o + tfloor * d;
+        hitGeom = true;
+        ao = 1.0f;
+    }
+
+    dot_p_xz = dot(swi2(p,x,z), swi2(p,x,z));
+
+    if (hitGeom && dot_p_xz < FLOOR_BOUNDING_CIRCLE_SQR) {
+        if (sec_cast.w > T_EPS)
+            rflParams = getReflectionClr(sec_cast.w, p, d, n, i_mtl, i_rfl_mtl, scr_resolution, iResolution, &lpTrf, g_dir, &scrTrf, scrRndSide, N_CHAIRS, iChannel2, iChannel3);
+    }
+
+    if (i_mtl == FLOOR_MTL  && dot_p_xz < FLOOR_BOUNDING_CIRCLE_SQR) {
+        col = render_floor_high(o, d, tfloor, swi2(shadow,x,y), rflParams, fragCoord, iResolution, iChannel2, iChannel3);
+        for (float iy = quad_pixel; iy < full_pixel; iy += half_pixel) {
+            for(float ix = quad_pixel; ix < full_pixel; ix += half_pixel) {
+                float4 trg = TF3(LOOKAT_SEQ);                   \
+                float3 dq = normalize(to_float3_aw((uv + to_float2(ix, iy))*_tanf(trg.w), -1.0f)); \
+                dq = lookAt(o, dq, swi3(trg,x,y,z));
+                float tf = rayXFloor(o.y, dq.y);
+                col += render_floor_high(o, dq, tf, swi2(shadow,x,y), rflParams, fragCoord, iResolution, iChannel2, iChannel3);
+            }
+        }
+        col /= 5.0f;
+        emit_col /= 5.0f;
+    }
+    else if (i_mtl == FLOOR_MTL) {
+        col = to_float3_s(0.0f);
+    }
+    else if (hitGeom) {
+        col = render(ao, o, d, n, i_mtl, raycast.x, shadow, scr_resolution, rflParams, &emit_col, &lpTrf, &scrTrf, N_CHAIRS, iResolution, iChannel2, iChannel3);
+    }
+
+    // post processing
+    // tone mapping
+    col *= 2.0f;
+    col /= (col*0.9f + 1.1f);
+    col += emit_col;
+    swi3S(col,x,y,z, pow_f3(swi3(col,x,y,z), to_float3_s(2.2f)));
+
+    fragColor = to_float4_aw(col, 1.0f);
+    
+    fragColor = nan_inf( fragColor );
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InN_CHAIRSSlider = self:AddInput("N_CHAIRS", "N_CHAIRS", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 10,
+      INP_Default        = 5,
+      INP_Integer        = true,
+  })
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    { CCS_AddString = "BufferC", },
+    { CCS_AddString = "BufferD", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 4,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+  InChannel2 = self:AddInput( "iChannel2",  "iChannel2",  { LINKID_DataType = "Image", LINK_Main = 3, INP_Required = false  })
+  InChannel3 = self:AddInput( "iChannel3",  "iChannel3",  { LINKID_DataType = "Image", LINK_Visible = false, LINK_Main = 4, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+  Image_Buff_GlobalC = Image(ImgAttrs_Global)
+  Image_Buff_GlobalD = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstC = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstD = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstI = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "SpaceAtHomeFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "SpaceAtHomeFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  iChannel2 = InChannel2:GetValue(req)
+
+  if iChannel2==nil then
+    iChannel2 = Image(imgattrs)
+    iChannel2:Fill(black)
+  end
+
+  iChannel3 = InChannel3:GetValue(req)
+
+  if iChannel3==nil then
+    iChannel3 = Image(imgattrs)
+    iChannel3:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.N_CHAIRS = InN_CHAIRSSlider:GetValue(req).Value
+
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+    
+    
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddInput("iChannel2",iChannel2) -- TODO: add a better channel name
+    node:AddInput("iChannel3",iChannel3) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",iChannel0)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",iChannel1)  -- Anpassen !!
+    nodeA:AddInput("iChannel2",Image_Buff_GlobalA)  -- Anpassen !!
+    nodeA:AddInput("iChannel3",iChannel2)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "SpaceAtHomeFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+    
+
+    -------------------------- BufferC-Kernel----------------------------------------
+    local nodeC = DVIPComputeNode(req,
+      "SpaceAtHomeFuse__Buffer_C", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeC:SetParamBlock(params)
+
+    --nodeC:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeC)
+
+    nodeC:AddInput("iChannel0", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeC:AddInput("iChannel1", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeC:AddOutput("dst", dstC)
+
+    local success = nodeC:RunSession(req)
+    if not success then
+      dstC = nil
+      dump(nodeC:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalC = dstC --Recursiv Image	
+
+
+    -------------------------- BufferD-Kernel----------------------------------------
+    local nodeD = DVIPComputeNode(req,
+      "SpaceAtHomeFuse__Buffer_D", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeD:SetParamBlock(params)
+
+    --nodeD:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeD)
+
+    nodeD:AddInput("iChannel0", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeD:AddInput("iChannel1", Image_Buff_GlobalC)  -- Anpassen !!
+    nodeD:AddInput("iChannel2", iChannel0)           -- Anpassen !!
+    nodeD:AddInput("iChannel3", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeD:AddOutput("dst", dstD)
+
+    local success = nodeD:RunSession(req)
+    if not success then
+      dstD = nil
+      dump(nodeD:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalD = dstD --Recursiv Image	
+
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "SpaceAtHomeFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalB)  -- Anpassen !!
+    node:AddInput("iChannel1", Image_Buff_GlobalD)  -- Anpassen !!
+    node:AddInput("iChannel2", iChannel0)           -- Anpassen !!
+    node:AddInput("iChannel3", Image_Buff_GlobalA)  -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+    if (InDebugImage:GetValue(req).Value == 3) then OutImage:Set(req, Image_Buff_GlobalC) end
+    if (InDebugImage:GetValue(req).Value == 4) then OutImage:Set(req, Image_Buff_GlobalD) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+-- */
