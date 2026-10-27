@@ -1,4 +1,4 @@
-# Here insert a description of the shader! And maybe a gif
+![Another day, another glowmarcher](AnotherDayAnotherGlowmarcher.gif)
 
 [![Thumbnail](AnotherDayAnotherGlowmarcher_screenshot.png)](AnotherDayAnotherGlowmarcher.fuse)
 
