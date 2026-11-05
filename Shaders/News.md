@@ -2,10 +2,10 @@
 
 ## Shader of the Week
 
-### My Current Shader of the Week (17th of October 2026):
+### My Current Shader of the Week (5th of November 2026):
 
-[![Baby Unicorn](Monster/BabyUnicorn.gif)](Monster/BabyUnicorn.md) <br>
-[Baby Unicorn](Monster/BabyUnicorn.md) by [Cotterzz](https://www.shadertoy.com/user/Cotterzz)
+[![Devil's Maw (Claude Code)](Tunnel/DevilSMawClaudeCode.gif)](Tunnel/DevilSMawClaudeCode.md) <br>
+[Devil's Maw (Claude Code)](Monster/DevilSMawClaudeCode.md) by [Nanerbeet](https://www.shadertoy.com/user/Nanerbeet)
 
 ### Current Shader of the Week (27th of October 2026):
 

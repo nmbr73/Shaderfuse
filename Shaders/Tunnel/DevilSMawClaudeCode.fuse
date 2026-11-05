@@ -1,0 +1,3126 @@
+--[[--/*
+
+  DevilSMawClaudeCode.fuse
+
+  Based on https://www.shadertoy.com/view/s3KSDy a WebGL shader created by Nanerbeet.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iTimeDelta;
+  int    iFrame;
+  bool   Reset;
+  bool   TEMPORAL;
+  float  FLESH_Deep[4];
+  float  FLESH_Mid[4];
+  float  FLESH_Pale[4];
+  float  FLESH_Crease[4];
+  float  TENTACLE_Colour[4];
+  float  FANG_Colour[4];
+  float  FANG_Stain[4];
+  float  FANG_Tan[4];
+  float  LAMP_Colour[4];
+  float  Sheen[4];
+  float  HAZE_Colour[4];
+  float  MIST_Colour[4];
+  float  TEMPORAL_NEW;
+  float  TEMPORAL_NEW_FAST;
+  float  TEMPORAL_RANGE;
+  float  SHARPEN;
+  float  FLIGHT_START;
+  float  FLIGHT_SPEED;
+  float  FLIGHT_SURGE;
+  float  CAMERA_FOCAL;
+  float  CAMERA_HEIGHT;
+  float  CAMERA_SWAY;
+  float  CAMERA_BOB;
+  float  CAMERA_ROLL;
+  float  CAMERA_LOOK;
+  float  CAMERA_AIM;
+  float  PATH_BEND;
+  float  THROAT_TWIST;
+  float  BREATH_WAVE;
+  float  BREATH_SLOW;
+  float  THROAT_CLENCH;
+  float  CLENCH_NEAR;
+  float  CLENCH_FAR;
+  float  WALL_RADIUS;
+  float  THROAT_WIDTH;
+  float  WALL_RELIEF;
+  float  FOLD_FREQUENCY;
+  float  FOLD_DEPTH;
+  float  FOLD_CREASE;
+  float  CORD_DEPTH;
+  float  LUMP_DEPTH;
+  float  FLOOR_DEPTH;
+  float  FLOOR_BLEND;
+  float  FLOOR_SWELL;
+  float  FANG_MAX_ANGLE;
+  float  FANG_BLEND;
+  float  FANG_BIG_SLICE;
+  float  FANG_BIG_DENSITY;
+  float  FANG_SMALL_SLICE;
+  float  FANG_SMALL_SECTOR;
+  float  FANG_SMALL_DENSITY;
+  float  FANG_CURVE;
+  float  WALL_TENTACLE_SIZE;
+  float  HANG_CELL;
+  float  HANG_SIZE;
+  float  HANG_SPREAD;
+  float  WRITHE_SPEED;
+  float  WRINKLE_SCALE;
+  float  FILM_RELIEF;
+  float  WRINKLE_BUMP;
+  float  DROPLETS;
+  float  LAMP_POWER;
+  float  LAMP_FALLOFF;
+  float  LAMP_SPILL;
+  float  GLOSS;
+  float  GLOSS_REACH;
+  float  BOUNCE;
+  float  BOUNCE_FALLOFF;
+  float  HAZE_DENSITY;
+  float  TONE_MIDDLE;
+  float  VIGNETTE;
+  float  GRAIN;
+  float  TONE_CONTRAST;
+  int    FANG_BIG_COUNT;
+  int    WRINKLE_OCTAVES;
+  
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) { return (A*B); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 B, mat3 A)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define sin_f3(i) sin(i)
+ #define cos_f3(i) cos(i)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define sin_f3(i) sin(i)
+ #define cos_f3(i) cos(i)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_CUDA)
+   #define radians(a) a * M_PI/180.0f
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define sin_f3(i) to_float3( _sinf((i).x), _sinf((i).y), _sinf((i).z))
+ #define cos_f3(i) to_float3( _cosf((i).x), _cosf((i).y), _cosf((i).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+
+
+// THE MAW
+// Written by Claude (Anthropic). All code is original and all detail is procedural:
+// the shader uses no textures.
+//
+// A slow flight down the throat of something very large. This is also a short
+// tutorial on how the picture is made.
+//
+// 1.0f THE THROAT IS A BENT, TWISTED TUBE. Every point is first moved into "throat space":
+//    subtract the tunnel's centre line at that depth, turn by the throat's twist there,
+//    then divide by how far the throat is currently swollen. Everything is built in that
+//    space, so fangs and tentacles ride along with every bend and swallow. Bending makes
+//    distances measured in that space too long, so they are shortened by the exact slope
+//    of the centre line.
+//
+// 2.0f THE WALL IS A HEIGHT ABOVE THE TUBE. Rolled folds, long cords and broad lumps
+//    are sums of sines bent by other sines. Those are smooth at every scale, so
+//    rays can follow them closely. When a ray step does land inside the surface,
+//    the march bisects back to it instead of stopping where the step fell. Slopes
+//    are kept gentle for the same reason: this is what stops surfaces wobbling as
+//    the camera moves.
+//
+// 3.0f FANGS AND TENTACLES ARE TAPERED CURVES placed by a random number per grid
+//    cell. Only the cells around a point are evaluated, so hundreds of them cost
+//    the same as a handful. Each is blended into the wall with a smooth minimum,
+//    which raises a swollen gum around each root.
+//
+// 4.0f WET SKIN IS MOSTLY NORMALS. The fine wrinkles never enter the ray march. They
+//    are layers of a gyroid, a surface whose gradient is known exactly, so one
+//    evaluation gives both height and slope. Layers smaller than a pixel fade out,
+//    and their lost slope widens the highlight instead, which keeps it from
+//    sparkling on and off. Droplets add a few sharp glints up close.
+//
+// 5.0f ONE LAMP AND THE DARK. Nothing inside a gullet gives off light, so the only light
+//    is the lamp beside the camera. It falls off with the square of distance, and wet
+//    folds catch it long after the skin itself has gone dark. Its glow in the damp air
+//    has an exact formula, so it costs no extra steps.
+//
+// 6.0f THREE PASSES. Buffer A renders below screen resolution and looks through a
+//    slightly different point in each pixel every frame. Buffer B blends those
+//    frames, following the camera, which removes shimmer. Image enlarges the result
+//    with a bicubic filter and adds the final grade.
+//
+// All settings are below. Lowering RENDER_SCALE and RENDER_MIN_LINES is the simplest
+// way to gain speed.
+
+
+// --- Speed and quality --------------------------------------------------------
+#define RENDER_SCALE 0.67f        // Share of screen resolution that is ray traced.
+#define RENDER_MIN_LINES 1100.0f  // But never fewer lines than this, so that small windows
+                                 // render at full size. Lower both to gain speed.
+#define MARCH_STEPS 96           // Most steps per ray, including bisection.
+#define MARCH_STEP_SCALE 0.68f    // Below 1 because the wall is steeper than 45 degrees.
+#define MARCH_FAR 30.0f           // Rays stop here. The haze hides it. Raise if you thin the haze.
+#define SHADOW_STEPS 12          // Steps per lamp shadow ray. 0 turns shadows off.
+#define SHADOW_RANGE 12.0f        // No shadow rays for points further than this.
+
+
+// Runs a loop on a value the compiler cannot see through. A compiler that unrolled
+// the loop would make one copy of the whole scene for each pass through it.
+#define ZERO 0 //_fminf(iFrame, 0)
+
+// The size of the lower-left corner of the buffers that the picture is rendered into.
+__DEVICE__ float2 renderCorner(float2 resolution)
+{
+    float lines = _fmaxf(RENDER_SCALE * resolution.y, _fminf(resolution.y, RENDER_MIN_LINES));
+    return _floor(resolution * lines / resolution.y);
+}
+
+struct Camera
+{
+    float3 position;
+    float3 right;
+    float3 up;
+    float3 forward;
+};
+
+// The lamp is carried just up and to the left of the camera.
+__DEVICE__ float3 lampPosition(struct Camera camera)
+{
+    return camera.position - camera.right * 0.55f + camera.up * 0.5f + camera.forward * 0.15f;
+}
+
+// How much of the lamp reaches a direction: full in its beam, less outside it.
+__DEVICE__ float lampBeam(float3 direction, float3 forward, float LAMP_SPILL)
+{
+    return _mix(LAMP_SPILL, 1.0f, smoothstep(0.45f, 0.92f, dot(direction, forward)));
+}
+
+// The tunnel's centre line: three frequencies on each axis, none of them related, so
+// the bends never quite repeat.
+__DEVICE__ float2 throatCentre(float z, float PATH_BEND)
+{
+    return PATH_BEND * to_float2(2.20f * _sinf(z * 0.11f) + 1.00f * _sinf(z * 0.23f + 1.3f) + 0.35f * _sinf(z * 0.47f + 0.7f),
+                                 1.20f * _sinf(z * 0.13f + 2.1f) + 0.70f * _sinf(z * 0.31f + 0.4f) + 0.22f * _sinf(z * 0.59f + 1.9f));
+}
+
+// How far the centre line moves sideways per unit of depth: its exact derivative.
+__DEVICE__ float2 throatCentreSlope(float z, float PATH_BEND)
+{
+    return PATH_BEND * to_float2(0.2420f * _cosf(z * 0.11f) + 0.2300f * _cosf(z * 0.23f + 1.3f) + 0.1645f * _cosf(z * 0.47f + 0.7f),
+                            0.1560f * _cosf(z * 0.13f + 2.1f) + 0.2170f * _cosf(z * 0.31f + 0.4f) + 0.1298f * _cosf(z * 0.59f + 1.9f));
+}
+
+// How far the throat has turned about its own length at a depth.
+__DEVICE__ float throatTwist(float z, float THROAT_TWIST)
+{
+    return THROAT_TWIST * (_sinf(z * 0.083f + 0.7f) + 0.6f * _sinf(z * 0.19f + 2.4f));
+}
+
+__DEVICE__ float throatTwistRate(float z, float THROAT_TWIST)
+{
+    return THROAT_TWIST * (0.083f * _cosf(z * 0.083f + 0.7f) + 0.114f * _cosf(z * 0.19f + 2.4f));
+}
+
+// Turns a vector counter-clockwise by an angle.
+__DEVICE__ float2 turned(float2 v, float angle)
+{
+    float c = _cosf(angle);
+    float s = _sinf(angle);
+    return to_float2(c * v.x - s * v.y, s * v.x + c * v.y);
+}
+
+// A point's place in the throat's cross-section, before allowing for swelling.
+__DEVICE__ float2 throatOffset(float3 p, float PATH_BEND, float THROAT_TWIST)
+{
+    return turned(swi2(p,x,y) - throatCentre(p.z, PATH_BEND), -throatTwist(p.z, THROAT_TWIST));
+}
+
+// Distances measured across a depth slice are too long where the tube leans or twists
+// through that slice: the true surface is closer than it looks. This shortens them.
+__DEVICE__ float throatSlant(float z, float radius, float PATH_BEND, float THROAT_TWIST)
+{
+    float lean = length(throatCentreSlope(z, PATH_BEND)) + radius * _fabs(throatTwistRate(z, THROAT_TWIST));
+    return 1.0f / _sqrtf(1.0f + lean * lean);
+}
+
+__DEVICE__ float flightDepth(float time, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE)
+{
+    return FLIGHT_START + FLIGHT_SPEED * time + FLIGHT_SURGE * _sinf(time * 0.62f);
+}
+
+// How swollen the throat is at a depth: a slow swallowing wave that runs away from the
+// viewer, on top of a shallow breath. A gullet is also not an open pipe: it stays shut
+// until something arrives. Far ahead of the viewer the walls are clenched together, and
+// they relax on approach.
+__DEVICE__ float throatBreath(float z, float time, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE, float BREATH_WAVE, float BREATH_SLOW, float THROAT_CLENCH, float CLENCH_NEAR, float CLENCH_FAR)
+{
+    float open = 1.0f + BREATH_WAVE * _sinf(z * 0.31f - time * 0.75f) + BREATH_SLOW * _sinf(time * 0.37f);
+    float ahead = z - flightDepth(time, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE);
+    return open * (1.0f - THROAT_CLENCH * smoothstep(CLENCH_NEAR, CLENCH_FAR, ahead));
+}
+
+__DEVICE__ struct Camera flightCamera(float time, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE, float CAMERA_SWAY, float CAMERA_HEIGHT, float CAMERA_BOB, float THROAT_TWIST, float PATH_BEND,
+                                      float BREATH_WAVE, float BREATH_SLOW, float THROAT_CLENCH, float CLENCH_NEAR, float CLENCH_FAR, float CAMERA_LOOK, float CAMERA_AIM, float CAMERA_ROLL)
+{
+    float z = flightDepth(time, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE);
+    float2 offset = to_float2(CAMERA_SWAY * _sinf(z * 0.19f + 0.6f), CAMERA_HEIGHT + CAMERA_BOB * _sinf(z * 0.53f));
+
+    // The camera rides the twist, so the floor stays beneath it and the throat is seen
+    // turning ahead.
+    float spin = throatTwist(z, THROAT_TWIST);
+    float3 position = to_float3_aw(throatCentre(z, PATH_BEND) + turned(offset * throatBreath(z, time, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR), spin), z);
+
+    float aimDepth = z + CAMERA_LOOK;
+    float3 target = to_float3_aw(throatCentre(aimDepth, PATH_BEND) + turned(to_float2(0.0f, CAMERA_AIM), spin), aimDepth);
+
+    float roll = CAMERA_ROLL * _sinf(z * 0.13f + 1.1f) - spin;
+    struct Camera camera;
+    camera.position = position;
+    camera.forward = normalize(target - position);
+    camera.right = normalize(cross(to_float3(_sinf(roll), _cosf(roll), 0.0f), camera.forward));
+    camera.up = cross(camera.forward, camera.right);
+    return camera;
+}
+
+// Four random numbers for one grid site.
+__DEVICE__ float4 siteRandom(int a, int b, int salt)
+{
+    uint x = (uint)(a) * 0x9E3779B1u + (uint)(b) * 0x85EBCA77u + (uint)(salt) * 0xC2B2AE3Du;
+    x ^= x >> 15;
+    x *= 0x2C1B3C6Du;
+    x ^= x >> 12;
+    x *= 0x297A2D39u;
+    x ^= x >> 15;
+    return to_float4((float)(x & 255u), (float)((x >> 8) & 255u), (float)((x >> 16) & 255u), (float)(x >> 24)) / 255.0f;
+}
+
+// A Catmull-Rom bicubic read from the lower-left `size` texels of a buffer, using
+// nine linear reads. The channel must use linear filtering.
+__DEVICE__ float3 bicubicRead(__TEXTURE2D__ source, float2 position, float2 size, float2 iResolution)
+{
+    int RowSampler = 15; // Total irre !!! Tausend Shader, die liefen ohne diese Zeile mit OpenCL. Dieser Shader braucht aber genau dies nur für OpenCL -> Total irre !!!
+  
+    float2 full = iResolution;//to_float2(textureSize(source, 0));
+    float2 centre = _floor(position - 0.5f) + 0.5f;
+    float2 f = position - centre;
+    float2 w0 = f * (-0.5f + f * (1.0f - 0.5f * f));
+    float2 w1 = 1.0f + f * f * (-2.5f + 1.5f * f);
+    float2 w2 = f * (0.5f + f * (2.0f - 1.5f * f));
+    float2 w3 = f * f * (-0.5f + 0.5f * f);
+    float2 w12 = w1 + w2;
+    float2 low = to_float2_s(0.5f);
+    float2 high = size - 0.5f;
+    float2 a = clamp(centre - 1.0f, low, high) / full;
+    float2 b = clamp(centre + w2 / w12, low, high) / full;
+    float2 c = clamp(centre + 2.0f, low, high) / full;
+    float3 sum = to_float3_s(0.0f);
+    sum += swi3(texture(source, to_float2(a.x, a.y)),x,y,z) * w0.x * w0.y;
+    sum += swi3(texture(source, to_float2(b.x, a.y)),x,y,z) * w12.x * w0.y;
+    sum += swi3(texture(source, to_float2(c.x, a.y)),x,y,z) * w3.x * w0.y;
+    sum += swi3(texture(source, to_float2(a.x, b.y)),x,y,z) * w0.x * w12.y;
+    sum += swi3(texture(source, to_float2(b.x, b.y)),x,y,z) * w12.x * w12.y;
+    sum += swi3(texture(source, to_float2(c.x, b.y)),x,y,z) * w3.x * w12.y;
+    sum += swi3(texture(source, to_float2(a.x, c.y)),x,y,z) * w0.x * w3.y;
+    sum += swi3(texture(source, to_float2(b.x, c.y)),x,y,z) * w12.x * w3.y;
+    sum += swi3(texture(source, to_float2(c.x, c.y)),x,y,z) * w3.x * w3.y;
+    return sum;
+}
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+
+
+// The Maw - Buffer A: the throat.
+// Written by Claude (Anthropic). Settings and an overview are at the top of Common.
+//
+// Traces and lights the scene below screen resolution. Colour goes in rgb, already
+// through the film curve so that frames blend evenly, and ray length goes in alpha
+// so that Buffer B can work out where each surface was on screen last frame.
+#ifdef GLOBALS
+float gTime;
+
+// Added to every distance that is only a limit rather than a real surface. It is zero
+// for camera rays and large for the rest: a soft shadow or occlusion ray would read a
+// limit as an object nearby, and draw false bands.
+float gEdgeSlack;
+
+// Set by throat(), read when shading. Distances are in throat space.
+float gWall;
+float gFang;
+float gTentacle;
+float gFangAlong;
+float3 gFangAxis;
+float gTentacleAlong;
+float gRoll;
+#endif
+
+__DEVICE__ float softMin(float a, float b, float k)
+{
+    float h = _fmaxf(k - _fabs(a - b), 0.0f) / k;
+    return _fminf(a, b) - h * h * k * 0.25f;
+}
+
+// ---------------------------------------------------------------- the wall
+
+// The wall's broad changes of size. Only whole multiples of `side` are used, so
+// everything joins up where the angle wraps, at the bottom of the floor.
+__DEVICE__ float wallSwell(float side, float z)
+{
+    return 0.30f * _sinf(z * 0.29f + 1.4f * _sinf(z * 0.11f))
+         + 0.17f * _sinf(2.0f * side + z * 0.17f + 0.8f * _sinf(z * 0.23f));
+}
+
+// How much closer the wall is at the sides than at the roof. The argument is the square
+// of the sine of the angle from the roof. Narrowing the wall itself, rather than
+// squeezing the space, keeps fangs and tentacles round.
+__DEVICE__ float wallNarrowing(float sinSquared, float WALL_RADIUS, float THROAT_WIDTH)
+{
+    return WALL_RADIUS * (THROAT_WIDTH - 1.0f) * sinSquared;
+}
+
+__DEVICE__ float wallDistance(float2 q, float r, float side, float z, float WALL_RADIUS, float THROAT_WIDTH, float FLOOR_DEPTH, float WALL_RELIEF, float FLOOR_SWELL, float FLOOR_BLEND, inout float *gRoll, float gEdgeSlack,
+                              float FOLD_FREQUENCY, float FOLD_CREASE, float FOLD_DEPTH, float CORD_DEPTH, float LUMP_DEPTH )
+{
+  
+    float radius = WALL_RADIUS + wallNarrowing(q.x * q.x / _fmaxf(r * r, 1e-4f), WALL_RADIUS, THROAT_WIDTH);
+
+    // Well away from the wall none of its detail matters.
+    float floorHeight = q.y + FLOOR_DEPTH;
+    float clearance = _fminf(radius - WALL_RELIEF - r, floorHeight - FLOOR_SWELL) - 0.25f * FLOOR_BLEND;
+    if (clearance > 0.5f)
+    {
+        *gRoll = 0.5f;
+        return clearance + gEdgeSlack;
+    }
+
+    float lower = smoothstep(1.55f, 2.35f, _fabs(side));
+
+    // Rolled folds ring the throat. Bending their phase with the angle stops them
+    // being perfect rings. _sqrtf(sin^2) rounds the rolls and keeps the creases tight.
+    float phase = z * FOLD_FREQUENCY + 0.8f * _sinf(2.0f * side + z * 0.37f)
+                + 0.42f * _sinf(5.0f * side - z * 0.61f + 1.7f);
+    float wave = _sinf(phase);
+    *gRoll = _sqrtf(wave * wave + FOLD_CREASE);
+    float rollSize = FOLD_DEPTH * (0.62f + 0.38f * _sinf(z * 0.19f + side + 1.1f * _sinf(z * 0.08f)));
+
+    // Long cords run down the throat, wandering as they go.
+    float cord = 0.5f + 0.5f * _sinf(7.0f * side + 1.3f * _sinf(z * 0.41f + 2.0f * side) + z * 0.13f);
+
+    // Broad lumps: one layer of gyroid.
+    float3 g = to_float3_aw(q, z * 0.7f) * 1.15f;
+    float lumps = dot(sin_f3(g), cos_f3(swi3(g,y,z,x)));
+
+    // Finer ribs between the rolls and thin strands beside the cords.
+    float rib = _sinf(z * 6.3f + 1.3f * _sinf(2.0f * side + z * 0.53f) + 0.6f * _sinf(9.0f * side + z * 0.3f));
+    float strand = _sinf(17.0f * side + 2.2f * _sinf(z * 0.73f + 3.0f * side) + 0.9f * _sinf(z * 0.31f));
+
+    float inward = rollSize * *gRoll * (1.0f - 0.8f * lower)
+                 + CORD_DEPTH * cord * (1.0f - 0.65f * lower)
+                 + LUMP_DEPTH * lumps
+                 + (0.040f * rib * *gRoll + 0.035f * strand * cord) * (1.0f - 0.7f * lower);
+    float wall = radius + wallSwell(side, z) - r - inward;
+
+    // The floor is a flat cut through the tube, with low swells and a soft trough.
+    float swell = 0.55f * lumps + 0.45f * _sinf(q.x * 2.1f + 0.9f * _sinf(z * 0.4f) + z * 0.1f);
+    float ground = floorHeight - FLOOR_SWELL * swell - 0.04f * *gRoll;
+    return softMin(wall, ground, FLOOR_BLEND);
+}
+
+// ---------------------------------------------------------------- tentacles
+
+// Tentacles that snake along the wall, half buried. Each follows an angle that
+// wanders with depth, at a height that lifts and sinks.
+__DEVICE__ float wallTentacle(float r, float side, float z, float radius, float index, float WALL_TENTACLE_SIZE)
+{
+    float whichWall = mod_f(index, 2.0f) < 0.5f ? 1.0f : -1.0f;
+    float seed = index * 2.4f;
+    float angle = whichWall * (1.05f + 0.60f * _sinf(z * (0.27f + 0.04f * index) + seed)
+                                    + 0.24f * _sinf(z * 0.79f + 2.0f * _sinf(z * 0.21f + seed)));
+    float centre = radius - 0.46f - 0.22f * _sinf(z * 0.43f + seed * 1.7f);
+    float away = mod_f(side - angle + 3.14159265f, 6.2831853f) - 3.14159265f;
+    float size = WALL_TENTACLE_SIZE * (0.72f + 0.28f * _sinf(z * 0.33f + seed * 2.0f));
+    return (length(to_float2(r - centre, away * r)) - size) * 0.68f;
+}
+
+// A tentacle hanging from the roof: a curve that tapers to a point and writhes, more
+// at the tip than at the root. Each lives in its own slice of depth.
+__DEVICE__ float hangingTentacle(float3 x, float shift, int salt, out float *along, float HANG_CELL, float HANG_SPREAD, float WALL_RADIUS, float WRITHE_SPEED, float HANG_SIZE, float gEdgeSlack, float gTime, float THROAT_WIDTH)
+{
+    *along = 0.0f;
+    float u = x.z / HANG_CELL + shift;
+    float slice = _floor(u);
+    float toEdge = (0.5f - _fabs(u - slice - 0.5f)) * HANG_CELL;
+
+    int cell = (int)(slice);
+    float4 a = siteRandom(cell, 0, salt);
+    float4 b = siteRandom(cell, 1, salt);
+    float angle = (a.y - 0.5f) * 2.0f * HANG_SPREAD;
+    float sn = _sinf(angle);
+    float cs = _cosf(angle);
+    float rootRadius = WALL_RADIUS + wallNarrowing(sn * sn, WALL_RADIUS, THROAT_WIDTH);
+    float3 root = to_float3(sn * rootRadius, cs * rootRadius, (slice + 0.5f + (a.x - 0.5f) * 0.26f - shift) * HANG_CELL);
+
+    // Long ones hang only to the sides, clear of the camera.
+    float size = _mix(1.5f, 3.1f, a.z);
+    if (_fabs(root.x) < 1.9f)
+    {
+        size = _fminf(size, root.y - 0.05f);
+    }
+
+    float3 v = x - root;
+    float reach = 1.35f;
+    if (_fabs(v.z) > reach + 0.3f)
+    {
+        return _fminf(toEdge + 0.3f, _fabs(v.z) - reach) + gEdgeSlack;
+    }
+
+    float3 axis = normalize(to_float3(-sn * 0.45f, -1.0f, (b.x - 0.5f) * 0.5f));
+    float3 across = normalize(to_float3(-axis.y, axis.x, 0.0f));
+    float t = clamp(dot(v, axis) / size, 0.0f, 1.0f);
+    float writhe = gTime * WRITHE_SPEED * (0.7f + 0.6f * b.y);
+    float3 centre = axis * size * t
+                + across * t * (0.55f + 0.45f * t) * 0.62f * _sinf(t * _mix(3.0f, 7.5f, b.z) + a.w * 6.28f + writhe)
+                + to_float3(0.0f, 0.0f, 1.0f) * t * 0.62f * _sinf(t * _mix(4.0f, 8.0f, b.w) + b.x * 6.28f - writhe * 0.8f);
+    *along = t;
+    float thickness = HANG_SIZE * _mix(0.65f, 1.25f, a.w) * (1.0f - t) * (1.0f + 0.8f * t - 0.5f * t * t);
+    return _fminf(toEdge + 0.3f + gEdgeSlack, (length(v - centre) - thickness) * 0.72f);
+}
+
+// ---------------------------------------------------------------- fangs
+
+// One fang. Its root sits behind the wall; its centre line leans along the throat and
+// hooks to one side as it runs inward; its width tapers to a point. Fangs on the
+// sides stop shorter, which keeps the camera's corridor clear.
+__DEVICE__ float oneFang(float3 x, float angle, float depth, float4 a, float4 b, float2 sizes, float2 widths, inout float *closest, float WALL_RADIUS, float THROAT_WIDTH, float gEdgeSlack, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis)
+{
+    float sn = _sinf(angle);
+    float cs = _cosf(angle);
+    float3 outward = to_float3(sn, cs, 0.0f);
+    float size = _mix(sizes.x, sizes.y, a.w) * _mix(1.0f, 0.5f, smoothstep(0.9f, 1.9f, _fabs(angle)));
+    float width = _mix(widths.x, widths.y, a.w) * (0.85f + 0.3f * b.w);
+    float reach = size * 1.32f + width + 0.35f;
+
+    // Far enough away, a sphere around the fang will do.
+    float3 v = x - to_float3_aw(swi2(outward,x,y) * (WALL_RADIUS + wallNarrowing(sn * sn, WALL_RADIUS, THROAT_WIDTH)), depth);
+    float far = dot(v, v);
+    if (far > (reach + 0.9f) * (reach + 0.9f))
+    {
+        return _sqrtf(far) - reach - 0.5f + gEdgeSlack;
+    }
+
+    v -= outward * (wallSwell(angle, depth) + 0.30f);
+    size += 0.30f;
+    float3 axis = normalize(to_float3(-sn, -cs, (b.x - 0.5f) * 0.5f));
+    float3 hook = normalize(to_float3(cs, -sn, 0.0f) * (b.y < 0.5f ? -1.0f : 1.0f) + to_float3(0.0f, 0.0f, (b.z - 0.5f) * 0.7f));
+    hook = normalize(hook - axis * dot(hook, axis));
+
+    float t = clamp(dot(v, axis) / size, 0.0f, 1.0f);
+    float bend = FANG_CURVE * (0.55f + 0.45f * b.w) * size;
+    float d = length(v - axis * size * t - hook * bend * t * t);
+    float result = (d - width * (1.0f - t) * (1.0f + 0.55f * t)) * 0.72f;
+    if (result < *closest)
+    {
+        *closest = result;
+        *gFangAlong = t;
+        *gFangAxis = axis;
+    }
+    return result;
+}
+
+// Big fangs are spread evenly around one depth slice and all of them are checked.
+// They hook too far to be found by looking only at nearby angles, but they never
+// leave their slice.
+__DEVICE__ float bigFangs(float3 x, inout float *closest, float FANG_BIG_SLICE, int FANG_BIG_COUNT, float FANG_BIG_DENSITY, float FANG_MAX_ANGLE,
+                          float WALL_RADIUS, float THROAT_WIDTH, float gEdgeSlack, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis)
+{
+    float u = x.z / FANG_BIG_SLICE;
+    float slice = _floor(u);
+    float result = (0.5f - _fabs(u - slice - 0.5f)) * FANG_BIG_SLICE + 0.15f + gEdgeSlack;
+    int cell = (int)(slice);
+    for (int i = ZERO; i < FANG_BIG_COUNT; i++)
+    {
+        float4 a = siteRandom(cell, i, 41);
+        if (a.x < FANG_BIG_DENSITY)
+        {
+            float4 b = siteRandom(cell, i, 42);
+            float angle = FANG_MAX_ANGLE * (2.0f * ((float)(i) + 0.15f + 0.7f * a.y) / (float)(FANG_BIG_COUNT) - 1.0f);
+            float depth = (slice + 0.5f + (a.z - 0.5f) * 0.2f) * FANG_BIG_SLICE;
+            result = _fminf(result, oneFang(x, angle, depth, a, b, to_float2(1.05f, 2.5f), to_float2(0.17f, 0.40f), closest, WALL_RADIUS, THROAT_WIDTH, gEdgeSlack, FANG_CURVE, gFangAlong, gFangAxis));
+        }
+    }
+    return result;
+}
+
+// Small fangs barely hook, so the two nearest angle sectors are enough.
+__DEVICE__ float smallFang(float3 x, int cell, int sector, float slice, inout float *closest, float FANG_SMALL_SECTOR, float FANG_MAX_ANGLE, float FANG_SMALL_DENSITY, float FANG_SMALL_SLICE,
+                           float WALL_RADIUS, float THROAT_WIDTH, float gEdgeSlack, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis)
+{
+    float centreAngle = ((float)(sector) + 0.5f) * FANG_SMALL_SECTOR;
+    float4 a = siteRandom(cell, sector, 53);
+    if (_fabs(centreAngle) > FANG_MAX_ANGLE || a.x > FANG_SMALL_DENSITY)
+    {
+        return 9.0f;
+    }
+    float4 b = siteRandom(cell, sector, 54);
+    float angle = centreAngle + (a.y - 0.5f) * 0.5f * FANG_SMALL_SECTOR;
+    float depth = (slice + 0.5f + (a.z - 0.5f) * 0.2f) * FANG_SMALL_SLICE;
+    return oneFang(x, angle, depth, a, b, to_float2(0.30f, 0.75f), to_float2(0.04f, 0.11f), closest, WALL_RADIUS, THROAT_WIDTH, gEdgeSlack, FANG_CURVE, gFangAlong, gFangAxis);
+}
+
+__DEVICE__ float smallFangs(float3 x, float side, inout float *closest, float FANG_SMALL_SECTOR, float FANG_MAX_ANGLE, float FANG_SMALL_DENSITY, float FANG_SMALL_SLICE,
+                            float WALL_RADIUS, float THROAT_WIDTH, float gEdgeSlack, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis)
+{
+    float u = x.z / FANG_SMALL_SLICE;
+    float slice = _floor(u);
+    float toEdge = (0.5f - _fabs(u - slice - 0.5f)) * FANG_SMALL_SLICE + 0.2f + gEdgeSlack;
+    float w = side / FANG_SMALL_SECTOR;
+    float sectorFloor = _floor(w);
+    int s0 = (int)(sectorFloor);
+    int s1 = w - sectorFloor < 0.5f ? s0 - 1 : s0 + 1;
+    int cell = (int)(slice);
+    return _fminf(toEdge, _fminf(smallFang(x, cell, s0, slice, closest, FANG_SMALL_SECTOR, FANG_MAX_ANGLE, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, WALL_RADIUS, THROAT_WIDTH, gEdgeSlack, FANG_CURVE, gFangAlong, gFangAxis), smallFang(x, cell, s1, slice, closest, FANG_SMALL_SECTOR, FANG_MAX_ANGLE, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, WALL_RADIUS, THROAT_WIDTH, gEdgeSlack, FANG_CURVE, gFangAlong, gFangAxis)));
+}
+
+// ---------------------------------------------------------------- the whole scene
+
+__DEVICE__ float throat(float3 p, float gTime, inout float *gWall, float gEdgeSlack, inout float *gTentacleAlong, inout float *gTentacle, inout float *gFang, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE, float BREATH_WAVE, float BREATH_SLOW, float THROAT_CLENCH, float CLENCH_NEAR, float CLENCH_FAR,
+                        float PATH_BEND, float THROAT_TWIST, float WALL_RADIUS, float THROAT_WIDTH, float FLOOR_DEPTH, float WALL_RELIEF, float FLOOR_SWELL, float FLOOR_BLEND, inout float *gRoll,
+                        float FOLD_FREQUENCY, float FOLD_CREASE, float FOLD_DEPTH, float CORD_DEPTH, float LUMP_DEPTH, float WALL_TENTACLE_SIZE, float HANG_CELL, float HANG_SPREAD, float WRITHE_SPEED, float HANG_SIZE,
+                        float FANG_BIG_SLICE, int FANG_BIG_COUNT, float FANG_BIG_DENSITY, float FANG_MAX_ANGLE, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis,
+                        float FANG_SMALL_SECTOR, float FANG_SMALL_DENSITY, float FANG_SMALL_SLICE, float FANG_BLEND)
+{
+  float xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx;
+    float breath = throatBreath(p.z, gTime, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR);
+    float2 q = throatOffset(p, PATH_BEND, THROAT_TWIST) / breath;
+    float z = p.z;
+    float3 x = to_float3_aw(q, z);
+    float r = length(q);
+    float side = _atan2f(q.x, q.y);
+
+    float wall = wallDistance(q, r, side, z, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll, gEdgeSlack, FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH);
+    *gWall = wall;
+
+    // Tentacles along the wall need looking at only near the wall.
+    float tentacle = wall - 1.05f + gEdgeSlack;
+    if (wall < 1.3f)
+    {
+      float qqqqqqqqqqqqqqqqqqq;
+        float radius = WALL_RADIUS + wallNarrowing(q.x * q.x / _fmaxf(r * r, 1e-4f), WALL_RADIUS, THROAT_WIDTH) + wallSwell(side, z);
+        tentacle = wallTentacle(r, side, z, radius, 0.0f, WALL_TENTACLE_SIZE);
+        tentacle = _fminf(tentacle, wallTentacle(r, side, z, radius, 1.0f, WALL_TENTACLE_SIZE));
+        tentacle = _fminf(tentacle, wallTentacle(r, side, z, radius, 2.0f, WALL_TENTACLE_SIZE));
+        tentacle = _fminf(tentacle, wallTentacle(r, side, z, radius, 3.0f, WALL_TENTACLE_SIZE));
+        tentacle = _fminf(tentacle, wallTentacle(r, side, z, radius, 4.0f, WALL_TENTACLE_SIZE));
+        tentacle = _fminf(tentacle, wallTentacle(r, side, z, radius, 5.0f, WALL_TENTACLE_SIZE));
+    }
+    *gTentacleAlong = 0.0f;
+    float along;
+    float hang = hangingTentacle(x, 0.0f, 11, &along, HANG_CELL, HANG_SPREAD, WALL_RADIUS, WRITHE_SPEED, HANG_SIZE, gEdgeSlack, gTime, THROAT_WIDTH);
+    if (hang < tentacle)
+    {
+        tentacle = hang;
+        *gTentacleAlong = along;
+    }
+    hang = hangingTentacle(x, 0.333f, 23, &along, HANG_CELL, HANG_SPREAD, WALL_RADIUS, WRITHE_SPEED, HANG_SIZE, gEdgeSlack, gTime, THROAT_WIDTH);
+    if (hang < tentacle)
+    {
+        tentacle = hang;
+        *gTentacleAlong = along;
+    }
+    hang = hangingTentacle(x, 0.667f, 31, &along, HANG_CELL, HANG_SPREAD, WALL_RADIUS, WRITHE_SPEED, HANG_SIZE, gEdgeSlack, gTime, THROAT_WIDTH);
+    if (hang < tentacle)
+    {
+        tentacle = hang;
+        *gTentacleAlong = along;
+    }
+    *gTentacle = tentacle;
+
+    float closest = 9.0f;
+    float fangs = bigFangs(x, &closest, FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, WALL_RADIUS, THROAT_WIDTH, gEdgeSlack, FANG_CURVE, gFangAlong, gFangAxis);
+    fangs = _fminf(fangs, wall < 1.4f ? smallFangs(x, side, &closest, FANG_SMALL_SECTOR, FANG_MAX_ANGLE, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, WALL_RADIUS, THROAT_WIDTH, gEdgeSlack, FANG_CURVE, gFangAlong, gFangAxis) : wall - 0.9f + gEdgeSlack);
+    *gFang = fangs;
+
+    float d = softMin(wall, tentacle, 0.22f);
+    d = softMin(d, fangs, FANG_BLEND);
+    return d * breath * throatSlant(z, r * breath, PATH_BEND, THROAT_TWIST);
+}
+
+__DEVICE__ float3 throatNormal(float3 p, float h, float gTime, inout float *gWall, float gEdgeSlack, inout float *gTentacleAlong, inout float *gTentacle, inout float *gFang, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE, float BREATH_WAVE, float BREATH_SLOW, float THROAT_CLENCH, float CLENCH_NEAR, float CLENCH_FAR,
+                        float PATH_BEND, float THROAT_TWIST, float WALL_RADIUS, float THROAT_WIDTH, float FLOOR_DEPTH, float WALL_RELIEF, float FLOOR_SWELL, float FLOOR_BLEND, inout float *gRoll,
+                        float FOLD_FREQUENCY, float FOLD_CREASE, float FOLD_DEPTH, float CORD_DEPTH, float LUMP_DEPTH, float WALL_TENTACLE_SIZE, float HANG_CELL, float HANG_SPREAD, float WRITHE_SPEED, float HANG_SIZE,
+                        float FANG_BIG_SLICE, int FANG_BIG_COUNT, float FANG_BIG_DENSITY, float FANG_MAX_ANGLE, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis,
+                        float FANG_SMALL_SECTOR, float FANG_SMALL_DENSITY, float FANG_SMALL_SLICE, float FANG_BLEND)
+{
+    float3 sum = to_float3_s(0.0f);
+    for (int i = ZERO; i < 4; i++)
+    {
+        float3 e = to_float3((i == 0 || i == 3) ? 1.0f : -1.0f, i >= 2 ? 1.0f : -1.0f, (i == 1 || i == 3) ? 1.0f : -1.0f);
+        sum += e * throat(p + e * h, gTime, gWall, gEdgeSlack, gTentacleAlong, gTentacle, gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, gFangAlong, gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND);
+    }
+    return normalize(sum);
+}
+
+// March until the surface is reached. A step that lands inside the surface brackets
+// it, and the remaining work halves that bracket, so a ray's stopping point does not
+// depend on where its steps happened to fall.
+__DEVICE__ float marchThroat(float3 from, float3 direction, float pixelAngle, float gTime, inout float *gWall, float gEdgeSlack, inout float *gTentacleAlong, inout float *gTentacle, inout float *gFang, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE, float BREATH_WAVE, float BREATH_SLOW, float THROAT_CLENCH, float CLENCH_NEAR, float CLENCH_FAR,
+                             float PATH_BEND, float THROAT_TWIST, float WALL_RADIUS, float THROAT_WIDTH, float FLOOR_DEPTH, float WALL_RELIEF, float FLOOR_SWELL, float FLOOR_BLEND, inout float *gRoll,
+                             float FOLD_FREQUENCY, float FOLD_CREASE, float FOLD_DEPTH, float CORD_DEPTH, float LUMP_DEPTH, float WALL_TENTACLE_SIZE, float HANG_CELL, float HANG_SPREAD, float WRITHE_SPEED, float HANG_SIZE,
+                             float FANG_BIG_SLICE, int FANG_BIG_COUNT, float FANG_BIG_DENSITY, float FANG_MAX_ANGLE, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis,
+                             float FANG_SMALL_SECTOR, float FANG_SMALL_DENSITY, float FANG_SMALL_SLICE, float FANG_BLEND)
+{
+    float t = 0.02f;
+    float low = t;
+    float high = -1.0f;
+    for (int i = ZERO; i < MARCH_STEPS; i++)
+    {
+        float probe = high > 0.0f ? 0.5f * (low + high) : t;
+        float d = throat(from + direction * probe, gTime, gWall, gEdgeSlack, gTentacleAlong, gTentacle, gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, gFangAlong, gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND);
+        float tolerance = _fmaxf(0.0006f, 0.2f * pixelAngle * probe);
+        if (high > 0.0f)
+        {
+            if (d < 0.0f)
+            {
+                high = probe;
+            }
+            else
+            {
+                low = probe;
+            }
+            if (high - low < tolerance)
+            {
+                return low;
+            }
+        }
+        else if (d < 0.0f)
+        {
+            high = probe;
+        }
+        else if (d < tolerance)
+        {
+            return probe;
+        }
+        else
+        {
+            low = probe;
+            t = probe + d * MARCH_STEP_SCALE;
+            if (t > MARCH_FAR)
+            {
+                return MARCH_FAR;
+            }
+        }
+    }
+    return high > 0.0f ? low : t;
+}
+
+__DEVICE__ float lampShadow(float3 from, float3 direction, float limit, float gTime, inout float *gWall, float gEdgeSlack, inout float *gTentacleAlong, inout float *gTentacle, inout float *gFang, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE, float BREATH_WAVE, float BREATH_SLOW, float THROAT_CLENCH, float CLENCH_NEAR, float CLENCH_FAR,
+                            float PATH_BEND, float THROAT_TWIST, float WALL_RADIUS, float THROAT_WIDTH, float FLOOR_DEPTH, float WALL_RELIEF, float FLOOR_SWELL, float FLOOR_BLEND, inout float *gRoll,
+                            float FOLD_FREQUENCY, float FOLD_CREASE, float FOLD_DEPTH, float CORD_DEPTH, float LUMP_DEPTH, float WALL_TENTACLE_SIZE, float HANG_CELL, float HANG_SPREAD, float WRITHE_SPEED, float HANG_SIZE,
+                            float FANG_BIG_SLICE, int FANG_BIG_COUNT, float FANG_BIG_DENSITY, float FANG_MAX_ANGLE, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis,
+                            float FANG_SMALL_SECTOR, float FANG_SMALL_DENSITY, float FANG_SMALL_SLICE, float FANG_BLEND)
+{
+#if SHADOW_STEPS > 0
+    float light = 1.0f;
+    float t = 0.06f;
+    for (int i = ZERO; i < SHADOW_STEPS; i++)
+    {
+        float d = throat(from + direction * t, gTime, gWall, gEdgeSlack, gTentacleAlong, gTentacle, gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, gFangAlong, gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND);
+        light = _fminf(light, 7.0f * d / t);
+        t += clamp(d * 0.9f, 0.05f, 0.7f);
+        if (light < 0.01f || t > limit)
+        {
+            break;
+        }
+    }
+    light = clamp(light, 0.0f, 1.0f);
+    return light * light * (3.0f - 2.0f * light);
+#else
+    return 1.0f;
+#endif
+}
+
+__DEVICE__ float nearbyOcclusion(float3 p, float3 n, float gTime, inout float *gWall, float gEdgeSlack, inout float *gTentacleAlong, inout float *gTentacle, inout float *gFang, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE, float BREATH_WAVE, float BREATH_SLOW, float THROAT_CLENCH, float CLENCH_NEAR, float CLENCH_FAR,
+                                 float PATH_BEND, float THROAT_TWIST, float WALL_RADIUS, float THROAT_WIDTH, float FLOOR_DEPTH, float WALL_RELIEF, float FLOOR_SWELL, float FLOOR_BLEND, inout float *gRoll,
+                                 float FOLD_FREQUENCY, float FOLD_CREASE, float FOLD_DEPTH, float CORD_DEPTH, float LUMP_DEPTH, float WALL_TENTACLE_SIZE, float HANG_CELL, float HANG_SPREAD, float WRITHE_SPEED, float HANG_SIZE,
+                                 float FANG_BIG_SLICE, int FANG_BIG_COUNT, float FANG_BIG_DENSITY, float FANG_MAX_ANGLE, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis,
+                                 float FANG_SMALL_SECTOR, float FANG_SMALL_DENSITY, float FANG_SMALL_SLICE, float FANG_BLEND)
+{
+    float blocked = 0.0f;
+    float weight = 1.0f;
+    for (int i = ZERO; i < 3; i++)
+    {
+        float h = 0.09f + 0.26f * (float)(i);
+        blocked += weight * _fmaxf(h - throat(p + n * h, gTime, gWall, gEdgeSlack, gTentacleAlong, gTentacle, gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, gFangAlong, gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND), 0.0f);
+        weight *= 0.62f;
+    }
+    return _expf(-3.4f * blocked);
+}
+
+// ---------------------------------------------------------------- skin
+
+// Layers of wrinkles. Each layer is a gyroid g; its absolute value makes crease
+// lines where g crosses zero with a pillow of skin between them. xyz returns the
+// slope, known exactly, and w the height. Layers finer than the pixel fade out and
+// their lost slope is returned in `lost`, which widens the highlights instead.
+__DEVICE__ float4 skinRelief(float3 x, float footprint, out float3 *filmSlope, out float *lost, float WRINKLE_SCALE, int WRINKLE_OCTAVES)
+{
+    float3 y = to_float3_aw(swi2(x,x,y), x.z * 0.78f);
+    y += 0.10f * sin_f3(swi3(y,z,x,y) * 2.7f + 1.0f);
+    mat3 turn = to_mat3(0.48f, 0.60f, -0.64f, -0.80f, 0.60f, 0.00f, 0.38f, 0.53f, 0.76f);
+    mat3 toWorld = to_mat3(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.78f);
+    float3 slope = to_float3_s(0.0f);
+    float height = 0.0f;
+    float total = 0.0f;
+    float size = 1.0f;
+    float frequency = WRINKLE_SCALE;
+    *lost = 0.0f;
+    *filmSlope = to_float3_s(0.0f);
+    for (int i = ZERO; i < WRINKLE_OCTAVES; i++)
+    {
+        float cover = clamp(2.2f - 1.6f * frequency * footprint, 0.0f, 1.0f);
+        float weight = size * cover * cover * (3.0f - 2.0f * cover);
+        *lost += size * (1.0f - cover);
+        if (weight > 0.0f)
+        {
+            float3 w = y * frequency + (float)(i) * 1.7f;
+            float3 sn = sin_f3(w);
+            float3 cs = cos_f3(w);
+            float g = dot(sn, swi3(cs,y,z,x));
+            float3 dg = cs * swi3(cs,y,z,x) - sn * swi3(sn,z,x,y);
+            float v = _sqrtf(g * g + 0.06f);
+            // The fine layers vanish under the wet film, so they barely affect it.
+            float colourWeight = cover * (i < 3 ? 1.0f : 0.25f);
+            height += colourWeight * v;
+            total += colourWeight;
+            float3 layerSlope = weight * (g / v) * (mul_f3_mat3(dg , toWorld));
+            slope += layerSlope;
+            *filmSlope += layerSlope * (i == 0 ? 0.3f : 1.0f / (0.6f + 0.4f * (float)(i)));
+        }
+        y = mul_mat3_f3(turn , y);
+        toWorld = mul_mat3_mat3(turn , toWorld);
+        frequency *= 2.13f;
+        size *= 0.60f;
+    }
+    return to_float4_aw(slope, height / _fmaxf(total, 1e-3f));
+}
+
+// A scatter of droplets in a 3D grid: where a droplet's sphere crosses the skin it
+// tilts the normal into a tiny dome. Returns the tilt, and the dome's height in w.
+__DEVICE__ float4 droplets(float3 x, float cellSize, int salt)
+{
+    float3 u = x / cellSize;
+    float3 c = _floor(u);
+    float3 f = u - c - 0.5f;
+    float4 a = siteRandom((int)(c.x) + 1771 * (int)(c.y), (int)(c.z), salt);
+    if (a.w > 0.30f)
+    {
+        return to_float4_s(0.0f);
+    }
+    float3 v = f - (swi3(a,x,y,z) - 0.5f) * 0.45f;
+    float size = 0.14f + 0.85f * a.w;
+    float dome = 1.0f - dot(v, v) / (size * size);
+    if (dome <= 0.0f)
+    {
+        return to_float4_s(0.0f);
+    }
+    return to_float4_aw(v / size, _sqrtf(dome) * (0.25f + 0.75f * a.x * a.x));
+}
+
+__DEVICE__ float highlight(float3 n, float3 h, float power)
+{
+    return _powf(_fmaxf(dot(n, h), 0.0f), power) * (power + 8.0f) * 0.04f;
+}
+
+// ---------------------------------------------------------------- shading
+
+__DEVICE__ float3 shadeThroat(float3 from, float3 direction, float t, struct Camera camera, float pixelAngle, float gTime, inout float *gWall, inout float *gEdgeSlack, inout float *gTentacleAlong, inout float *gTentacle, inout float *gFang, float FLIGHT_START, float FLIGHT_SPEED, float FLIGHT_SURGE, float BREATH_WAVE, float BREATH_SLOW, float THROAT_CLENCH, float CLENCH_NEAR, float CLENCH_FAR,
+                        float PATH_BEND, float THROAT_TWIST, float WALL_RADIUS, float THROAT_WIDTH, float FLOOR_DEPTH, float WALL_RELIEF, float FLOOR_SWELL, float FLOOR_BLEND, inout float *gRoll,
+                        float FOLD_FREQUENCY, float FOLD_CREASE, float FOLD_DEPTH, float CORD_DEPTH, float LUMP_DEPTH, float WALL_TENTACLE_SIZE, float HANG_CELL, float HANG_SPREAD, float WRITHE_SPEED, float HANG_SIZE,
+                        float FANG_BIG_SLICE, int FANG_BIG_COUNT, float FANG_BIG_DENSITY, float FANG_MAX_ANGLE, float FANG_CURVE, inout float *gFangAlong, inout float3 *gFangAxis,
+                        float FANG_SMALL_SECTOR, float FANG_SMALL_DENSITY, float FANG_SMALL_SLICE, float FANG_BLEND,
+                        float WRINKLE_BUMP, float3 FLESH_DEEP, float3 FLESH_MID, float3 FLESH_PALE, float3 FLESH_CREASE, float3 TENTACLE_COLOUR, float3 FANG_COLOUR, float3 FANG_TAN, float3 FANG_STAIN, float DROPLETS, float FILM_RELIEF, float GLOSS,
+                        float LAMP_POWER, float LAMP_FALLOFF, float3 LAMP_COLOUR, float GLOSS_REACH, float3 SHEEN, float BOUNCE, float BOUNCE_FALLOFF, float WRINKLE_SCALE, int WRINKLE_OCTAVES, float LAMP_SPILL)
+{
+    float3 p = from + direction * t;
+    float footprint = t * pixelAngle;
+    *gEdgeSlack = 9.0f;
+    float3 n = throatNormal(p, _fmaxf(0.005f, footprint * 1.5f), gTime, gWall, *gEdgeSlack, gTentacleAlong, gTentacle, gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, gFangAlong, gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND);
+
+    throat(p, gTime, gWall, *gEdgeSlack, gTentacleAlong, gTentacle, gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, gFangAlong, gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND);
+    float wallD     = *gWall;
+    float fangD     = *gFang;
+    float tentacleD = *gTentacle;
+    float fangAlong = *gFangAlong;
+    float3 fangAxis = *gFangAxis;
+    float tentacleAlong = *gTentacleAlong;
+    float roll      = *gRoll;
+
+    float isFang = 1.0f - smoothstep(-0.05f, 0.0f, fangD - _fminf(wallD, tentacleD));
+    float isTentacle = (1.0f - isFang) * (1.0f - smoothstep(-0.03f, 0.05f, tentacleD - wallD));
+    float isFlesh = 1.0f - isFang - isTentacle;
+
+    float2 q = throatOffset(p, PATH_BEND, THROAT_TWIST) / throatBreath(p.z, gTime, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR);
+    float3 x = to_float3_aw(q, p.z);
+
+    // Fine relief, only faint on fangs.
+    float lost;
+    float3 filmSlope;
+    float4 relief = skinRelief(x, footprint, &filmSlope, &lost, WRINKLE_SCALE, WRINKLE_OCTAVES);
+    float bump = WRINKLE_BUMP * _mix(1.0f, 0.22f, isFang);
+    float3 slope = swi3(relief,x,y,z) * bump;
+
+    // Those slopes point along the throat's own axes. Turn them back to the world's.
+    float spin = throatTwist(p.z, THROAT_TWIST);
+    swi2S(slope,x,y, turned(swi2(slope,x,y), spin));
+    swi2S(filmSlope,x,y, turned(swi2(filmSlope,x,y), spin));
+
+    // Blotches and threads in the skin's colour.
+    float3 m = x * to_float3(0.8f, 0.8f, 0.45f) + 3.1f;
+    float blotch = 0.5f + 0.33f * dot(sin_f3(m), cos_f3(swi3(m,y,z,x)));
+    float3 m2 = x * to_float3(2.4f, 2.4f, 1.3f) + 7.0f;
+    float veinField = dot(sin_f3(m2), cos_f3(swi3(m2,y,z,x)));
+    float vein = 1.0f - smoothstep(0.0f, 0.10f + footprint * 2.0f, _fabs(veinField));
+
+    float3 flesh = _mix(FLESH_DEEP, FLESH_MID, smoothstep(0.15f, 0.85f, blotch));
+    flesh = _mix(flesh, FLESH_PALE, 0.42f * smoothstep(0.35f, 1.0f, roll) * smoothstep(0.55f, 1.1f, relief.w));
+    flesh = _mix(FLESH_CREASE, flesh, smoothstep(0.18f, 0.72f, relief.w));
+    flesh = _mix(flesh, FLESH_CREASE * 1.6f, 0.22f * vein);
+    flesh *= 0.55f + 0.45f * smoothstep(0.03f, 0.75f, roll);
+
+    float3 tentacle = _mix(TENTACLE_COLOUR, FLESH_MID * 0.8f, smoothstep(0.3f, 1.0f, relief.w) * 0.6f);
+    tentacle *= 1.0f + 0.35f * tentacleAlong;
+
+    // Ivory, stained dark where it roots and in streaks along its length.
+    float3 s = (x - fangAxis * dot(x, fangAxis) * 0.97f) * 24.0f;
+    float streak = 0.5f + 0.28f * dot(sin_f3(s), cos_f3(swi3(s,y,z,x)));
+    float3 s2 = (x - fangAxis * dot(x, fangAxis) * 0.85f) * 5.3f + 2.0f;
+    float blot = 0.5f + 0.28f * dot(sin_f3(s2), cos_f3(swi3(s2,y,z,x)));
+    float3 ivory = _mix(FANG_COLOUR * to_float3(0.52f, 0.42f, 0.30f), FANG_COLOUR, smoothstep(0.2f, 0.75f, 0.4f * streak + 0.6f * blot));
+
+    // Tan creeps up the lower half, and stain darkens the root where it meets flesh.
+    float wander = 0.30f * (blot - 0.5f) + 0.16f * (streak - 0.5f);
+    ivory = _mix(FANG_TAN, ivory, smoothstep(0.10f, 0.62f, fangAlong + wander));
+    float rootness = 1.0f - smoothstep(0.02f, 0.50f, wallD + 0.7f * wander);
+    ivory = _mix(ivory, FANG_STAIN, rootness);
+    ivory *= 1.0f + 0.25f * smoothstep(0.65f, 1.0f, fangAlong);
+
+    float3 albedo = flesh * isFlesh + tentacle * isTentacle + ivory * isFang;
+
+    // Droplets, up close only.
+    float glintFade = (1.0f - smoothstep(0.016f, 0.05f, footprint)) * DROPLETS * (1.0f - 0.6f * isFang);
+    float4 dropA = droplets(x, 0.16f, 71);
+    float4 dropB = droplets(x + 0.37f, 0.085f, 72);
+    float wetPatch = smoothstep(0.32f, 0.62f, 0.5f + 0.33f * dot(sin_f3(m * 1.7f + 4.0f), cos_f3(swi3(m,y,z,x) * 1.7f + 1.0f)));
+    float wetDome = glintFade * _fmaxf(dropA.w, dropB.w) * wetPatch;
+
+    float3 bent = normalize(n - (slope - n * dot(slope, n)));
+    // The wet film fills in the smallest wrinkles, so it has a smoother normal of
+    // its own. All highlights come from this one.
+    float3 filmTilt = filmSlope * FILM_RELIEF * _mix(1.0f, 0.25f, isFang);
+    float3 film = normalize(n - (filmTilt - n * dot(filmTilt, n)));
+    // Droplets stand on the film.
+    float3 dropSlope = glintFade * (swi3(dropA,x,y,z) + swi3(dropB,x,y,z));
+    swi2S(dropSlope,x,y, turned(swi2(dropSlope,x,y), spin));
+    float3 glint = normalize(film - 1.6f * (dropSlope - n * dot(dropSlope, n)));
+
+    float occlusion = nearbyOcclusion(p, n, gTime, gWall, *gEdgeSlack, gTentacleAlong, gTentacle, gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, gFangAlong, gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND);
+    occlusion *= _mix(0.35f + 0.65f * smoothstep(0.03f, 0.7f, roll), 1.0f, isFang + isTentacle);
+    float cavity = _mix(0.45f + 0.55f * smoothstep(0.1f, 0.7f, relief.w), 1.0f, isFang);
+
+    // Gloss widens as wrinkles shrink below a pixel.
+    float spread = 1.0f / (1.0f + 2.2f * lost);
+    float sharpPower = _mix(60.0f, 420.0f, spread);
+    float broadPower = _mix(14.0f, 46.0f, spread);
+
+    float3 view = -direction;
+    float facing = _fmaxf(dot(film, view), 0.0f);
+    float fresnel = 0.035f + 0.965f * _powf(1.0f - facing, 5.0f);
+    float gloss = GLOSS * _mix(1.0f, 0.75f, isFang);
+
+    float3 result = to_float3_s(0.0f);
+
+    // The lamp beside the camera, the only light there is.
+    {
+        float3 toLamp = lampPosition(camera) - p;
+        float dist = length(toLamp);
+        float3 l = toLamp / dist;
+        float fall = LAMP_POWER * lampBeam(-l, camera.forward, LAMP_SPILL) / (1.0f + dist * dist * LAMP_FALLOFF);
+        float shadow = 1.0f;
+        if (t < SHADOW_RANGE)
+        {
+            shadow = _mix(lampShadow(p + n * 0.02f, l, dist - 0.1f, gTime, gWall, *gEdgeSlack, gTentacleAlong, gTentacle, gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, gFangAlong, gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND), 1.0f, smoothstep(0.7f * SHADOW_RANGE, SHADOW_RANGE, t));
+        }
+
+        // Light soaks into flesh and comes back red, softening the shadow edge.
+        float ndl = dot(bent, l);
+        float wrapped = _fmaxf((ndl + 0.3f - 0.25f * isFang) / (1.3f - 0.25f * isFang), 0.0f);
+        float3 soak = _mix(to_float3(1.0f, 0.30f, 0.25f), to_float3_s(1.0f), smoothstep(0.0f, 0.55f, ndl));
+        float3 diffuse = albedo * wrapped * wrapped * _mix(soak, to_float3_s(1.0f), isFang);
+        float soft = fall * _mix(1.0f, 1.35f, isFang) / (1.0f + fall * _mix(0.35f, 0.55f, isFang));
+        result += LAMP_COLOUR * soft * shadow * diffuse * cavity * (0.3f + 0.7f * occlusion);
+
+        // A wet surface sends a bright mirror image of the lamp back to the eye, so it
+        // can still be seen where the matte skin around it has gone dark.
+        float gleamFall = LAMP_POWER * lampBeam(-l, camera.forward, LAMP_SPILL) / (1.0f + dist * dist * LAMP_FALLOFF * GLOSS_REACH);
+        float3 h = normalize(l + view);
+        float sharp = highlight(film, h, sharpPower);
+        float broad = highlight(film, h, broadPower);
+        float dome = wetDome * highlight(glint, h, 120.0f);
+        result += LAMP_COLOUR * gleamFall * shadow * gloss * (fresnel + 0.03f) * (sharp * 5.0f + broad * 0.6f + dome * 9.0f)
+                * _mix(0.35f, 1.0f, occlusion);
+
+        // The film also mirrors the lit walls, most strongly where the view grazes it,
+        // which is what makes the floor read as wet rather than merely dark.
+        result += SHEEN * soft * fresnel * occlusion * GLOSS;
+    }
+
+    // Lamp light that has bounced around the wet tube comes back red, and dies out
+    // with distance. Ivory scatters light inside itself, so it holds on a little longer.
+    float bounce = BOUNCE / (1.0f + t * t * BOUNCE_FALLOFF);
+    result += albedo * to_float3(1.0f, 0.45f, 0.42f) * bounce * occlusion;
+    result += isFang * ivory * bounce * 0.3f * (1.0f - rootness) * occlusion;
+    return result;
+}
+
+// Tone: compresses highlights and deepens shadows. Working on each channel separately
+// lets bright red drift toward white, as film does.
+__DEVICE__ float3 filmCurve(float3 c, float TONE_CONTRAST, float TONE_MIDDLE)
+{
+    float3 x = pow_f3(_fmaxf(c, to_float3_s(0.0f)), to_float3_s(TONE_CONTRAST));
+    float m = _powf(TONE_MIDDLE, TONE_CONTRAST);
+    return x / (x + m);
+}
+
+
+
+//--------------------------------------------------------------------------------------------------------------------------------
+__KERNEL__ void DevilSMawClaudeCodeFuse__Buffer_A(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   TEMPORAL = params->TEMPORAL;
+  float4 FLESH_Deep = to_float4(params->FLESH_Deep[0], params->FLESH_Deep[1], params->FLESH_Deep[2], params->FLESH_Deep[3]);
+  float4 FLESH_Mid = to_float4(params->FLESH_Mid[0], params->FLESH_Mid[1], params->FLESH_Mid[2], params->FLESH_Mid[3]);
+  float4 FLESH_Pale = to_float4(params->FLESH_Pale[0], params->FLESH_Pale[1], params->FLESH_Pale[2], params->FLESH_Pale[3]);
+  float4 FLESH_Crease = to_float4(params->FLESH_Crease[0], params->FLESH_Crease[1], params->FLESH_Crease[2], params->FLESH_Crease[3]);
+  float4 TENTACLE_Colour = to_float4(params->TENTACLE_Colour[0], params->TENTACLE_Colour[1], params->TENTACLE_Colour[2], params->TENTACLE_Colour[3]);
+  float4 FANG_Colour = to_float4(params->FANG_Colour[0], params->FANG_Colour[1], params->FANG_Colour[2], params->FANG_Colour[3]);
+  float4 FANG_Stain = to_float4(params->FANG_Stain[0], params->FANG_Stain[1], params->FANG_Stain[2], params->FANG_Stain[3]);
+  float4 FANG_Tan = to_float4(params->FANG_Tan[0], params->FANG_Tan[1], params->FANG_Tan[2], params->FANG_Tan[3]);
+  float4 LAMP_Colour = to_float4(params->LAMP_Colour[0], params->LAMP_Colour[1], params->LAMP_Colour[2], params->LAMP_Colour[3]);
+  float4 Sheen = to_float4(params->Sheen[0], params->Sheen[1], params->Sheen[2], params->Sheen[3]);
+  float4 HAZE_Colour = to_float4(params->HAZE_Colour[0], params->HAZE_Colour[1], params->HAZE_Colour[2], params->HAZE_Colour[3]);
+  float4 MIST_Colour = to_float4(params->MIST_Colour[0], params->MIST_Colour[1], params->MIST_Colour[2], params->MIST_Colour[3]);
+  float  TEMPORAL_NEW = params->TEMPORAL_NEW;
+  float  TEMPORAL_NEW_FAST = params->TEMPORAL_NEW_FAST;
+  float  TEMPORAL_RANGE = params->TEMPORAL_RANGE;
+  float  SHARPEN = params->SHARPEN;
+  float  FLIGHT_START = params->FLIGHT_START;
+  float  FLIGHT_SPEED = params->FLIGHT_SPEED;
+  float  FLIGHT_SURGE = params->FLIGHT_SURGE;
+  float  CAMERA_FOCAL = params->CAMERA_FOCAL;
+  float  CAMERA_HEIGHT = params->CAMERA_HEIGHT;
+  float  CAMERA_SWAY = params->CAMERA_SWAY;
+  float  CAMERA_BOB = params->CAMERA_BOB;
+  float  CAMERA_ROLL = params->CAMERA_ROLL;
+  float  CAMERA_LOOK = params->CAMERA_LOOK;
+  float  CAMERA_AIM = params->CAMERA_AIM;
+  float  PATH_BEND = params->PATH_BEND;
+  float  THROAT_TWIST = params->THROAT_TWIST;
+  float  BREATH_WAVE = params->BREATH_WAVE;
+  float  BREATH_SLOW = params->BREATH_SLOW;
+  float  THROAT_CLENCH = params->THROAT_CLENCH;
+  float  CLENCH_NEAR = params->CLENCH_NEAR;
+  float  CLENCH_FAR = params->CLENCH_FAR;
+  float  WALL_RADIUS = params->WALL_RADIUS;
+  float  THROAT_WIDTH = params->THROAT_WIDTH;
+  float  WALL_RELIEF = params->WALL_RELIEF;
+  float  FOLD_FREQUENCY = params->FOLD_FREQUENCY;
+  float  FOLD_DEPTH = params->FOLD_DEPTH;
+  float  FOLD_CREASE = params->FOLD_CREASE;
+  float  CORD_DEPTH = params->CORD_DEPTH;
+  float  LUMP_DEPTH = params->LUMP_DEPTH;
+  float  FLOOR_DEPTH = params->FLOOR_DEPTH;
+  float  FLOOR_BLEND = params->FLOOR_BLEND;
+  float  FLOOR_SWELL = params->FLOOR_SWELL;
+  float  FANG_MAX_ANGLE = params->FANG_MAX_ANGLE;
+  float  FANG_BLEND = params->FANG_BLEND;
+  float  FANG_BIG_SLICE = params->FANG_BIG_SLICE;
+  float  FANG_BIG_DENSITY = params->FANG_BIG_DENSITY;
+  float  FANG_SMALL_SLICE = params->FANG_SMALL_SLICE;
+  float  FANG_SMALL_SECTOR = params->FANG_SMALL_SECTOR;
+  float  FANG_SMALL_DENSITY = params->FANG_SMALL_DENSITY;
+  float  FANG_CURVE = params->FANG_CURVE;
+  float  WALL_TENTACLE_SIZE = params->WALL_TENTACLE_SIZE;
+  float  HANG_CELL = params->HANG_CELL;
+  float  HANG_SIZE = params->HANG_SIZE;
+  float  HANG_SPREAD = params->HANG_SPREAD;
+  float  WRITHE_SPEED = params->WRITHE_SPEED;
+  float  WRINKLE_SCALE = params->WRINKLE_SCALE;
+  float  FILM_RELIEF = params->FILM_RELIEF;
+  float  WRINKLE_BUMP = params->WRINKLE_BUMP;
+  float  DROPLETS = params->DROPLETS;
+  float  LAMP_POWER = params->LAMP_POWER;
+  float  LAMP_FALLOFF = params->LAMP_FALLOFF;
+  float  LAMP_SPILL = params->LAMP_SPILL;
+  float  GLOSS = params->GLOSS;
+  float  GLOSS_REACH = params->GLOSS_REACH;
+  float  BOUNCE = params->BOUNCE;
+  float  BOUNCE_FALLOFF = params->BOUNCE_FALLOFF;
+  float  HAZE_DENSITY = params->HAZE_DENSITY;
+  float  TONE_MIDDLE = params->TONE_MIDDLE;
+  float  VIGNETTE = params->VIGNETTE;
+  float  GRAIN = params->GRAIN;
+  float  TONE_CONTRAST = params->TONE_CONTRAST;
+  int    FANG_BIG_COUNT = params->FANG_BIG_COUNT;
+  int    WRINKLE_OCTAVES = params->WRINKLE_OCTAVES;
+  
+  // --------
+
+    fragCoord+=0.5f;
+
+    float3 FLESH_DEEP      = swi3(FLESH_Deep     ,x,y,z);
+    float3 FLESH_MID       = swi3(FLESH_Mid      ,x,y,z);
+    float3 FLESH_PALE      = swi3(FLESH_Pale     ,x,y,z);
+    float3 FLESH_CREASE    = swi3(FLESH_Crease   ,x,y,z);
+    float3 TENTACLE_COLOUR = swi3(TENTACLE_Colour,x,y,z);
+    float3 FANG_COLOUR     = swi3(FANG_Colour    ,x,y,z);
+    float3 FANG_STAIN      = swi3(FANG_Stain     ,x,y,z);
+    float3 FANG_TAN        = swi3(FANG_Tan       ,x,y,z);
+
+    float3 LAMP_COLOUR     = swi3(LAMP_Colour,x,y,z);
+    float3 SHEEN           = swi3(Sheen      ,x,y,z);
+    float3 HAZE_COLOUR     = swi3(HAZE_Colour,x,y,z);
+    float3 MIST_COLOUR     = swi3(MIST_Colour,x,y,z);
+
+    float gTime;
+
+    // Added to every distance that is only a limit rather than a real surface. It is zero
+    // for camera rays and large for the rest: a soft shadow or occlusion ray would read a
+    // limit as an object nearby, and draw false bands.
+    float gEdgeSlack;
+
+    // Set by throat(), read when shading. Distances are in throat space.
+    float gWall;
+    float gFang;
+    float gTentacle;
+    float gFangAlong;
+    float3 gFangAxis;
+    float gTentacleAlong;
+    float gRoll;
+
+
+    float2 renderSize = renderCorner(iResolution);
+    if (fragCoord.x >= renderSize.x || fragCoord.y >= renderSize.y)
+    {
+        fragColor = to_float4_s(0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    gTime = iTime;
+    gEdgeSlack = 0.0f;
+    struct Camera camera = flightCamera(iTime, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, CAMERA_SWAY, CAMERA_HEIGHT, CAMERA_BOB, THROAT_TWIST, PATH_BEND, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR, CAMERA_LOOK, CAMERA_AIM, CAMERA_ROLL);
+
+    float2 jitter = to_float2_s(0.0f);
+    if (TEMPORAL)
+      jitter = fract((float)(iFrame) * to_float2(0.7548776662f, 0.5698402910f)) - 0.5f;
+
+    float2 uv = (2.0f * (fragCoord + jitter) - renderSize) / renderSize.y;
+    float3 direction = normalize(uv.x * camera.right + uv.y * camera.up + CAMERA_FOCAL * camera.forward);
+    float pixelAngle = 2.0f / (renderSize.y * CAMERA_FOCAL);
+
+
+    float t = marchThroat(camera.position, direction, pixelAngle, gTime, &gWall, gEdgeSlack, &gTentacleAlong, &gTentacle, &gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                          PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, &gRoll,
+                          FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                          FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, &gFangAlong, &gFangAxis,
+                          FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND);
+    float3 col = to_float3_s(0.0f);
+    if (t < MARCH_FAR)
+    {
+        col = shadeThroat(camera.position, direction, t, camera, pixelAngle, gTime, &gWall, &gEdgeSlack, &gTentacleAlong, &gTentacle, &gFang, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR,
+                        PATH_BEND, THROAT_TWIST, WALL_RADIUS, THROAT_WIDTH, FLOOR_DEPTH, WALL_RELIEF, FLOOR_SWELL, FLOOR_BLEND, &gRoll,
+                        FOLD_FREQUENCY, FOLD_CREASE, FOLD_DEPTH, CORD_DEPTH, LUMP_DEPTH, WALL_TENTACLE_SIZE, HANG_CELL, HANG_SPREAD, WRITHE_SPEED, HANG_SIZE,
+                        FANG_BIG_SLICE, FANG_BIG_COUNT, FANG_BIG_DENSITY, FANG_MAX_ANGLE, FANG_CURVE, &gFangAlong, &gFangAxis,
+                        FANG_SMALL_SECTOR, FANG_SMALL_DENSITY, FANG_SMALL_SLICE, FANG_BLEND,
+                        WRINKLE_BUMP, FLESH_DEEP, FLESH_MID, FLESH_PALE, FLESH_CREASE, TENTACLE_COLOUR, FANG_COLOUR, FANG_TAN, FANG_STAIN, DROPLETS, FILM_RELIEF, GLOSS,
+                        LAMP_POWER, LAMP_FALLOFF, LAMP_COLOUR, GLOSS_REACH, SHEEN, BOUNCE, BOUNCE_FALLOFF, WRINKLE_SCALE, WRINKLE_OCTAVES, LAMP_SPILL);
+    }
+
+    // Damp air swallows the distance. Nothing down there gives off light, so what
+    // lies beyond the lamp's reach fades to almost nothing.
+    col = _mix(HAZE_COLOUR, col, _expf(-t * HAZE_DENSITY));
+
+    // The lamp also lights the mist the ray passes through. This is the exact integral
+    // along the ray of light falling off with the square of distance, so it costs no
+    // extra steps. Mostly it is a faint veil in the beam.
+    float3 toLamp = lampPosition(camera) - camera.position;
+    float along = dot(toLamp, direction);
+    float miss = _sqrtf(_fmaxf(dot(toLamp, toLamp) - along * along, 0.0f) + 0.25f);
+    float mist = (_atan2f((t - along) / miss, 1.0f) + _atan2f(along / miss, 1.0f)) / miss;
+    col += MIST_COLOUR * mist * lampBeam(direction, camera.forward, LAMP_SPILL);
+    fragColor = to_float4_aw(filmCurve(col, TONE_CONTRAST, TONE_MIDDLE), t);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer B                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer B 'Previsualization: Buffer A' to iChannel0
+// Connect Buffer B 'Previsualization: Buffer B' to iChannel1
+
+
+// The Maw - Buffer B: steadying the picture over time.
+// Written by Claude (Anthropic).
+//
+// Buffer A looks through a slightly different point in each pixel every frame. This
+// pass blends those frames. To do that without smearing it asks, for each pixel:
+// where was this surface on screen last frame? The ray length in Buffer A's alpha
+// gives the surface point, and the known camera path gives the answer. Old colours
+// that no longer fit this pixel's neighbourhood are pulled back into its range, which
+// prevents ghost trails.
+//
+// iChannel0: Buffer A (nearest). iChannel1: this buffer, last frame (linear).
+
+__KERNEL__ void DevilSMawClaudeCodeFuse__Buffer_B(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float  iTimeDelta  = params->iTimeDelta;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   TEMPORAL = params->TEMPORAL;
+  float4 FLESH_Deep = to_float4(params->FLESH_Deep[0], params->FLESH_Deep[1], params->FLESH_Deep[2], params->FLESH_Deep[3]);
+  float4 FLESH_Mid = to_float4(params->FLESH_Mid[0], params->FLESH_Mid[1], params->FLESH_Mid[2], params->FLESH_Mid[3]);
+  float4 FLESH_Pale = to_float4(params->FLESH_Pale[0], params->FLESH_Pale[1], params->FLESH_Pale[2], params->FLESH_Pale[3]);
+  float4 FLESH_Crease = to_float4(params->FLESH_Crease[0], params->FLESH_Crease[1], params->FLESH_Crease[2], params->FLESH_Crease[3]);
+  float4 TENTACLE_Colour = to_float4(params->TENTACLE_Colour[0], params->TENTACLE_Colour[1], params->TENTACLE_Colour[2], params->TENTACLE_Colour[3]);
+  float4 FANG_Colour = to_float4(params->FANG_Colour[0], params->FANG_Colour[1], params->FANG_Colour[2], params->FANG_Colour[3]);
+  float4 FANG_Stain = to_float4(params->FANG_Stain[0], params->FANG_Stain[1], params->FANG_Stain[2], params->FANG_Stain[3]);
+  float4 FANG_Tan = to_float4(params->FANG_Tan[0], params->FANG_Tan[1], params->FANG_Tan[2], params->FANG_Tan[3]);
+  float4 LAMP_Colour = to_float4(params->LAMP_Colour[0], params->LAMP_Colour[1], params->LAMP_Colour[2], params->LAMP_Colour[3]);
+  float4 Sheen = to_float4(params->Sheen[0], params->Sheen[1], params->Sheen[2], params->Sheen[3]);
+  float4 HAZE_Colour = to_float4(params->HAZE_Colour[0], params->HAZE_Colour[1], params->HAZE_Colour[2], params->HAZE_Colour[3]);
+  float4 MIST_Colour = to_float4(params->MIST_Colour[0], params->MIST_Colour[1], params->MIST_Colour[2], params->MIST_Colour[3]);
+  float  TEMPORAL_NEW = params->TEMPORAL_NEW;
+  float  TEMPORAL_NEW_FAST = params->TEMPORAL_NEW_FAST;
+  float  TEMPORAL_RANGE = params->TEMPORAL_RANGE;
+  float  SHARPEN = params->SHARPEN;
+  float  FLIGHT_START = params->FLIGHT_START;
+  float  FLIGHT_SPEED = params->FLIGHT_SPEED;
+  float  FLIGHT_SURGE = params->FLIGHT_SURGE;
+  float  CAMERA_FOCAL = params->CAMERA_FOCAL;
+  float  CAMERA_HEIGHT = params->CAMERA_HEIGHT;
+  float  CAMERA_SWAY = params->CAMERA_SWAY;
+  float  CAMERA_BOB = params->CAMERA_BOB;
+  float  CAMERA_ROLL = params->CAMERA_ROLL;
+  float  CAMERA_LOOK = params->CAMERA_LOOK;
+  float  CAMERA_AIM = params->CAMERA_AIM;
+  float  PATH_BEND = params->PATH_BEND;
+  float  THROAT_TWIST = params->THROAT_TWIST;
+  float  BREATH_WAVE = params->BREATH_WAVE;
+  float  BREATH_SLOW = params->BREATH_SLOW;
+  float  THROAT_CLENCH = params->THROAT_CLENCH;
+  float  CLENCH_NEAR = params->CLENCH_NEAR;
+  float  CLENCH_FAR = params->CLENCH_FAR;
+  float  WALL_RADIUS = params->WALL_RADIUS;
+  float  THROAT_WIDTH = params->THROAT_WIDTH;
+  float  WALL_RELIEF = params->WALL_RELIEF;
+  float  FOLD_FREQUENCY = params->FOLD_FREQUENCY;
+  float  FOLD_DEPTH = params->FOLD_DEPTH;
+  float  FOLD_CREASE = params->FOLD_CREASE;
+  float  CORD_DEPTH = params->CORD_DEPTH;
+  float  LUMP_DEPTH = params->LUMP_DEPTH;
+  float  FLOOR_DEPTH = params->FLOOR_DEPTH;
+  float  FLOOR_BLEND = params->FLOOR_BLEND;
+  float  FLOOR_SWELL = params->FLOOR_SWELL;
+  float  FANG_MAX_ANGLE = params->FANG_MAX_ANGLE;
+  float  FANG_BLEND = params->FANG_BLEND;
+  float  FANG_BIG_SLICE = params->FANG_BIG_SLICE;
+  float  FANG_BIG_DENSITY = params->FANG_BIG_DENSITY;
+  float  FANG_SMALL_SLICE = params->FANG_SMALL_SLICE;
+  float  FANG_SMALL_SECTOR = params->FANG_SMALL_SECTOR;
+  float  FANG_SMALL_DENSITY = params->FANG_SMALL_DENSITY;
+  float  FANG_CURVE = params->FANG_CURVE;
+  float  WALL_TENTACLE_SIZE = params->WALL_TENTACLE_SIZE;
+  float  HANG_CELL = params->HANG_CELL;
+  float  HANG_SIZE = params->HANG_SIZE;
+  float  HANG_SPREAD = params->HANG_SPREAD;
+  float  WRITHE_SPEED = params->WRITHE_SPEED;
+  float  WRINKLE_SCALE = params->WRINKLE_SCALE;
+  float  FILM_RELIEF = params->FILM_RELIEF;
+  float  WRINKLE_BUMP = params->WRINKLE_BUMP;
+  float  DROPLETS = params->DROPLETS;
+  float  LAMP_POWER = params->LAMP_POWER;
+  float  LAMP_FALLOFF = params->LAMP_FALLOFF;
+  float  LAMP_SPILL = params->LAMP_SPILL;
+  float  GLOSS = params->GLOSS;
+  float  GLOSS_REACH = params->GLOSS_REACH;
+  float  BOUNCE = params->BOUNCE;
+  float  BOUNCE_FALLOFF = params->BOUNCE_FALLOFF;
+  float  HAZE_DENSITY = params->HAZE_DENSITY;
+  float  TONE_MIDDLE = params->TONE_MIDDLE;
+  float  VIGNETTE = params->VIGNETTE;
+  float  GRAIN = params->GRAIN;
+  float  TONE_CONTRAST = params->TONE_CONTRAST;
+  int    FANG_BIG_COUNT = params->FANG_BIG_COUNT;
+  int    WRINKLE_OCTAVES = params->WRINKLE_OCTAVES;
+  
+  // --------
+
+    fragCoord+=0.5f;
+
+    float3 FLESH_DEEP      = swi3(FLESH_Deep     ,x,y,z);
+    float3 FLESH_MID       = swi3(FLESH_Mid      ,x,y,z);
+    float3 FLESH_PALE      = swi3(FLESH_Pale     ,x,y,z);
+    float3 FLESH_CREASE    = swi3(FLESH_Crease   ,x,y,z);
+    float3 TENTACLE_COLOUR = swi3(TENTACLE_Colour,x,y,z);
+    float3 FANG_COLOUR     = swi3(FANG_Colour    ,x,y,z);
+    float3 FANG_STAIN      = swi3(FANG_Stain     ,x,y,z);
+    float3 FANG_TAN        = swi3(FANG_Tan       ,x,y,z);
+
+    float3 LAMP_COLOUR     = swi3(LAMP_Colour,x,y,z);
+    float3 SHEEN           = swi3(Sheen      ,x,y,z);
+    float3 HAZE_COLOUR     = swi3(HAZE_Colour,x,y,z);
+    float3 MIST_COLOUR     = swi3(MIST_Colour,x,y,z);
+
+    float gTime;
+
+    // Added to every distance that is only a limit rather than a real surface. It is zero
+    // for camera rays and large for the rest: a soft shadow or occlusion ray would read a
+    // limit as an object nearby, and draw false bands.
+    float gEdgeSlack;
+
+    // Set by throat(), read when shading. Distances are in throat space.
+    float gWall;
+    float gFang;
+    float gTentacle;
+    float gFangAlong;
+    float3 gFangAxis;
+    float gTentacleAlong;
+    float gRoll;
+
+    int RowSampler = 15; // Total irre !!! Tausend Shader, die liefen ohne diese Zeile mit OpenCL. Dieser Shader braucht aber genau dies nur für OpenCL -> Total irre !!!
+
+    float2 renderSize = renderCorner(iResolution);
+    if (fragCoord.x >= renderSize.x || fragCoord.y >= renderSize.y)
+    {
+        fragColor = to_float4_s(0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    int2 here = to_int2_cfloat(fragCoord);
+    int2 top = to_int2_cfloat(renderSize) - 1;
+    float3 current = to_float3_s(0.0f);
+    float3 mean = to_float3_s(0.0f);
+    float3 squares = to_float3_s(0.0f);
+    float nearest = 1e5f;
+    for (int j = -1; j <= 1; j++)
+    {
+        for (int i = -1; i <= 1; i++)
+        {
+            float4 s = texelFetch(iChannel0, clamp(here + to_int2(i, j), to_int2(0,0), top), 0);
+            if (i == 0 && j == 0)
+            {
+               current = swi3(s,x,y,z);
+            }
+            mean    += swi3(s,x,y,z);
+            squares += swi3(s,x,y,z) * swi3(s,x,y,z);
+            nearest  = _fminf(nearest, s.w);
+        }
+    }
+    mean /= 9.0f;
+    float3 spread = sqrt_f3(_fmaxf(squares / 9.0f - mean * mean, to_float3_s(0.0f)));
+
+    float3 result = current;
+    if (TEMPORAL)
+    {
+      if (iFrame > 0 && !Reset)
+      {
+          struct Camera now = flightCamera(iTime, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, CAMERA_SWAY, CAMERA_HEIGHT, CAMERA_BOB, THROAT_TWIST, PATH_BEND, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR, CAMERA_LOOK, CAMERA_AIM, CAMERA_ROLL);
+          struct Camera before = flightCamera(iTime - iTimeDelta, FLIGHT_START, FLIGHT_SPEED, FLIGHT_SURGE, CAMERA_SWAY, CAMERA_HEIGHT, CAMERA_BOB, THROAT_TWIST, PATH_BEND, BREATH_WAVE, BREATH_SLOW, THROAT_CLENCH, CLENCH_NEAR, CLENCH_FAR, CAMERA_LOOK, CAMERA_AIM, CAMERA_ROLL);
+          float2 uv = (2.0f * fragCoord - renderSize) / renderSize.y;
+          float3 surface = now.position + nearest * normalize(uv.x * now.right + uv.y * now.up + CAMERA_FOCAL * now.forward);
+          float3 fromBefore = surface - before.position;
+          float ahead = dot(fromBefore, before.forward);
+          float2 previous = (to_float2(dot(fromBefore, before.right), dot(fromBefore, before.up)) * CAMERA_FOCAL / _fmaxf(ahead, 1e-4f)
+                           * renderSize.y + renderSize) * 0.5f;
+          //if (ahead > 0.0f && all(greaterThan(previous, to_float2_s(0.5f))) && all(lessThan(previous, renderSize - 0.5f)))
+          if (ahead > 0.0f && (previous.x>0.5f&&previous.y>0.5f) && (previous.x<renderSize.x-0.5f&&previous.y<renderSize.y-0.5f))
+
+          {
+              float3 history = bicubicRead(iChannel1, previous, renderSize, iResolution);
+              history = clamp(history, mean - TEMPORAL_RANGE * spread, mean + TEMPORAL_RANGE * spread);
+
+              // Each read of the old picture softens it slightly, and quickly moving
+              // pixels would collect many such reads, so they trust the new frame more.
+              float moved = length(previous - fragCoord);
+              result = _mix(history, current, _mix(TEMPORAL_NEW, TEMPORAL_NEW_FAST, smoothstep(1.0f, 8.0f, moved)));
+          }
+      }
+    }
+    fragColor = to_float4_aw(_fmaxf(result, to_float3_s(0.0f)), 1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer B' to iChannel0
+
+
+// The Maw - Image: enlarge to the screen and finish the picture.
+// Written by Claude (Anthropic).
+//
+// iChannel0: Buffer B (linear).
+
+__KERNEL__ void DevilSMawClaudeCodeFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float  iTimeDelta  = params->iTimeDelta;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   TEMPORAL = params->TEMPORAL;
+  float4 FLESH_Deep = to_float4(params->FLESH_Deep[0], params->FLESH_Deep[1], params->FLESH_Deep[2], params->FLESH_Deep[3]);
+  float4 FLESH_Mid = to_float4(params->FLESH_Mid[0], params->FLESH_Mid[1], params->FLESH_Mid[2], params->FLESH_Mid[3]);
+  float4 FLESH_Pale = to_float4(params->FLESH_Pale[0], params->FLESH_Pale[1], params->FLESH_Pale[2], params->FLESH_Pale[3]);
+  float4 FLESH_Crease = to_float4(params->FLESH_Crease[0], params->FLESH_Crease[1], params->FLESH_Crease[2], params->FLESH_Crease[3]);
+  float4 TENTACLE_Colour = to_float4(params->TENTACLE_Colour[0], params->TENTACLE_Colour[1], params->TENTACLE_Colour[2], params->TENTACLE_Colour[3]);
+  float4 FANG_Colour = to_float4(params->FANG_Colour[0], params->FANG_Colour[1], params->FANG_Colour[2], params->FANG_Colour[3]);
+  float4 FANG_Stain = to_float4(params->FANG_Stain[0], params->FANG_Stain[1], params->FANG_Stain[2], params->FANG_Stain[3]);
+  float4 FANG_Tan = to_float4(params->FANG_Tan[0], params->FANG_Tan[1], params->FANG_Tan[2], params->FANG_Tan[3]);
+  float4 LAMP_Colour = to_float4(params->LAMP_Colour[0], params->LAMP_Colour[1], params->LAMP_Colour[2], params->LAMP_Colour[3]);
+  float4 Sheen = to_float4(params->Sheen[0], params->Sheen[1], params->Sheen[2], params->Sheen[3]);
+  float4 HAZE_Colour = to_float4(params->HAZE_Colour[0], params->HAZE_Colour[1], params->HAZE_Colour[2], params->HAZE_Colour[3]);
+  float4 MIST_Colour = to_float4(params->MIST_Colour[0], params->MIST_Colour[1], params->MIST_Colour[2], params->MIST_Colour[3]);
+  float  TEMPORAL_NEW = params->TEMPORAL_NEW;
+  float  TEMPORAL_NEW_FAST = params->TEMPORAL_NEW_FAST;
+  float  TEMPORAL_RANGE = params->TEMPORAL_RANGE;
+  float  SHARPEN = params->SHARPEN;
+  float  FLIGHT_START = params->FLIGHT_START;
+  float  FLIGHT_SPEED = params->FLIGHT_SPEED;
+  float  FLIGHT_SURGE = params->FLIGHT_SURGE;
+  float  CAMERA_FOCAL = params->CAMERA_FOCAL;
+  float  CAMERA_HEIGHT = params->CAMERA_HEIGHT;
+  float  CAMERA_SWAY = params->CAMERA_SWAY;
+  float  CAMERA_BOB = params->CAMERA_BOB;
+  float  CAMERA_ROLL = params->CAMERA_ROLL;
+  float  CAMERA_LOOK = params->CAMERA_LOOK;
+  float  CAMERA_AIM = params->CAMERA_AIM;
+  float  PATH_BEND = params->PATH_BEND;
+  float  THROAT_TWIST = params->THROAT_TWIST;
+  float  BREATH_WAVE = params->BREATH_WAVE;
+  float  BREATH_SLOW = params->BREATH_SLOW;
+  float  THROAT_CLENCH = params->THROAT_CLENCH;
+  float  CLENCH_NEAR = params->CLENCH_NEAR;
+  float  CLENCH_FAR = params->CLENCH_FAR;
+  float  WALL_RADIUS = params->WALL_RADIUS;
+  float  THROAT_WIDTH = params->THROAT_WIDTH;
+  float  WALL_RELIEF = params->WALL_RELIEF;
+  float  FOLD_FREQUENCY = params->FOLD_FREQUENCY;
+  float  FOLD_DEPTH = params->FOLD_DEPTH;
+  float  FOLD_CREASE = params->FOLD_CREASE;
+  float  CORD_DEPTH = params->CORD_DEPTH;
+  float  LUMP_DEPTH = params->LUMP_DEPTH;
+  float  FLOOR_DEPTH = params->FLOOR_DEPTH;
+  float  FLOOR_BLEND = params->FLOOR_BLEND;
+  float  FLOOR_SWELL = params->FLOOR_SWELL;
+  float  FANG_MAX_ANGLE = params->FANG_MAX_ANGLE;
+  float  FANG_BLEND = params->FANG_BLEND;
+  float  FANG_BIG_SLICE = params->FANG_BIG_SLICE;
+  float  FANG_BIG_DENSITY = params->FANG_BIG_DENSITY;
+  float  FANG_SMALL_SLICE = params->FANG_SMALL_SLICE;
+  float  FANG_SMALL_SECTOR = params->FANG_SMALL_SECTOR;
+  float  FANG_SMALL_DENSITY = params->FANG_SMALL_DENSITY;
+  float  FANG_CURVE = params->FANG_CURVE;
+  float  WALL_TENTACLE_SIZE = params->WALL_TENTACLE_SIZE;
+  float  HANG_CELL = params->HANG_CELL;
+  float  HANG_SIZE = params->HANG_SIZE;
+  float  HANG_SPREAD = params->HANG_SPREAD;
+  float  WRITHE_SPEED = params->WRITHE_SPEED;
+  float  WRINKLE_SCALE = params->WRINKLE_SCALE;
+  float  FILM_RELIEF = params->FILM_RELIEF;
+  float  WRINKLE_BUMP = params->WRINKLE_BUMP;
+  float  DROPLETS = params->DROPLETS;
+  float  LAMP_POWER = params->LAMP_POWER;
+  float  LAMP_FALLOFF = params->LAMP_FALLOFF;
+  float  LAMP_SPILL = params->LAMP_SPILL;
+  float  GLOSS = params->GLOSS;
+  float  GLOSS_REACH = params->GLOSS_REACH;
+  float  BOUNCE = params->BOUNCE;
+  float  BOUNCE_FALLOFF = params->BOUNCE_FALLOFF;
+  float  HAZE_DENSITY = params->HAZE_DENSITY;
+  float  TONE_MIDDLE = params->TONE_MIDDLE;
+  float  VIGNETTE = params->VIGNETTE;
+  float  GRAIN = params->GRAIN;
+  float  TONE_CONTRAST = params->TONE_CONTRAST;
+  int    FANG_BIG_COUNT = params->FANG_BIG_COUNT;
+  int    WRINKLE_OCTAVES = params->WRINKLE_OCTAVES;
+  
+  // --------
+
+    fragCoord+=0.5f;
+    
+    int RowSampler = 15; // Total irre !!! Tausend Shader, die liefen ohne diese Zeile mit OpenCL. Dieser Shader braucht aber genau dies nur für OpenCL -> Total irre !!!
+
+    float3 FLESH_DEEP      = swi3(FLESH_Deep     ,x,y,z);
+    float3 FLESH_MID       = swi3(FLESH_Mid      ,x,y,z);
+    float3 FLESH_PALE      = swi3(FLESH_Pale     ,x,y,z);
+    float3 FLESH_CREASE    = swi3(FLESH_Crease   ,x,y,z);
+    float3 TENTACLE_COLOUR = swi3(TENTACLE_Colour,x,y,z);
+    float3 FANG_COLOUR     = swi3(FANG_Colour    ,x,y,z);
+    float3 FANG_STAIN      = swi3(FANG_Stain     ,x,y,z);
+    float3 FANG_TAN        = swi3(FANG_Tan       ,x,y,z);
+
+    float3 LAMP_COLOUR     = swi3(LAMP_Colour,x,y,z);
+    float3 SHEEN           = swi3(Sheen      ,x,y,z);
+    float3 HAZE_COLOUR     = swi3(HAZE_Colour,x,y,z);
+    float3 MIST_COLOUR     = swi3(MIST_Colour,x,y,z);
+
+
+    float2 renderSize = renderCorner(iResolution);
+    float2 position = fragCoord * (renderSize / iResolution);
+    float3 col = bicubicRead(iChannel0, position, renderSize, iResolution);
+
+    // Push each pixel away from the average around it. Applied only here, so it
+    // never builds up from frame to frame.
+    float2 texel = 1.0f / iResolution;//to_float2(textureSize(iChannel0, 0));
+    float2 uv = clamp(position, to_float2_s(1.5f), renderSize - 1.5f) * texel;
+    float3 around = 0.25f * (swi3(texture(iChannel0, uv + to_float2(texel.x, 0.0f)),x,y,z)
+                           + swi3(texture(iChannel0, uv - to_float2(texel.x, 0.0f)),x,y,z)
+                           + swi3(texture(iChannel0, uv + to_float2(0.0f, texel.y)),x,y,z)
+                           + swi3(texture(iChannel0, uv - to_float2(0.0f, texel.y)),x,y,z));
+    col = _fmaxf(col + SHARPEN * (col - around), to_float3_s(0.0f));
+
+    float2 centred = (2.0f * fragCoord - iResolution) / iResolution;
+    col *= 1.0f - VIGNETTE * smoothstep(0.35f, 1.6f, dot(centred, centred));
+
+    col = pow_f3(col, to_float3_s(1.0f / 2.2f));
+
+    float4 r = siteRandom((int)(fragCoord.x), (int)(fragCoord.y), iFrame);
+    col += GRAIN * (r.x + r.y - 1.0f);
+
+    fragColor = to_float4_aw(col, 1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTEMPORALCheckbox = self:AddInput("TEMPORAL", "TEMPORAL", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("FLESH_Deep", "FLESH_Deep", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FLESH_Deep",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFLESH_DeepColorR = self:AddInput("Red",   "FLESH_DeepRed",   { INP_Default  = 0.036, IC_ControlID = 0, attrs})
+    InFLESH_DeepColorG = self:AddInput("Green", "FLESH_DeepGreen", { INP_Default  = 0.0065, IC_ControlID = 1, attrs})
+    InFLESH_DeepColorB = self:AddInput("Blue",  "FLESH_DeepBlue",  { INP_Default  = 0.0095, IC_ControlID = 2, attrs})
+    InFLESH_DeepColorA = self:AddInput("Alpha", "FLESH_DeepAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("FLESH_Mid", "FLESH_Mid", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FLESH_Mid",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFLESH_MidColorR = self:AddInput("Red",   "FLESH_MidRed",   { INP_Default  = 0.080, IC_ControlID = 0, attrs})
+    InFLESH_MidColorG = self:AddInput("Green", "FLESH_MidGreen", { INP_Default  = 0.019, IC_ControlID = 1, attrs})
+    InFLESH_MidColorB = self:AddInput("Blue",  "FLESH_MidBlue",  { INP_Default  = 0.021, IC_ControlID = 2, attrs})
+    InFLESH_MidColorA = self:AddInput("Alpha", "FLESH_MidAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("FLESH_Pale", "FLESH_Pale", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FLESH_Pale",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFLESH_PaleColorR = self:AddInput("Red",   "FLESH_PaleRed",   { INP_Default  = 0.20, IC_ControlID = 0, attrs})
+    InFLESH_PaleColorG = self:AddInput("Green", "FLESH_PaleGreen", { INP_Default  = 0.090, IC_ControlID = 1, attrs})
+    InFLESH_PaleColorB = self:AddInput("Blue",  "FLESH_PaleBlue",  { INP_Default  = 0.082, IC_ControlID = 2, attrs})
+    InFLESH_PaleColorA = self:AddInput("Alpha", "FLESH_PaleAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("FLESH_Crease", "FLESH_Crease", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FLESH_Crease",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFLESH_CreaseColorR = self:AddInput("Red",   "FLESH_CreaseRed",   { INP_Default  = 0.012, IC_ControlID = 0, attrs})
+    InFLESH_CreaseColorG = self:AddInput("Green", "FLESH_CreaseGreen", { INP_Default  = 0.002, IC_ControlID = 1, attrs})
+    InFLESH_CreaseColorB = self:AddInput("Blue",  "FLESH_CreaseBlue",  { INP_Default  = 0.003, IC_ControlID = 2, attrs})
+    InFLESH_CreaseColorA = self:AddInput("Alpha", "FLESH_CreaseAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("TENTACLE_Colour", "TENTACLE_Colour", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "TENTACLE_Colour",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InTENTACLE_ColourColorR = self:AddInput("Red",   "TENTACLE_ColourRed",   { INP_Default  = 0.026, IC_ControlID = 0, attrs})
+    InTENTACLE_ColourColorG = self:AddInput("Green", "TENTACLE_ColourGreen", { INP_Default  = 0.0052, IC_ControlID = 1, attrs})
+    InTENTACLE_ColourColorB = self:AddInput("Blue",  "TENTACLE_ColourBlue",  { INP_Default  = 0.0105, IC_ControlID = 2, attrs})
+    InTENTACLE_ColourColorA = self:AddInput("Alpha", "TENTACLE_ColourAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("FANG_Colour", "FANG_Colour", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FANG_Colour",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFANG_ColourColorR = self:AddInput("Red",   "FANG_ColourRed",   { INP_Default  = 0.72, IC_ControlID = 0, attrs})
+    InFANG_ColourColorG = self:AddInput("Green", "FANG_ColourGreen", { INP_Default  = 0.58, IC_ControlID = 1, attrs})
+    InFANG_ColourColorB = self:AddInput("Blue",  "FANG_ColourBlue",  { INP_Default  = 0.37, IC_ControlID = 2, attrs})
+    InFANG_ColourColorA = self:AddInput("Alpha", "FANG_ColourAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("FANG_Stain", "FANG_Stain", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FANG_Stain",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFANG_StainColorR = self:AddInput("Red",   "FANG_StainRed",   { INP_Default  = 0.060, IC_ControlID = 0, attrs})
+    InFANG_StainColorG = self:AddInput("Green", "FANG_StainGreen", { INP_Default  = 0.022, IC_ControlID = 1, attrs})
+    InFANG_StainColorB = self:AddInput("Blue",  "FANG_StainBlue",  { INP_Default  = 0.014, IC_ControlID = 2, attrs})
+    InFANG_StainColorA = self:AddInput("Alpha", "FANG_StainAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("FANG_Tan", "FANG_Tan", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FANG_Tan",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFANG_TanColorR = self:AddInput("Red",   "FANG_TanRed",   { INP_Default  = 0.27, IC_ControlID = 0, attrs})
+    InFANG_TanColorG = self:AddInput("Green", "FANG_TanGreen", { INP_Default  = 0.165, IC_ControlID = 1, attrs})
+    InFANG_TanColorB = self:AddInput("Blue",  "FANG_TanBlue",  { INP_Default  = 0.085, IC_ControlID = 2, attrs})
+    InFANG_TanColorA = self:AddInput("Alpha", "FANG_TanAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("LAMP_Colour", "LAMP_Colour", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "LAMP_Colour",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InLAMP_ColourColorR = self:AddInput("Red",   "LAMP_ColourRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InLAMP_ColourColorG = self:AddInput("Green", "LAMP_ColourGreen", { INP_Default  = 0.90, IC_ControlID = 1, attrs})
+    InLAMP_ColourColorB = self:AddInput("Blue",  "LAMP_ColourBlue",  { INP_Default  = 0.80, IC_ControlID = 2, attrs})
+    InLAMP_ColourColorA = self:AddInput("Alpha", "LAMP_ColourAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Sheen", "Sheen", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Sheen",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InSheenColorR = self:AddInput("Red",   "SheenRed",   { INP_Default  = 0.045, IC_ControlID = 0, attrs})
+    InSheenColorG = self:AddInput("Green", "SheenGreen", { INP_Default  = 0.0085, IC_ControlID = 1, attrs})
+    InSheenColorB = self:AddInput("Blue",  "SheenBlue",  { INP_Default  = 0.007, IC_ControlID = 2, attrs})
+    InSheenColorA = self:AddInput("Alpha", "SheenAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("HAZE_Colour", "HAZE_Colour", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "HAZE_Colour",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHAZE_ColourColorR = self:AddInput("Red",   "HAZE_ColourRed",   { INP_Default  = 0.0035, IC_ControlID = 0, attrs})
+    InHAZE_ColourColorG = self:AddInput("Green", "HAZE_ColourGreen", { INP_Default  = 0.002875, IC_ControlID = 1, attrs})
+    InHAZE_ColourColorB = self:AddInput("Blue",  "HAZE_ColourBlue",  { INP_Default  = 0.0006, IC_ControlID = 2, attrs})
+    InHAZE_ColourColorA = self:AddInput("Alpha", "HAZE_ColourAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MIST_Colour", "MIST_Colour", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MIST_Colour",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMIST_ColourColorR = self:AddInput("Red",   "MIST_ColourRed",   { INP_Default  = 0.0030, IC_ControlID = 0, attrs})
+    InMIST_ColourColorG = self:AddInput("Green", "MIST_ColourGreen", { INP_Default  = 0.0012, IC_ControlID = 1, attrs})
+    InMIST_ColourColorB = self:AddInput("Blue",  "MIST_ColourBlue",  { INP_Default  = 0.0010, IC_ControlID = 2, attrs})
+    InMIST_ColourColorA = self:AddInput("Alpha", "MIST_ColourAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+self:EndControlNest()
+
+  InTEMPORAL_NEWSlider = self:AddInput("TEMPORAL_NEW", "TEMPORAL_NEW", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.14,
+      })
+
+  InTEMPORAL_NEW_FASTSlider = self:AddInput("TEMPORAL_NEW_FAST", "TEMPORAL_NEW_FAST", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.55,
+      })
+
+  InTEMPORAL_RANGESlider = self:AddInput("TEMPORAL_RANGE", "TEMPORAL_RANGE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.25,
+      })
+
+  InSHARPENSlider = self:AddInput("SHARPEN", "SHARPEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.35,
+      })
+
+  InFLIGHT_STARTSlider = self:AddInput("FLIGHT_START", "FLIGHT_START", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 100.0,
+          INP_Default        = 34.0,
+      })
+
+  InFLIGHT_SPEEDSlider = self:AddInput("FLIGHT_SPEED", "FLIGHT_SPEED", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.85,
+      })
+
+  InFLIGHT_SURGESlider = self:AddInput("FLIGHT_SURGE", "FLIGHT_SURGE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.55,
+      })
+
+  InCAMERA_FOCALSlider = self:AddInput("CAMERA_FOCAL", "CAMERA_FOCAL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.22,
+      })
+
+  InCAMERA_HEIGHTSlider = self:AddInput("CAMERA_HEIGHT", "CAMERA_HEIGHT", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -2.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = -0.72,
+      })
+
+  InCAMERA_SWAYSlider = self:AddInput("CAMERA_SWAY", "CAMERA_SWAY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.22,
+      })
+
+  InCAMERA_BOBSlider = self:AddInput("CAMERA_BOB", "CAMERA_BOB", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.07,
+      })
+
+  InCAMERA_ROLLSlider = self:AddInput("CAMERA_ROLL", "CAMERA_ROLL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.05,
+      })
+
+  InCAMERA_LOOKSlider = self:AddInput("CAMERA_LOOK", "CAMERA_LOOK", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 7.0,
+      })
+
+  InCAMERA_AIMSlider = self:AddInput("CAMERA_AIM", "CAMERA_AIM", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -3.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = -1.15,
+      })
+
+  InPATH_BENDSlider = self:AddInput("PATH_BEND", "PATH_BEND", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -3.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.0,
+      })
+
+  InTHROAT_TWISTSlider = self:AddInput("THROAT_TWIST", "THROAT_TWIST", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.55,
+      })
+
+  InBREATH_WAVESlider = self:AddInput("BREATH_WAVE", "BREATH_WAVE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.045,
+      })
+
+  InBREATH_SLOWSlider = self:AddInput("BREATH_SLOW", "BREATH_SLOW", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.02,
+      })
+
+  InTHROAT_CLENCHSlider = self:AddInput("THROAT_CLENCH", "THROAT_CLENCH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.58,
+      })
+
+  InCLENCH_NEARSlider = self:AddInput("CLENCH_NEAR", "CLENCH_NEAR", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 8.0,
+      })
+
+  InCLENCH_FARSlider = self:AddInput("CLENCH_FAR", "CLENCH_FAR", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 50.0,
+          INP_Default        = 26.0,
+      })
+
+  InWALL_RADIUSSlider = self:AddInput("WALL_RADIUS", "WALL_RADIUS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.85,
+      })
+
+  InTHROAT_WIDTHSlider = self:AddInput("THROAT_WIDTH", "THROAT_WIDTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.80,
+      })
+
+  InWALL_RELIEFSlider = self:AddInput("WALL_RELIEF", "WALL_RELIEF", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.95,
+      })
+
+  InFOLD_FREQUENCYSlider = self:AddInput("FOLD_FREQUENCY", "FOLD_FREQUENCY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.5,
+      })
+
+  InFOLD_DEPTHSlider = self:AddInput("FOLD_DEPTH", "FOLD_DEPTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.27,
+      })
+
+  InFOLD_CREASESlider = self:AddInput("FOLD_CREASE", "FOLD_CREASE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.03,
+      })
+
+  InCORD_DEPTHSlider = self:AddInput("CORD_DEPTH", "CORD_DEPTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.19,
+      })
+
+  InLUMP_DEPTHSlider = self:AddInput("LUMP_DEPTH", "LUMP_DEPTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.13,
+      })
+
+  InFLOOR_DEPTHSlider = self:AddInput("FLOOR_DEPTH", "FLOOR_DEPTH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.62,
+      })
+
+  InFLOOR_BLENDSlider = self:AddInput("FLOOR_BLEND", "FLOOR_BLEND", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 0.9,
+      })
+
+  InFLOOR_SWELLSlider = self:AddInput("FLOOR_SWELL", "FLOOR_SWELL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.11,
+      })
+
+  InFANG_MAX_ANGLESlider = self:AddInput("FANG_MAX_ANGLE", "FANG_MAX_ANGLE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.30,
+      })
+
+  InFANG_BLENDSlider = self:AddInput("FANG_BLEND", "FANG_BLEND", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.16,
+      })
+
+  InFANG_BIG_SLICESlider = self:AddInput("FANG_BIG_SLICE", "FANG_BIG_SLICE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 5.0,
+      })
+
+  InFANG_BIG_DENSITYSlider = self:AddInput("FANG_BIG_DENSITY", "FANG_BIG_DENSITY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 0.85,
+      })
+
+  InFANG_SMALL_SLICESlider = self:AddInput("FANG_SMALL_SLICE", "FANG_SMALL_SLICE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.3,
+      })
+
+  InFANG_SMALL_SECTORSlider = self:AddInput("FANG_SMALL_SECTOR", "FANG_SMALL_SECTOR", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.42,
+      })
+
+  InFANG_SMALL_DENSITYSlider = self:AddInput("FANG_SMALL_DENSITY", "FANG_SMALL_DENSITY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.6,
+      })
+
+  InFANG_CURVESlider = self:AddInput("FANG_CURVE", "FANG_CURVE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.70,
+      })
+
+  InWALL_TENTACLE_SIZESlider = self:AddInput("WALL_TENTACLE_SIZE", "WALL_TENTACLE_SIZE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.30,
+      })
+
+  InHANG_CELLSlider = self:AddInput("HANG_CELL", "HANG_CELL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 4.5,
+      })
+
+  InHANG_SIZESlider = self:AddInput("HANG_SIZE", "HANG_SIZE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.24,
+      })
+
+  InHANG_SPREADSlider = self:AddInput("HANG_SPREAD", "HANG_SPREAD", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.15,
+      })
+
+  InWRITHE_SPEEDSlider = self:AddInput("WRITHE_SPEED", "WRITHE_SPEED", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.55,
+      })
+
+  InWRINKLE_SCALESlider = self:AddInput("WRINKLE_SCALE", "WRINKLE_SCALE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 5.5,
+      })
+
+  InFILM_RELIEFSlider = self:AddInput("FILM_RELIEF", "FILM_RELIEF", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 0.95,
+      })
+
+  InWRINKLE_BUMPSlider = self:AddInput("WRINKLE_BUMP", "WRINKLE_BUMP", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.36,
+      })
+
+  InDROPLETSSlider = self:AddInput("DROPLETS", "DROPLETS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -3.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.0,
+      })
+
+  InLAMP_POWERSlider = self:AddInput("LAMP_POWER", "LAMP_POWER", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.35,
+      })
+
+  InLAMP_FALLOFFSlider = self:AddInput("LAMP_FALLOFF", "LAMP_FALLOFF", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.055,
+      })
+
+  InLAMP_SPILLSlider = self:AddInput("LAMP_SPILL", "LAMP_SPILL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.45,
+      })
+
+  InGLOSSSlider = self:AddInput("GLOSS", "GLOSS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.5,
+      })
+
+  InGLOSS_REACHSlider = self:AddInput("GLOSS_REACH", "GLOSS_REACH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.22,
+      })
+
+  InBOUNCESlider = self:AddInput("BOUNCE", "BOUNCE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.05,
+      })
+
+  InBOUNCE_FALLOFFSlider = self:AddInput("BOUNCE_FALLOFF", "BOUNCE_FALLOFF", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.03,
+      })
+
+  InHAZE_DENSITYSlider = self:AddInput("HAZE_DENSITY", "HAZE_DENSITY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.125,
+      })
+
+  InTONE_MIDDLESlider = self:AddInput("TONE_MIDDLE", "TONE_MIDDLE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.36,
+      })
+
+  InVIGNETTESlider = self:AddInput("VIGNETTE", "VIGNETTE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.855,
+      })
+
+  InGRAINSlider = self:AddInput("GRAIN", "GRAIN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0325,
+      })
+
+  InTONE_CONTRASTSlider = self:AddInput("TONE_CONTRAST", "TONE_CONTRAST", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.19,
+      })
+
+  InFANG_BIG_COUNTSlider = self:AddInput("FANG_BIG_COUNT", "FANG_BIG_COUNT", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 20,
+      INP_Default        = 5,
+      INP_Integer        = true,
+  })
+
+  InWRINKLE_OCTAVESSlider = self:AddInput("WRINKLE_OCTAVES", "WRINKLE_OCTAVES", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 10,
+      INP_Default        = 7,
+      INP_Integer        = true,
+  })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Visible = false, LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Visible = false, LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "DevilSMawClaudeCodeFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "DevilSMawClaudeCodeFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  params.iTimeDelta = 1/framerate
+  params.iFrame = req.Time
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.TEMPORAL = InTEMPORALCheckbox:GetValue(req).Value
+  params.FLESH_Deep = {
+    InFLESH_DeepColorR:GetValue(req).Value,
+    InFLESH_DeepColorG:GetValue(req).Value,
+    InFLESH_DeepColorB:GetValue(req).Value,InFLESH_DeepColorA:GetValue(req).Value
+  }
+  params.FLESH_Mid = {
+    InFLESH_MidColorR:GetValue(req).Value,
+    InFLESH_MidColorG:GetValue(req).Value,
+    InFLESH_MidColorB:GetValue(req).Value,InFLESH_MidColorA:GetValue(req).Value
+  }
+  params.FLESH_Pale = {
+    InFLESH_PaleColorR:GetValue(req).Value,
+    InFLESH_PaleColorG:GetValue(req).Value,
+    InFLESH_PaleColorB:GetValue(req).Value,InFLESH_PaleColorA:GetValue(req).Value
+  }
+  params.FLESH_Crease = {
+    InFLESH_CreaseColorR:GetValue(req).Value,
+    InFLESH_CreaseColorG:GetValue(req).Value,
+    InFLESH_CreaseColorB:GetValue(req).Value,InFLESH_CreaseColorA:GetValue(req).Value
+  }
+  params.TENTACLE_Colour = {
+    InTENTACLE_ColourColorR:GetValue(req).Value,
+    InTENTACLE_ColourColorG:GetValue(req).Value,
+    InTENTACLE_ColourColorB:GetValue(req).Value,InTENTACLE_ColourColorA:GetValue(req).Value
+  }
+  params.FANG_Colour = {
+    InFANG_ColourColorR:GetValue(req).Value,
+    InFANG_ColourColorG:GetValue(req).Value,
+    InFANG_ColourColorB:GetValue(req).Value,InFANG_ColourColorA:GetValue(req).Value
+  }
+  params.FANG_Stain = {
+    InFANG_StainColorR:GetValue(req).Value,
+    InFANG_StainColorG:GetValue(req).Value,
+    InFANG_StainColorB:GetValue(req).Value,InFANG_StainColorA:GetValue(req).Value
+  }
+  params.FANG_Tan = {
+    InFANG_TanColorR:GetValue(req).Value,
+    InFANG_TanColorG:GetValue(req).Value,
+    InFANG_TanColorB:GetValue(req).Value,InFANG_TanColorA:GetValue(req).Value
+  }
+  params.LAMP_Colour = {
+    InLAMP_ColourColorR:GetValue(req).Value,
+    InLAMP_ColourColorG:GetValue(req).Value,
+    InLAMP_ColourColorB:GetValue(req).Value,InLAMP_ColourColorA:GetValue(req).Value
+  }
+  params.Sheen = {
+    InSheenColorR:GetValue(req).Value,
+    InSheenColorG:GetValue(req).Value,
+    InSheenColorB:GetValue(req).Value,InSheenColorA:GetValue(req).Value
+  }
+  params.HAZE_Colour = {
+    InHAZE_ColourColorR:GetValue(req).Value,
+    InHAZE_ColourColorG:GetValue(req).Value,
+    InHAZE_ColourColorB:GetValue(req).Value,InHAZE_ColourColorA:GetValue(req).Value
+  }
+  params.MIST_Colour = {
+    InMIST_ColourColorR:GetValue(req).Value,
+    InMIST_ColourColorG:GetValue(req).Value,
+    InMIST_ColourColorB:GetValue(req).Value,InMIST_ColourColorA:GetValue(req).Value
+  }
+  params.TEMPORAL_NEW = InTEMPORAL_NEWSlider:GetValue(req).Value
+  params.TEMPORAL_NEW_FAST = InTEMPORAL_NEW_FASTSlider:GetValue(req).Value
+  params.TEMPORAL_RANGE = InTEMPORAL_RANGESlider:GetValue(req).Value
+  params.SHARPEN = InSHARPENSlider:GetValue(req).Value
+  params.FLIGHT_START = InFLIGHT_STARTSlider:GetValue(req).Value
+  params.FLIGHT_SPEED = InFLIGHT_SPEEDSlider:GetValue(req).Value
+  params.FLIGHT_SURGE = InFLIGHT_SURGESlider:GetValue(req).Value
+  params.CAMERA_FOCAL = InCAMERA_FOCALSlider:GetValue(req).Value
+  params.CAMERA_HEIGHT = InCAMERA_HEIGHTSlider:GetValue(req).Value
+  params.CAMERA_SWAY = InCAMERA_SWAYSlider:GetValue(req).Value
+  params.CAMERA_BOB = InCAMERA_BOBSlider:GetValue(req).Value
+  params.CAMERA_ROLL = InCAMERA_ROLLSlider:GetValue(req).Value
+  params.CAMERA_LOOK = InCAMERA_LOOKSlider:GetValue(req).Value
+  params.CAMERA_AIM = InCAMERA_AIMSlider:GetValue(req).Value
+  params.PATH_BEND = InPATH_BENDSlider:GetValue(req).Value
+  params.THROAT_TWIST = InTHROAT_TWISTSlider:GetValue(req).Value
+  params.BREATH_WAVE = InBREATH_WAVESlider:GetValue(req).Value
+  params.BREATH_SLOW = InBREATH_SLOWSlider:GetValue(req).Value
+  params.THROAT_CLENCH = InTHROAT_CLENCHSlider:GetValue(req).Value
+  params.CLENCH_NEAR = InCLENCH_NEARSlider:GetValue(req).Value
+  params.CLENCH_FAR = InCLENCH_FARSlider:GetValue(req).Value
+  params.WALL_RADIUS = InWALL_RADIUSSlider:GetValue(req).Value
+  params.THROAT_WIDTH = InTHROAT_WIDTHSlider:GetValue(req).Value
+  params.WALL_RELIEF = InWALL_RELIEFSlider:GetValue(req).Value
+  params.FOLD_FREQUENCY = InFOLD_FREQUENCYSlider:GetValue(req).Value
+  params.FOLD_DEPTH = InFOLD_DEPTHSlider:GetValue(req).Value
+  params.FOLD_CREASE = InFOLD_CREASESlider:GetValue(req).Value
+  params.CORD_DEPTH = InCORD_DEPTHSlider:GetValue(req).Value
+  params.LUMP_DEPTH = InLUMP_DEPTHSlider:GetValue(req).Value
+  params.FLOOR_DEPTH = InFLOOR_DEPTHSlider:GetValue(req).Value
+  params.FLOOR_BLEND = InFLOOR_BLENDSlider:GetValue(req).Value
+  params.FLOOR_SWELL = InFLOOR_SWELLSlider:GetValue(req).Value
+  params.FANG_MAX_ANGLE = InFANG_MAX_ANGLESlider:GetValue(req).Value
+  params.FANG_BLEND = InFANG_BLENDSlider:GetValue(req).Value
+  params.FANG_BIG_SLICE = InFANG_BIG_SLICESlider:GetValue(req).Value
+  params.FANG_BIG_DENSITY = InFANG_BIG_DENSITYSlider:GetValue(req).Value
+  params.FANG_SMALL_SLICE = InFANG_SMALL_SLICESlider:GetValue(req).Value
+  params.FANG_SMALL_SECTOR = InFANG_SMALL_SECTORSlider:GetValue(req).Value
+  params.FANG_SMALL_DENSITY = InFANG_SMALL_DENSITYSlider:GetValue(req).Value
+  params.FANG_CURVE = InFANG_CURVESlider:GetValue(req).Value
+  params.WALL_TENTACLE_SIZE = InWALL_TENTACLE_SIZESlider:GetValue(req).Value
+  params.HANG_CELL = InHANG_CELLSlider:GetValue(req).Value
+  params.HANG_SIZE = InHANG_SIZESlider:GetValue(req).Value
+  params.HANG_SPREAD = InHANG_SPREADSlider:GetValue(req).Value
+  params.WRITHE_SPEED = InWRITHE_SPEEDSlider:GetValue(req).Value
+  params.WRINKLE_SCALE = InWRINKLE_SCALESlider:GetValue(req).Value
+  params.FILM_RELIEF = InFILM_RELIEFSlider:GetValue(req).Value
+  params.WRINKLE_BUMP = InWRINKLE_BUMPSlider:GetValue(req).Value
+  params.DROPLETS = InDROPLETSSlider:GetValue(req).Value
+  params.LAMP_POWER = InLAMP_POWERSlider:GetValue(req).Value
+  params.LAMP_FALLOFF = InLAMP_FALLOFFSlider:GetValue(req).Value
+  params.LAMP_SPILL = InLAMP_SPILLSlider:GetValue(req).Value
+  params.GLOSS = InGLOSSSlider:GetValue(req).Value
+  params.GLOSS_REACH = InGLOSS_REACHSlider:GetValue(req).Value
+  params.BOUNCE = InBOUNCESlider:GetValue(req).Value
+  params.BOUNCE_FALLOFF = InBOUNCE_FALLOFFSlider:GetValue(req).Value
+  params.HAZE_DENSITY = InHAZE_DENSITYSlider:GetValue(req).Value
+  params.TONE_MIDDLE = InTONE_MIDDLESlider:GetValue(req).Value
+  params.VIGNETTE = InVIGNETTESlider:GetValue(req).Value
+  params.GRAIN = InGRAINSlider:GetValue(req).Value
+  params.TONE_CONTRAST = InTONE_CONTRASTSlider:GetValue(req).Value
+  params.FANG_BIG_COUNT = InFANG_BIG_COUNTSlider:GetValue(req).Value
+  params.WRINKLE_OCTAVES = InWRINKLE_OCTAVESSlider:GetValue(req).Value
+  
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+  
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "DevilSMawClaudeCodeFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeB:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+    
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "DevilSMawClaudeCodeFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalB)  -- Anpassen !!
+    node:AddInput("iChannel1", iChannel0)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+-- */
