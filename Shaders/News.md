@@ -7,10 +7,10 @@
 [![Devil's Maw (Claude Code)](Tunnel/DevilSMawClaudeCode.gif)](Tunnel/DevilSMawClaudeCode.md) <br>
 [Devil's Maw (Claude Code)](Monster/DevilSMawClaudeCode.md) by [Nanerbeet](https://www.shadertoy.com/user/Nanerbeet)
 
-### Current Shader of the Week (27th of October 2026):
+### Current Shader of the Week (6th of November 2026):
 
-[![Another day, another glowmarcher](ShaderOfTheWeek/AnotherDayAnotherGlowmarcher.gif)](ShaderOfTheWeek/AnotherDayAnotherGlowmarcher.md) <br>
-[Another day, another glowmarcher](ShaderOfTheWeek/AnotherDayAnotherGlowmarcher.md) by [mrange](https://www.shadertoy.com/user/mrange)
+[![Light Cycle](ShaderOfTheWeek/LightCycle.gif)](ShaderOfTheWeek/LightCycle.md) <br>
+[Light Cycle](ShaderOfTheWeek/LightCycle.md) by [noztol](https://www.shadertoy.com/user/noztol)
 
 ## A new Category: Monster
 
