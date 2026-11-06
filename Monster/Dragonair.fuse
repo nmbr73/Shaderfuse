@@ -1,0 +1,1186 @@
+--[[--/*
+
+  Dragonair.fuse
+
+  Based on https://www.shadertoy.com/view/sXf3DN a WebGL shader created by noztol.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  Water1Color[4];
+  float  Water2Color[4];
+  float  MatBlueColor[4];
+  float  BellyColor[4];
+  float  MatWhiteColor[4];
+  float  MatOrb1Color[4];
+  float  MatOrb2Color[4];
+  float  PupilColor[4];
+  float  HighlightColor[4];
+  float  SkyColor[4];
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  CamHeight;
+  float  FrontFactor;
+  float  Yaw;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+// Dragonair
+// By Noztol
+
+// sdf primitives
+
+__DEVICE__ float sdSphere(float3 p, float r) {
+    return length(p) - r;
+}
+
+__DEVICE__ float sdEllipsoid(float3 p, float3 r) {
+    float k0 = length(p/r);
+    float k1 = length(p/(r*r));
+    return k0*(k0-1.0f)/k1;
+}
+
+// Capsule used for body, snout, feathers, and the horn
+__DEVICE__ float Capsule(float3 p, float3 a, float3 b, float r1, float r2) {
+    float3 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0f, 1.0f);
+    float r = _mix(r1, r2, h);
+    return length(pa - ba * h) - r;
+}
+
+__DEVICE__ float smin(float a, float b, float k) {
+    float h = _fmaxf(k - _fabs(a - b), 0.0f) / k;
+    return _fminf(a, b) - h * h * k * 0.25f;
+}
+
+__DEVICE__ mat2 rot(float a) {
+    float s = _sinf(a), c = _cosf(a);
+    return to_mat2(c, -s, s, c);
+}
+
+// materials
+#define MAT_WATER     1.0
+#define MAT_BLUE      2.0
+#define MAT_WHITE     3.0
+#define MAT_PUPIL     4.0
+#define MAT_HIGHLIGHT 5.0
+#define MAT_ORB       6.0
+
+// swimming wave
+__DEVICE__ float GetWaveY(float z, float time) {
+    return _sinf(z * 0.8f + time * 3.0f) * 2.4f;
+}
+
+// scene map
+__DEVICE__ float2 GetDist(float3 p, float iTime) {
+    float time = iTime;
+    // NOTE the body is broken up into two peices
+    // we don't wantt the body to intersect the head
+    // So we need to know the exact point where the flexible
+    // body ends
+    float neckZ = 5.4f;
+
+    // water plane
+    float phase = p.z * 0.8f + time * 3.0f;
+    float k = _floor(phase / 3.14159265f + 0.5f);
+    float zIntersect = (k * 3.14159265f - time * 3.0f) / 0.8f;
+
+    float distToIntersect = length(to_float2(p.x, p.z - zIntersect));
+    float ripple = _sinf(distToIntersect * 15.0f - time * 10.0f) * 0.04f;
+    ripple *= smoothstep(2.5f, 0.3f, distToIntersect);
+    float bodyMask = smoothstep(6.5f, 5.5f, _fabs(zIntersect));
+    ripple *= bodyMask;
+
+    float ambientWave = _sinf(p.x * 1.5f + time) * _cosf(p.z * 1.5f + time * 0.8f) * 0.015f;
+
+    // Smoothly fade all waves to 0.0f in the distance to prevent tearing
+    float distFromOrigin = length(swi2(p,x,z));
+    float waveFade = smoothstep(80.0f, 40.0f, distFromOrigin);
+
+    float2 res = to_float2(p.y - (ripple + ambientWave) * waveFade, MAT_WATER);
+
+    // 2.0f flexible part of body
+    float3 bp = p;
+    float waveZ = _fminf(bp.z, neckZ);
+    bp.y -= GetWaveY(waveZ, time);
+
+    float bodyLen = 6.0f;
+    float dragonDist = Capsule(bp, to_float3(0, 0, -bodyLen), to_float3(0, 0, neckZ), 0.05f, 0.45f);
+
+    // 3.0f head (inflexible body)
+    float3 headPos = to_float3(0.0f, GetWaveY(neckZ, time), neckZ);
+    float3 prevPos = to_float3(0.0f, GetWaveY(neckZ - 0.1f, time), neckZ - 0.1f);
+
+    float3 fwd = normalize(headPos - prevPos);
+    fwd.y *= 0.5f; // Dampen upward pitch
+    fwd = normalize(fwd);
+    float3 right = to_float3(1.0f, 0.0f, 0.0f);
+    float3 up = cross(fwd, right);
+
+    float3 localP = to_float3(dot(p - headPos, right), dot(p - headPos, up), dot(p - headPos, fwd));
+
+    // nose code
+    float3 snoutDir = to_float3(0.0f, -0.15f, 0.6f); // Direction vector of the nose
+    float snout = Capsule(localP, to_float3_s(0.0f), snoutDir, 0.45f, 0.12f);
+    dragonDist = smin(dragonDist, snout, 0.1f);
+
+    // Blinking Math
+    float blink = smoothstep(0.7f, 0.95f, _sinf(time * 1.2f));
+    float lidHeight = _mix(0.12f, -0.15f, blink);
+
+    float3 eyeP = localP;
+    eyeP.x = _fabs(eyeP.x); // Mirror
+
+    // defined deer eyes
+    float3 pEyeSpace = eyeP - to_float3(0.24f, 0.15f, 0.42f);
+
+    swi2S(pEyeSpace,x,z, mul_f2_mat2(swi2(pEyeSpace,x,z) , rot(0.6f)));
+    swi2S(pEyeSpace,x,y, mul_f2_mat2(swi2(pEyeSpace,x,y) , rot(-0.1f)));
+    swi2S(pEyeSpace,y,z, mul_f2_mat2(swi2(pEyeSpace,y,z) , rot(0.1f)));
+
+    // Shallow socket carved perfectly into the side
+    float eyeHole = sdEllipsoid(pEyeSpace, to_float3(0.15f, 0.15f, 0.08f));
+    dragonDist = _fmaxf(dragonDist, -eyeHole);
+
+    // Eyelid
+    float eyelidBase = sdSphere(localP, 0.43f);
+    float eyelid = _fmaxf(eyelidBase, eyeHole - 0.01f);
+    eyelid = _fmaxf(eyelid, -(pEyeSpace.y - lidHeight));
+    dragonDist = _fminf(dragonDist, eyelid);
+
+    if (dragonDist < res.x) res = to_float2(dragonDist, MAT_BLUE);
+
+    // Eye White (Flushed into the side socket)
+    float3 pEyeWhite = pEyeSpace - to_float3(0.0f, 0.0f, -0.02f);
+    float eyeWhite = sdEllipsoid(pEyeWhite, to_float3(0.14f, 0.14f, 0.04f));
+
+    // Pupil (Flattened and resting perfectly on the white)
+    float3 pPupil = pEyeSpace - to_float3(-0.02f, 0.0f, 0.01f);
+    float pupil = sdEllipsoid(pPupil, to_float3(0.05f, 0.06f, 0.015f));
+
+    // Highlight
+    float3 pHighlight = pPupil - to_float3(-0.01f, 0.015f, 0.01f);
+    float highlight = sdEllipsoid(pHighlight, to_float3(0.012f, 0.012f, 0.008f));
+
+    float eyeContents = _fminf(eyeWhite, _fminf(pupil, highlight));
+    eyeContents = _fmaxf(eyeContents, pEyeSpace.y - lidHeight);
+
+    if (eyeContents < res.x) {
+        float mat = MAT_WHITE;
+        if (highlight < pupil && highlight < eyeWhite) mat = MAT_HIGHLIGHT;
+        else if (pupil < eyeWhite) mat = MAT_PUPIL;
+        res = to_float2(eyeContents, mat);
+    }
+
+    // horn
+    float3 hornBase = to_float3(0.0f, 0.25f, 0.35f);
+    float3 hornTip = hornBase + normalize(snoutDir) * 0.35f;
+    float horn = Capsule(localP, hornBase, hornTip, 0.10f, 0.01f);
+
+    // Winged Ears
+    float3 wp = localP;
+    wp.x = _fabs(wp.x);
+    wp -= to_float3(0.35f, 0.1f, 0.0f);
+    swi2S(wp,x,y, mul_f2_mat2(swi2(wp,x,y) , rot(-0.35f)));
+    swi2S(wp,x,z, mul_f2_mat2(swi2(wp,x,z) , rot(-0.25f)));
+
+    float feathers = 100.0f;
+    feathers = _fminf(feathers, Capsule(wp, to_float3_s(0), to_float3(1.2f, 0.4f, 0), 0.20f, 0.02f));
+    feathers = _fminf(feathers, Capsule(wp, to_float3_s(0), to_float3(1.0f, 0.0f, 0), 0.15f, 0.02f));
+    feathers = _fminf(feathers, Capsule(wp, to_float3_s(0), to_float3(0.8f, -0.3f, 0), 0.10f, 0.02f));
+
+    float whiteFeatures = _fminf(horn, feathers);
+    if (whiteFeatures < res.x) res = to_float2(whiteFeatures, MAT_WHITE);
+
+    // Neck Orb
+    float3 neckP = localP - to_float3(0.0f, -0.45f, 0.15f);
+    float orbs = sdSphere(neckP, 0.18f);
+
+    // Tail Orbs
+    float3 tailPos1 = to_float3(0.0f, GetWaveY(-5.0f, time), -5.0f);
+    float3 tailPos2 = to_float3(0.0f, GetWaveY(-5.6f, time), -5.6f);
+    orbs = _fminf(orbs, sdSphere(p - tailPos1, 0.25f));
+    orbs = _fminf(orbs, sdSphere(p - tailPos2, 0.15f));
+
+    if (orbs < res.x) res = to_float2(orbs, MAT_ORB);
+
+    return res;
+}
+
+__DEVICE__ float2 RayMarch(float3 ro, float3 rd, float iTime) {
+    float2 res = to_float2_s(0.0f);
+    float d = 0.0f;
+
+    for(int i = 0; i < 500; i++) {
+        float2 stepRes = GetDist(ro + rd * d, iTime);
+        float stepSafe = stepRes.x * 0.3f;
+
+        if(_fabs(stepSafe) < 0.001f || d > 150.0f) {
+            res.y = stepRes.y;
+            break;
+        }
+        d += stepSafe;
+    }
+    res.x = d;
+    return res;
+}
+
+__DEVICE__ float3 GetNormal(float3 p, float iTime) {
+    float d = GetDist(p, iTime).x;
+    float2 e = to_float2(0.01f, 0.0f);
+    float3 normal = d - to_float3(
+                                  GetDist(p - swi3(e,x,y,y), iTime).x,
+                                  GetDist(p - swi3(e,y,x,y), iTime).x,
+                                  GetDist(p - swi3(e,y,y,x), iTime).x);
+    return normalize(normal);
+}
+
+// --- Rendering ---
+__KERNEL__ void DragonairFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 Water1Color = to_float4(params->Water1Color[0], params->Water1Color[1], params->Water1Color[2], params->Water1Color[3]);
+  float4 Water2Color = to_float4(params->Water2Color[0], params->Water2Color[1], params->Water2Color[2], params->Water2Color[3]);
+  float4 MatBlueColor = to_float4(params->MatBlueColor[0], params->MatBlueColor[1], params->MatBlueColor[2], params->MatBlueColor[3]);
+  float4 BellyColor = to_float4(params->BellyColor[0], params->BellyColor[1], params->BellyColor[2], params->BellyColor[3]);
+  float4 MatWhiteColor = to_float4(params->MatWhiteColor[0], params->MatWhiteColor[1], params->MatWhiteColor[2], params->MatWhiteColor[3]);
+  float4 MatOrb1Color = to_float4(params->MatOrb1Color[0], params->MatOrb1Color[1], params->MatOrb1Color[2], params->MatOrb1Color[3]);
+  float4 MatOrb2Color = to_float4(params->MatOrb2Color[0], params->MatOrb2Color[1], params->MatOrb2Color[2], params->MatOrb2Color[3]);
+  float4 PupilColor = to_float4(params->PupilColor[0], params->PupilColor[1], params->PupilColor[2], params->PupilColor[3]);
+  float4 HighlightColor = to_float4(params->HighlightColor[0], params->HighlightColor[1], params->HighlightColor[2], params->HighlightColor[3]);
+  float4 SkyColor = to_float4(params->SkyColor[0], params->SkyColor[1], params->SkyColor[2], params->SkyColor[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  CamHeight = params->CamHeight;
+  float  FrontFactor = params->FrontFactor;
+  float  Yaw = params->Yaw;
+
+  // --------
+
+    float Alpha = SkyColor.w;
+
+    float2 uv = (fragCoord - 0.5f * iResolution) / iResolution.y;
+    float2 m = swi2(iMouse,x,y) / iResolution;
+
+    // --- CINEMATIC CAMERA ORBIT ---
+    float baseTime = iTime * 0.4f;
+    float yaw = baseTime - Yaw * _sinf(baseTime);
+    float frontFactor = _cosf(yaw) * FrontFactor + 0.5f;
+    float front180 = smoothstep(-0.2f, 0.2f, _cosf(yaw));
+
+    float dist = _mix(25.0f, 12.0f, frontFactor);
+    float camHeight = _mix(10.0f, 2.5f, front180) + CamHeight;
+
+    float3 ro = to_float3(dist * _sinf(yaw), camHeight, dist * _cosf(yaw)) + to_float3_aw(ViewDXY, ViewDZ);
+    float3 dynamicHeadPos = to_float3(0.0f, GetWaveY(5.4f, iTime), 5.4f);
+    float3 lookAt = _mix(to_float3(0.0f, 0.0f, 0.0f), dynamicHeadPos, frontFactor) + to_float3_aw(ViewXY, ViewZ);
+
+    // mouse override for debugging
+    if(iMouse.z > 0.0f) {
+        yaw = -m.x * 6.28f + (Yaw - 0.95);
+        float pitch = clamp((m.y - 0.5f) * 2.0f, -0.2f, 0.6f);
+        dist = 18.0f;
+
+        ro = to_float3(
+                          dist * _sinf(yaw) * _cosf(pitch),
+                          _fmaxf(2.5f, 8.0f + dist * _sinf(pitch)),
+                          dist * _cosf(yaw) * _cosf(pitch)
+                      );
+        lookAt = to_float3(0.0f, 0.0f, 0.0f) + to_float3_aw(ViewXY, ViewZ);
+    }
+
+    float3 f = normalize(lookAt - ro);
+    float3 r = normalize(cross(to_float3(0.0f, 1.0f, 0.0f), f));
+    float3 u = cross(f, r);
+    float3 rd = normalize(f + r * uv.x + u * uv.y);
+
+    float2 march = RayMarch(ro, rd, iTime);
+    float d = march.x;
+    float mat = march.y;
+
+    float3 skyColor = swi3(SkyColor,x,y,z);//to_float3_s(0.05f); // Sky base
+    float3 col = skyColor;
+
+    if (d < 150.0f) {
+        float3 p = ro + rd * d;
+        float3 n = GetNormal(p, iTime);
+
+        // lighting
+        float3 mainLight = normalize(to_float3(0.6f, 1.0f, -0.5f));
+        float3 fillLight = normalize(to_float3(-0.8f, 0.2f, 0.6f));
+
+        float difMain = _fmaxf(0.0f, dot(n, mainLight));
+        float difFill = _fmaxf(0.0f, dot(n, fillLight)) * 0.6f;
+        float ambient = 0.2f;
+
+        float shadowDist = RayMarch(p + n * 0.1f, mainLight, iTime).x;
+        if(shadowDist < 140.0f && mat != MAT_WATER) difMain *= 0.1f;
+
+        float dif = difMain + difFill + ambient;
+
+        if (mat == MAT_WATER) {
+            col = swi3(Water1Color,x,y,z) * dif;//to_float3(0.1f, 0.35f, 0.6f) * dif;
+            float3 halfVec = normalize(mainLight - rd);
+            float spec = _powf(_fmaxf(dot(n, halfVec), 0.0f), 32.0f);
+            col += spec * swi3(Water2Color,x,y,z);//to_float3(0.8f, 0.9f, 1.0f);
+        } else if (mat == MAT_BLUE) {
+            col = swi3(MatBlueColor,x,y,z) * dif;//to_float3(0.35f, 0.65f, 0.95f) * dif;
+
+            // White Belly Logic bound to correct space
+            float3 bp = p;
+            float waveZ = _fminf(bp.z, 5.4f);
+            bp.y -= GetWaveY(waveZ, iTime);
+            if (bp.y < 0.0f && normalize(swi2(bp,x,y)).y < -0.3f && bp.z < 5.0f) {
+                col = swi3(BellyColor,x,y,z) * dif;//to_float3_s(0.95f) * dif;
+            }
+        } else if (mat == MAT_WHITE) {
+            col = swi3(MatWhiteColor,x,y,z) * dif;//to_float3_s(0.95f) * dif;
+        } else if (mat == MAT_ORB) {
+            col = swi3(MatOrb1Color,x,y,z) * dif;//to_float3(0.1f, 0.2f, 0.8f) * dif;
+            float3 halfVec = normalize(mainLight - rd);
+            float spec = _powf(_fmaxf(dot(n, halfVec), 0.0f), 64.0f);
+            col += spec * swi3(MatOrb2Color,x,y,z);//to_float3(0.8f, 0.9f, 1.0f);
+        } else if (mat == MAT_PUPIL) {
+            col = swi3(PupilColor,x,y,z) * dif;//to_float3_s(0.05f) * dif;
+        } else if (mat == MAT_HIGHLIGHT) {
+            col = swi3(HighlightColor,x,y,z);//to_float3_s(1.0f);
+        }
+
+        // Depth Fog
+        // doesn't work great but idea is to smooth out edges
+        // between water and sky plane
+        col = _mix(col, skyColor, smoothstep(80.0f, 150.0f, d));
+        Alpha = _mix( 1.0f, Alpha, smoothstep(80.0f, 150.0f, d));
+    }
+
+    col = pow_f3(col, to_float3_s(0.4545f));
+    fragColor = to_float4_aw(col, Alpha);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  
+  self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("Water1Color", "Water1Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Water1Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InWater1ColorColorR = self:AddInput("Red",   "Water1ColorRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InWater1ColorColorG = self:AddInput("Green", "Water1ColorGreen", { INP_Default  = 0.35, IC_ControlID = 1, attrs})
+    InWater1ColorColorB = self:AddInput("Blue",  "Water1ColorBlue",  { INP_Default  = 0.6, IC_ControlID = 2, attrs})
+    InWater1ColorColorA = self:AddInput("Alpha", "Water1ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Water2Color", "Water2Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Water2Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InWater2ColorColorR = self:AddInput("Red",   "Water2ColorRed",   { INP_Default  = 0.8, IC_ControlID = 0, attrs})
+    InWater2ColorColorG = self:AddInput("Green", "Water2ColorGreen", { INP_Default  = 0.9, IC_ControlID = 1, attrs})
+    InWater2ColorColorB = self:AddInput("Blue",  "Water2ColorBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InWater2ColorColorA = self:AddInput("Alpha", "Water2ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MatBlueColor", "MatBlueColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MatBlueColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMatBlueColorColorR = self:AddInput("Red",   "MatBlueColorRed",   { INP_Default  = 0.35, IC_ControlID = 0, attrs})
+    InMatBlueColorColorG = self:AddInput("Green", "MatBlueColorGreen", { INP_Default  = 0.65, IC_ControlID = 1, attrs})
+    InMatBlueColorColorB = self:AddInput("Blue",  "MatBlueColorBlue",  { INP_Default  = 0.95, IC_ControlID = 2, attrs})
+    InMatBlueColorColorA = self:AddInput("Alpha", "MatBlueColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("BellyColor", "BellyColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "BellyColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBellyColorColorR = self:AddInput("Red",   "BellyColorRed",   { INP_Default  = 0.95, IC_ControlID = 0, attrs})
+    InBellyColorColorG = self:AddInput("Green", "BellyColorGreen", { INP_Default  = 0.95, IC_ControlID = 1, attrs})
+    InBellyColorColorB = self:AddInput("Blue",  "BellyColorBlue",  { INP_Default  = 0.95, IC_ControlID = 2, attrs})
+    InBellyColorColorA = self:AddInput("Alpha", "BellyColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MatWhiteColor", "MatWhiteColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MatWhiteColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMatWhiteColorColorR = self:AddInput("Red",   "MatWhiteColorRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InMatWhiteColorColorG = self:AddInput("Green", "MatWhiteColorGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InMatWhiteColorColorB = self:AddInput("Blue",  "MatWhiteColorBlue",  { INP_Default  = 0.1, IC_ControlID = 2, attrs})
+    InMatWhiteColorColorA = self:AddInput("Alpha", "MatWhiteColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MatOrb1Color", "MatOrb1Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MatOrb1Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMatOrb1ColorColorR = self:AddInput("Red",   "MatOrb1ColorRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InMatOrb1ColorColorG = self:AddInput("Green", "MatOrb1ColorGreen", { INP_Default  = 0.2, IC_ControlID = 1, attrs})
+    InMatOrb1ColorColorB = self:AddInput("Blue",  "MatOrb1ColorBlue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    InMatOrb1ColorColorA = self:AddInput("Alpha", "MatOrb1ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MatOrb2Color", "MatOrb2Color", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MatOrb2Color",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMatOrb2ColorColorR = self:AddInput("Red",   "MatOrb2ColorRed",   { INP_Default  = 0.8, IC_ControlID = 0, attrs})
+    InMatOrb2ColorColorG = self:AddInput("Green", "MatOrb2ColorGreen", { INP_Default  = 0.9, IC_ControlID = 1, attrs})
+    InMatOrb2ColorColorB = self:AddInput("Blue",  "MatOrb2ColorBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InMatOrb2ColorColorA = self:AddInput("Alpha", "MatOrb2ColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("PupilColor", "PupilColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "PupilColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InPupilColorColorR = self:AddInput("Red",   "PupilColorRed",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InPupilColorColorG = self:AddInput("Green", "PupilColorGreen", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InPupilColorColorB = self:AddInput("Blue",  "PupilColorBlue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InPupilColorColorA = self:AddInput("Alpha", "PupilColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("HighlightColor", "HighlightColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "HighlightColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHighlightColorColorR = self:AddInput("Red",   "HighlightColorRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InHighlightColorColorG = self:AddInput("Green", "HighlightColorGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InHighlightColorColorB = self:AddInput("Blue",  "HighlightColorBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InHighlightColorColorA = self:AddInput("Alpha", "HighlightColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("SkyColor", "SkyColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "SkyColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InSkyColorColorR = self:AddInput("Red",   "SkyColorRed",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InSkyColorColorG = self:AddInput("Green", "SkyColorGreen", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InSkyColorColorB = self:AddInput("Blue",  "SkyColorBlue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InSkyColorColorA = self:AddInput("Alpha", "SkyColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InCamHeightSlider = self:AddInput("CamHeight", "CamHeight", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -2.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.0,
+      })
+
+  InFrontFactorSlider = self:AddInput("FrontFactor", "FrontFactor", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -2.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.5,
+      })
+
+  InYawSlider = self:AddInput("Yaw", "Yaw", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.95,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+   ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  node = DVIPComputeNode(req,
+    "DragonairFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.Water1Color = {
+    InWater1ColorColorR:GetValue(req).Value,
+    InWater1ColorColorG:GetValue(req).Value,
+    InWater1ColorColorB:GetValue(req).Value,InWater1ColorColorA:GetValue(req).Value
+  }
+  params.Water2Color = {
+    InWater2ColorColorR:GetValue(req).Value,
+    InWater2ColorColorG:GetValue(req).Value,
+    InWater2ColorColorB:GetValue(req).Value,InWater2ColorColorA:GetValue(req).Value
+  }
+  params.MatBlueColor = {
+    InMatBlueColorColorR:GetValue(req).Value,
+    InMatBlueColorColorG:GetValue(req).Value,
+    InMatBlueColorColorB:GetValue(req).Value,InMatBlueColorColorA:GetValue(req).Value
+  }
+  params.BellyColor = {
+    InBellyColorColorR:GetValue(req).Value,
+    InBellyColorColorG:GetValue(req).Value,
+    InBellyColorColorB:GetValue(req).Value,InBellyColorColorA:GetValue(req).Value
+  }
+  params.MatWhiteColor = {
+    InMatWhiteColorColorR:GetValue(req).Value,
+    InMatWhiteColorColorG:GetValue(req).Value,
+    InMatWhiteColorColorB:GetValue(req).Value,InMatWhiteColorColorA:GetValue(req).Value
+  }
+  params.MatOrb1Color = {
+    InMatOrb1ColorColorR:GetValue(req).Value,
+    InMatOrb1ColorColorG:GetValue(req).Value,
+    InMatOrb1ColorColorB:GetValue(req).Value,InMatOrb1ColorColorA:GetValue(req).Value
+  }
+  params.MatOrb2Color = {
+    InMatOrb2ColorColorR:GetValue(req).Value,
+    InMatOrb2ColorColorG:GetValue(req).Value,
+    InMatOrb2ColorColorB:GetValue(req).Value,InMatOrb2ColorColorA:GetValue(req).Value
+  }
+  params.PupilColor = {
+    InPupilColorColorR:GetValue(req).Value,
+    InPupilColorColorG:GetValue(req).Value,
+    InPupilColorColorB:GetValue(req).Value,InPupilColorColorA:GetValue(req).Value
+  }
+  params.HighlightColor = {
+    InHighlightColorColorR:GetValue(req).Value,
+    InHighlightColorColorG:GetValue(req).Value,
+    InHighlightColorColorB:GetValue(req).Value,InHighlightColorColorA:GetValue(req).Value
+  }
+  params.SkyColor = {
+    InSkyColorColorR:GetValue(req).Value,
+    InSkyColorColorG:GetValue(req).Value,
+    InSkyColorColorB:GetValue(req).Value,InSkyColorColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.CamHeight = InCamHeightSlider:GetValue(req).Value
+  params.FrontFactor = InFrontFactorSlider:GetValue(req).Value
+  params.Yaw = InYawSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+     
+  node:AddOutput("dst", dst)
+    
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

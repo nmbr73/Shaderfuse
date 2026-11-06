@@ -1,0 +1,1289 @@
+--[[--/*
+
+  Magnemite.fuse
+
+  Based on https://www.shadertoy.com/view/fXX3zX a WebGL shader created by noztol.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  Mat1Col[4];
+  float  Mat2Col[4];
+  float  Mat3Col[4];
+  float  Mat4Col[4];
+  float  MagnetLeft1Col[4];
+  float  MagnetLeft2Col[4];
+  float  MagnetRight1Col[4];
+  float  MagnetRight2Col[4];
+  float  FloorCol[4];
+  float  LightCol[4];
+  float  BGCol[4];
+  float  ViewDXY[2];
+  float  ViewDZ;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  CamAngle;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 B, mat3 A)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+#define pi 3.1415926535897f
+
+// Magnemite
+
+
+#define MAX_STEPS 300
+#define MAX_DIST 20.0f
+#define SURF_DIST 0.001f
+
+__DEVICE__ mat2 rot(float a) {
+    float s = _sinf(a), c = _cosf(a);
+    return to_mat2(c, -s, s, c);
+}
+
+// SDF Primitives
+__DEVICE__ float sdSphere(float3 p, float s) {
+    return length(p) - s;
+}
+
+__DEVICE__ float sdBox( float3 p, float3 b ) {
+    float3 q = abs_f3(p) - b;
+    return length(_fmaxf(q, to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f);
+}
+
+__DEVICE__ float sdCappedCylinder( float3 p, float h, float r ) {
+    float2 d = abs_f2(to_float2(length(swi2(p,x,z)),p.y)) - to_float2(r,h);
+    return _fminf(_fmaxf(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f)));
+}
+
+__DEVICE__ float sdCapsule( float3 p, float3 a, float3 b, float r ) {
+    float3 pa = p - a, ba = b - a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0f, 1.0f );
+    return length( pa - ba*h ) - r;
+}
+
+// Magnemite Custom SDFs
+
+// Extruded U-Shape Magnet with flat faces
+__DEVICE__ float sdMagnet(float3 p) {
+    float radius = 0.3f;
+    float2 d2;
+
+    // Left side of the local space is the curved back
+    if (p.x < 0.0f) {
+        d2 = to_float2(length(swi2(p,x,y)) - radius, p.z);
+    } else {
+        // Right side of the local space is the straight prongs
+        d2 = to_float2(_fabs(p.y) - radius, p.z);
+    }
+
+    float2 d = abs_f2(d2) - to_float2(0.12f, 0.12f);
+    float dist = _fminf(_fmaxf(d.x, d.y), 0.0f) + length(_fmaxf(d, to_float2_s(0.0f)));
+
+    // Cap the ends of the prongs
+    return _fmaxf(dist, p.x - 0.6f);
+}
+
+// Phillips-head Screw
+__DEVICE__ float sdScrew(float3 p) {
+    float stem = sdCappedCylinder(p - to_float3(0.0f, 0.1f, 0.0f), 0.1f, 0.08f);
+    float3 pHead = p - to_float3(0.0f, 0.2f, 0.0f);
+    float2 dHead = abs_f2(to_float2(length(swi2(pHead,x,z)), pHead.y)) - to_float2(0.25f, 0.05f);
+    float head = _fminf(_fmaxf(dHead.x, dHead.y), 0.0f) + length(_fmaxf(dHead, to_float2_s(0.0f)));
+
+    float3 pCross = pHead - to_float3(0.0f, 0.05f, 0.0f);
+    float cross1 = sdBox(pCross, to_float3(0.15f, 0.05f, 0.04f));
+    float cross2 = sdBox(pCross, to_float3(0.04f, 0.05f, 0.15f));
+
+    head = _fmaxf(head, -cross1);
+    head = _fmaxf(head, -cross2);
+
+    return _fminf(stem, head);
+}
+
+// Positioning Helpers
+__DEVICE__ float3 getRightMagP(float3 pModel) {
+    // Pushed out to 1.42f so the inner U-curve (which extends -0.42f locally) sits flush at 1.0f (body radius)
+    float3 p = pModel - to_float3(1.42f, 0.0f, 0.0f);
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , rot(0.2f)));
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(-0.1f)));
+    return p;
+}
+
+__DEVICE__ float3 getLeftMagP(float3 pModel) {
+    // Pushed out to -1.42
+    float3 p = pModel - to_float3(-1.42f, 0.0f, 0.0f);
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(3.14159f)));
+    swi2S(p,x,y, mul_f2_mat2(swi2(p,x,y) , rot(0.2f)));
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(0.1f)));
+    return p;
+}
+
+__DEVICE__ float3 getTopScrew(float3 pModel) {
+    float3 p = pModel;
+    p.y -= 0.98f;
+    return p;
+}
+
+__DEVICE__ float3 getLeftScrew(float3 pModel) {
+    float3 p = pModel;
+    // We must invert yaw then pitch to properly map world to local space
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(-0.55f))); // Inverse yaw left
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , rot(1.9f)));   // Inverse pitch down
+    p.y -= 0.98f;        // Push to surface
+    return p;
+}
+
+__DEVICE__ float3 getRightScrew(float3 pModel) {
+    float3 p = pModel;
+    swi2S(p,x,z, mul_f2_mat2(swi2(p,x,z) , rot(0.55f)));  // Inverse yaw right
+    swi2S(p,y,z, mul_f2_mat2(swi2(p,y,z) , rot(1.9f)));   // Inverse pitch down
+    p.y -= 0.98f;        // Push to surface
+    return p;
+}
+
+// --- Scene Mapping ---
+
+__DEVICE__ float mapLightning(float3 p, float iTime) {
+    float hover = _sinf(iTime * 2.5f) * 0.15f + 0.4f;
+    float t = iTime * 40.0f;
+
+    float3 p1 = p;
+    p1 += to_float3(_sinf(p.y*15.0f+t), _cosf(p.x*15.0f+t), _sinf(p.z*15.0f+t)) * 0.04f;
+    p1 += to_float3(_cosf(p.z*25.0f-t), _sinf(p.y*25.0f+t), _cosf(p.x*25.0f-t)) * 0.02f;
+
+    // Adjusted tips outwards to match new magnet placements
+    float3 tipRight = to_float3(1.85f, 0.35f + hover, -0.1f);
+    float3 tipLeft  = to_float3(-1.85f, 0.35f + hover, -0.1f);
+
+    float3 mid = to_float3(0.0f, 2.0f + hover, 0.0f) + to_float3(_cosf(t), _sinf(t), 0.0f) * 0.2f;
+
+    float spark1 = sdCapsule(p1, tipRight, mid, 0.005f);
+    float spark2 = sdCapsule(p1, mid, tipLeft, 0.005f);
+
+    return _fminf(spark1, spark2);
+}
+
+__DEVICE__ float2 opU(float2 d1, float2 d2) {
+    return (d1.x < d2.x) ? d1 : d2;
+}
+
+__DEVICE__ float2 map(float3 p, float iTime) {
+    float hover = _sinf(iTime * 2.5f) * 0.15f + 0.4f;
+    float3 pModel = p;
+    pModel.y -= (1.0f + hover);
+
+    // 1.0f The Main Outer Shell
+    float mainShell = sdSphere(pModel, 1.0f);
+
+    // 2.0f Eye Cavity & Blinking Lid
+    float blink = smoothstep(0.7f, 0.95f, _sinf(iTime * 1.2f));
+    float lidHeight = _mix(0.15f, -0.45f, blink);
+
+    float3 pEyeSpace = pModel - to_float3(0.0f, 0.25f, -0.8f);
+    float eyeHole = sdSphere(pEyeSpace, 0.45f);
+    float bodyDist = _fmaxf(mainShell, -eyeHole);
+
+    float eyelidBase = sdSphere(pModel, 0.97f);
+    float eyelid = _fmaxf(eyelidBase, eyeHole - 0.05f);
+    eyelid = _fmaxf(eyelid, -(pEyeSpace.y - lidHeight));
+
+    bodyDist = _fminf(bodyDist, eyelid);
+    float2 res = to_float2(bodyDist, 1.0f); // Mat 1 = Body
+
+    // 3.0f Eye Contents
+    float eyeWhite = sdSphere(pModel, 0.95f);
+    float3 pPupil = pModel - to_float3(0.0f, 0.25f, -0.95f);
+    float pupil = sdSphere(pPupil, 0.07f);
+
+    float eyeContents = _fminf(eyeWhite, pupil);
+    eyeContents = _fmaxf(eyeContents, pEyeSpace.y - lidHeight);
+
+    float eyeMat = (pupil < eyeWhite) ? 3.0f : 2.0f;
+    res = opU(res, to_float2(eyeContents, eyeMat));
+
+    // 4.0f Screws
+    float topScrew = sdScrew(getTopScrew(pModel));
+    // Scale cheek screws down by 1.5f so they aren't as massive as the top one
+    float screwL = sdScrew(getLeftScrew(pModel) * 1.5f) / 1.5f;
+    float screwR = sdScrew(getRightScrew(pModel) * 1.5f) / 1.5f;
+
+    float screws = _fminf(topScrew, _fminf(screwL, screwR));
+    res = opU(res, to_float2(screws, 4.0f)); // Mat 4 = Metal
+
+    // 5.0f Magnets
+    float magR = sdMagnet(getRightMagP(pModel));
+    float magL = sdMagnet(getLeftMagP(pModel));
+    float magnets = _fminf(magL, magR);
+    res = opU(res, to_float2(magnets, 4.0f));
+
+    // 6.0f Floor
+    float floorDist = p.y;
+    res = opU(res, to_float2(floorDist, 5.0f));
+
+    return res;
+}
+
+__DEVICE__ float3 calcNormal(float3 p, float iTime) {
+    float2 e = to_float2(0.001f, 0.0f);
+    return normalize(to_float3(
+                                  map(p + swi3(e,x,y,y), iTime).x - map(p - swi3(e,x,y,y), iTime).x,
+                                  map(p + swi3(e,y,x,y), iTime).x - map(p - swi3(e,y,x,y), iTime).x,
+                                  map(p + swi3(e,y,y,x), iTime).x - map(p - swi3(e,y,y,x), iTime).x
+                              ));
+}
+
+__DEVICE__ float getShadow(float3 ro, float3 rd, float iTime) {
+    float res = 1.0f;
+    float t = 0.05f;
+    for(int i = 0; i < 40; i++) {
+        float h = map(ro + rd * t, iTime).x;
+        if(h < 0.001f) return 0.0f;
+        res = _fminf(res, 8.0f * h / t);
+        t += h;
+        if(t > 6.0f) break;
+    }
+    return clamp(res, 0.0f, 1.0f);
+}
+
+__KERNEL__ void MagnemiteFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float4 Mat1Col = to_float4(params->Mat1Col[0], params->Mat1Col[1], params->Mat1Col[2], params->Mat1Col[3]);
+  float4 Mat2Col = to_float4(params->Mat2Col[0], params->Mat2Col[1], params->Mat2Col[2], params->Mat2Col[3]);
+  float4 Mat3Col = to_float4(params->Mat3Col[0], params->Mat3Col[1], params->Mat3Col[2], params->Mat3Col[3]);
+  float4 Mat4Col = to_float4(params->Mat4Col[0], params->Mat4Col[1], params->Mat4Col[2], params->Mat4Col[3]);
+  float4 MagnetLeft1Col = to_float4(params->MagnetLeft1Col[0], params->MagnetLeft1Col[1], params->MagnetLeft1Col[2], params->MagnetLeft1Col[3]);
+  float4 MagnetLeft2Col = to_float4(params->MagnetLeft2Col[0], params->MagnetLeft2Col[1], params->MagnetLeft2Col[2], params->MagnetLeft2Col[3]);
+  float4 MagnetRight1Col = to_float4(params->MagnetRight1Col[0], params->MagnetRight1Col[1], params->MagnetRight1Col[2], params->MagnetRight1Col[3]);
+  float4 MagnetRight2Col = to_float4(params->MagnetRight2Col[0], params->MagnetRight2Col[1], params->MagnetRight2Col[2], params->MagnetRight2Col[3]);
+  float4 FloorCol = to_float4(params->FloorCol[0], params->FloorCol[1], params->FloorCol[2], params->FloorCol[3]);
+  float4 LightCol = to_float4(params->LightCol[0], params->LightCol[1], params->LightCol[2], params->LightCol[3]);
+  float4 BGCol = to_float4(params->BGCol[0], params->BGCol[1], params->BGCol[2], params->BGCol[3]);
+  float2 ViewDXY = to_float2(params->ViewDXY[0], params->ViewDXY[1]);
+  float  ViewDZ = params->ViewDZ;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  CamAngle = params->CamAngle;
+
+  // --------
+    float Alpha = FloorCol.w;
+
+
+    float2 uv = (fragCoord - 0.5f * iResolution) / iResolution.y;
+
+    float camAngle = _sinf(iTime * 0.3f) * CamAngle;//0.3f;
+    float3 ro = to_float3(_sinf(camAngle) * 5.0f, 2.5f, -_cosf(camAngle) * 5.0f);
+    float3 target = to_float3(0.0f, 1.2f, 0.0f) + to_float3_aw(ViewDXY, ViewDZ);
+
+    float3 f = normalize(target - ro);
+    float3 r = normalize(cross(to_float3(0.0f, 1.0f, 0.0f), f));
+    float3 u = cross(f, r);
+    float3 rd = normalize(f + uv.x * r + uv.y * u + to_float3_aw(ViewXY, ViewZ));
+
+    //############### 3D Mouse-Rotation des Objektes ##############
+    float crz = (iMouse.x - iResolution.x / 2.0f) / iResolution.x * pi;
+    float crx = (iMouse.y - iResolution.y / 2.0f) / iResolution.y * pi;
+
+    mat3 m = mul_mat3_mat3(to_mat3(_cosf(crz), 0.0f, _sinf(crz), 0.0f, 1.0f, 0.0f, -_sinf(crz), 0.0f, _cosf(crz)) ,
+                           to_mat3(1.0f, 0.0f, 0.0f, 0.0f, _cosf(crx), _sinf(crx), 0.0f, -_sinf(crx), _cosf(crx)));
+
+    if(iMouse.z > 0.0f)
+    {
+        ro = mul_mat3_f3(m , ro);
+        rd = mul_mat3_f3(m , rd);
+    }
+    //#############################################################
+
+
+    float dO = 0.0f;
+    float matID = 0.0f;
+
+    float sparkTime = iTime * 4.5f;
+    float burst = step(0.9f, _sinf(sparkTime) * _sinf(sparkTime * 1.3f));
+    float flicker = step(0.4f, fract(_sinf(iTime * 143.2f) * 4375.14f));
+    float flash = burst * flicker;
+    float glow = 0.0f;
+
+    for(int i=0; i<MAX_STEPS; i++) {
+        float3 p = ro + rd * dO;
+        float2 dS = map(p, iTime);
+        float stepDist = dS.x;
+
+        if (flash > 0.0f) {
+            float dL = mapLightning(p, iTime);
+            glow += 0.005f / (0.005f + dL * dL);
+            stepDist = _fminf(stepDist, dL + 0.05f);
+        }
+
+        if(_fabs(dS.x) < SURF_DIST || dO > MAX_DIST) {
+            matID = dS.y;
+            break;
+        }
+        dO += stepDist * 0.75f;
+    }
+
+    float3 col = swi3(BGCol,x,y,z);//to_float3_s(0.02f);
+    float hover = _sinf(iTime * 2.5f) * 0.15f + 0.4f;
+    float3 lightningColor = swi3(LightCol,x,y,z);//to_float3(1.0f, 0.9f, 0.3f);
+
+    if(dO < MAX_DIST) {
+        float3 p = ro + rd * dO;
+        float3 n = calcNormal(p, iTime);
+        float3 l = normalize(to_float3(3.0f, 5.0f, -4.0f) - p);
+        float3 view = normalize(ro - p);
+
+        float dif = clamp(dot(n, l), 0.0f, 1.0f);
+        float shadow = getShadow(p + n * 0.01f, l, iTime);
+        float spec = _powf(clamp(dot(view, reflect(-l, n)), 0.0f, 1.0f), 32.0f);
+
+        float3 albedo = to_float3_s(0.0f);
+
+        if(matID == 1.0f)      albedo = swi3(Mat1Col,x,y,z), Alpha = 1.0f;//to_float3(0.55f, 0.65f, 0.7f);
+        else if(matID == 2.0f) albedo = swi3(Mat2Col,x,y,z), Alpha = 1.0f;//to_float3_s(0.95f);
+        else if(matID == 3.0f) albedo = swi3(Mat3Col,x,y,z), Alpha = 1.0f;//to_float3_s(0.05f);
+        else if(matID == 4.0f) {
+            albedo = swi3(Mat4Col,x,y,z);//to_float3(0.4f, 0.45f, 0.5f);
+            spec *= 2.0f;
+
+            float3 pModel = p;
+            pModel.y -= (1.0f + hover);
+
+            // Paint Right Magnet (Blue Top, Red Bottom)
+            float3 pRMag = getRightMagP(pModel);
+            if (sdMagnet(pRMag) < 0.01f && pRMag.x > 0.3f) {
+                //albedo = (pRMag.y > 0.0f) ? to_float3(0.1f, 0.2f, 0.8f) : to_float3(0.8f, 0.1f, 0.1f);
+                albedo = (pRMag.y > 0.0f) ? swi3(MagnetRight1Col,x,y,z) : swi3(MagnetRight2Col,x,y,z);
+            }
+
+            // Paint Left Magnet (Red Top, Blue Bottom)
+            float3 pLMag = getLeftMagP(pModel);
+            if (sdMagnet(pLMag) < 0.01f && pLMag.x > 0.3f) {
+                //albedo = (pLMag.y > 0.0f) ? to_float3(0.8f, 0.1f, 0.1f) : to_float3(0.1f, 0.2f, 0.8f);
+                albedo = (pLMag.y > 0.0f) ? swi3(MagnetLeft1Col,x,y,z) : swi3(MagnetLeft2Col,x,y,z);
+            }
+            Alpha = 1.0f;
+        }
+        else if(matID == 5.0f) albedo = swi3(FloorCol,x,y,z) * (0.8f + 0.2f * mod_f(_floor(p.x*2.0f)+_floor(p.z*2.0f), 2.0f));// * (0.8f + 0.2f * mod_f(_floor(p.x*2.0f)+_floor(p.z*2.0f), 2.0f));
+
+        col = albedo * (dif * shadow + 0.15f) + spec * 0.4f;
+
+        if (flash > 0.0f) {
+            float3 center = to_float3(0.0f, 2.0f + hover, 0.0f);
+            float3 flashDir = normalize(center - p);
+            float flashDist = length(center - p);
+            float flashDif = clamp(dot(n, flashDir), 0.0f, 1.0f);
+            float falloff = 1.0f / (1.0f + flashDist * flashDist);
+            col += albedo * flashDif * falloff * lightningColor * 3.0f;
+            //Alpha = 1.0f;
+        }
+    }
+
+    col += glow * lightningColor * flash;
+    fragColor = to_float4_aw(pow_f3(col, to_float3_s(0.4545f)), Alpha);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("Mat1Col", "Mat1Col", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Mat1Col",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMat1ColColorR = self:AddInput("Red",   "Mat1ColRed",   { INP_Default  = 0.55, IC_ControlID = 0, attrs})
+    InMat1ColColorG = self:AddInput("Green", "Mat1ColGreen", { INP_Default  = 0.65, IC_ControlID = 1, attrs})
+    InMat1ColColorB = self:AddInput("Blue",  "Mat1ColBlue",  { INP_Default  = 0.7, IC_ControlID = 2, attrs})
+    InMat1ColColorA = self:AddInput("Alpha", "Mat1ColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Mat2Col", "Mat2Col", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Mat2Col",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMat2ColColorR = self:AddInput("Red",   "Mat2ColRed",   { INP_Default  = 0.95, IC_ControlID = 0, attrs})
+    InMat2ColColorG = self:AddInput("Green", "Mat2ColGreen", { INP_Default  = 0.95, IC_ControlID = 1, attrs})
+    InMat2ColColorB = self:AddInput("Blue",  "Mat2ColBlue",  { INP_Default  = 0.95, IC_ControlID = 2, attrs})
+    InMat2ColColorA = self:AddInput("Alpha", "Mat2ColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Mat3Col", "Mat3Col", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Mat3Col",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMat3ColColorR = self:AddInput("Red",   "Mat3ColRed",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InMat3ColColorG = self:AddInput("Green", "Mat3ColGreen", { INP_Default  = 0.05, IC_ControlID = 1, attrs})
+    InMat3ColColorB = self:AddInput("Blue",  "Mat3ColBlue",  { INP_Default  = 0.05, IC_ControlID = 2, attrs})
+    InMat3ColColorA = self:AddInput("Alpha", "Mat3ColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Mat4Col", "Mat4Col", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Mat4Col",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMat4ColColorR = self:AddInput("Red",   "Mat4ColRed",   { INP_Default  = 0.4, IC_ControlID = 0, attrs})
+    InMat4ColColorG = self:AddInput("Green", "Mat4ColGreen", { INP_Default  = 0.45, IC_ControlID = 1, attrs})
+    InMat4ColColorB = self:AddInput("Blue",  "Mat4ColBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InMat4ColColorA = self:AddInput("Alpha", "Mat4ColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MagnetLeft1Col", "MagnetLeft1Col", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MagnetLeft1Col",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMagnetLeft1ColColorR = self:AddInput("Red",   "MagnetLeft1ColRed",   { INP_Default  = 0.8, IC_ControlID = 0, attrs})
+    InMagnetLeft1ColColorG = self:AddInput("Green", "MagnetLeft1ColGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InMagnetLeft1ColColorB = self:AddInput("Blue",  "MagnetLeft1ColBlue",  { INP_Default  = 0.1, IC_ControlID = 2, attrs})
+    InMagnetLeft1ColColorA = self:AddInput("Alpha", "MagnetLeft1ColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MagnetLeft2Col", "MagnetLeft2Col", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MagnetLeft2Col",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMagnetLeft2ColColorR = self:AddInput("Red",   "MagnetLeft2ColRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InMagnetLeft2ColColorG = self:AddInput("Green", "MagnetLeft2ColGreen", { INP_Default  = 0.2, IC_ControlID = 1, attrs})
+    InMagnetLeft2ColColorB = self:AddInput("Blue",  "MagnetLeft2ColBlue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    InMagnetLeft2ColColorA = self:AddInput("Alpha", "MagnetLeft2ColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MagnetRight1Col", "MagnetRight1Col", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MagnetRight1Col",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMagnetRight1ColColorR = self:AddInput("Red",   "MagnetRight1ColRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InMagnetRight1ColColorG = self:AddInput("Green", "MagnetRight1ColGreen", { INP_Default  = 0.2, IC_ControlID = 1, attrs})
+    InMagnetRight1ColColorB = self:AddInput("Blue",  "MagnetRight1ColBlue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    InMagnetRight1ColColorA = self:AddInput("Alpha", "MagnetRight1ColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("MagnetRight2Col", "MagnetRight2Col", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "MagnetRight2Col",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMagnetRight2ColColorR = self:AddInput("Red",   "MagnetRight2ColRed",   { INP_Default  = 0.8, IC_ControlID = 0, attrs})
+    InMagnetRight2ColColorG = self:AddInput("Green", "MagnetRight2ColGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InMagnetRight2ColColorB = self:AddInput("Blue",  "MagnetRight2ColBlue",  { INP_Default  = 0.1, IC_ControlID = 2, attrs})
+    InMagnetRight2ColColorA = self:AddInput("Alpha", "MagnetRight2ColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("FloorCol", "FloorCol", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FloorCol",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFloorColColorR = self:AddInput("Red",   "FloorColRed",   { INP_Default  = 0.1, IC_ControlID = 0, attrs})
+    InFloorColColorG = self:AddInput("Green", "FloorColGreen", { INP_Default  = 0.1, IC_ControlID = 1, attrs})
+    InFloorColColorB = self:AddInput("Blue",  "FloorColBlue",  { INP_Default  = 0.1, IC_ControlID = 2, attrs})
+    InFloorColColorA = self:AddInput("Alpha", "FloorColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("LightCol", "LightCol", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "LightCol",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InLightColColorR = self:AddInput("Red",   "LightColRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InLightColColorG = self:AddInput("Green", "LightColGreen", { INP_Default  = 0.9, IC_ControlID = 1, attrs})
+    InLightColColorB = self:AddInput("Blue",  "LightColBlue",  { INP_Default  = 0.3, IC_ControlID = 2, attrs})
+    InLightColColorA = self:AddInput("Alpha", "LightColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("BGCol", "BGCol", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "BGCol",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBGColColorR = self:AddInput("Red",   "BGColRed",   { INP_Default  = 0.02, IC_ControlID = 0, attrs})
+    InBGColColorG = self:AddInput("Green", "BGColGreen", { INP_Default  = 0.02, IC_ControlID = 1, attrs})
+    InBGColColorB = self:AddInput("Blue",  "BGColBlue",  { INP_Default  = 0.02, IC_ControlID = 2, attrs})
+    InBGColColorA = self:AddInput("Alpha", "BGColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InViewDXYPoint = self:AddInput("ViewDXY", "ViewDXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewDZSlider = self:AddInput("ViewDZ", "ViewDZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InCamAngleSlider = self:AddInput("CamAngle", "CamAngle", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.3,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+ 
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "MagnemiteFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.Mat1Col = {
+    InMat1ColColorR:GetValue(req).Value,
+    InMat1ColColorG:GetValue(req).Value,
+    InMat1ColColorB:GetValue(req).Value,InMat1ColColorA:GetValue(req).Value
+  }
+  params.Mat2Col = {
+    InMat2ColColorR:GetValue(req).Value,
+    InMat2ColColorG:GetValue(req).Value,
+    InMat2ColColorB:GetValue(req).Value,InMat2ColColorA:GetValue(req).Value
+  }
+  params.Mat3Col = {
+    InMat3ColColorR:GetValue(req).Value,
+    InMat3ColColorG:GetValue(req).Value,
+    InMat3ColColorB:GetValue(req).Value,InMat3ColColorA:GetValue(req).Value
+  }
+  params.Mat4Col = {
+    InMat4ColColorR:GetValue(req).Value,
+    InMat4ColColorG:GetValue(req).Value,
+    InMat4ColColorB:GetValue(req).Value,InMat4ColColorA:GetValue(req).Value
+  }
+  params.MagnetLeft1Col = {
+    InMagnetLeft1ColColorR:GetValue(req).Value,
+    InMagnetLeft1ColColorG:GetValue(req).Value,
+    InMagnetLeft1ColColorB:GetValue(req).Value,InMagnetLeft1ColColorA:GetValue(req).Value
+  }
+  params.MagnetLeft2Col = {
+    InMagnetLeft2ColColorR:GetValue(req).Value,
+    InMagnetLeft2ColColorG:GetValue(req).Value,
+    InMagnetLeft2ColColorB:GetValue(req).Value,InMagnetLeft2ColColorA:GetValue(req).Value
+  }
+  params.MagnetRight1Col = {
+    InMagnetRight1ColColorR:GetValue(req).Value,
+    InMagnetRight1ColColorG:GetValue(req).Value,
+    InMagnetRight1ColColorB:GetValue(req).Value,InMagnetRight1ColColorA:GetValue(req).Value
+  }
+  params.MagnetRight2Col = {
+    InMagnetRight2ColColorR:GetValue(req).Value,
+    InMagnetRight2ColColorG:GetValue(req).Value,
+    InMagnetRight2ColColorB:GetValue(req).Value,InMagnetRight2ColColorA:GetValue(req).Value
+  }
+  params.FloorCol = {
+    InFloorColColorR:GetValue(req).Value,
+    InFloorColColorG:GetValue(req).Value,
+    InFloorColColorB:GetValue(req).Value,InFloorColColorA:GetValue(req).Value
+  }
+  params.LightCol = {
+    InLightColColorR:GetValue(req).Value,
+    InLightColColorG:GetValue(req).Value,
+    InLightColColorB:GetValue(req).Value,InLightColColorA:GetValue(req).Value
+  }
+  params.BGCol = {
+    InBGColColorR:GetValue(req).Value,
+    InBGColColorG:GetValue(req).Value,
+    InBGColColorB:GetValue(req).Value,InBGColColorA:GetValue(req).Value
+  }
+  params.ViewDXY = {InViewDXYPoint:GetValue(req).X,InViewDXYPoint:GetValue(req).Y}
+  params.ViewDZ = InViewDZSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.CamAngle = InCamAngleSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    
+  node:AddOutput("dst", dst)
+  
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

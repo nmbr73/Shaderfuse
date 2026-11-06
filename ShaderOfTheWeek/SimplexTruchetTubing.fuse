@@ -1,0 +1,1305 @@
+--[[--/*
+
+  SimplexTruchetTubing.fuse
+
+  Based on https://www.shadertoy.com/view/XsffWj a WebGL shader created by Shane.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  LookXY[2];
+  float  LookZ;
+  float  ForwardXY[2];
+  float  ForwardZ;
+  float  RightXY[2];
+  float  RightZ;
+  float  FOV;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Rusty Metal' to iChannel0
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+/*
+  Simplex Truchet Tubing
+  ----------------------
+
+  This was inspired by Mattz's "Rainbow Sphaghetti" example, which I've always admired
+  for both its aesthetics and mathematical content. However, this version was constructed
+  via a more direct simplex grid approach. In fact, I made it a point not to look at
+  Mattz's code too deeply in the hope that I might bring something new to the table...
+  Not sure if I did, but here it is anyway. :)
+
+  The idea is very simple: Break space into a simplex grid, which is just a bunch of
+  packed regular tetrahedrons. Each tetrahedron has four faces, so run a tube from one
+  face center to another face center, then do the same with the remaining two faces -
+  If you require a visual reference, look up cubic Truchet tiles, then picture one with
+  tetrahedrons instead of cubes. The result is a grid space full of double-tubed
+  tetrahedral Truchet blocks which can each be randomly oriented to produce a Truchet
+  pattern.
+
+  Running a straight tube, or even a Bezier curve, from one tetrahedral face center to
+  the next is almost trivial, but threading tori through them was slighly more tricky.
+  Each had to be centered on the correct central edge, then aligned accordingly. The code
+  to do that turned out to be reasonably simple, but I had to make a lot of really stupid
+  mistakes to get there. :)
+
+  Anyway, for anyone interested, the relevant code is contained in the distance function;
+  The rest is window dressing. I also have a much, much more simplistic version using
+  straight tubes that I'll put up pretty soon which should be much easier to absorb. With
+  a bit of trial and error, I've also managed to produce an animated version, so I'll
+  put that up too.
+
+
+  By the way, I really rushed in the comments, but I'll tidy them up later.
+
+
+    // Relevant examples:
+
+    // Truchet pattern using an octahedral and tetrahedral setup.
+    rainbow sphagetti - Mattz
+    https://www.shadertoy.com/view/lsjGRV
+
+  // Classic cubic Truchet pattern. Easier to understand.
+  Twisted Tubes - Shane
+  https://www.shadertoy.com/view/lsc3DH
+
+
+*/
+
+
+#define FAR 20.0f // Maximum ray distance. Analogous to the far plane.
+
+//#define NO_BOLTS // Bland, but faster, plus it allows you to see the pattern better.
+
+
+// Scene object ID. Either the bolts (0) or the tube itself (1).
+//float objID;
+//float svObjID; // Global ID to keep a copy of the above from pass to pass.
+
+__DEVICE__ float hash(float n){ return fract(_sinf(n)*43758.5453f); }
+
+// Standard 2D rotation formula.
+__DEVICE__ mat2 rot2(in float a){ float c = _cosf(a), s = _sinf(a); return to_mat2(c, -s, s, c); }
+
+
+// The path is a 2D sinusoid that varies over time, depending upon the frequencies, and amplitudes.
+__DEVICE__ float2 path(in float t){
+
+    //return to_float2(0); // Straight path override.
+
+    // Curvy path.
+    float a = _sinf(t * 0.22f);
+    float b = _cosf(t * 0.28f);
+    return to_float2(a*2.0f -b*0.75f, b*0.85f + a*0.75f);
+}
+
+// Tri-Planar blending function. Based on an old Nvidia tutorial.
+__DEVICE__ float3 tex3D( __TEXTURE2D__ t, in float3 p, in float3 n ){
+
+    //p -= to_float3_aw(path(p.z), 0.0f);
+
+    n = _fmaxf(abs_f3(n), to_float3_s(0.001f));
+    n /= dot(n, to_float3_s(1));
+    float3 tx = swi3(texture(t, swi2(p,y,z)),x,y,z);
+    float3 ty = swi3(texture(t, swi2(p,z,x)),x,y,z);
+    float3 tz = swi3(texture(t, swi2(p,x,y)),x,y,z);
+
+    // Textures are stored in sRGB (I think), so you have to convert them to linear space
+    // (squaring is a rough approximation) prior to working with them... or something like that. :)
+    // Once the final color value is gamma corrected, you should see correct looking colors.
+    return (tx*tx*n.x + ty*ty*n.y + tz*tz*n.z);
+}
+
+
+__DEVICE__ float hash31(float3 p) {
+
+    // Faster, but doesn't disperse things quite as nicely as the block below it. However, when framerate
+    // is an issue, and it often is, this is the one to use. Basically, it's a tweaked amalgamation I put
+    // together, based on a couple of other random algorithms I've seen around... so use it with caution,
+    // because I make a tonne of mistakes. :)
+    float n = _sinf(dot(p, to_float3(7.31f, 157.47f, 113.93f)));
+    return fract(n); // return fract(to_float3(64, 8, 1)*32768.0f*n)*2.0f-1.0f;
+
+    // I'll assume the following came from IQ.
+    //p = to_float3( dot(p, to_float3(127.1f, 311.7f, 74.7f)), dot(p, to_float3(269.5f, 183.3f, 246.1f)), dot(p, to_float3(113.5f, 271.9f, 124.6f)));
+    //return (fract(_sinf(p)*43758.5453f)*2.0f - 1.0f);
+}
+
+// A cheap orthonormal basis vector function - Taken from Nimitz's "Cheap Orthonormal Basis" example, then
+// modified slightly.
+//
+//Cheap orthonormal basis by nimitz
+//http://orbit.dtu.dk/fedora/objects/orbit:113874/datastreams/file_75b66578-222e-4c7d-abdf-f7e255100209/content
+//via: http://psgraphics.blogspot.pt/2014/11/making-orthonormal-basis-from-unit.html
+__DEVICE__ mat3 basis(in float3 n){
+
+    float a = 1.0f/(1.0f + n.z);
+    float b = -n.x*n.y*a;
+    return to_mat3(1.0f - n.x*n.x*a, b, n.x, b, 1.0f - n.y*n.y*a, n.y, -n.x, -n.y, n.z);
+    //return transpose(mat3(to_float3(1.0f - n.x*n.x*a, b, -n.x), to_float3(b, 1.0f - n.y*n.y*a , -n.y), n));
+}
+
+// Torus function, with the standard large radius and smaller cross-sectional radius. With just a
+// standard torus shape, this would be a very simple algorithm, but just to make it a little more
+// interesting, I spaced some bolts around the tori segments, so that added a few more lines.
+__DEVICE__ float2 tor(float3 p, float rad, float rad2){
+
+    // "p" has been passed in as "p - p0," where "p0" is the central torus axial point.
+
+    #ifndef NO_BOLTS
+    // Bolts. Standard object repetition around a torus.
+    float3 q = p;
+    swi2S(q,x,y, mul_mat2_f2(rot2(-3.14159f/12.0f),swi2(q,x,y))); // Rotating the bolts to avoid seam lines.
+    // Animation: I'd love to include this but there are some boundary issues that I'll have
+    // to compensate for first. It's on the list though.
+    //swi2(q,x,y) = rot2(iTime/2.0f)*swi2(q,x,y);
+
+    float a = _atan2f(q.y, q.x); // Polar angle of "q.xy" coordinate.
+
+    // Partitioning the the torus into centered cells - "oNum" in all.
+    const float oNum = 6.0f; // Six objects in all.
+    float ia = _floor(a/6.2831853f*oNum);
+    ia = (ia + 0.5f)/oNum*6.2831853f;
+
+    // Converting the cell coordinates to polar positions. "X" now represents the radial
+    // distance, and "Y" repesents the radial distance.
+    swi2S(q,x,y, mul_mat2_f2(rot2(ia),swi2(q,x,y)));
+
+    q.x -= rad; // Edging the object out to the distance of the outer radius.
+
+    // Drawing some hexagon bolts at the postion.
+    q = abs_f3(q);
+    float sh = _fmaxf(_fmaxf(q.x*0.866025f + q.z*0.5f, q.z) - rad2 - 0.0125f, q.y - 0.045f);
+    sh = _fmaxf(sh, -q.y + 0.01f); // Taking out the center to make it look like two bolts.
+    #endif
+
+    #ifndef NO_BOLTS
+    // The torus itself. Without the bolts, the following would be all you need:
+
+    // Sweeping a circle "rad" units about the center point.
+    swi2S(p,x,y, to_float2(length(swi2(p,x,y)) - rad, p.z));
+
+    // Producing the inner circle and adding some tiny ribbing ("cos" term) to emulate a thread.
+    float tor = length(swi2(p,x,y)) - rad2 + _cosf(a*180.0f)*0.0002f;
+
+    // Hexagonal cross section. Cool, but I have to deal with segment alignment first.
+    ////swi2S(p,x,y, mul_mat2_f2(rot2(a),swi2(p,x,y)));
+    //p = abs_f3(p);
+    //float tor = _fmaxf(p.x, p.y) - rad2;// + _cosf(a*180.0f)*0.0002f;
+
+
+    // Returning the torus value and the shape (bolt) value seperately (for ID purposes), but
+    // they'll be combined afterward.
+
+    return to_float2(tor, sh);
+    #else
+    float a = _atan2f(p.y, p.x);
+    swi2S(p,x,y, to_float2(length(swi2(p,x,y)) - rad, p.z));
+    float tor = length(swi2(p,x,y)) - rad2 + _cosf(a*180.0f)*0.0002f;
+    return to_float2(tor, 1e8);
+    #endif
+}
+
+
+// Breaking space into a 3D simplex grid (packed tetrahedra), constructing tetrahedral Truchet tiles,
+// then randomly rotating them to form a 3D simplex Truchet pattern.
+__DEVICE__ float simplexTruchet(in float3 p, inout float *objID)
+{
+    // Breaking space into tetrahedra and obtaining the four verticies. The folowing three code lines
+    // are pretty standard, and are used for all kinds of things, including 3D simplex noise. In this
+    // case though, we're constructing tetrahedral Truchet tiles.
+
+    // Skewing the cubic grid, then determining relative fractional position.
+    float3 i = _floor(p + dot(p, to_float3_s(1.0f/3.0f)));  p -= i - dot(i, to_float3_s(1.0f/6.0f)) ;
+
+    // Breaking the skewed cube into tetrahedra with partitioning planes, then determining which side of
+    // the intersecting planes the skewed point is on. Ie: Determining which tetrahedron the point is in.
+    float3 i1 = step(swi3(p,y,z,x), p), i2 = _fmaxf(i1, 1.0f - swi3(i1,z,x,y)); i1 = _fminf(i1, 1.0f - swi3(i1,z,x,y));
+
+
+    // Using the above to produce the four vertices for the tetrahedron.
+    float3 p0 = to_float3_s(0), p1 = i1 - 1.0f/6.0f, p2 = i2 - 1.0f/3.0f, p3 = to_float3_s(0.5f);
+
+    // Using the verticies to produce a unit random value for the tetrahedron, which in turn is used
+    // to determine its rotation.
+    float rnd = hash31(i*57.31f + i1*41.57f + i2*27.93f);
+
+    // This is a cheap way (there might be cheaper, though) to rotate the tetrahedron. Basically, we're
+    // rotating the vertices themselves, depending on the random number generated.
+    float3 t0 = p1, t1 = p2, t2 = p3, t3 = p0;
+    if (rnd > 0.66f){ t0 = p2, t1 = p3; t2 = p0; t3 = p1; }
+    else if (rnd > 0.33f){ t0 = p3, t1 = p0; t2 = p1; t3 = p2; }
+
+
+    // Threading two torus segments through each pair of faces on the tetrahedron.
+
+    // Used to hold the distance field values for the tori segments and the bolts.
+    // swi2(v,x,y) holds the first torus and bolt values, and swi2(v,z,w) hold the same for the second torus.
+    float4 v = to_float4_s(0.0f);
+
+    // Axial point of the torus segment, and the normal from which the orthonormal bais is derived.
+    float3 q, bn;
+
+
+    // I remember reasoning that the outer torus radius had to be this factor (_sqrtf(6)/8), but I
+    // can't for the life of me remember why. A lot of tetrahedral lengths involve root six. I
+    // think it's equal to the tetrahedral circumradius... I'm not happy with that explanation either,
+    // so I'll provide a proper explanation later. :D Either way, it's the only value that fits.
+    float rad = 0.306186218f; // Equal to _sqrtf(6)/8.
+    float rad2 = 0.025f; // The smaller cross-sectional torus radius.
+
+
+    // Positioning the center of each torus at the corresponding edge mid-point, then aligning with
+    // the direction of the edge running through the midpoint. One of the ways to align an object is to
+    // determine a face normal, construct an orthonormal basis from it, then multiply the object by it
+    // relative to its position. On a side note, orientation could probably be achieved with a few
+    // matrix rotations instead, which may or may not be cheaper, so I'll look into it later.
+
+    // First torus. Centered on the line between verticies t0 and t1, and aligned to the face that
+    // the edge runs through.
+    bn = (t0 - t1)*1.1547005f; // Equivalent to normalize(t0 - t1);
+    q = mul_mat3_f3(basis(bn) , (p - _mix(t0, t1, 0.5f))); // Applying Nimitz's basis formula to the point to realign it.
+    swi2S(v,x,y, tor(q, rad, rad2)); // Obtain the first torus distance.
+
+    // Second torus. Centered on the line between verticies t2 and t3, and aligned to the face that
+    // the edge runs through.
+    bn = (t2 - t3)*1.1547005f; // Equivalent to normalize(t2 - t3);
+    q = mul_mat3_f3(basis(bn) , (p - _mix(t2, t3, 0.5f))); // Applying Nimitz's basis formula to the point to realign it.
+    swi2S(v,z,w, tor(q, rad, rad2)); // Obtain the second torus distance.
+
+    // Determine the minium torus value, v.x, and the minimum bolt value, v.y.
+    swi2S(v,x,y, _fminf(swi2(v,x,y), swi2(v,z,w)));
+
+
+    // Object ID. It's either the ribbed torus itself or a bolt.
+    *objID = step(v.x, v.y);
+
+    // Return the minimum surface point.
+    return _fminf(v.x, v.y);
+}
+
+// The main distance field function. In this case, it's just calling the
+// simplex Truchet object.
+__DEVICE__ float map(float3 p, inout float *objID){
+
+    swi2S(p,x,y, swi2(p,x,y) - swi2(path(p.z),x,y)); // Perturb the object around the camera path.
+
+    float ns = simplexTruchet(p, objID); // The Truchet object.
+
+    // If a field function adheres to Lipschitz conditions, then no ray shortening is
+    // necessary, but this one seems to require just a touch. I've tried to use the highest
+    // shortening factor possible.
+    return ns*0.9f;
+}
+
+
+// Texture bump mapping. Four tri-planar lookups, or 12 texture lookups in total. I tried to
+// make it as concise as possible. Whether that translates to speed, or not, I couldn't say.
+__DEVICE__ float3 bumpMap(__TEXTURE2D__ tx, in float3 p, in float3 n, float bf){
+
+    const float2 e = to_float2(0.001f, 0);
+
+    // Three gradient vectors rolled into a matrix, constructed with offset greyscale texture values.
+    mat3 m = to_mat3_f3( tex3D(tx, p - swi3(e,x,y,y), n), tex3D(tx, p - swi3(e,y,x,y), n), tex3D(tx, p - swi3(e,y,y,x), n));
+
+    float3 g = mul_f3_mat3(to_float3(0.299f, 0.587f, 0.114f),m); // Converting to greyscale.
+    g = (g - dot(tex3D(tx,  p , n), to_float3(0.299f, 0.587f, 0.114f)) )/e.x; g -= n*dot(n, g);
+
+    return normalize( n + g*bf ); // Bumped normal. "bf" - bump factor.
+}
+
+
+// Standard raymarching routine.
+__DEVICE__ float trace(float3 ro, float3 rd, inout float *objID){
+
+    float t = 0.0f, d;
+
+    for (int i=0; i<96; i++){
+
+        d = map(ro + rd*t, objID);
+
+        if(_fabs(d)<0.001f*(t*0.125f + 1.0f) || t>FAR) break;//0.001f*(t*0.125f + 1.0f)
+
+        t += d; // Using slightly more accuracy in the first pass.
+    }
+
+    return _fminf(t, FAR);
+}
+
+
+
+// Cheap shadows are the bain of my raymarching existence, since trying to alleviate artifacts is an excercise in
+// futility. In fact, I'd almost say, shadowing - in a setting like this - with limited  iterations is impossible...
+// However, I'd be very grateful if someone could prove me wrong. :)
+__DEVICE__ float softShadow(float3 ro, float3 lp, float k, float t, inout float *objID){
+
+    // More would be nicer. More is always nicer, but not really affordable... Not on my slow test machine, anyway.
+    const int maxIterationsShad = 24;
+
+    float3 rd = lp-ro; // Unnormalized direction ray.
+
+    float shade = 1.0f;
+    float dist = 0.001f*(t*0.125f + 1.0f);  // Coincides with the hit condition in the "trace" function.
+    float end = _fmaxf(length(rd), 0.0001f);
+    //float stepDist = end/float(maxIterationsShad);
+    rd /= end;
+
+    // Max shadow iterations - More iterations make nicer shadows, but slow things down. Obviously, the lowest
+    // number to give a decent shadow is the best one to choose.
+    for (int i=0; i<maxIterationsShad; i++){
+
+        float h = map(ro + rd*dist, objID);
+        //shade = _fminf(shade, k*h/dist);
+        shade = _fminf(shade, smoothstep(0.0f, 1.0f, k*h/dist)); // Subtle difference. Thanks to IQ for this tidbit.
+        // So many options here, and none are perfect: dist += _fminf(h, 0.2f), dist += clamp(h, 0.01f, stepDist), etc.
+        dist += clamp(h, 0.01f, 0.25f);
+
+        // Early exits from accumulative distance function calls tend to be a good thing.
+        if (h<0.0f || dist > end) break;
+    }
+
+    // I've added a constant to the final shade value, which lightens the shadow a bit. It's a preference thing.
+    // Really dark shadows look too brutal to me. Sometimes, I'll add AO also, just for kicks. :)
+    return _fminf(_fmaxf(shade, 0.0f) + 0.1f, 1.0f);
+}
+
+/*
+// Standard normal function. It's not as fast as the tetrahedral calculation, but more symmetrical. Due to
+// the intricacies of this particular scene, it's kind of needed to reduce jagged effects.
+__DEVICE__ float3 getNormal(in float3 p) {
+  const float2 e = to_float2(0.002f, 0);
+  return normalize(to_float3(map(p + swi3(e,x,y,y)) - map(p - swi3(e,x,y,y)), map(p + swi3(e,y,x,y)) - map(p - swi3(e,y,x,y)),  map(p + swi3(e,y,y,x)) - map(p - swi3(e,y,y,x))));
+}
+
+
+*/
+
+// Normal calculation, with some edging and curvature bundled in.
+__DEVICE__ float3 getNormal(float3 p, inout float *edge, inout float crv, inout float *objID, float2 iResolution) {
+
+    // Roughly two pixel edge spread, regardless of resolution.
+    float2 e = to_float2(2.0f/iResolution.y, 0);
+
+  float d1 = map(p + swi3(e,x,y,y), objID), d2 = map(p - swi3(e,x,y,y), objID);
+  float d3 = map(p + swi3(e,y,x,y), objID), d4 = map(p - swi3(e,y,x,y), objID);
+  float d5 = map(p + swi3(e,y,y,x), objID), d6 = map(p - swi3(e,y,y,x), objID);
+  float d  = map(p, objID)*2.0f;
+
+  *edge = _fabs(d1 + d2 - d) + _fabs(d3 + d4 - d) + _fabs(d5 + d6 - d);
+  //edge = _fabs(d1 + d2 + d3 + d4 + d5 + d6 - d*3.0f);
+  *edge = smoothstep(0.0f, 1.0f, _sqrtf(*edge/e.x*2.0f));
+/*
+    // Wider sample spread for the curvature.
+    e = to_float2(12.0f/450.0f, 0);
+  d1 = map(p + swi3(e,x,y,y)), d2 = map(p - swi3(e,x,y,y));
+  d3 = map(p + swi3(e,y,x,y)), d4 = map(p - swi3(e,y,x,y));
+  d5 = map(p + swi3(e,y,y,x)), d6 = map(p - swi3(e,y,y,x));
+    crv = clamp((d1 + d2 + d3 + d4 + d5 + d6 - d*3.0f)*32.0f + 0.5f, 0.0f, 1.0f);
+*/
+
+    e = to_float2(0.002f, 0); //iResolution.y - Depending how you want different resolutions to look.
+  d1 = map(p + swi3(e,x,y,y), objID), d2 = map(p - swi3(e,x,y,y), objID);
+  d3 = map(p + swi3(e,y,x,y), objID), d4 = map(p - swi3(e,y,x,y), objID);
+  d5 = map(p + swi3(e,y,y,x), objID), d6 = map(p - swi3(e,y,y,x), objID);
+
+  return normalize(to_float3(d1 - d2, d3 - d4, d5 - d6));
+}
+
+
+// I keep a collection of occlusion routines... OK, that sounded really nerdy. :)
+// Anyway, I like this one. I'm assuming it's based on IQ's original.
+__DEVICE__ float calculateAO(in float3 pos, in float3 nor, inout float *objID)
+{
+    float sca = 2.0f, occ = 0.0f;
+    for( int i=0; i<5; i++ ){
+
+        float hr = 0.01f + (float)(i)*0.5f/4.0f;
+        float dd = map(nor * hr + pos, objID);
+        occ += (hr - dd)*sca;
+        sca *= 0.7f;
+    }
+    return clamp( 1.0f - occ, 0.0f, 1.0f );
+}
+
+
+// Coloring	exturing the scene objects, according to the object IDs.
+__DEVICE__ float3 getObjectColor(float3 p, float3 n, float svObjID, __TEXTURE2D__ iChannel0){
+
+    // Object texture color.
+
+    float3 tx = tex3D(iChannel0, p, n);
+    tx = smoothstep(to_float3_s(0.05f), to_float3_s(0.5f), tx);
+
+    // Shading the steel tubes sepia grey and giving the bolts a splash
+    // of color, just to break up the monotony a bit.
+    if(svObjID>0.5f) tx *= to_float3(1.25f, 1.0f, 0.8f); // Steel tubes.
+    else tx *= to_float3(0.9f, 0.6f, 0.3f); // Bolts.
+
+    return tx; // Return the texture.
+}
+
+
+// Simple environment mapping. Pass the reflected vector in and create some
+// colored noise with it. It's fake, obviously, but gives a bit of a shiny
+// reflected-pass vibe.
+//
+// More sophisticated environment mapping:
+// UI easy to integrate - XT95
+// https://www.shadertoy.com/view/ldKSDm
+__DEVICE__ float3 eMap(float3 rd, float3 sn, float svObjID, __TEXTURE2D__ iChannel0){
+
+    // Pass the reflected vector into the object color function.
+    float3 tx = getObjectColor(rd, sn, svObjID, iChannel0);
+    return smoothstep(to_float3_s(0.15f), to_float3_s(0.75f), tx);
+}
+
+// Using the hit point, unit direction ray, etc, to color the scene. Diffuse, specular, falloff, etc.
+// It's all pretty standard stuff.
+__DEVICE__ float3 doColor(in float3 ro, in float3 rd, in float3 lp, float t, inout float *objID, float svObjID, float2 iResolution, __TEXTURE2D__ iChannel0){
+
+    // Initiate the scene (for this pass) to zero.
+    float3 sceneCol = to_float3_s(0);
+
+    if(t<FAR){ // If we've hit a scene object, light it up.
+
+         // Surface position.
+        float3 sp = ro + rd*t;
+
+        // Edge and curvature variables. Passed to the normal functions.
+        float edge = 0.0f, crv = 1.0f;
+
+        // Retrieving the normal at the hit point, plus the edge and curvature values.
+        float3 sn = getNormal(sp, &edge, crv, objID, iResolution);
+        //vec3 sn = getNormal(sp);
+        float3 svSn = sn; // Save the unbumped normal.
+
+        // Texture-based bump mapping.
+        // Contorting the texture coordinates to match the contorted scene.
+        sn = bumpMap(iChannel0, sp*2.0f, sn, 0.01f);
+
+        // Less bumped normal for the fake environment mapping. Sometimes, I prefer it.
+        svSn = _mix(sn, svSn, 0.75f);
+
+        // Shading. Shadows, ambient occlusion, etc.
+        float sh = softShadow(sp + sn*0.00125f, lp, 16.0f, t, objID); // Set to "1.," if you can do without them.
+        float ao = calculateAO(sp, sn, objID);
+        sh = (sh + ao*0.3f)*ao;
+
+        float3 ld = lp - sp; // Light direction vector.
+        float lDist = _fmaxf(length(ld), 0.001f); // Light to surface distance.
+        ld /= lDist; // Normalizing the light vector.
+
+        // Attenuating the light, based on distance.
+        float atten = 2.0f/(1.0f + lDist*0.125f + lDist*lDist*0.25f);
+
+        // Diffuse term.
+        float diff = _fmaxf(dot(sn, ld), 0.0f);
+        diff = (_powf(diff, 2.0f)*0.66f + _powf(diff, 4.0f)*0.34f)*2.0f; // Ramping up the diffuse.
+        // Specular term.
+        float spec = _powf(_fmaxf( dot( reflect(-ld, sn), -rd ), 0.0f ), 32.0f);
+        // Fresnel term.
+        float fres = clamp(1.0f + dot(rd, sn), 0.0f, 1.0f);
+        //float Schlick = _powf( 1.0f - _fmaxf(dot(rd, normalize(rd + ld)), 0.0f), 5.0f);
+        //float fre2 = _mix(0.5f, 1.0f, Schlick);  //F0 = .5.
+
+        // Coloring the object. You could set it to a single color, to
+        // make things simpler, if you wanted.
+        float3 objCol = getObjectColor(sp*2.0f, sn, svObjID, iChannel0);
+
+        // Combining the above terms to produce the final scene color.
+        sceneCol = objCol*(diff + 0.5f*ao + fres*fres*0.25f) + to_float3(1, 0.97f, 0.92f)*spec*2.0f;
+        //sceneCol += fres*fres*to_float3(0.2f, 0.6f, 1)*0.5f;
+
+        sceneCol += eMap(reflect(rd, svSn)/2.0f, svSn, svObjID, iChannel0)*0.75f;
+
+        // Edges and curvature.
+        //sceneCol *= clamp(crv, 0.0f, 1.0f);
+        //sceneCol += (sceneCol*0.75f + 0.25f)*edge;
+        sceneCol *= 1.0f - edge*0.9f;
+
+        // APPLYING SHADOWS
+        sceneCol *= sh;
+
+        // Attenuation only. To save cycles, the shadows and ambient occlusion
+        // from the first pass only are used.
+        sceneCol *= atten;
+    }
+
+    // APPLYING FOG
+    // Blend in a bit of light fog for atmospheric effect.
+    float3 fogCol = to_float3_s(0);//to_float3(0.7f, 0.8f, 1.0f)*(rd.y*0.5f + 0.5f)*2.5f;
+    sceneCol = _mix(sceneCol, fogCol, smoothstep(0.0f, 0.75f, t/FAR)); // _expf(-0.002f*t*t), etc.
+
+    // Return the color. Done once for each pass.
+    return sceneCol;
+}
+
+
+__DEVICE__ mat2 rot(float a){
+     float c = _cosf(a),s = _sinf(a);
+     return to_mat2(c, -s, s, c);
+}
+
+
+__KERNEL__ void SimplexTruchetTubingFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float2 LookXY = to_float2(params->LookXY[0], params->LookXY[1]);
+  float  LookZ = params->LookZ;
+  float2 ForwardXY = to_float2(params->ForwardXY[0], params->ForwardXY[1]);
+  float  ForwardZ = params->ForwardZ;
+  float2 RightXY = to_float2(params->RightXY[0], params->RightXY[1]);
+  float  RightZ = params->RightZ;
+  float  FOV = params->FOV;
+
+  // --------
+
+
+  // Screen coordinates.
+  float2 uv = (fragCoord - iResolution*0.5f) / iResolution.y;
+
+  // Camera Setup.
+  float3 ro = to_float3(0, 0, iTime*0.5f);  // Camera position, doubling as the ray origin.
+
+  if(iMouse.z > 0.0f){
+      swi2S(ro,y,z, mul_f2_mat2(swi2(ro,y,z) , rot(-iMouse.y/iResolution.y)));
+      swi2S(ro,x,z, mul_f2_mat2(swi2(ro,x,z) , rot(-iMouse.x/iResolution.x)));
+  }
+
+  float3 lk = ro + to_float3(0, 0, 0.25f) + to_float3_aw(LookXY,LookZ);  // "Look At" position.
+
+  // Light position. Set in the vicinity the ray origin.
+  float3 lp = ro + to_float3(0, 1, 0.375f);
+
+  // Using the Z-value to perturb the XY-plane.
+  // Sending the camera, "look at," and light vector down the tunnel. The "path" function is
+  // synchronized with the distance function.
+  swi2S(ro,x,y, swi2(ro,x,y) + path(ro.z));
+  swi2S(lk,x,y, swi2(lk,x,y) + path(lk.z));
+  swi2S(lp,x,y, swi2(lp,x,y) + path(lp.z));
+
+
+  // Using the above to produce the unit ray-direction vector.
+  //float  FOV = 3.14159f/2.0f; // FOV - Field of view.
+  float3 forward = normalize(lk - ro + to_float3_aw(ForwardXY,ForwardZ));
+  float3 right = normalize(to_float3(forward.z, 0.0f, -forward.x )+ to_float3_aw(RightXY,RightZ));
+  float3 up = cross(forward, right);
+
+  // rd - Ray direction.
+  float3 rd = normalize(forward + (uv.x*right + uv.y*up)*FOV);
+  rd = normalize(to_float3_aw(swi2(rd,x,y), rd.z - length(swi2(rd,x,y))*0.25f ));
+
+
+  // Raymarching.
+  // Obtain the scene distance.
+  float objID = 0.0f;
+  float t = trace(ro, rd, &objID);
+
+  float svObjID = objID; // Save the ID.
+
+  // Coloring.
+  // Retrieving the color at the hit point.
+  float3 sceneColor = doColor(ro, rd, lp, t, &objID, svObjID, iResolution, iChannel0);
+
+  // Postprocessing.
+  // Subtle vignette.
+  uv = fragCoord/iResolution;
+  sceneColor *= _powf(16.0f*uv.x*uv.y*(1.0f - uv.x)*(1.0f - uv.y) , 0.125f)*0.5f + 0.5f;
+  // Colored varation.
+  //sceneColor = _mix(_powf(_fminf(to_float3(1.5f, 1, 1)*sceneColor, 1.0f), to_float3(1, 2.5f, 12.0f)).zyx, sceneColor,
+                   // _powf( 16.0f*uv.x*uv.y*(1.0f-uv.x)*(1.0f-uv.y) , 0.125f)*0.5f + 0.5f);
+
+
+  // Clamping the scene color, roughly gamma correcting, then presenting to the screen.
+  fragColor = to_float4_aw(sqrt_f3(clamp(sceneColor, 0.0f, 1.0f)), 1);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InLookXYPoint = self:AddInput("LookXY", "LookXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InLookZSlider = self:AddInput("LookZ", "LookZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InForwardXYPoint = self:AddInput("ForwardXY", "ForwardXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InForwardZSlider = self:AddInput("ForwardZ", "ForwardZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InRightXYPoint = self:AddInput("RightXY", "RightXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InRightZSlider = self:AddInput("RightZ", "RightZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InFOVSlider = self:AddInput("FOV", "FOV", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.571,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+    ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+ node = DVIPComputeNode(req,
+    "SimplexTruchetTubingFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.LookXY = {InLookXYPoint:GetValue(req).X,InLookXYPoint:GetValue(req).Y}
+  params.LookZ = InLookZSlider:GetValue(req).Value
+  params.ForwardXY = {InForwardXYPoint:GetValue(req).X,InForwardXYPoint:GetValue(req).Y}
+  params.ForwardZ = InForwardZSlider:GetValue(req).Value
+  params.RightXY = {InRightXYPoint:GetValue(req).X,InRightXYPoint:GetValue(req).Y}
+  params.RightZ = InRightZSlider:GetValue(req).Value
+  params.FOV = InFOVSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+   
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

@@ -1,0 +1,2845 @@
+--[[--/*
+
+  Skully.fuse
+
+  Based on https://www.shadertoy.com/view/3tGSDz a WebGL shader created by monsterkodi.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   Rotate;
+  bool   Axes;
+  bool   Shadow_;
+  bool   Occl;
+  bool   Dither;
+  bool   Gamma;
+  bool   Anim;
+  bool   Normal;
+  bool   Depthb;
+  bool   Colors;
+  bool   Reset;
+  bool   Foggy;
+  bool   Vignette;
+  float  DIRECTION;
+  float  WSAD;
+  float  OTHER;
+  float  ColSkull[4];
+  float  ColTeeth[4];
+  float  ColBone[4];
+  float  GloEmSkull[2];
+  float  GloEmTeeth[2];
+  float  GloEmBone[2];
+  float  FogColor[4];
+  bool   ChangeCol;
+  float  FogNear;
+  float  FogFar;
+  float  Fov;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+    #define swi4(A,a,b,c,d) (A).a##b##c##d
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+    #define swi4(A,a,b,c,d) to_float4((A).a,(A).b,(A).c,(A).d)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 a, float3 b, float3 c ) { return mat3(a,b,c); }
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+  __DEVICE__ inline mat3 to_mat3_f3( float3 A, float3 B, float3 C)
+  {
+    mat3 D;
+    D.r0 = A;
+    D.r1 = B;
+    D.r2 = C;
+    return D;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+ #define fract_f4(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+ #define mod_f3(value,divisor) fmod(value,divisor)
+ #define mod_f4f4(value,divisor) fmod(value,divisor)
+
+ #define sin_f4(i) sin(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define fract_f4(A) to_float4(fract((A).x),fract((A).y),fract((A).z),fract((A).w))
+ #define mod_f(a,b) _fmod(a,b)
+ #define mod_f3(value,divisor) _fmod(value,divisor)
+ #define mod_f4f4(value,divisor) _fmod(value,divisor)
+ #define sin_f4(i) sin(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define fract_f4(A) to_float4(fract((A).x),fract((A).y),fract((A).z),fract((A).w))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define mod_f3(value,divisor) to_float3(mod_f((value).x, (divisor)),mod_f((value).y, (divisor)),mod_f((value).z, (divisor)))
+ #define mod_f4f4(value,divisor) to_float4(mod_f((value).x, (divisor).x),mod_f((value).y, (divisor).y),mod_f((value).z, (divisor).z),mod_f((value).w, (divisor).w))
+ #define sin_f4(i) to_float4( _sinf((i).x), _sinf((i).y), _sinf((i).z), _sinf((i).w))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+
+/*
+ 0000000   0000000   00     00  00     00   0000000   000   000
+000       000   000  000   000  000   000  000   000  0000  000
+000       000   000  000000000  000000000  000   000  000 0 000
+000       000   000  000 0 000  000 0 000  000   000  000  0000
+ 0000000   0000000   000   000  000   000   0000000   000   000
+*/
+
+//#define KEYS \
+//__DEVICE__ float4 keys(int x, int y) { return texelFetch(iChannel0, to_int2(x,y), 0); } \
+//__DEVICE__ bool keyState(int key)  { return keys(key, 2).x < 0.5f; } \
+//__DEVICE__ bool keyDown(int key)   { return keys(key, 0).x > 0.5f; }
+
+
+//#define HEADER \
+//    KEYS       \
+//    LOAD       \
+//    PRINT
+
+
+
+#define PI   3.141592653589f
+#define PI2  1.570796326795f
+#define TAU  6.283185307178f
+#define E    2.718281828459f
+#define PHI  1.618033988750f
+#define EPS  0.000000000001f
+#define EPS1 1.00001f
+
+
+#define NONE         -1
+
+#define PASS_MARCH   0
+#define PASS_NORMAL  1
+#define PASS_SHADOW  2
+#define PASS_AO      3
+
+#define HUE_R 0.0f
+#define HUE_G 0.3333f
+#define HUE_B 0.6677f
+#define HUE_Y 0.1667f
+
+#define v0  to_float3(0,0,0)
+#define vx  to_float3(1,0,0)
+#define vy  to_float3(0,1,0)
+#define vz  to_float3(0,0,1)
+
+//const float3 red    = to_float3(0.8f,0.0f,0.0f);
+//const float3 green  = to_float3(0.0f,0.5f,0.0f);
+//const float3 blue   = to_float3(0.2f,0.2f,1.0f);
+//const float3 yellow = to_float3(1.0f,1.0f,0.0f);
+//const float3 orange = to_float3(1.0f,0.5f,0.0f);
+//const float3 white  = to_float3_s(1.0f);
+//const float3 gray   = to_float3_s(0.1f);
+//const float3 black  = to_float3_s(0.0f);
+
+// 000000000  00000000  000   000  000000000
+//    000     000        000 000      000
+//    000     0000000     00000       000
+//    000     000        000 000      000
+//    000     00000000  000   000     000
+
+struct Text {
+    int2 size;
+    int2 adv;
+};
+
+//  0000000   00000000   000000000
+// 000   000  000   000     000
+// 000   000  00000000      000
+// 000   000  000           000
+//  0000000   000           000
+
+struct Opt {
+    bool axes;
+    bool info;
+    bool help;
+    bool space;
+    bool anim;
+    bool soft;
+    bool occl;
+    bool shadow;
+    bool colors;
+    bool dither;
+    bool gamma;
+    bool foggy;
+    bool rotate;
+    bool normal;
+    bool depthb;
+    bool vignette;
+};
+
+//#define OPTIONS \
+//    opt.rotate   =  keyState(KEY_R);      \
+//    opt.axes     = !keyState(KEY_X);      \
+//    opt.info     = !keyState(KEY_I);      \
+//    opt.help     =  keyState(KEY_H);      \
+//    opt.shadow   =  keyState(KEY_L);      \
+//    opt.occl     =  keyState(KEY_O);      \
+//    opt.dither   =  keyState(KEY_T);      \
+//    opt.gamma    =  keyState(KEY_G);      \
+//    opt.anim     =  keyState(KEY_P);      \
+//    opt.normal   = !keyState(KEY_N);      \
+//    opt.depthb   = !keyState(KEY_B);      \
+//    opt.colors   = !keyState(KEY_K);      \
+//    opt.space    = !keyState(KEY_SPACE);  \
+//    opt.foggy    =  keyState(KEY_F);      \
+//    opt.vignette =  keyState(KEY_V);
+
+//  0000000   0000000   00     00
+// 000       000   000  000   000
+// 000       000000000  000000000
+// 000       000   000  000 0 000
+//  0000000  000   000  000   000
+
+struct Cam {
+    float3  tgt;
+    float3  pos;
+    float3  pos2tgt;
+    float3  dir;
+    float3  up;
+    float3  rgt;
+    float dist;
+    float fov;
+};
+
+//  0000000  000   000   0000000   0000000     0000000   000   000
+// 000       000   000  000   000  000   000  000   000  000 0 000
+// 0000000   000000000  000000000  000   000  000   000  000000000
+//      000  000   000  000   000  000   000  000   000  000   000
+// 0000000   000   000  000   000  0000000     0000000   00     00
+
+struct Shadow {
+    float soft;
+    float power;
+    float dark;
+};
+
+struct Light {
+    float3   pos;
+    float3   color;
+    float  bright;
+    struct Shadow shadow;
+};
+
+struct Fog {
+    float near;
+    float far;
+    float3  color;
+};
+
+// 00     00   0000000   000000000
+// 000   000  000   000     000
+// 000000000  000000000     000
+// 000 0 000  000   000     000
+// 000   000  000   000     000
+
+struct Mat {
+    float hue;
+    float sat;
+    float lum;
+    float shiny;
+    float glossy;
+    float emit;
+};
+
+//  0000000  0000000    00000000
+// 000       000   000  000
+// 0000000   000   000  000000
+//      000  000   000  000
+// 0000000   0000000    000
+
+struct SDF {
+    float3  pos;
+    float3  color;
+    float3  normal;
+    float dist;
+    int   mat;
+};
+
+struct Env {
+    float gloss;   // size of glossy
+    float3  ambient;
+};
+
+//  0000000   000       0000000   0000000     0000000   000
+// 000        000      000   000  000   000  000   000  000
+// 000  0000  000      000   000  0000000    000000000  000
+// 000   000  000      000   000  000   000  000   000  000
+//  0000000   0000000   0000000   0000000    000   000  0000000
+
+struct Global {
+    float2   uv;
+    float3   tuv;
+    float2   frag;
+    float2   res;
+    float2   mouse;
+    float2   mp;
+    int2  ifrag;
+    int2  ires;
+    float  aspect;
+    float4   color;
+    int    frame;
+    float  time;
+    float3   rd;
+    int    zero;
+    int    pass;
+    int    maxSteps;
+    float  minDist;
+    float  maxDist;
+    struct Light light[3];
+    struct SDF   hit;
+};
+
+
+__DEVICE__ float4 load(int x, int y, float2 iResolution, __TEXTURE2D__ iChannel1) { return texelFetch(iChannel1, to_int2(x,y), 0); }
+__DEVICE__ void save(int x, int y, float4 c, inout struct Global *gl ) { if (((*gl).ifrag.x==x) && ((*gl).ifrag.y==y)) (*gl).color=c; }
+
+__DEVICE__ float map(float3 p, inout struct SDF *sdf, struct Global gl, float3 black, float3 red, float3 green, float3 blue, struct Opt opt, struct Cam cam);
+
+// 000   000   0000000   00000000   00     00   0000000   000
+// 0000  000  000   000  000   000  000   000  000   000  000
+// 000 0 000  000   000  0000000    000000000  000000000  000
+// 000  0000  000   000  000   000  000 0 000  000   000  000
+// 000   000   0000000   000   000  000   000  000   000  0000000
+
+
+__DEVICE__ float3 getNormal(float3 p, inout struct Global *gl, inout struct SDF *sdf, float3 black, float3 red, float3 green, float3 blue, struct Opt opt, struct Cam cam)
+{
+    (*gl).pass = PASS_NORMAL;
+    float3 n = v0;
+    for (int i = (*gl).zero; i<4; i++)
+    {
+        float3 e = 0.5773f*(2.0f*to_float3((((i+3)>>1)&1),((i>>1)&1),(i&1))-1.0f);
+        n += e*map(p+e*0.0001f, sdf, *gl, black, red, green, blue, opt, cam);
+    }
+    return normalize(n);
+}
+
+// 00     00   0000000   00000000    0000000  000   000
+// 000   000  000   000  000   000  000       000   000
+// 000000000  000000000  0000000    000       000000000
+// 000 0 000  000   000  000   000  000       000   000
+// 000   000  000   000  000   000   0000000  000   000
+
+
+__DEVICE__ void copyHit(float t, float3 p, inout struct Global *gl, inout struct SDF *sdf, float3 black, float3 red, float3 green, float3 blue, struct Opt opt, struct Cam cam)
+{
+    (*gl).hit.dist   = t;
+    (*gl).hit.mat    = (*sdf).mat;
+    (*gl).hit.color  = (*sdf).color;
+    (*gl).hit.pos    = p;
+    (*gl).hit.normal = getNormal(p, gl, sdf, black, red, green, blue, opt, cam);
+}
+
+__DEVICE__ void march(float3 ro, float2 uv, inout struct Global *gl, struct Cam cam, inout struct SDF *sdf, float3 black, float3 red, float3 green, float3 blue, struct Opt opt)
+{
+    uv = (2.0f*uv-(*gl).res)/(*gl).res.y;
+    float3 rd = normalize(uv.x*cam.rgt + uv.y*cam.up + cam.fov*cam.dir);
+
+    (*gl).pass = PASS_MARCH;
+    float t = 0.0f;
+    for (int i = (*gl).zero; i < (*gl).maxSteps; i++)
+    {
+        float3 p = ro+t*rd;
+        float d = map(p, sdf, *gl, black, red, green, blue, opt, cam);
+        t += d;
+        if (d < (*gl).minDist) { copyHit(t, p, gl, sdf, black, red, green, blue, opt, cam); return; }
+        if (t > (*gl).maxDist) break;
+    }
+    (*gl).hit.mat  = NONE;
+    (*gl).hit.dist = (*gl).maxDist;
+}
+
+//  0000000    0000000   0000000  000      000   000   0000000  000   0000000   000   000
+// 000   000  000       000       000      000   000  000       000  000   000  0000  000
+// 000   000  000       000       000      000   000  0000000   000  000   000  000 0 000
+// 000   000  000       000       000      000   000       000  000  000   000  000  0000
+//  0000000    0000000   0000000  0000000   0000000   0000000   000   0000000   000   000
+
+__DEVICE__ float clamp01(float v);
+
+__DEVICE__ float occlusion(float3 p, float3 n, inout struct SDF *sdf, struct Global gl, float3 black, float3 red, float3 green, float3 blue, struct Opt opt, struct Cam cam)
+{
+
+    if (!opt.occl) return 1.0f;
+    float a = 0.0f;
+    float weight = 1.0f;
+    for (int i = 0; i <= 10; i++)
+    {
+        float d = ((float)(i) / 10.0f)*1.5f;
+        a += weight * (d - map(p + n*d, sdf, gl, black, red, green, blue, opt, cam));
+        weight *= 0.60f;
+    }
+    float f = clamp01(1.0f-a);
+    return f*f;
+}
+
+
+
+// 000  000   000  000  000000000
+// 000  0000  000  000     000
+// 000  000 0 000  000     000
+// 000  000  0000  000     000
+// 000  000   000  000     000
+
+//#define INIT \
+//    OPTIONS  \
+//    initGlobal(fragCoord, iResolution, iMouse, iTime, iFrame); \
+//    lookAtFrom(swi3(load(0,2),x,y,z), swi3(load(0,3),x,y,z));
+
+
+
+
+__DEVICE__ float iRange_(float l, float h, float f, struct Global gl, struct Opt opt) { return l+(h-l)*(opt.anim ? 1.0f-(_cosf(gl.time*f)*0.5f+0.5f) : 0.0f); }
+__DEVICE__ float iRange(float l, float h, struct Global gl, struct Opt opt) { return iRange_(l, h, 1.0f, gl, opt); }
+
+__DEVICE__ void sdStart(float3 p, inout struct SDF *sdf, struct Global gl, float3 black)
+{
+    (*sdf).dist  = gl.maxDist;
+    (*sdf).pos   = p;
+    (*sdf).mat   = -1;
+    (*sdf).color = black;
+}
+
+__DEVICE__ float powi(int a, int b)  { return _powf((float)(a), (float)(b)); }
+//__DEVICE__ float _log10f(float a)    { return _logf(a)/_logf(10.0f); }  // OpenCL doesnt know
+__DEVICE__ float clamp01(float v)    { return clamp(v, 0.0f, 1.0f); }
+__DEVICE__ float3  clamp01f3(float3 v) { return clamp(v, 0.0f, 1.0f); }
+
+// 00000000   00000000   000  000   000  000000000
+// 000   000  000   000  000  0000  000     000
+// 00000000   0000000    000  000 0 000     000
+// 000        000   000  000  000  0000     000
+// 000        000   000  000  000   000     000
+
+#define PRINT \
+float print(int2 pos, int ch)                                                   \
+{                                                                               \
+    pos *= text.size;                                                           \
+    pos.y = gl.ires.y - pos.y - text.size.y;                                    \
+    int2 r = gl.ifrag-pos;                                                      \
+    bool i = r.y>0 && r.x>0 && r.x<=text.size.y && r.y<=text.size.y;            \
+    return i ? texelFetch(iChannel2,                                            \
+        to_int2((ch%16)*64,(1024-64-64*(ch/16)))+r*64/text.size.y,0).x : 0.0f;  \
+}                                                                               \
+                                                                                \
+float print(int2 pos, float v)                                                  \
+{                                                                               \
+    float c = 0.0f;                                                             \
+    float fv = fract(v);                                                        \
+    v = (fv > 0.995f || fv < 0.005f) ? round(v) : v;                            \
+    float f = _fabs(v);                                                         \
+    int i = (fv == 0.0f) ? 1 : fract(v*10.0f) == 0.0f ? -1 : -2;                \
+    int ch, u = _fmaxf(1,int(_log10f(f))+1);                                    \
+    pos.x += 6;                                                                 \
+    for (; i <= u; i++) {                                                       \
+        if (i == 0)     ch = 46;                                                \
+        else if (i > 0) ch = 48+int(mod_f(f, powi(10,i))/powi(10,i-1));         \
+        else            ch = 48+int(mod_f(f+0.005f, powi(10,i+1))/powi(10,i));  \
+        c = _fmaxf(c, print(pos-to_int2(i,0), ch)); }                           \
+    if (v < 0.0f) c = _fmaxf(c, print(pos-to_int2(i,0), 45));                   \
+    return c;                                                                   \
+}                                                                               \
+                                                                                \
+float print(int2 pos, float4 v)                                                 \
+{                                                                               \
+    float c = 0.0f;                                                             \
+    for (int i = 0; i < 4; i++) { c = _fmaxf(c, print(pos, v[i])); pos.x += 8; } \
+    return c;                                                                   \
+}                                                                               \
+                                                                                \
+float print(int2 pos, float3 v)                                                 \
+{                                                                               \
+    float c = 0.0f;                                                             \
+    for (int i = 0; i < 3; i++) { c = _fmaxf(c, print(pos, v[i])); pos.x += 8; } \
+    return c;                                                                   \
+}                                                                               \
+                                                                                \
+float print(int2 pos, float2 v)                                                 \
+{                                                                               \
+    float c = 0.0f;                                                             \
+    for (int i = 0; i < 2; i++) { c = _fmaxf(c, print(pos, v[i]));pos.x += 8; } \
+    return c;                                                                   \
+}                                                                               \
+                                                                                \
+__DEVICE__ float print(int x, int y, float v) { return print(to_int2(x,y), v); }            \
+__DEVICE__ float print(int x, int y, int v)   { return print(to_int2(x,y), float(v)); }     \
+__DEVICE__ float print(int x, int y, float4 v)  { return print(to_int2(x,y), v); }          \
+__DEVICE__ float print(int x, int y, float3 v)  { return print(to_int2(x,y), v); }          \
+__DEVICE__ float print(int x, int y, float2 v)  { return print(to_int2(x,y), v); }          \
+__DEVICE__ float print(int x, int y, int3 v) { return print(to_int2(x,y), to_float3(v)); }  \
+__DEVICE__ float print(int x, int y, int2 v) { return print(to_int2(x,y), to_float2(v)); }  \
+__DEVICE__ float print(int x, int y, bool v)  { return print(to_int2(x,y), float(v)); }
+
+#define DBG(y,v) \
+    col = _mix(col, white, print(6, y, (v)));
+
+#define print4(c0,v0,c1,v1,c2,v2,c3,v3)  \
+    vec3[4]  cs = vec3[4](c0,c1,c2,c3);  \
+    float[4] vs = float[4](v0,v1,v2,v3); \
+    for (int i = gl.zero; i<4; i++)      \
+        {col = _mix(col, cs[i], print(-2, y, vs[i] )); y++;}
+
+// 000  000   000  00000000   0000000
+// 000  0000  000  000       000   000
+// 000  000 0 000  000000    000   000
+// 000  000  0000  000       000   000
+// 000  000   000  000        0000000
+
+#define INFO \
+    if (opt.info && gl.ifrag.x < 9*text.size.x && gl.ifrag.y > gl.ires.y-10*text.size.y) \
+    {                                          \
+        col *= 0.02f;                           \
+        int y = 0;                             \
+                                               \
+        print4(yellow, _floor(iFrameRate),      \
+               blue,   _floor(iTime),           \
+               red,    _floor(iMouse.x),        \
+               green,  _floor(iMouse.y));       \
+                                               \
+        if (iMouse.z > 0.0f)                    \
+        {                                      \
+            march(cam.pos, swi2(iMouse,x,y));         \
+                                               \
+            if (gl.hit.dist < gl.maxDist)      \
+            {                                  \
+                y++;                           \
+                print4(white, gl.hit.dist,     \
+                       red,   gl.hit.pos.x,    \
+                       green, gl.hit.pos.y,    \
+                       blue,  gl.hit.pos.z);   \
+            }                                  \
+        }                                      \
+    }
+
+#define printOpt(o,k,c1,c2,c3,c4)                       \
+    iv = int[6](k, 32, c1, c2+32, c3+32, c4+32);        \
+    ct = o ? white : gray;                              \
+    for (int i = gl.zero; i<6; i++)                     \
+        col = _mix(col, ct, print(to_int2(i+1,y), iv[i])); \
+    y++
+
+// 000   000  00000000  000      00000000
+// 000   000  000       000      000   000
+// 000000000  0000000   000      00000000
+// 000   000  000       000      000
+// 000   000  00000000  0000000  000
+
+#define HELP \
+    if (opt.help && gl.ifrag.x < 9*text.size.x && gl.ifrag.y <= gl.ires.y-10*text.size.y) \
+    {                                                               \
+        col *= 0.02f;                                                \
+        int y = 10;                                                 \
+        float3 ct;                                                    \
+        int[6] iv;                                                  \
+                                                                    \
+        printOpt(opt.help,     KEY_H, KEY_H, KEY_E, KEY_L, KEY_P);  \
+        printOpt(opt.info,     KEY_I, KEY_I, KEY_N, KEY_F, KEY_O);  \
+        printOpt(opt.axes,     KEY_X, KEY_A, KEY_X, KEY_E, KEY_S);  \
+        printOpt(opt.anim,     KEY_P, KEY_A, KEY_N, KEY_I, KEY_M);  \
+        printOpt(opt.shadow,   KEY_L, KEY_S, KEY_H, KEY_A, KEY_D);  \
+        printOpt(opt.occl,     KEY_O, KEY_O, KEY_C, KEY_C, KEY_L);  \
+        printOpt(opt.dither,   KEY_T, KEY_D, KEY_I, KEY_T, KEY_H);  \
+        printOpt(opt.gamma,    KEY_G, KEY_G, KEY_A, KEY_M, KEY_M);  \
+        printOpt(opt.foggy,    KEY_F, KEY_F, KEY_O, KEY_G, 0);      \
+        printOpt(opt.rotate,   KEY_R, KEY_R, KEY_O, KEY_T, 0);      \
+        printOpt(opt.colors,   KEY_K, KEY_C, KEY_O, KEY_L, 0);      \
+        printOpt(opt.depthb,   KEY_B, KEY_Z, KEY_B, KEY_U, KEY_F);  \
+        printOpt(opt.normal,   KEY_N, KEY_N, KEY_O, KEY_R, KEY_M);  \
+        printOpt(opt.vignette, KEY_V, KEY_V, KEY_I, KEY_G, KEY_N);  \
+    }
+
+// 000   000   0000000    0000000  000   000
+// 000   000  000   000  000       000   000
+// 000000000  000000000  0000000   000000000
+// 000   000  000   000       000  000   000
+// 000   000  000   000  0000000   000   000
+
+__DEVICE__ float hash11(float p)
+{
+    p = fract(p * 0.1031f);
+    p *= p + 33.33f;
+    p *= p + p;
+    return fract(p);
+}
+
+__DEVICE__ float3 hash33(float3 p3)
+{
+    p3 = fract_f3(p3 * to_float3(12.3f,456.7f,8912.3f));
+    p3 += dot(p3, swi3(p3,y,x,z)+33.33f);
+    return fract_f3((swi3(p3,x,x,y) + swi3(p3,y,x,x))*swi3(p3,z,y,x));
+}
+
+__DEVICE__ float3 hash31(float p)
+{
+   return hash33(to_float3_s(p));
+}
+
+__DEVICE__ float hash12(float2 p)
+{
+    float3 p3  = fract_f3((swi3(p,x,y,x)) * 0.1031f);
+    p3 += dot(p3, swi3(p3,y,z,x) + 33.33f);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+__DEVICE__ float gradientNoise(float2 v)
+{
+    return fract(52.9829189f * fract(dot(v, to_float2(0.06711056f, 0.00583715f))));
+}
+
+// 000   000   0000000  000
+// 000   000  000       000
+// 000000000  0000000   000
+// 000   000       000  000
+// 000   000  0000000   0000000
+
+__DEVICE__ float3 hsl2rgb( in float3 c )
+{
+    float3 rgb = clamp( abs_f3(mod_f3(c.x*6.0f+to_float3(0.0f,4.0f,2.0f),6.0f)-3.0f)-1.0f, to_float3_s(0.0f), to_float3_s(1.0f) );
+    return c.z + c.y * (rgb-0.5f)*(1.0f-_fabs(2.0f*c.z-1.0f));
+}
+
+__DEVICE__ float3 hsl(float h, float s, float l) { return hsl2rgb(to_float3(h,s,l)); }
+
+__DEVICE__ float3 rgb2hsl(float3 col)
+{
+float ttttttttttttttttttttttt;
+    float minc = _fminf( col.x, _fminf(col.y, col.z) );
+    float maxc = _fmaxf( col.x, _fmaxf(col.y, col.z) );
+    float3  mask = step(swi3(col,y,x,x),swi3(col,x,y,z)) * step(swi3(col,z,z,y),swi3(col,x,y,z));
+    float3 h = mask * (to_float3(0.0f,2.0f,4.0f) + (swi3(col,y,z,x)-swi3(col,z,x,y))/(maxc-minc + EPS)) / 6.0f;
+    return to_float3( fract( 1.0f + h.x + h.y + h.z ),
+                    (maxc-minc)/(1.0f-_fabs(minc+maxc-1.0f) + EPS),
+                    (minc+maxc)*0.5f);
+}
+
+__DEVICE__ float3 setsat(float3 col, float sat)
+{
+    float3 h = rgb2hsl(col);
+    return hsl(h.x,sat,h.z);
+}
+
+__DEVICE__ float3 desat(float3 col)
+{
+    return setsat(col, 0.0f);
+}
+
+// 00     00   0000000   000000000  00000000   000  000   000
+// 000   000  000   000     000     000   000  000   000 000
+// 000000000  000000000     000     0000000    000    00000
+// 000 0 000  000   000     000     000   000  000   000 000
+// 000   000  000   000     000     000   000  000  000   000
+
+__DEVICE__ float3 normal(float x, float y, float z)
+{
+    return normalize(to_float3(x,y,z));
+}
+
+__DEVICE__ mat3 alignMatrix(float3 right, float3 up)
+{
+    return to_mat3_f3(right, up, cross(right,up));
+}
+
+// 00000000    0000000   000000000
+// 000   000  000   000     000
+// 0000000    000   000     000
+// 000   000  000   000     000
+// 000   000   0000000      000
+
+__DEVICE__ float rad2deg(float r) { return 180.0f * r / PI; }
+__DEVICE__ float deg2rad(float d) { return PI * d / 180.0f; }
+
+__DEVICE__ float3  rad2deg_f3(float3 v) { return 180.0f * v / PI; }
+__DEVICE__ float3  deg2rad_f3(float3 v) { return PI * v / 180.0f; }
+
+__DEVICE__ mat3  rotMat(float3 u, float angle)
+{
+    float s = _sinf(deg2rad(angle));
+    float c = _cosf(deg2rad(angle));
+    float i = 1.0f-c;
+
+    return to_mat3(
+                  c+u.x*u.x*i, u.x*u.y*i-u.z*s, u.x*u.z*i+u.y*s,
+                  u.y*u.x*i+u.z*s, c+u.y*u.y*i, u.y*u.z*i-u.x*s,
+                  u.z*u.x*i-u.y*s, u.z*u.y*i+u.x*s, c+u.z*u.z*i
+                  );
+}
+
+__DEVICE__ float3 rotAxisAngle(float3 position, float3 axis, float angle)
+{
+    mat3 m = rotMat(axis, angle);
+    return mul_mat3_f3(m , position);
+}
+
+// 00000000    0000000   000       0000000   00000000
+// 000   000  000   000  000      000   000  000   000
+// 00000000   000   000  000      000000000  0000000
+// 000        000   000  000      000   000  000   000
+// 000         0000000   0000000  000   000  000   000
+
+__DEVICE__ float3 polar(float3 v)
+{
+    float radius = length(v);
+    float phi    = _atan2f(v.y, v.x);
+    float rho    = _acosf(v.z/radius);
+    return to_float3(phi, rho, radius);
+}
+
+__DEVICE__ float3 unpolar(float3 v)
+{
+    float s = _sinf(v.y);
+    float x = s * _cosf(v.x);
+    float y = s * _sinf(v.x);
+    float z =     _cosf(v.y);
+    return to_float3(x, y, z)*v.z;
+}
+
+__DEVICE__ float3 polar2(float3 v)
+{
+    float radius = length(v);
+    float phi    = _atan2f(v.z, v.x);
+    float rho    = _acosf(v.y/radius);
+    return to_float3(phi, rho, radius);
+}
+
+__DEVICE__ float3 unpolar2(float3 v)
+{
+    float s = _sinf(v.y);
+    float x = s * _cosf(v.x);
+    float z = s * _sinf(v.x);
+    float y =     _cosf(v.y);
+    return to_float3(x, y, z)*v.z;
+}
+
+//  0000000   000   000   0000000   000000000
+// 000   000  000   000  000   000     000
+// 000 00 00  000   000  000000000     000
+// 000 0000   000   000  000   000     000
+//  00000 00   0000000   000   000     000
+
+__DEVICE__ float4 quatAxisAngle(float3 axis, float angle)
+{
+    float half_angle = deg2rad(angle*0.5f);
+    return to_float4_aw(axis*_sinf(half_angle), _cosf(half_angle));
+}
+
+__DEVICE__ float4 quatConj(float4 q)
+{
+    return to_float4(-q.x, -q.y, -q.z, q.w);
+}
+
+__DEVICE__ float4 quatMul(float4 q1, float4 q2)
+{
+    float4 qr;
+    qr.x = (q1.w * q2.x) + (q1.x * q2.w) + (q1.y * q2.z) - (q1.z * q2.y);
+    qr.y = (q1.w * q2.y) - (q1.x * q2.z) + (q1.y * q2.w) + (q1.z * q2.x);
+    qr.z = (q1.w * q2.z) + (q1.x * q2.y) - (q1.y * q2.x) + (q1.z * q2.w);
+    qr.w = (q1.w * q2.w) - (q1.x * q2.x) - (q1.y * q2.y) - (q1.z * q2.z);
+    return qr;
+}
+
+__DEVICE__ float3 rotAxisAngleQuat(float3 p, float3 axis, float angle)
+{
+    float4 qr = quatAxisAngle(axis, angle);
+    return swi3(quatMul(quatMul(qr, to_float4_aw(p, 0)), quatConj(qr)),x,y,z);
+}
+
+__DEVICE__ float3 rotRayAngle(float3 p, float3 ro, float3 rd, float angle)
+{
+    return rotAxisAngle(p-ro, rd-ro, angle)+ro;
+}
+
+__DEVICE__ float3 rotY(float3 v, float d)
+{
+    float r = deg2rad(d);
+    float c = _cosf(r);
+    float s = _sinf(r);
+    return to_float3(v.x*c+v.z*s, v.y, v.z*c+v.x*s);
+}
+
+__DEVICE__ float3 rotX(float3 v, float d)
+{
+    float r = deg2rad(d);
+    float c = _cosf(r);
+    float s = _sinf(r);
+    return to_float3(v.x, v.y*c+v.z*s, v.z*c+v.y*s);
+}
+
+__DEVICE__ float3 rotZ(float3 v, float d)
+{
+    float r = deg2rad(d);
+    float c = _cosf(r);
+    float s = _sinf(r);
+    return to_float3(v.x*c+v.y*s, v.y*c+v.x*s, v.z);
+}
+
+//  0000000   00000000   0000000   00     00
+// 000        000       000   000  000   000
+// 000  0000  0000000   000   000  000000000
+// 000   000  000       000   000  000 0 000
+//  0000000   00000000   0000000   000   000
+
+__DEVICE__ float3 posOnPlane_a(float3 p, float3 a, float3 n)
+{
+    return p-dot(p-a,n)*n;
+}
+
+__DEVICE__ float3 posOnPlane(float3 p, float3 n)
+{
+    return p-dot(p,n)*n;
+}
+
+__DEVICE__ float3 posOnRay_pn(float3 p, float3 n)
+{
+    return _fmaxf(0.0f, dot(p, n) / dot(n, n)) * n;
+}
+
+__DEVICE__ float3 posOnRay(float3 ro, float3 rd, float3 p)
+{
+    return ro + _fmaxf(0.0f, dot(p - ro, rd) / dot(rd, rd)) * rd;
+}
+
+__DEVICE__ bool rayIntersectsSphere(float3 ro, float3 rd, float3 ctr, float r)
+{
+    return length(posOnRay(ro, rd, ctr) - ctr) < r;
+}
+
+//  0000000   00000000
+// 000   000  000   000
+// 000   000  00000000
+// 000   000  000
+//  0000000   000
+
+__DEVICE__ float opUnion(float d1, float d2, float k)
+{
+    float h = clamp(0.5f + 0.5f*(d2-d1)/k, 0.0f, 1.0f);
+    return _mix(d2, d1, h) - k*h*(1.0f-h);
+}
+
+__DEVICE__ float opDiff(float d1, float d2, float k)
+{
+    float h = clamp(0.5f - 0.5f*(d2+d1)/k, 0.0f, 1.0f);
+    return _mix(d1, -d2, h) + k*h*(1.0f-h);
+}
+
+__DEVICE__ float opInter(float d1, float d2, float k)
+{
+
+    float h = clamp(0.5f - 0.5f*(d2-d1)/k, 0.0f, 1.0f);
+    return _mix(d2, d1, h) + k*h*(1.0f-h);
+}
+
+__DEVICE__ float opDiff2 (float d1, float d2) { return opDiff (d1, d2, 0.0f); }
+__DEVICE__ float opUnion2(float d1, float d2) { return opUnion(d1, d2, 0.5f); }
+__DEVICE__ float opInter2(float d1, float d2) { return opInter(d1, d2, 0.2f); }
+
+__DEVICE__ void sdMat(int m, float d, inout struct SDF *sdf) { if (d < (*sdf).dist) { (*sdf).dist = d; (*sdf).mat = m; } }
+__DEVICE__ void sdUni(int m, float d, inout struct SDF *sdf) { sdMat(m, opUnion(d, (*sdf).dist, 0.5f),sdf); }
+__DEVICE__ void sdDif(int m, float d, inout struct SDF *sdf) { sdMat(m, opDiff(d, (*sdf).dist, 0.5f),sdf); }
+__DEVICE__ void sdUni_f(int m, float f, float d, inout struct SDF *sdf) { sdMat(m, opUnion(d, (*sdf).dist, f),sdf); }
+__DEVICE__ void sdInt(int m, float f, float d, inout struct SDF *sdf) { float md = opInter(d-f, (*sdf).dist, 0.0f); if (md <= (*sdf).dist) { (*sdf).dist = md; (*sdf).mat = m; }}
+__DEVICE__ void sdDif_f(int m, float f, float d, inout struct SDF *sdf) { float md = opDiff((*sdf).dist, d, f); if (md > (*sdf).dist) { (*sdf).dist = md; (*sdf).mat = m; }}
+__DEVICE__ void sdEmb(int m, float f, float d, inout struct SDF *sdf) { float md = opDiff((*sdf).dist, d-f, 0.0f); if (md > (*sdf).dist) { (*sdf).dist = md; (*sdf).mat = m; }}
+__DEVICE__ void sdExt(int m, float f, float d, inout struct SDF *sdf) { float md = opInter(d-f, (*sdf).dist-f, f); if (md <= (*sdf).dist) { (*sdf).dist = md; (*sdf).mat = m; }}
+
+__DEVICE__ void sdCol(float3 c, float d, inout struct SDF *sdf) { if (d < (*sdf).dist) { (*sdf).dist = d; (*sdf).mat = -2; (*sdf).color = c; } }
+
+//  0000000  0000000
+// 000       000   000
+// 0000000   000   000
+//      000  000   000
+// 0000000   0000000
+
+__DEVICE__ float sdSphere(float3 a, float r, struct SDF sdf)
+{
+    return length(sdf.pos-a)-r;
+}
+
+__DEVICE__ float sdPill(float3 a, float r, float3 n, struct SDF sdf)
+{
+    float3 p = sdf.pos-a;
+    float d = _fabs(dot(normalize(n),normalize(p)));
+    float f = smoothstep(0.0f, 1.3f, d);
+    return length(p) - r + f * length(n);
+}
+
+__DEVICE__ float sdPlane_a(float3 a, float3 n, struct SDF sdf)
+{
+    return dot(n, sdf.pos-a);
+}
+
+__DEVICE__ float sdPlane(float3 n, struct SDF sdf)
+{
+    return dot(n, sdf.pos);
+}
+
+__DEVICE__ float sdHalfSphere(float3 a, float3 n, float r, float k, struct SDF sdf)
+{
+    return opInter(sdPlane_a(a, -n, sdf), sdSphere(a, r, sdf), k);
+}
+
+__DEVICE__ float sdBox(float3 a, float3 b, float r, struct SDF sdf)
+{
+    float3 q = abs_f3(sdf.pos-a)-(b-r);
+    return length(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f) - r;
+}
+
+__DEVICE__ float sdCube(float3 a, float s, float r, struct SDF sdf)
+{
+    return sdBox(a, to_float3_s(s), r, sdf);
+}
+
+__DEVICE__ float sdBox_dim(float3 a, float3 right, float3 up, float3 dim, struct SDF sdf)
+{
+  float3  q = sdf.pos-a;
+  float x = _fabs(dot(right, q))-dim.x;
+  float y = _fabs(dot(up,    q))-dim.y;
+  float z = _fabs(dot(cross(right,up), q))-dim.z;
+  return _fmaxf(x,_fmaxf(y,z));
+}
+
+__DEVICE__ float sdBox_r(float3 a, float3 right, float3 up, float3 dim, float r, inout struct SDF *sdf)
+{
+  float3 p = (*sdf).pos;
+  (*sdf).pos -= a;
+  (*sdf).pos = mul_f3_mat3((*sdf).pos,alignMatrix(right, up));
+  float d = sdBox(v0, dim, r, *sdf);
+  (*sdf).pos = p;
+  return d;
+}
+
+__DEVICE__ float sdEllipsoid(float3 a, float3 r, struct SDF sdf)
+{
+    float3 p = sdf.pos-a;
+    float k0 = length(p/r);
+    float k1 = length(p/(r*r));
+    return k0*(k0-1.0f)/k1;
+}
+
+__DEVICE__ float sdCone(float3 a, float h, float r, struct SDF sdf)
+{
+    float3 p = sdf.pos-a;
+    float q = length(swi2(p,x,z));
+    return dot(to_float2(h,r),to_float2(p.y,q));
+}
+
+__DEVICE__ float sdCone2(float3 a, float r1, float r2, float h, struct SDF sdf)
+{
+    float3 p = sdf.pos-a;
+    float2 q = to_float2( length(swi2(p,x,z)), p.y );
+
+    float b = (r1-r2)/h;
+    float c = _sqrtf(1.0f-b*b);
+    float k = dot(q,to_float2(-b,c));
+
+    if( k < 0.0f ) return length(q) - r1;
+    if( k > c*h ) return length(q-to_float2(0.0f,h)) - r2;
+
+    return dot(q, to_float2(c,b) ) - r1;
+}
+
+__DEVICE__ float sdLine(float3 a, float3 n, float r, struct SDF sdf)
+{
+    float3 p = sdf.pos-a;
+    return length(p-n*dot(p,n))-r;
+}
+
+__DEVICE__ float sdLine_f2(float2 p, float2 a, float2 b)
+{
+    float2 n = b-a;
+    float2 nc = swi2(n,y,x); nc.x *= -1.0f;
+    return dot(p-a,nc) <= 0.0f ? 0.0f : length((p-a)-n*dot(p-a,n)/dot(n,n));
+}
+
+__DEVICE__ float sdLine2(float2 p, float2 a, float2 b)
+{
+    float2 n = b-a;
+    return length((p-a)-n*dot(p-a,n)/dot(n,n));
+}
+
+__DEVICE__ float sdCapsule(float3 a, float3 b, float r, struct SDF sdf)
+{
+    float3 ab = b-a;
+    float3 ap = sdf.pos-a;
+    float t = dot(ab,ap) / dot(ab,ab);
+    t = clamp(t, 0.0f, 1.0f);
+    float3 c = a + t*ab;
+    return length(sdf.pos-c)-r;
+}
+
+__DEVICE__ float sdCylinder(float3 a, float3 b, float r, float cr, struct SDF sdf)
+{
+  float3  ba = b - a;
+  float3  pa = sdf.pos - a;
+  float baba = dot(ba,ba);
+  float paba = dot(pa,ba);
+  float x = length(pa*baba-ba*paba) - r*baba;
+  float y = _fabs(paba-baba*0.5f)-baba*0.5f;
+  float x2 = x*x;
+  float y2 = y*y*baba;
+  float d = (_fmaxf(x,y)<0.0f)?-_fminf(x2,y2):(((x>0.0f)?x2:0.0)+((y>0.0f)?y2:0.0));
+  return sign_f(d)*_sqrtf(_fabs(d))/baba - cr;
+}
+
+__DEVICE__ float sdHexagon(float3 p, float3 a, float3 r) // r: (radius, height, bevel)
+{
+    float3 k = to_float3(-0.8660254f, 0.5f, 0.57735f);
+    p = abs_f3(p - a);
+    swi2S(p,x,z, swi2(p,x,z) - 2.0f*_fminf(dot(swi2(k,x,y), swi2(p,x,z)), 0.0f)*swi2(k,x,y));
+    float hr = r.x-r.z;
+    float hh = r.y-r.z;
+    float2 d = to_float2(length(swi2(p,x,z)-to_float2(clamp(p.x,-k.z*hr,k.z*hr), hr))*sign_f(p.z-hr), p.y-hh);
+    return _fminf(_fmaxf(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f))) - r.z;
+}
+
+__DEVICE__ float sdHexagon_sdf(float3 a, float3 r, struct SDF sdf) // r: (radius, height, bevel)
+{
+    return sdHexagon(sdf.pos, a, r);
+}
+
+__DEVICE__ float sdTorus(float3 p, float3 a, float3 n, float rl, float rs)
+{
+    float3 q = p-a;
+    return length(to_float2(length(posOnPlane(q, n))-rl,_fabs(dot(n, q))))-rs;
+}
+
+__DEVICE__ float sdLink(float3 p, float le, float r1, float r2)
+{
+    float3 q = to_float3(p.x, _fmaxf(_fabs(p.y)-le,0.0f), p.z);
+    return length(to_float2(length(swi2(q,x,y))-r1,q.z)) - r2;
+}
+
+__DEVICE__ float sdLink_gl(float3 a, float3 b, float3 n, float3 r, float uvz, struct SDF sdf, inout struct Global *gl)
+{
+    float3 ab = normalize(b-a);
+    float lab = length(ab);
+    float3 p = sdf.pos - (b+a)*0.5f; // center
+    p = mul_f3_mat3(p,to_mat3_f3(cross(n, ab), ab, n)); // orientate
+    p -= to_float3(0,0,clamp(p.z,-r.y, r.y)); // elongate
+    float3 q = to_float3(p.x, _fmaxf(_fabs(p.y)-lab,0.0f), p.z); // stretch up
+    float d = length(to_float2(length(swi2(q,x,y))-r.x,q.z)) - r.z;
+    if (d < sdf.dist && (*gl).pass == PASS_MARCH)
+    {
+        float uvy = _fabs(length(swi2(q,x,y))-r.x)/r.z;
+        if (q.y == 0.0f)
+            (*gl).tuv = to_float3(fract(sign_f(p.x)*p.y/lab), uvy, uvz);
+        else
+            (*gl).tuv = to_float3(fract(sign_f(p.x)*sign_f(p.y)*(1.0f-_acosf(dot(normalize(swi2(q,x,y)), to_float2(0,1)))/PI2)), uvy, uvz);
+    }
+    return d;
+}
+
+__DEVICE__ void sdAxes(float r, float3 red, float3 green, float3 blue, inout struct SDF *sdf, struct Global gl, struct Opt opt )
+{
+    if (!opt.axes || gl.pass == PASS_SHADOW) return;
+    sdCol(red,   sdCapsule(v0, vx*gl.maxDist, r, *sdf), sdf);
+    sdCol(green, sdCapsule(v0, vy*gl.maxDist, r, *sdf), sdf);
+    sdCol(blue,  sdCapsule(v0, vz*gl.maxDist, r, *sdf), sdf);
+}
+
+__DEVICE__ void sdFloor(float3 color, float h, inout struct SDF *sdf, struct Cam cam)
+{
+    if (cam.pos.y > h) sdCol(color, sdPlane_a(vy*h, vy, *sdf), sdf);
+}
+
+__DEVICE__ void sdFlex(float3 color, float h, struct Global gl, inout struct SDF *sdf, struct Cam cam)
+{
+    if (cam.pos.y > h)
+    {
+        float3 pp = vy*h;
+        float d = sdPlane_a(pp, vy, *sdf);
+        // swi2(pp,x,z) = cam.swi2(pos,x,z);
+        pp.y += 0.8f*0.7f*gl.maxDist;
+        //d = _fminf(d, -sdSphere(pp, gl.maxDist*0.99f, *sdf));
+        d = opUnion(d, -sdSphere(pp, gl.maxDist*0.7f, *sdf), gl.maxDist*0.1f);
+        sdCol(color, d, sdf);
+    }
+}
+
+// 000   000   0000000   000   0000000  00000000
+// 0000  000  000   000  000  000       000
+// 000 0 000  000   000  000  0000000   0000000
+// 000  0000  000   000  000       000  000
+// 000   000   0000000   000  0000000   00000000
+
+__DEVICE__ float noise3D(in float3 p)
+{
+    const float3 s = to_float3(7, 157, 113);
+    float3 ip = _floor(p); p -= ip;
+    float4 h = to_float4(0.0f, s.y, s.z, s.y + s.z) + dot(ip, s);
+    p = p*p*(3.0f - 2.0f*p);
+    h = _mix(fract_f4(sin_f4(h)*43758.5453f), fract_f4(sin_f4(h + s.x)*43758.5453f), p.x);
+    swi2S(h,x,y, _mix(swi2(h,x,z), swi2(h,y,w), p.y));
+    return _mix(h.x, h.y, p.z);
+}
+
+// 0000000    000   000  00     00  00000000
+// 000   000  000   000  000   000  000   000
+// 0000000    000   000  000000000  00000000
+// 000   000  000   000  000 0 000  000
+// 0000000     0000000   000   000  000
+
+__DEVICE__ float drawSphere(in float3 p)
+{
+    p = fract_f3(p)-0.5f; return dot(p, p);
+}
+
+__DEVICE__ float cellTile(in float3 p)
+{
+    float4 d;
+    d.x = drawSphere(p - to_float3(0.81f, 0.62f, 0.53f)); swi2S(p,x,y, to_float2(p.y-p.x, p.y + p.x)*0.7071f);
+    d.y = drawSphere(p - to_float3(0.39f, 0.2f,  0.11f)); swi2S(p,y,z, to_float2(p.z-p.y, p.z + p.y)*0.7071f);
+    d.z = drawSphere(p - to_float3(0.62f, 0.24f, 0.06f)); swi2S(p,x,z, to_float2(p.z-p.x, p.z + p.x)*0.7071f);
+    d.w = drawSphere(p - to_float3(0.2f,  0.82f, 0.64f));
+    swi2S(d,x,y, _fminf(swi2(d,x,z), swi2(d,y,w)));
+    return _fminf(d.x, d.y)*2.66f;
+}
+
+__DEVICE__ float bumpSurf(float3 p, float factor)
+{
+    return 0.2f*noise3D(p*15.0f) - 0.05f*noise3D(p*10.0f/factor);
+}
+
+__DEVICE__ float3 bumpMap(float3 p, float3 nor, float factor, struct Cam cam)
+{
+    const float2 e = to_float2(0.001f, 0);
+    float3 grad = (to_float3(bumpSurf(p - swi3(e,x,y,y), factor),
+                             bumpSurf(p - swi3(e,y,x,y), factor),
+                             bumpSurf(p - swi3(e,y,y,x), factor))-bumpSurf(p, factor))/e.x;
+    grad -= nor*dot(nor, grad);
+    return normalize(nor - grad*factor * clamp01(1.0f-length(cam.pos-p)/4.0f));
+}
+
+//  0000000   0000000   00     00  00000000  00000000    0000000
+// 000       000   000  000   000  000       000   000  000   000
+// 000       000000000  000000000  0000000   0000000    000000000
+// 000       000   000  000 0 000  000       000   000  000   000
+//  0000000  000   000  000   000  00000000  000   000  000   000
+
+__DEVICE__ void lookAtFrom(float3 tgt, float3 pos, inout struct Cam *cam)
+{
+    (*cam).tgt     = tgt;
+    (*cam).pos     = pos;
+    (*cam).pos2tgt = (*cam).tgt-(*cam).pos;
+    (*cam).dir     = normalize((*cam).pos2tgt);
+    (*cam).rgt     = normalize(cross((*cam).dir, vy));
+    (*cam).up      = normalize(cross((*cam).rgt,(*cam).dir));
+    (*cam).dist    = length((*cam).pos2tgt);
+}
+
+__DEVICE__ void lookAt  (float3 tgt, inout struct Cam *cam) { lookAtFrom(tgt, (*cam).pos, cam); }
+__DEVICE__ void lookFrom(float3 pos, inout struct Cam *cam) { lookAtFrom((*cam).tgt, pos, cam); }
+__DEVICE__ void lookPan (float3 pan, inout struct Cam *cam) { lookAtFrom((*cam).tgt+pan, (*cam).pos+pan, cam); }
+__DEVICE__ void lookPitch(float ang, inout struct Cam *cam) {
+    (*cam).pos2tgt = rotAxisAngle((*cam).pos2tgt, (*cam).rgt, ang);
+    (*cam).tgt     = (*cam).pos + (*cam).pos2tgt;
+    (*cam).dir     = normalize((*cam).pos2tgt);
+    (*cam).up      = normalize(cross((*cam).rgt,(*cam).dir));
+}
+
+__DEVICE__ void lookZoom(float z, inout struct Cam *cam)
+{
+    if (z == 0.0f)
+    {
+        (*cam).tgt = (*cam).pos + normalize((*cam).pos2tgt)*1.0f;
+        (*cam).pos2tgt = (*cam).tgt-(*cam).pos;
+    }
+    else
+    {
+        (*cam).pos2tgt -= z*normalize((*cam).pos2tgt)*0.3f;
+        (*cam).pos = (*cam).tgt-(*cam).pos2tgt;
+    }
+}
+
+__DEVICE__ void orbitPitch(float pitch, inout struct Cam *cam)
+{
+    float3 p2t = rotAxisAngle((*cam).pos2tgt, (*cam).rgt, pitch);
+    if (_fabs(dot(normalize(p2t),vy)) > 0.998f) return;
+    (*cam).pos2tgt = p2t;
+    (*cam).pos     = (*cam).tgt - (*cam).pos2tgt;
+    (*cam).dir     = normalize((*cam).pos2tgt);
+    (*cam).up      = normalize(cross((*cam).rgt,(*cam).dir));
+}
+
+__DEVICE__ void orbitYaw(float yaw, inout struct Cam *cam)
+{
+    (*cam).pos2tgt = rotAxisAngle((*cam).pos2tgt, vy, yaw);
+    (*cam).pos     = (*cam).tgt - (*cam).pos2tgt;
+    (*cam).dir     = normalize((*cam).pos2tgt);
+    (*cam).rgt     = normalize(cross((*cam).dir, vy));
+    (*cam).up      = normalize(cross((*cam).rgt,(*cam).dir));
+}
+
+__DEVICE__ void orbit(float pitch, float yaw, inout struct Cam *cam)
+{
+    orbitYaw(yaw, cam);
+    orbitPitch(pitch, cam);
+}
+
+__DEVICE__ void initCam(float3 lookAt, float dist, float rotx, float roty, inout struct Cam *cam)
+{
+    lookAtFrom(lookAt, rotAxisAngle(rotAxisAngle(to_float3(0,0,-dist), vx, 89.0f*roty), vy, 180.0f*rotx), cam);
+}
+
+// 00000000    0000000    0000000  000000000
+// 000   000  000   000  000          000
+// 00000000   000   000  0000000      000
+// 000        000   000       000     000
+// 000         0000000   0000000      000
+
+__DEVICE__ float4 postProc(float3 col, bool dither, bool gamma, bool vignette, struct Global gl)
+{
+    if (dither)   col -= to_float3_s(gradientNoise(gl.frag)/256.0f);
+    if (gamma)    col  = pow_f3(col, to_float3_s(1.0f/2.2f));
+    if (vignette) col *= to_float3_s(smoothstep(1.8f, 0.5f, length(gl.uv)/_fmaxf(gl.aspect,1.0f)));
+    return to_float4_aw(col, 1.0f);
+}
+
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Preset: Keyboard' to iChannel0
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel1
+
+
+/*
+0000000    000   000  00000000  00000000  00000000  00000000
+000   000  000   000  000       000       000       000   000
+0000000    000   000  000000    000000    0000000   0000000
+000   000  000   000  000       000       000       000   000
+0000000     0000000   000       000       00000000  000   000
+*/
+
+//KEYS
+//LOAD
+
+// 000  000   000  000  000000000
+// 000  0000  000  000     000
+// 000  000 0 000  000     000
+// 000  000  0000  000     000
+// 000  000   000  000     000
+
+__DEVICE__ void initCamera(inout struct Global *gl, inout struct Cam *cam)
+{
+    initCam(-2.0f*vy, 40.0f, 1.0f, -0.53f, cam);
+
+    save(0,2,to_float4_aw((*cam).tgt,0),gl);
+    save(0,3,to_float4_aw((*cam).pos,0),gl);
+}
+
+//  0000000   0000000   00     00  00000000  00000000    0000000
+// 000       000   000  000   000  000       000   000  000   000
+// 000       000000000  000000000  0000000   0000000    000000000
+// 000       000   000  000 0 000  000       000   000  000   000
+//  0000000  000   000  000   000  00000000  000   000  000   000
+
+__DEVICE__ void calcCamera(inout struct Global *gl, inout struct Cam *cam, struct Opt opt, int DIRECTION, int WSAD, int OTHER, float2 iResolution, __TEXTURE2D__ iChannel1)
+{
+    float4 d01 = load(0,1, iResolution, iChannel1);
+    float4 tgt = load(0,2, iResolution, iChannel1);
+    float4 pos = load(0,3, iResolution, iChannel1);
+
+    lookAtFrom(swi3(tgt,x,y,z),swi3(pos,x,y,z), cam);
+
+    orbit(-100.0f*(d01.y), 100.0f*(d01.x), cam);
+
+    if (opt.rotate) orbitYaw(iRange_(0.15f,-0.15f,0.2f, *gl, opt), cam);
+
+    if ((int)DIRECTION&1)  orbitYaw(-1.0f, cam);      //keyDown(KEY_LEFT))
+    if ((int)DIRECTION&2)  orbitYaw( 1.0f, cam);      //keyDown(KEY_RIGHT)
+    if ((int)DIRECTION&4)  orbitPitch(-1.0f, cam);    //keyDown(KEY_UP))
+    if ((int)DIRECTION&8) orbitPitch( 1.0f, cam);    //keyDown(KEY_DOWN))
+
+    float3 pan = to_float3_s(0.0f);
+    if ((int)WSAD&1)  { if (length((*cam).pos2tgt)>1.0f) { lookZoom(1.0f,cam); } else { pan += 0.2f*(*cam).dir; }}
+    if ((int)WSAD&2)  { lookZoom(-1.0f,cam); }
+    if ((int)WSAD&4)  { lookZoom(0.0f,cam); pan -= 0.1f*(*cam).rgt; }
+    if ((int)WSAD&8) { lookZoom(0.0f,cam); pan += 0.1f*(*cam).rgt; }
+    if ((int)OTHER&1) { lookZoom(0.0f,cam); pan -= 0.1f*(*cam).up;  }
+    if ((int)OTHER&2) { lookZoom(0.0f,cam); pan += 0.1f*(*cam).up;  }
+
+    lookPan(pan, cam);
+
+    if ((int)OTHER&4)  lookPan(-1.0f*vy*0.1f, cam);
+    if ((int)OTHER&8) lookPan( vy*0.1f, cam);
+
+    save(0,2,to_float4_aw((*cam).tgt, 0),gl);
+    save(0,3,to_float4_aw((*cam).pos, 0),gl);
+}
+
+// 00     00   0000000   000  000   000
+// 000   000  000   000  000  0000  000
+// 000000000  000000000  000  000 0 000
+// 000 0 000  000   000  000  000  0000
+// 000   000  000   000  000  000   000
+
+__KERNEL__ void SkullyFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Rotate = params->Rotate;
+  bool   Axes = params->Axes;
+  bool   Shadow_ = params->Shadow_;
+  bool   Occl = params->Occl;
+  bool   Dither = params->Dither;
+  bool   Gamma = params->Gamma;
+  bool   Anim = params->Anim;
+  bool   Normal = params->Normal;
+  bool   Depthb = params->Depthb;
+  bool   Colors = params->Colors;
+  bool   Reset = params->Reset;
+  bool   Foggy = params->Foggy;
+  bool   Vignette = params->Vignette;
+  float  DIRECTION = params->DIRECTION;
+  float  WSAD = params->WSAD;
+  float  OTHER = params->OTHER;
+  float4 ColSkull = to_float4(params->ColSkull[0], params->ColSkull[1], params->ColSkull[2], params->ColSkull[3]);
+  float4 ColTeeth = to_float4(params->ColTeeth[0], params->ColTeeth[1], params->ColTeeth[2], params->ColTeeth[3]);
+  float4 ColBone = to_float4(params->ColBone[0], params->ColBone[1], params->ColBone[2], params->ColBone[3]);
+  float2 GloEmSkull = to_float2(params->GloEmSkull[0], params->GloEmSkull[1]);
+  float2 GloEmTeeth = to_float2(params->GloEmTeeth[0], params->GloEmTeeth[1]);
+  float2 GloEmBone = to_float2(params->GloEmBone[0], params->GloEmBone[1]);
+  float4 FogColor = to_float4(params->FogColor[0], params->FogColor[1], params->FogColor[2], params->FogColor[3]);
+  bool   ChangeCol = params->ChangeCol;
+  float  FogNear = params->FogNear;
+  float  FogFar = params->FogFar;
+  float  Fov = params->Fov;
+
+  // --------
+
+    //------------------Globals---------------------------
+    struct Global gl;
+    struct SDF    sdf;
+    struct Cam    cam;
+    struct Opt    opt;
+    struct Text   text;
+    struct Fog    fog;
+    struct Env    env;
+
+    //------------------Init Global-----------------------
+
+
+    opt.rotate   =  Rotate;
+    opt.axes     = !Axes;
+    opt.info     =  false;//!Info;
+    opt.help     =  false;//Help;
+    opt.shadow   =  Shadow_;
+    opt.occl     =  Occl;
+    opt.dither   =  Dither;
+    opt.gamma    =  Gamma;
+    opt.anim     =  Anim;
+    opt.normal   = !Normal;
+    opt.depthb   = !Depthb;
+    opt.colors   = !Colors;
+    opt.space    = !Reset;
+    opt.foggy    =  Foggy;
+    opt.vignette =  Vignette;
+
+float AAAAAAAAAAAAAAAAAAAAAA;
+
+    gl.maxSteps = 128;
+    gl.minDist  = 0.001f;
+    gl.maxDist  = 100.0f;
+
+    env.ambient = to_float3_s(0.03f);
+    env.gloss   = 1.0f;
+
+    gl.res    = iResolution;
+    gl.ires   = to_int2_cfloat(gl.res);
+    gl.frag   = fragCoord;
+    gl.ifrag  = to_int2_cfloat(fragCoord);
+    gl.aspect = gl.res.x / gl.res.y;
+    gl.frame  = iFrame;
+    gl.time   = iTime;
+    gl.uv     = (fragCoord+fragCoord-gl.res)/gl.res.y;
+    gl.zero   = 0;
+
+    swi2S(iMouse,x,y, _fminf(swi2(iMouse,x,y),iResolution));
+    if (iMouse.z < 1.0f)
+    {
+        if (iMouse.z > -1.0f)
+            gl.mouse = iResolution*0.5f;
+        else
+            gl.mouse = swi2(iMouse,x,y);
+    }
+    else gl.mouse = swi2(iMouse,x,y);
+
+    gl.mp     = (2.0f*abs_f2(gl.mouse)-(gl.res))/gl.res.y;
+
+    int tw    = clamp(gl.ires.y/64,4,64);
+    text.size = to_int2(tw,tw*2);
+    text.adv  = to_int2(text.size.x,0);
+
+    fog.color = to_float3_s(0.002f);
+    fog.near  = 0.5f;
+    fog.far   = 1.0f;
+
+    cam.fov = PI2;
+    //--------------------------------------------------------
+
+    lookAtFrom(swi3(load(0,2, iResolution, iChannel1),x,y,z), swi3(load(0,3, iResolution, iChannel1),x,y,z), &cam);
+
+    int2 mem = to_int2_cfloat(fragCoord);
+
+    if (mem.x == 0 && mem.y <= 1)
+    {
+        float4 d00 = load(0,0, iResolution, iChannel1);
+
+        float2 delta = to_float2_s(0.0f);
+        if (iMouse.z > 0.0f && d00.z > 0.0f)
+        {
+            delta = gl.mp - swi2(d00,x,y);
+        }
+
+        save(0,0,to_float4(gl.mp.x, gl.mp.y, iMouse.z, iMouse.w), &gl);
+        save(0,1,to_float4(delta.x, delta.y, 0, 0), &gl);
+    }
+    else if (mem.x == 0 && mem.y <= 3)
+    {
+        if (iFrame < 1 || Reset)
+        {
+            initCamera(&gl, &cam);
+        }
+        else
+        {
+            calcCamera(&gl, &cam, opt, DIRECTION, WSAD, OTHER, iResolution, iChannel1);
+        }
+    }
+
+    fragColor = gl.color;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Preset: Keyboard' to iChannel0
+// Connect Image 'Previsualization: Buffer A' to iChannel1
+// Connect Image 'Texture: Font 1' to iChannel2
+
+
+
+//HEADER
+
+
+
+//  0000000  000   000  000   000  000      000
+// 000       000  000   000   000  000      000
+// 0000000   0000000    000   000  000      000
+//      000  000  000   000   000  000      000
+// 0000000   000   000   0000000   0000000  0000000
+
+__DEVICE__ void skull(inout struct SDF *sdf)
+{
+    (*sdf).pos.x = _fabs((*sdf).pos.x);
+    (*sdf).pos.y -= 0.15f;
+    (*sdf).pos = mul_f3_mat3((*sdf).pos, alignMatrix(vx, normal(0.0f,1.0f,-0.5f)));
+
+    float d=0.0f, h=0.0f;
+
+    d = sdEllipsoid(vy, to_float3(5.5f,5.5f,5.0f), *sdf); // frontal
+
+    if (d > 15.0f) {
+        (*sdf).dist = _fminf((*sdf).dist, d);
+        return;
+    }
+
+    d = opUnion(d, sdSphere( 2.0f*vy -2.0f*vz, 6.0f, *sdf), 1.0f);              // parietal
+    d = opDiff (d, sdPlane_a (-1.0f*vy, vy, *sdf), 1.5f);                            // cranial cutoff
+    d = opUnion(d, sdCone2 ( 4.1f*vz -2.5f*vy, 2.5f, 1.8f, 3.5f, *sdf), 0.5f);  // jaw
+    d = opDiff (d, sdCone2 ( 4.1f*vz -2.5f*vy, 1.6f, 0.6f, 3.5f, *sdf), 0.5f);  // jaw hole
+    d = opDiff (d, sdCone2 ( 5.8f*vz -0.1f*vy, 1.0f, 0.5f, 1.5f, *sdf), 0.3f);  // nose
+    d = opDiff (d, sdPlane_a (-2.5f*vy, vy, *sdf), 0.5f);                       // jaw cutoff
+    d = opDiff (d, sdSphere( 2.7f*vx +3.0f*vy +3.6f*vz, 2.0f, *sdf), 0.5f);     // eye holes
+
+    d = opDiff(d, sdBox_r(7.2f*vx+3.5f*vy-1.2f*vz, normalize(to_float3(1,-0.2f,0.4f)), vy, to_float3(2.0f,3.0f,3.0f), 1.0f, sdf), 1.0f);
+
+    h = sdCapsule(-2.5f*vy-1.5f*vz, -2.5f*vy-0.2f*vz, 3.6f, *sdf);
+    h = opUnion2(h, sdCapsule(vy-2.0f*vz, vy-0.5f*vz, 3.6f, *sdf));
+    d = opDiff(d, h, 1.0f);
+
+    sdMat(0, d, sdf);
+
+    sdMat(1, sdBox_r(0.47f*vx-2.8f*vy+6.1f*vz, normalize(to_float3(1,0,-0.2f)), vy, to_float3(0.50f,0.70f,0.3f), 0.3f, sdf), sdf);
+    sdMat(1, sdBox_r(1.29f*vx-2.8f*vy+5.7f*vz, normalize(to_float3(1,0,-0.8f)), vy, to_float3(0.47f,0.65f,0.3f), 0.3f, sdf), sdf);
+    sdMat(1, sdBox_r(1.80f*vx-2.8f*vy+5.0f*vz, normalize(to_float3(0.4f,0,-1)), vy, to_float3(0.47f,0.65f,0.3f), 0.3f, sdf), sdf);
+    sdMat(1, sdBox_r(2.00f*vx-2.8f*vy+4.1f*vz, normalize(to_float3(0,   0,-1)), vy, to_float3(0.47f,0.65f,0.3f), 0.3f, sdf), sdf);
+}
+
+// 0000000     0000000   000   000  00000000
+// 000   000  000   000  0000  000  000
+// 0000000    000   000  000 0 000  0000000
+// 000   000  000   000  000  0000  000
+// 0000000     0000000   000   000  00000000
+
+__DEVICE__ void bone(inout struct SDF *sdf)
+{
+    (*sdf).pos.x = _fabs((*sdf).pos.x);
+
+    float d = 0.0f;
+    float3 ctr = 5.0f*vz - 1.8f*vy;
+    float3 rgt =  7.0f*vx +ctr+3.0f*vz;
+    d = sdCapsule(ctr, rgt, 0.9f, *sdf);
+    d = opUnion(d, sdSphere(rgt+vz, 1.7f, *sdf), 0.5f);
+    d = opUnion(d, sdSphere(rgt-vz-vx, 1.5f, *sdf), 0.5f);
+
+    rgt -= 6.0f*vz;
+    rgt += (rgt-ctr)*0.3f;
+    d = _fminf(d, sdCapsule(ctr, rgt, 0.9f, *sdf));
+    d = opUnion(d, sdSphere(rgt-vz, 1.7f, *sdf), 0.5f);
+    d = opUnion(d, sdSphere(rgt+vz-vx, 1.5f, *sdf), 0.5f);
+
+    sdMat(2, d, sdf);
+}
+
+// 00     00   0000000   00000000
+// 000   000  000   000  000   000
+// 000000000  000000000  00000000
+// 000 0 000  000   000  000
+// 000   000  000   000  000
+
+__DEVICE__ float map(float3 p, inout struct SDF *sdf, struct Global gl, float3 black, float3 red, float3 green, float3 blue, struct Opt opt, struct Cam cam)
+{
+    sdStart(p, sdf, gl, black);
+
+    sdFlex(to_float3_s(1), -3.6f, gl, sdf, cam);
+    sdAxes(0.1f, red, green, blue, sdf, gl, opt);
+
+    if (gl.pass != PASS_SHADOW)
+    {
+        sdMat(3, sdSphere(gl.light[0].pos, gl.light[0].bright, *sdf), sdf);
+        sdMat(4, sdSphere(gl.light[1].pos, gl.light[1].bright, *sdf), sdf);
+        sdMat(5, sdSphere(gl.light[2].pos, gl.light[2].bright, *sdf), sdf);
+    }
+
+    bone(sdf);
+    skull(sdf);
+
+    return (*sdf).dist;
+}
+
+//NORMAL
+//MARCH
+
+//  0000000  000   000   0000000   0000000     0000000   000   000
+// 000       000   000  000   000  000   000  000   000  000 0 000
+// 0000000   000000000  000000000  000   000  000   000  000000000
+//      000  000   000  000   000  000   000  000   000  000   000
+// 0000000   000   000  000   000  0000000     0000000   00     00
+
+__DEVICE__ float shadow(float3 ro, float3 n, int lid, inout struct Global *gl, struct Opt opt, inout struct SDF *sdf, float3 black, float3 red, float3 green, float3 blue, struct Cam cam)
+{
+    float3 lp  = (*gl).light[lid].pos;
+    float soft = (*gl).light[lid].shadow.soft;
+    (*gl).pass = PASS_SHADOW;
+
+    if (!opt.shadow) return 1.0f;
+float xxxxxxxxxxxxxxx;
+    ro += n*(*gl).minDist*2.0f;
+    float3 rd = lp-ro;
+    float far = _fmaxf(length(rd), (*gl).minDist);
+    rd = normalize(rd);
+
+    float shade = 1.0f;
+    float sd = 0.0f;
+    for (float t=(float)((*gl).zero); t<far;)
+    {
+        float d = map(ro+rd*t, sdf, *gl, black, red, green, blue, opt, cam);
+        if (d < (*gl).minDist) { shade = 0.0f; break; }
+
+        if (soft > 0.01f)
+        {
+            float newShade = d/(t*soft*0.1f);
+            if (newShade < shade)
+            {
+                sd = t;
+                shade = newShade;
+            }
+            t += d;
+        }
+        else
+        {
+            t += d;
+        }
+    }
+
+    float power = (*gl).light[lid].shadow.power;
+    shade = _fmaxf(1.0f-_powf(1.0f-sd/(*gl).maxDist, power*soft), shade);
+    float dark = (*gl).light[lid].shadow.dark;
+    return dark + shade * (1.0f-dark);
+}
+
+//OCCLUSION
+
+// 000      000   0000000   000   000  000000000
+// 000      000  000        000   000     000
+// 000      000  000  0000  000000000     000
+// 000      000  000   000  000   000     000
+// 0000000  000   0000000   000   000     000
+
+__DEVICE__ float3 calcLight(float3 p, float3 n, inout struct Global *gl, struct Mat material[6], struct Opt opt, struct Env env, float3 black, float3 white, inout struct SDF *sdf, float3 red, float3 green, float3 blue, struct Cam cam)
+{
+float zzzzzzzzzzzzzzzzzzzzzz;
+    float3 col = to_float3_s(0.0f);
+    struct Mat  mat = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+    switch ((*gl).hit.mat)
+    {
+        case -2: col = (*gl).hit.color; break;
+        case NONE:
+        {
+           float2 guv = swi2((*gl).frag,x,y) - (*gl).res / 2.0f;
+           float  grid = dot(step(mod_f4f4(swi4(guv,x,y,x,y), to_float4(10,10,100,100)), to_float4_s(1)), to_float4(0.5f, 0.5f, 1, 1));
+           return _mix(to_float3_s(0.001f), to_float3(0.01f,0.01f,0.01f), grid);
+        }
+        default:
+        {
+            mat = material[(*gl).hit.mat];
+            col = hsl(mat.hue, mat.sat, mat.lum);
+        }
+    }
+    col = (opt.colors) ? desat(col) : col;
+    if (opt.normal || opt.depthb)
+    {
+        float3 nc = opt.normal ? (*gl).hit.dist >= (*gl).maxDist ? black : n : white;
+        float3 zc = opt.depthb ? to_float3_s(_powf(1.0f-(*gl).hit.dist/(*gl).maxDist, 4.0f)) : white;
+        col = nc*zc;
+    }
+    else
+    {
+        float3 sum   = v0;
+        float3 gloss = v0;
+        float bsum = 0.0f;
+        float mbr  = 0.0f;
+        float occl = occlusion(p, n, sdf, *gl, black, red, green, blue, opt, cam);
+        for (int i = (*gl).zero; i < 3; i++)
+        {
+            float br = (*gl).light[i].bright;
+            float3 ldir = normalize((*gl).light[i].pos-p);
+            float shd = shadow(p, n, i, gl, opt, sdf, black, red, green, blue, cam);
+            float brf = br * shd * occl;
+
+            float3 vn = normalize(ldir-cam.dir);
+            gloss += br*(*gl).light[i].color*mat.glossy*_powf(smoothstep(mat.glossy*(0.992f-env.gloss*0.6f*0.01f), 1.0f-env.gloss*0.45f*0.01f, _fmaxf(0.0f,dot(n,vn))), 1.0f+40.0f*mat.glossy);
+
+            sum  += (*gl).light[i].color * _fmaxf(0.0f,dot(n,ldir)) * brf;
+            bsum += br;
+            mbr = _fmaxf(mbr, br);
+        }
+        sum /= bsum/mbr;
+        col = _mix(col * sum, col, mat.emit);
+
+        col += gloss;
+
+        col = _fmaxf(col, env.ambient);
+    }
+    return col;
+}
+
+//  0000000  00000000  000000000  000   000  00000000
+// 000       000          000     000   000  000   000
+// 0000000   0000000      000     000   000  00000000
+//      000  000          000     000   000  000
+// 0000000   00000000     000      0000000   000
+
+__DEVICE__ void setMatColor(int i, float3 c, struct Mat material[6])
+{
+    float3 hc = rgb2hsl(c);
+    material[i].hue = hc.x;
+    material[i].sat = hc.y;
+    material[i].lum = hc.z;
+}
+
+__DEVICE__ void setup(inout struct Global *gl, struct Mat material[6], struct Opt opt, inout struct Env *env, float iTime, inout struct Cam *cam, inout struct Fog *fog)
+{
+    (*cam).fov     = PI;
+    (*fog).near    = 0.9f;
+    (*fog).color   = hsl(HUE_B, 0.5f, 0.2f);
+    (*env).ambient = hsl(HUE_B, 0.5f, 0.02f);
+    (*env).gloss   = 1.0f;
+
+    (*gl).maxSteps = 128;
+    (*gl).minDist  = 0.02f;
+    (*gl).maxDist  = 200.0f;
+
+    float3 lp = to_float3(23,10,0);
+    float soft = 1.0f;
+    float dark = 0.1f;
+    (*gl).light[0].color = hsl(HUE_R, 1.0f, iRange_(0.99f,0.5f,0.2f, *gl, opt));
+    (*gl).light[0].bright = iRange(1.0f, 1.0f, *gl, opt);
+    (*gl).light[0].shadow.soft = soft;
+    (*gl).light[0].shadow.dark = dark;
+    (*gl).light[0].pos = rotAxisAngle(lp, vy, 120.0f-iTime*10.0f);
+
+    (*gl).light[1].color = hsl(HUE_G, 1.0f, iRange_(0.99f,0.5f,0.2f, *gl, opt));
+    (*gl).light[1].bright = iRange_(1.0f, 1.0f, 0.5f, *gl, opt);
+    (*gl).light[1].shadow.soft = soft;
+    (*gl).light[1].shadow.dark = dark;
+    (*gl).light[1].pos = rotAxisAngle(lp, vy, -120.0f-iTime*10.0f);
+
+    (*gl).light[2].color = hsl(HUE_B, 1.0f, iRange_(0.99f,0.5f,0.2f, *gl, opt));
+    (*gl).light[2].bright = iRange_(1.0f, 1.0f, 0.25f, *gl, opt);
+    (*gl).light[2].shadow.soft = soft;
+    (*gl).light[2].shadow.dark = dark;
+    (*gl).light[2].pos = rotAxisAngle(lp, vy, -iTime*10.0f);
+
+    for (int i = 0; i < 3; i++)
+    {
+        setMatColor(3+i, (*gl).light[i].bright*(*gl).light[i].color, material);
+    }
+
+    material[0].glossy = iRange_(1.0f,0.0f,0.5f, *gl, opt);
+    material[2].glossy = iRange_(1.0f,0.0f,0.5f, *gl, opt);
+
+    material[0].lum    = iRange_(0.6f,1.0f,0.2f,  *gl, opt);
+    material[2].lum    = iRange_(0.6f,1.0f,0.2f,  *gl, opt);
+    material[1].emit   = iRange_(0.2f,0.05f,0.2f, *gl, opt);
+}
+
+
+
+__KERNEL__ void SkullyFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Rotate = params->Rotate;
+  bool   Axes = params->Axes;
+  bool   Shadow_ = params->Shadow_;
+  bool   Occl = params->Occl;
+  bool   Dither = params->Dither;
+  bool   Gamma = params->Gamma;
+  bool   Anim = params->Anim;
+  bool   Normal = params->Normal;
+  bool   Depthb = params->Depthb;
+  bool   Colors = params->Colors;
+  bool   Reset = params->Reset;
+  bool   Foggy = params->Foggy;
+  bool   Vignette = params->Vignette;
+  float  DIRECTION = params->DIRECTION;
+  float  WSAD = params->WSAD;
+  float  OTHER = params->OTHER;
+  float4 ColSkull = to_float4(params->ColSkull[0], params->ColSkull[1], params->ColSkull[2], params->ColSkull[3]);
+  float4 ColTeeth = to_float4(params->ColTeeth[0], params->ColTeeth[1], params->ColTeeth[2], params->ColTeeth[3]);
+  float4 ColBone = to_float4(params->ColBone[0], params->ColBone[1], params->ColBone[2], params->ColBone[3]);
+  float2 GloEmSkull = to_float2(params->GloEmSkull[0], params->GloEmSkull[1]);
+  float2 GloEmTeeth = to_float2(params->GloEmTeeth[0], params->GloEmTeeth[1]);
+  float2 GloEmBone = to_float2(params->GloEmBone[0], params->GloEmBone[1]);
+  float4 FogColor = to_float4(params->FogColor[0], params->FogColor[1], params->FogColor[2], params->FogColor[3]);
+  bool   ChangeCol = params->ChangeCol;
+  float  FogNear = params->FogNear;
+  float  FogFar = params->FogFar;
+  float  Fov = params->Fov;
+
+  // --------
+
+    fragCoord+=0.5f;
+
+    //------------------Globals---------------------------
+
+    struct Global gl;
+    struct SDF    sdf;
+    struct Cam    cam;
+    struct Opt    opt;
+    struct Text   text;
+    struct Fog    fog;
+    struct Env    env;
+
+
+    //------------------Init Global-----------------------
+    float3 red    = to_float3(1.0,0.0,1.0);
+    float3 green  = to_float3(1.0,0.5,1.0);
+    float3 blue   = to_float3(0.2,0.2,1.0);
+    float3 yellow = to_float3(1.0,1.0,0.0);
+    float3 orange = to_float3(1.0,0.5,0.0);
+    float3 white  = to_float3_s(1.0);
+    float3 gray   = to_float3_s(0.1);
+    float3 black  = to_float3_s(1.0);
+
+    opt.rotate   =  Rotate;
+    opt.axes     =  Axes;
+    opt.info     =  false;//!Info;
+    opt.help     =  false;//Help;
+    opt.shadow   =  Shadow_;
+    opt.occl     =  Occl;
+    opt.dither   =  Dither;
+    opt.gamma    =  Gamma;
+    opt.anim     =  Anim;
+    opt.normal   = !Normal;
+    opt.depthb   = !Depthb;
+    opt.colors   = !Colors;
+    opt.space    = !Reset;
+    opt.foggy    =  Foggy;
+    opt.vignette =  Vignette;
+
+
+    struct Mat material[6] ={
+                  //  hue    sat    lum    shiny  glossy   emit
+                    {HUE_Y,  1.0f,  0.8f,   0.0f,  1.0f,   0.0f  },
+                    {0.5f,   0.0f,  1.0f,   0.0f,  1.0f,   0.05f },
+                    {0.05f,  1.0f,  0.8f,   0.0f,  1.0f,   0.0f  },
+                    {0.5f,   0.0f,  1.0f,   0.0f,  0.0f,   1.0f  },
+                    {0.5f,   0.0f,  1.0f,   0.0f,  0.0f,   1.0f  },
+                    {0.5f,   0.0f,  1.0f,   0.0f,  0.0f,   1.0f  }
+                 };
+float IIIIIIIIIIIIIIIIIIII;
+    if(ChangeCol)
+    {
+       material[0].hue = ColSkull.x, material[0].sat = ColSkull.y, material[0].lum = ColSkull.z, material[0].shiny = ColSkull.w, material[0].glossy += GloEmSkull.x, material[0].emit = GloEmSkull.y;
+       material[1].hue = ColTeeth.x, material[1].sat = ColTeeth.y, material[1].lum = ColTeeth.z, material[1].shiny = ColTeeth.w, material[1].glossy += GloEmTeeth.x, material[1].emit = GloEmTeeth.y;
+       material[2].hue = ColBone.x,  material[2].sat = ColBone.y,  material[2].lum = ColBone.z,  material[2].shiny = ColBone.w,  material[2].glossy += GloEmBone.x,  material[2].emit = GloEmBone.y;
+    }
+
+
+    gl.maxSteps = 128;
+    gl.minDist  = 0.001f;
+    gl.maxDist  = 100.0f;
+
+    env.ambient = to_float3_s(0.03f);
+    env.gloss   = 1.0f;
+
+    gl.res    = iResolution;
+    gl.ires   = to_int2_cfloat(gl.res);
+    gl.frag   = fragCoord;
+    gl.ifrag  = to_int2_cfloat(fragCoord);
+    gl.aspect = gl.res.x / gl.res.y;
+    gl.frame  = iFrame;
+    gl.time   = iTime;
+    gl.uv     = (fragCoord+fragCoord-gl.res)/gl.res.y;
+    gl.zero   = 0;
+
+    swi2S(iMouse,x,y, _fminf(swi2(iMouse,x,y),iResolution));
+    if (iMouse.z < 1.0f)
+    {
+        if (iMouse.z > -1.0f)
+            gl.mouse = iResolution*0.5f;
+        else
+            gl.mouse = swi2(iMouse,x,y);
+    }
+    else gl.mouse = swi2(iMouse,x,y);
+
+    gl.mp     = (2.0f*abs_f2(gl.mouse)-(gl.res))/gl.res.y;
+
+    int tw    = clamp(gl.ires.y/64,4,64);
+    text.size = to_int2(tw,tw*2);
+    text.adv  = to_int2(text.size.x,0);
+
+    fog.color = to_float3_s(0.002f);
+    fog.near  = FogNear;//0.5f;
+    fog.far   = FogFar;//1.0f;
+
+    cam.fov = PI2*Fov;
+    //--------------------------------------------------------
+
+    lookAtFrom(swi3(load(0,2, iResolution, iChannel1),x,y,z), swi3(load(0,3, iResolution, iChannel1),x,y,z), &cam);
+
+    setup(&gl, material, opt, &env, iTime, &cam, &fog);
+    march(cam.pos, fragCoord, &gl, cam, &sdf, black, red, green, blue, opt);
+    float3 col = calcLight(gl.hit.pos, gl.hit.normal, &gl, material, opt, env, black, white, &sdf, red, green, blue, cam);
+
+    if (opt.foggy) col = _mix(col, fog.color, smoothstep(gl.maxDist*fog.near, gl.maxDist*fog.far, gl.hit.dist));
+    /*INFO*/
+    /*HELP*/
+    fragColor = postProc(col, opt.dither, opt.gamma && !opt.depthb, opt.vignette, gl);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InRotateCheckbox = self:AddInput("Rotate", "Rotate", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAxesCheckbox = self:AddInput("Axes", "Axes", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InShadow_Checkbox = self:AddInput("Shadow_", "Shadow_", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InOcclCheckbox = self:AddInput("Occl", "Occl", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InDitherCheckbox = self:AddInput("Dither", "Dither", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InGammaCheckbox = self:AddInput("Gamma", "Gamma", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InAnimCheckbox = self:AddInput("Anim", "Anim", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InNormalCheckbox = self:AddInput("Normal", "Normal", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InDepthbCheckbox = self:AddInput("Depthb", "Depthb", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InColorsCheckbox = self:AddInput("Colors", "Colors", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InFoggyCheckbox = self:AddInput("Foggy", "Foggy", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InVignetteCheckbox = self:AddInput("Vignette", "Vignette", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InDIRECTIONButton = self:AddInput("DIRECTION", "DIRECTION", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "MultiButtonControl",
+      MBTNC_ForceButtons = true,
+      MBTNC_Type         = "Toggle", 
+      MBTNC_ShowName     = false,
+      { MBTNC_AddButton  = " LEFT", },  { MBTNC_AddButton  = " RIGHT", },  { MBTNC_AddButton  = " UP", },  { MBTNC_AddButton  = " DOWN", }, 
+		  MBTNC_StretchToFit = true,
+      IC_NoLabel         = true,
+		  INP_Default        = 0,
+      IC_Visible         = true,
+  })
+
+  InWSADButton = self:AddInput("WSAD", "WSAD", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "MultiButtonControl",
+      MBTNC_ForceButtons = true,
+      MBTNC_Type         = "Toggle", 
+      MBTNC_ShowName     = false,
+      { MBTNC_AddButton  = " WW", },  { MBTNC_AddButton  = " SS", },  { MBTNC_AddButton  = " AA", },  { MBTNC_AddButton  = " DD", }, 
+		  MBTNC_StretchToFit = true,
+      IC_NoLabel         = true,
+		  INP_Default        = 0,
+      IC_Visible         = true,
+  })
+
+  InOTHERButton = self:AddInput("OTHER", "OTHER", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "MultiButtonControl",
+      MBTNC_ForceButtons = true,
+      MBTNC_Type         = "Toggle", 
+      MBTNC_ShowName     = false,
+      { MBTNC_AddButton  = " QQ", },  { MBTNC_AddButton  = " EE", },  { MBTNC_AddButton  = " PGDN", },  { MBTNC_AddButton  = " PGUP", },
+		  MBTNC_StretchToFit = true,
+      IC_NoLabel         = true,
+		  INP_Default        = 0,
+      IC_Visible         = true,
+  })
+
+  self:BeginControlNest("ColorTab", "ColorTab", false, {})
+  self:BeginControlNest("ColSkull", "ColSkull", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColSkull",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColSkullColorR = self:AddInput("Red",   "ColSkullRed",   { INP_Default  = 0.1667, IC_ControlID = 0, attrs})
+    InColSkullColorG = self:AddInput("Green", "ColSkullGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColSkullColorB = self:AddInput("Blue",  "ColSkullBlue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    InColSkullColorA = self:AddInput("Alpha", "ColSkullAlpha", { INP_Default  = 0.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColTeeth", "ColTeeth", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColTeeth",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColTeethColorR = self:AddInput("Red",   "ColTeethRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColTeethColorG = self:AddInput("Green", "ColTeethGreen", { INP_Default  = 0.0, IC_ControlID = 1, attrs})
+    InColTeethColorB = self:AddInput("Blue",  "ColTeethBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InColTeethColorA = self:AddInput("Alpha", "ColTeethAlpha", { INP_Default  = 0.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBone", "ColBone", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBone",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBoneColorR = self:AddInput("Red",   "ColBoneRed",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InColBoneColorG = self:AddInput("Green", "ColBoneGreen", { INP_Default  = 1.0, IC_ControlID = 1, attrs})
+    InColBoneColorB = self:AddInput("Blue",  "ColBoneBlue",  { INP_Default  = 0.8, IC_ControlID = 2, attrs})
+    InColBoneColorA = self:AddInput("Alpha", "ColBoneAlpha", { INP_Default  = 0.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("FogColor", "FogColor", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "FogColor",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InFogColorColorR = self:AddInput("Red",   "FogColorRed",   { INP_Default  = 0.002, IC_ControlID = 0, attrs})
+    InFogColorColorG = self:AddInput("Green", "FogColorGreen", { INP_Default  = 0.002, IC_ControlID = 1, attrs})
+    InFogColorColorB = self:AddInput("Blue",  "FogColorBlue",  { INP_Default  = 0.002, IC_ControlID = 2, attrs})
+    InFogColorColorA = self:AddInput("Alpha", "FogColorAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InGloEmSkullPoint = self:AddInput("GloEmSkull", "GloEmSkull", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InGloEmTeethPoint = self:AddInput("GloEmTeeth", "GloEmTeeth", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InGloEmBonePoint = self:AddInput("GloEmBone", "GloEmBone", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+ 
+  InChangeColCheckbox = self:AddInput("ChangeCol", "ChangeCol", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InFogNearSlider = self:AddInput("FogNear", "FogNear", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.5,
+      })
+
+  InFogFarSlider = self:AddInput("FogFar", "FogFar", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 1.0,
+      })
+
+  InFovSlider = self:AddInput("Fov", "Fov", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 1.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, LINK_Visible = false, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, LINK_Visible = false, INP_Required = false  })
+  InChannel2 = self:AddInput( "iChannel2",  "iChannel2",  { LINKID_DataType = "Image", LINK_Main = 3, LINK_Visible = false, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Nur ( float16/32 )
+  if InDepth:GetValue(req).Value == 0 then 
+ 	   SourceDepth = 7 
+	else
+	   SourceDepth = 8
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "SkullyFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "SkullyFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  iChannel2 = InChannel2:GetValue(req)
+
+  if iChannel2==nil then
+    iChannel2 = Image(imgattrs)
+    iChannel2:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.Rotate = InRotateCheckbox:GetValue(req).Value
+  params.Axes = InAxesCheckbox:GetValue(req).Value
+  params.Shadow_ = InShadow_Checkbox:GetValue(req).Value
+  params.Occl = InOcclCheckbox:GetValue(req).Value
+  params.Dither = InDitherCheckbox:GetValue(req).Value
+  params.Gamma = InGammaCheckbox:GetValue(req).Value
+  params.Anim = InAnimCheckbox:GetValue(req).Value
+  params.Normal = InNormalCheckbox:GetValue(req).Value
+  params.Depthb = InDepthbCheckbox:GetValue(req).Value
+  params.Colors = InColorsCheckbox:GetValue(req).Value
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.Foggy = InFoggyCheckbox:GetValue(req).Value
+  params.Vignette = InVignetteCheckbox:GetValue(req).Value
+  params.DIRECTION = InDIRECTIONButton:GetValue(req).Value
+  params.WSAD = InWSADButton:GetValue(req).Value
+  params.OTHER = InOTHERButton:GetValue(req).Value
+  params.ColSkull = {
+    InColSkullColorR:GetValue(req).Value,
+    InColSkullColorG:GetValue(req).Value,
+    InColSkullColorB:GetValue(req).Value,InColSkullColorA:GetValue(req).Value
+  }
+  params.ColTeeth = {
+    InColTeethColorR:GetValue(req).Value,
+    InColTeethColorG:GetValue(req).Value,
+    InColTeethColorB:GetValue(req).Value,InColTeethColorA:GetValue(req).Value
+  }
+  params.ColBone = {
+    InColBoneColorR:GetValue(req).Value,
+    InColBoneColorG:GetValue(req).Value,
+    InColBoneColorB:GetValue(req).Value,InColBoneColorA:GetValue(req).Value
+  }
+  params.GloEmSkull = {InGloEmSkullPoint:GetValue(req).X,InGloEmSkullPoint:GetValue(req).Y}
+  params.GloEmTeeth = {InGloEmTeethPoint:GetValue(req).X,InGloEmTeethPoint:GetValue(req).Y}
+  params.GloEmBone = {InGloEmBonePoint:GetValue(req).X,InGloEmBonePoint:GetValue(req).Y}
+  params.FogColor = {
+    InFogColorColorR:GetValue(req).Value,
+    InFogColorColorG:GetValue(req).Value,
+    InFogColorColorB:GetValue(req).Value,InFogColorColorA:GetValue(req).Value
+  }
+  
+  params.ChangeCol = InChangeColCheckbox:GetValue(req).Value
+  params.FogNear = InFogNearSlider:GetValue(req).Value
+  params.FogFar = InFogFarSlider:GetValue(req).Value
+  params.Fov = InFovSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddInput("iChannel2",iChannel2) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    nodeA:AddInput("iChannel1",Image_Buff_GlobalA) -- TODO: add a better channel name
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "SkullyFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", iChannel0)           -- Anpassen !!
+    node:AddInput("iChannel1", Image_Buff_GlobalA)  -- Anpassen !!
+    node:AddInput("iChannel2", iChannel1)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

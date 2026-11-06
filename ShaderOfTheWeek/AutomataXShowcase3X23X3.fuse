@@ -1,0 +1,1851 @@
+--[[--/*
+
+  AutomataXShowcase3X23X3.fuse
+
+  Based on https://www.shadertoy.com/view/ds2fD1 a WebGL shader created by misol101.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   Reset;
+  bool   KEY_SPACE;
+  bool   KEY_1;
+  bool   KEY_Z;
+  bool   KEY_X;
+  bool   KEY_V;
+  bool   KEY_Method;
+  bool   KEY_Speed;
+  bool   KEY_RIGHT;
+  bool   KEY_LEFT;
+  bool   KEY_DOWN;
+  bool   KEY_UP;
+  bool   KEY_M;
+  bool   KEY_ENTER;
+  bool   KEY_A;
+  int    Picture;
+  float  Blend1;
+  float  Blend1Off;
+  float  Blend1Mul;
+  float  Modus;
+  float  Par1[2];
+  float  Gitter[2];
+  float  fC_Off[2];
+  float  Method;
+  float  Speed;
+  float  Brightness;
+  float  NH;
+  float  V1;
+  float  V2;
+  float  Density;
+  float  Liveval;
+  float  Decimate;
+  float  Colch;
+  float  Staypatt;
+  float  RP;
+  float  GP;
+  float  BP;
+  float  RM;
+  float  GM;
+  float  BM;
+  float  RA;
+  float  GA;
+  float  BA;
+
+  float  ColorOut[4];
+  float  liveval;
+  
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+
+__DEVICE__ float4 Blending( __TEXTURE2D__ channel, float2 uv, float4 Q, float Blend, float2 Par, float2 MulOff, int Modus, float2 U, float2 R)
+{
+    Modus *= 2; // for Fusination
+
+    if (Blend > 0.0f)
+    {
+      //float2 tuv = U/R;
+      float4 tex = texture(channel,uv);
+
+      if (tex.w > 0.0f)
+      {
+        if ((int)Modus&2)
+          //swi2S(Q,x,y, _mix(swi2(Q,x,y),(swi2(tex,x,y)+MulOff.y)*MulOff.x,Blend));
+          Q = _mix(Q,(tex+MulOff.y)*MulOff.x,Blend);
+          //swi3S(Q,x,y,w, _mix(swi3(Q,x,y,w),(swi3(tex,x,y,z)+MulOff.y)*MulOff.x,Blend));
+
+        if ((int)Modus&4)
+          //swi2S(Q,x,y, _mix( swi2(Q,x,y), Par , Blend));
+          //swi2S(Q,x,y, _mix( swi2(Q,x,y),  Par, Blend));
+          //swi3S(Q,x,y,z, _mix(swi3(Q,x,y,z), (swi3(tex,x,y,z)+MulOff.y)*MulOff.x, Blend));
+          Q = _mix(Q,to_float4(Par.x,Par.y,(tex.x+MulOff.y)*MulOff.x,(tex.y+MulOff.y)*MulOff.x),Blend);
+
+
+        if ((int)Modus&8)
+          //swi2S(Q,x,y, _mix( swi2(Q,x,y), Par, Blend));
+          Q = _mix(Q,to_float4((tex.x+MulOff.y)*MulOff.x,(tex.y+MulOff.y)*MulOff.x,Par.x,Par.y),Blend);
+          //Q.z = _mix( Q.z,  (tex.x+MulOff.y)*MulOff.x, Blend);
+          //swi2S(Q,z,w, _mix( swi2(Q,z,w), swi2(tex,x,y)*Par, Blend));
+
+        if ((int)Modus&16)
+          //swi2S(Q,z,w, _mix(swi2(Q,z,w),  swi2(tex,x,y)*Par, Blend));
+          Q = _mix(Q,to_float4(Par.x,Par.y,MulOff.x,MulOff.y),Blend);
+      }
+      else
+        if ((int)Modus&32) //Special
+          //swi2S(Q,x,y, _mix(swi2(Q,x,y),(swi2(tex,x,y)+MulOff.y)*MulOff.x,Blend));
+          Q = _mix(Q,(tex+MulOff.y)*MulOff.x,Blend);
+    }
+
+  return Q;
+}
+
+
+__DEVICE__ float hash1( float n ) {
+    return fract(_sinf(n)*138.5453123f);
+}
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel0
+// Connect Buffer A 'Texture: Blending' to iChannel1
+// Connect Buffer A 'Previsualization: Buffer B' to iChannel2
+
+
+// Cellular automata buffer
+
+__DEVICE__ int cell( in int2 p, float2 iResolution, float liveval, __TEXTURE2D__ iChannel0 )
+{
+    int2 r = to_int2_cfloat(iResolution);//to_int2(textureSize(iChannel0, 0));
+    p = to_int2((p.x+r.x) % r.x,(p.y+r.y) % r.y);//(p+r) % r;
+    float val = texelFetch(iChannel0, p, 0 ).w;
+    return ( val == liveval ) ? 1 : 0;
+}
+__DEVICE__ float4 cellval( in int2 p, float2 iResolution, __TEXTURE2D__ iChannel0 )
+{
+    int2 r = to_int2_cfloat(iResolution);//to_int2(textureSize(iChannel0, 0));
+    p = to_int2((p.x+r.x) % r.x,(p.y+r.y) % r.y);//(p+r) % r;
+    return texelFetch(iChannel0, p, 0 );
+}
+
+__DEVICE__ float randpix(float2 fragCoord, float iTime, float density, float liveval) {
+    float rn = hash1(iTime+fragCoord.x*13.0f+hash1(fragCoord.y*71.1f));
+    return clamp(step(1.01f-density/100.0f, rn), 0.0f, 1.0f) * (liveval);
+}
+
+__DEVICE__ float restart(float2 fragCoord, int method, bool preserve, float iTime, float2 iResolution, float density, float liveval) {
+    if (method == 0)
+        return randpix(fragCoord, iTime, density, liveval);
+
+    float2 mid = iResolution / 2.0f;
+    float w=100.0f, h=100.0f, radius=452.0f, rradius=25.0f;
+    if (iResolution.y < 1000.0f) radius=182.0f;
+    float xrad=569.0f,yrad=453.0f;
+    float thick=2.0f, wl=w-thick, hl=h-thick;
+
+    if (method == 1) {
+        if (length(fragCoord-mid)< radius && length(fragCoord-mid) > (radius-thick))
+            return liveval;
+    }
+    if (method == 2) {
+        if (((fragCoord.x > mid.x - w && fragCoord.x < mid.x - wl) || (fragCoord.x > mid.x + wl && fragCoord.x < mid.x + w))
+            && fragCoord.y > mid.y - h && fragCoord.y < mid.y + h)
+            return liveval;
+        if (((fragCoord.y > mid.y - h && fragCoord.y < mid.y - hl) || (fragCoord.y > mid.y + hl && fragCoord.y < mid.y + h))
+            && fragCoord.x > mid.x - w && fragCoord.x < mid.x + w)
+            return liveval;
+    }
+    if (method == 3) {
+        if (length(to_float2((fragCoord.x-mid.x)*0.793f,(fragCoord.y-mid.y)*1.0f))< radius)
+            return liveval;
+    }
+    if (method == 4) {
+        float xmul=1.0f; if (iResolution.y < 1000.0f) xmul=1.75f;
+        if (fragCoord.x > mid.x - rradius*xmul && fragCoord.x < mid.x + rradius*xmul+1.0f && fragCoord.y > mid.y - rradius && fragCoord.y < mid.y + rradius +1.0f)
+            return liveval;
+    }
+    return preserve? -1.0f : 0.0f;
+}
+
+
+__KERNEL__ void AutomataXShowcase3X23X3Fuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   Reset = params->Reset;
+  bool   KEY_SPACE = params->KEY_SPACE;
+  bool   KEY_1 = params->KEY_1;
+  bool   KEY_Z = params->KEY_Z;
+  bool   KEY_X = params->KEY_X;
+  bool   KEY_V = params->KEY_V;
+  bool   KEY_Method = params->KEY_Method;
+  bool   KEY_Speed = params->KEY_Speed;
+  bool   KEY_RIGHT = params->KEY_RIGHT;
+  bool   KEY_LEFT = params->KEY_LEFT;
+  bool   KEY_DOWN = params->KEY_DOWN;
+  bool   KEY_UP = params->KEY_UP;
+  bool   KEY_M = params->KEY_M;
+  bool   KEY_ENTER = params->KEY_ENTER;
+  bool   KEY_A = params->KEY_A;
+  int    Picture = params->Picture;
+  float  Blend1 = params->Blend1;
+  float  Blend1Off = params->Blend1Off;
+  float  Blend1Mul = params->Blend1Mul;
+  float  Modus = params->Modus;
+  float2 Par1 = to_float2(params->Par1[0], params->Par1[1]);
+  float2 Gitter = to_float2(params->Gitter[0], params->Gitter[1]);
+  float2 fC_Off = to_float2(params->fC_Off[0], params->fC_Off[1]);
+  float  Method = params->Method;
+  float  Speed = params->Speed;
+  float  Brightness = params->Brightness;
+  float  NH = params->NH;
+  float  V1 = params->V1;
+  float  V2 = params->V2;
+  float  Density = params->Density;
+  float  Liveval = params->Liveval;
+  float  Decimate = params->Decimate;
+  float  Colch = params->Colch;
+  float  Staypatt = params->Staypatt;
+  float  RP = params->RP;
+  float  GP = params->GP;
+  float  BP = params->BP;
+  float  RM = params->RM;
+  float  GM = params->GM;
+  float  BM = params->BM;
+  float  RA = params->RA;
+  float  GA = params->GA;
+  float  BA = params->BA;
+
+  float4 ColorOut = to_float4(params->ColorOut[0], params->ColorOut[1], params->ColorOut[2], params->ColorOut[3]);
+  float  liveval = params->liveval;
+  
+
+  // --------
+    fragCoord+=0.5f;
+
+    float ix   = texelFetch(iChannel2, to_int2(0,0), 0 ).x;
+    float xres = texelFetch(iChannel2, to_int2(0,1), 0 ).x;
+    int method = (int)(texelFetch(iChannel2, to_int2(1,0), 0 ).x);
+    int speed  = (int)(texelFetch(iChannel2, to_int2(2,0), 0 ).x);
+    int mono   = (int)(texelFetch(iChannel2, to_int2(3,0), 0 ).x);
+    int rows   = 2 + (int)(texelFetch(iChannel2, to_int2(4,0), 0 ).x);
+
+    float xsq = 3.0f+Gitter.x, ysq = (float)(rows)+Gitter.y;
+    float wsq = iResolution.x / xsq;
+    float hsq = iResolution.y / ysq;
+    float thick = 3.0f;
+
+    int cix = ((int)(fragCoord.x / wsq) + (int)(fragCoord.y / hsq)*(int)(xsq) + (int)(ix*10.0f)) % 9;
+
+    // Einzelpicture
+    if(Picture>0)
+    {
+       rows -= 2;
+       xsq   = 1.0f;
+       ysq   = (float)rows;
+       wsq = iResolution.x / xsq;
+       hsq = iResolution.y / ysq;
+       cix = Picture-1;
+    }
+
+    //***********************************************************************************************
+    //setRules(cix, to_float3_s(0.0f));
+    const float LAST_PATT = 3.0f;
+    const float cstep=1.0f/256.0f;
+
+    float density=50.0f, density2=-1.0f;
+    //float liveval = 2.0f;
+    int newmethod = 0;
+    float decimate = 0.0f;
+    float rp,gp,bp, rm,gm,bm, stayval;
+    int colch, staypatt;
+    int ra,ga,ba;
+    bool clampstay;
+    int setmethod;
+    int stayset, bornset;
+    int nh;
+    int wrap;
+
+//__DEVICE__ void setRules(int index, float3 col) {
+    int index = cix;
+    float3 col = to_float3_s(0.0f);
+
+    int v1=0, v2=0;
+    decimate = 1.0f;liveval=2.0f;
+
+    rp=4.0f,gp=3.0f,bp=10.0f, rm=2.0f,gm=2.0f,bm=8.0f, ra=7,ga=7,ba=7,staypatt=1,stayval=1.0f,colch=0, clampstay=false, setmethod=0; nh=10, wrap=0, density2=-1.0f;
+
+    // sponge
+    if (index == 0) {nh=5; v1 = 1175456, v2=1910512; density=11.0f, liveval=6.0f, decimate=1.0f, colch=1, staypatt=0, rp=0.24f, gp=0.36f, bp=0.15f, rm=26.0f, gm=41.0f,bm=81.0f,  ra=1,ga=2,ba=4; density2=15.0f; }
+
+    // baby explosions
+    if (index == 1) {nh=5; v1 = 1175524, v2=1910512; density=20.0f, liveval=6.0f, decimate=1.0f, colch=1, staypatt=0, rp=3.0f, gp=1.5f, bp=1.5f, rm=6.0f, gm=8.0f,bm=13.0f,  ra=1,ga=2,ba=4; }
+
+    // worms
+    if (index == 2) {nh=10; v1 = 4094, v2=3966; density=90.0f, liveval=5.0f, decimate=0.0f, colch=2, staypatt=0, rp=10.0f, gp=4.0f, bp=4.0f, rm=16.0f, gm=16.0f,bm=18.0f,  ra=6,ga=7,ba=6; density2=6.0f;}
+
+    // generative
+    if (index == 3) {nh=0; v1 = 23, v2=86; density=6.0f, liveval=5.0f, decimate=0.0f, colch=2, staypatt=0, rp=10.0f*1.3f, gp=7.0f*1.3f, bp=20.0f*1.3f, rm=2.0f, gm=2.0f,bm=2.0f,  ra=1,ga=2,ba=4; }
+
+    // pump
+    if (index == 4) {nh=5; v1 = 1175552, v2=1910552; density=100.0f, liveval=7.0f, decimate=1.0f, colch=3, staypatt=0, rp=11.5f, gp=6.5f, bp=6.5f, rm=6.0f, gm=7.5f,bm=13.0f,  ra=1,ga=3,ba=7; density2=10.0f; }
+
+    // straight lines
+    if (index == 5) {nh=6; v1 = 50182, v2=16516; density=20.0f, liveval=6.0f, decimate=0.0f, colch=1, staypatt=5, rp=4.0f, gp=4.0f, bp=8.0f, rm=6.0f, gm=16.0f,bm=18.0f,  ra=6,ga=7,ba=6; }
+
+    // small worms
+    if (index == 6) {nh=10, v1 = 64860, v2=4094; density=80.0f; liveval=2.0f; decimate=0.0f; colch=2, staypatt=6; rp=9.0f; rm=16.0f,gm=16.0f,bm=18.0f; ra=6,ga=7,ba=6; density2=10.0f; }
+
+    // straight lines II
+    if (index == 7) {nh=-1, v1 = 200, v2=14; density=-1.3f; liveval=3.0f; decimate=1.0f; staypatt=6; rp=5.0f; rm=8.5f,gm=8.5f,bm=6.0f; ra=1,ga=2,ba=4; density2=10.0f; }
+
+    // square critters
+    if (index == 8) {nh=4, v1 = 1175537, v2=1910520; density=70.0f; liveval=6.0f; decimate=1.0f;  colch=1, staypatt=1, rp=10.0f, gp=2.5f, bp=1.0f, rm=39.0f, gm=39.0f,bm=39.0f,  ra=1,ga=2,ba=4; density2=10.0f; }
+
+
+    rp=rp+col.x; gp=gp+col.y; bp=bp+col.z;
+    stayset = v1; bornset = v2;
+    //***********************************************************************************************
+    nh+=NH; v1+=V1; V2+=V2; density+=Density; liveval+=Liveval; decimate+=Decimate; colch+=Colch; staypatt+=Staypatt; rp+=RP; gp+=GP; bp+=BP; rm+=RM; gm+=GM; bm+=BM; ra+=RA; ga+=GA; ba+=BA;
+
+    if (cix==3 && iResolution.y < 400.0f) { rp*=1.8f; gp*=1.8f; bp*=1.8f; }
+
+    float dt=density; if (density2 >= 0.0f) density=density2; if (cix==0 && iResolution.y > 400.0f) density=0.0f;
+    float i=0.0f, bsh=1.0f;
+    for (i=0.0f; i<=xsq; i++) {
+        if (fragCoord.x > wsq*i-thick && fragCoord.x < wsq*i+thick ) {
+            fragColor = to_float4(bsh,bsh,bsh,randpix(fragCoord, iTime, density, liveval));
+            _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+            return;
+        }
+    }
+    for (i=0.0f; i<=ysq; i++) {
+        if (fragCoord.y > hsq*i-thick && fragCoord.y < hsq*i+thick ) {
+            fragColor = to_float4(bsh,bsh,bsh,randpix(fragCoord, iTime, density, liveval));
+            _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+            return;
+        }
+    }
+    density=dt;
+
+    int2 px = to_int2_cfloat( fragCoord );
+    float4 curr = cellval(px, iResolution, iChannel0);
+    float ev = curr.w;
+
+    if( iFrame==0 || KEY_SPACE || (int)(xres) != (int)(iResolution.x) ) {  //|| readKey(KEY_ENTER) || readKey(KEY_Z) || readKey(KEY_X)
+        fragColor = to_float4( 0.0f, 0.0f, 0.0f, restart(fragCoord, setmethod, false, iTime, iResolution, density, liveval));
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if( KEY_1 ) { // || readKey(KEY_2) || readKey(KEY_3) || readKey(KEY_4) || readKey(KEY_5)
+        fragColor = to_float4( 0.0f, 0.0f, 0.0f, restart(fragCoord, method, false, iTime, iResolution, density, liveval));
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (iFrame % (speed+1) > 0) {
+        fragColor = curr;
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    int k=0;
+
+
+    if (nh == 0) {
+        // ..X..
+        // .X.X.
+        // X.*.X
+        // .X.X.
+        // ..X..
+        k =   cell(px+to_int2(0,-2), iResolution, liveval, iChannel0)  + cell(px+to_int2(-1,-1), iResolution, liveval, iChannel0) + cell(px+to_int2(1,-1), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(-2, 0), iResolution, liveval, iChannel0)                                                            + cell(px+to_int2(2, 0), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(-1, 1), iResolution, liveval, iChannel0) + cell(px+to_int2(1, 1), iResolution, liveval, iChannel0)  + cell(px+to_int2(0, 2), iResolution, liveval, iChannel0);
+    } else if (nh == 4 || nh==5 || nh == 6) {
+        // .XXX. 4
+        // XXXXX
+        // XX*XX
+        // XXXXX
+        // .XXX.
+        k =   cell(px+to_int2(-1,  2), iResolution, liveval, iChannel0) + cell(px+to_int2(0,  2), iResolution, liveval, iChannel0) + cell(px+to_int2(1,  2), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(-1, -2), iResolution, liveval, iChannel0) + cell(px+to_int2(0, -2), iResolution, liveval, iChannel0) + cell(px+to_int2(1, -2), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(-2, -1), iResolution, liveval, iChannel0) + cell(px+to_int2(-2, 0), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(-2, 1), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(2, -1), iResolution, liveval, iChannel0)  + cell(px+to_int2(2, 0), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(2,  1), iResolution, liveval, iChannel0);
+        // XXXXX 6
+        // X...X
+        // X.*.X
+        // X...X
+        // XXXXX
+        if (nh > 4) k += cell(px+to_int2(2, 2), iResolution, liveval, iChannel0) + cell(px+to_int2(-2, -2), iResolution, liveval, iChannel0) + cell(px+to_int2(-2, 2), iResolution, liveval, iChannel0) + cell(px+to_int2(2, -2), iResolution, liveval, iChannel0);
+        // XXXXX 5
+        // XXXXX
+        // XX*XX
+        // XXXXX
+        // XXXXX
+        if (nh < 6)
+            k +=  cell(px+to_int2(0, -1), iResolution, liveval, iChannel0)
+                + cell(px+to_int2(-1, 0), iResolution, liveval, iChannel0) + cell(px+to_int2(1,  0), iResolution, liveval, iChannel0)
+                + cell(px+to_int2(0,  1), iResolution, liveval, iChannel0) + cell(px+to_int2(-1,-1), iResolution, liveval, iChannel0) + cell(px+to_int2(1,-1), iResolution, liveval, iChannel0)
+                + cell(px+to_int2(-1, 1), iResolution, liveval, iChannel0) + cell(px+to_int2(1,  1), iResolution, liveval, iChannel0);
+    } else if (nh == 10) {
+        // XXXXX
+        // ..X..
+        // ..*..
+        // ..X..
+        // XXXXX
+        k =   cell(px+to_int2(0,  -1), iResolution, liveval, iChannel0)  + cell(px+to_int2( 0,  1), iResolution, liveval, iChannel0) +
+            + cell(px+to_int2(-2, -2), iResolution, liveval, iChannel0)  + cell(px+to_int2(-1, -2), iResolution, liveval, iChannel0) + cell(px+to_int2(0, -2), iResolution, liveval, iChannel0) + cell(px+to_int2(1, -2), iResolution, liveval, iChannel0) + cell(px+to_int2(2, -2), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(-2,  2), iResolution, liveval, iChannel0)  + cell(px+to_int2(-1,  2), iResolution, liveval, iChannel0) + cell(px+to_int2(0,  2), iResolution, liveval, iChannel0) + cell(px+to_int2(1,  2), iResolution, liveval, iChannel0) + cell(px+to_int2(2,  2), iResolution, liveval, iChannel0);
+    } else {
+        // XXX
+        // X*X
+        // XXX
+        k =   cell(px+to_int2(-1,-1), iResolution, liveval, iChannel0) + cell(px+to_int2(0,-1), iResolution, liveval, iChannel0) + cell(px+to_int2(1,-1), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(-1, 0), iResolution, liveval, iChannel0)                                                           + cell(px+to_int2(1, 0), iResolution, liveval, iChannel0)
+            + cell(px+to_int2(-1, 1), iResolution, liveval, iChannel0) + cell(px+to_int2(0, 1), iResolution, liveval, iChannel0) + cell(px+to_int2(1, 1), iResolution, liveval, iChannel0);
+    }
+
+    float ff = 0.0f;
+    if (ev > 0.5f) {
+        if (decimate > 0.0f) ff = ev-decimate;
+        if ((stayset & (1<<(k-1))) > 0 ) { ff = (float)(k); if (clampstay && ff > liveval) ff = liveval; }
+    }
+    else {
+        ff = (bornset & (1<<(k-1))) > 0 ? liveval : 0.0f;
+    }
+
+    if (mono == 0) {
+        if (ff >= 1.0f) {
+            int st = (int)(ff);
+
+            float mulbase = (float)(k);
+            if (colch == 1) mulbase = ff;
+            else if (colch == 2) mulbase = 1.0f;
+            else if (colch == 3) mulbase = (float)(k^st);
+
+            if ((st & ra) > 0) curr.x += cstep*mulbase*rp;
+            if ((st & ga) > 0) curr.y += cstep*mulbase*gp;
+            if ((st & ba) > 0) curr.z += cstep*mulbase*bp;
+
+            if (staypatt == 5 || staypatt == 6) curr.z=curr.y=curr.x;
+
+        } else {
+            float stayt = cstep * stayval;
+
+            if (staypatt == 0 || staypatt > 5) {
+                curr.x -= cstep*rm;
+                curr.y -= cstep*gm;
+                curr.z -= cstep*bm;
+            }
+            else if (staypatt == 1) {
+                if(curr.x > cstep) {
+                    curr.x -= cstep*rm;
+                    curr.y -= cstep*gm;
+                    curr.z -= cstep*bm;
+                }
+            }
+            else if (staypatt == 2) {
+                if(curr.y > cstep) {
+                    curr.x -= cstep*rm;
+                    curr.y -= cstep*gm;
+                    curr.z -= cstep*bm;
+                }
+            }
+            else if (staypatt == 3) {
+                if(curr.z > cstep) {
+                    curr.x -= cstep*rm;
+                    curr.y -= cstep*gm;
+                    curr.z -= cstep*bm;
+                }
+            }
+            else if (staypatt == 4) {
+                if(curr.z > cstep) {
+                    curr.x -= cstep*rm;
+                    curr.y -= cstep*gm;
+                }
+                if(curr.x > cstep) curr.z -= cstep*bm;
+            }
+            else if (staypatt == 5) {
+                curr.x -= cstep*rm;
+                curr.z=curr.y=curr.x;
+            }
+        }
+    }
+
+  fragColor = to_float4_aw( clamp(swi3(curr,x,y,z),0.0f,1.0f), ff );
+
+  if (Blend1>0.0f) fragColor = Blending(iChannel1, fragCoord/iResolution, fragColor, Blend1, Par1, to_float2(Blend1Mul,Blend1Off), Modus, fragCoord, iResolution);
+
+  fragColor.w = ff;
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer B                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer B 'Previsualization: Buffer B' to iChannel0
+// Connect Buffer B 'Texture: Blending' to iChannel1
+
+
+// Persistive Keyboard Input buffer & resolution change check
+
+__DEVICE__ float4 keyStep(int ix, int iy, int key, float delta, float maxval, float2 iResolution, __TEXTURE2D__ iChannel0) {
+    float3 keystate = swi3(texelFetch(iChannel0, to_int2(ix,iy), 0 ),x,y,z);
+    float kx=keystate.x;
+    float ky=keystate.y;
+    if( key ) {
+        if (ky == 0.0f) {
+            kx+=1.0f;
+            if (kx >= maxval) kx=0.0f;
+            if (kx < 0.0f)    kx=maxval-delta;
+        }
+        ky+=0.01f;
+        if (ky >= 1.0f) ky=0.0f;
+    }
+    else {
+        ky = 0.0f;
+    }
+    return to_float4(kx,ky,0.0f,0.0f);
+}
+
+
+__KERNEL__ void AutomataXShowcase3X23X3Fuse__Buffer_B(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   Reset = params->Reset;
+  bool   KEY_SPACE = params->KEY_SPACE;
+  bool   KEY_1 = params->KEY_1;
+  bool   KEY_Z = params->KEY_Z;
+  bool   KEY_X = params->KEY_X;
+  bool   KEY_V = params->KEY_V;
+  bool   KEY_Method = params->KEY_Method;
+  bool   KEY_Speed = params->KEY_Speed;
+  bool   KEY_RIGHT = params->KEY_RIGHT;
+  bool   KEY_LEFT = params->KEY_LEFT;
+  bool   KEY_DOWN = params->KEY_DOWN;
+  bool   KEY_UP = params->KEY_UP;
+  bool   KEY_M = params->KEY_M;
+  bool   KEY_ENTER = params->KEY_ENTER;
+  bool   KEY_A = params->KEY_A;
+  int    Picture = params->Picture;
+  float  Blend1 = params->Blend1;
+  float  Blend1Off = params->Blend1Off;
+  float  Blend1Mul = params->Blend1Mul;
+  float  Modus = params->Modus;
+  float2 Par1 = to_float2(params->Par1[0], params->Par1[1]);
+  float2 Gitter = to_float2(params->Gitter[0], params->Gitter[1]);
+  float2 fC_Off = to_float2(params->fC_Off[0], params->fC_Off[1]);
+  float  Method = params->Method;
+  float  Speed = params->Speed;
+  float  Brightness = params->Brightness;
+  float  NH = params->NH;
+  float  V1 = params->V1;
+  float  V2 = params->V2;
+  float  Density = params->Density;
+  float  Liveval = params->Liveval;
+  float  Decimate = params->Decimate;
+  float  Colch = params->Colch;
+  float  Staypatt = params->Staypatt;
+  float  RP = params->RP;
+  float  GP = params->GP;
+  float  BP = params->BP;
+  float  RM = params->RM;
+  float  GM = params->GM;
+  float  BM = params->BM;
+  float  RA = params->RA;
+  float  GA = params->GA;
+  float  BA = params->BA;
+
+  float4 ColorOut = to_float4(params->ColorOut[0], params->ColorOut[1], params->ColorOut[2], params->ColorOut[3]);
+  float  liveval = params->liveval;
+  
+  // --------
+
+    fragCoord+=0.5f;
+
+    const float LAST_PATT = 3.0f;
+    const float cstep=1.0f/256.0f;
+
+    int ix = (int)(fragCoord.x), iy = (int)(fragCoord.y);
+
+    if (iy > 1 || iFrame==0 || Reset) {
+        fragColor = to_float4(0.0f,0.0f,0.0f,1.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (ix == 0 && iy == 0) {
+        float3 keystate = swi3(texelFetch(iChannel0, to_int2(ix,iy), 0 ),x,y,z);
+        float kx=keystate.x;
+        float ky=keystate.y;
+        if( KEY_Z || KEY_V) {  //||readKey(KEY_X)||readKey(KEY_C)||readKey(KEY_V)
+            if (ky == 0.0f) {
+                if (KEY_X || KEY_V) {
+                    kx+=0.1f;
+                    if (kx > LAST_PATT*0.1f+0.05f) kx=0.05f;
+                } else {
+                    kx-=0.1f;
+                    if (kx < 0.0f) kx=LAST_PATT*0.1f+0.05f;
+                }
+            }
+            ky+=0.01f;
+            if (ky >= 1.0f) ky=0.0f;
+        }
+        else {
+            ky = 0.0f;
+        }
+        fragColor = to_float4(kx,ky,0.0f,0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (ix == 1 && iy == 0) {
+        float method = texelFetch(iChannel0, to_int2(ix,iy), 0 ).x;
+        if( KEY_Method) method = Method;
+        //if( readKey(KEY_2)) method = 1.5f;
+        //if( readKey(KEY_3)) method = 2.5f;
+        //if( readKey(KEY_4)) method = 3.5f;
+        //if( readKey(KEY_5)) method = 4.5f;
+        fragColor = to_float4(method,0.0f,0.0f,0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (ix == 2 && iy == 0) {
+        float speed = texelFetch(iChannel0, to_int2(ix,iy), 0 ).x;
+        if( KEY_Speed) speed = Speed;//0.0f;
+        //if( readKey(KEY_8)) speed = 1.0f;
+        //if( readKey(KEY_9)) speed = 5.0f;
+        fragColor = to_float4(speed,0.0f,0.0f,0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (ix == 3 && iy == 0) {
+        fragColor = keyStep(ix, iy, KEY_M, 1.0f, 2.0f, iResolution, iChannel0);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (ix == 4 && iy == 0) {
+        fragColor = keyStep(ix, iy, KEY_ENTER, 1.0f, 2.0f, iResolution, iChannel0);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (ix == 5 && iy == 0) {
+        fragColor = keyStep(ix, iy, KEY_A, 1.0f, 2.0f, iResolution, iChannel0);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (ix == 10 && iy == 0) {
+        float2 ppos = swi2(texelFetch(iChannel0, to_int2(ix,iy), 0 ),x,y);
+        float mmul = iMouse.x / iResolution.x;
+        float2 mid = iResolution / 2.0f;
+
+        float psp=8.0f;
+        if( KEY_RIGHT) ppos.x += psp;
+        if( KEY_LEFT)  ppos.x -= psp;
+        if( KEY_DOWN)  ppos.y -= psp;
+        if( KEY_UP)    ppos.y += psp;
+        ppos.x = clamp(ppos.x, -mid.x*mmul, mid.x*mmul);
+        ppos.y = clamp(ppos.y, -mid.y*mmul, mid.y*mmul);
+
+        fragColor = to_float4(ppos.x,ppos.y,0.0f,1.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    if (ix == 0 && iy == 1) {
+        fragColor = to_float4(iResolution.x,0.0f,0.0f,0.0f);
+        _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+        return;
+    }
+
+    fragColor = to_float4(0.0f,0.0f,0.0f,1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+// Connect Image 'Previsualization: Buffer B' to iChannel1
+
+
+__KERNEL__ void AutomataXShowcase3X23X3Fuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   Reset = params->Reset;
+  bool   KEY_SPACE = params->KEY_SPACE;
+  bool   KEY_1 = params->KEY_1;
+  bool   KEY_Z = params->KEY_Z;
+  bool   KEY_X = params->KEY_X;
+  bool   KEY_V = params->KEY_V;
+  bool   KEY_Method = params->KEY_Method;
+  bool   KEY_Speed = params->KEY_Speed;
+  bool   KEY_RIGHT = params->KEY_RIGHT;
+  bool   KEY_LEFT = params->KEY_LEFT;
+  bool   KEY_DOWN = params->KEY_DOWN;
+  bool   KEY_UP = params->KEY_UP;
+  bool   KEY_M = params->KEY_M;
+  bool   KEY_ENTER = params->KEY_ENTER;
+  bool   KEY_A = params->KEY_A;
+  int    Picture = params->Picture;
+  float  Blend1 = params->Blend1;
+  float  Blend1Off = params->Blend1Off;
+  float  Blend1Mul = params->Blend1Mul;
+  float  Modus = params->Modus;
+  float2 Par1 = to_float2(params->Par1[0], params->Par1[1]);
+  float2 Gitter = to_float2(params->Gitter[0], params->Gitter[1]);
+  float2 fC_Off = to_float2(params->fC_Off[0], params->fC_Off[1]);
+  float  Method = params->Method;
+  float  Speed = params->Speed;
+  float  Brightness = params->Brightness;
+  float  NH = params->NH;
+  float  V1 = params->V1;
+  float  V2 = params->V2;
+  float  Density = params->Density;
+  float  Liveval = params->Liveval;
+  float  Decimate = params->Decimate;
+  float  Colch = params->Colch;
+  float  Staypatt = params->Staypatt;
+  float  RP = params->RP;
+  float  GP = params->GP;
+  float  BP = params->BP;
+  float  RM = params->RM;
+  float  GM = params->GM;
+  float  BM = params->BM;
+  float  RA = params->RA;
+  float  GA = params->GA;
+  float  BA = params->BA;
+
+  float4 ColorOut = to_float4(params->ColorOut[0], params->ColorOut[1], params->ColorOut[2], params->ColorOut[3]);
+  float  liveval = params->liveval;
+  
+  // --------
+    //float liveval = 2.0;
+
+    float ix = texelFetch(iChannel1, to_int2(0,0), 0 ).x;
+    int mono = (int)(texelFetch(iChannel1, to_int2(3,0), 0 ).x);
+    int aa = 1-(int)(texelFetch(iChannel1, to_int2(5,0), 0 ).x);
+    float2 ppos = swi2(texelFetch(iChannel1, to_int2(10,0), 0 ),x,y);
+
+    float mx= iMouse.x / iResolution.x;
+    float2 mid = iResolution / 2.0f;
+    float mmul = 1.0f-mx;
+    fragCoord = mid - (mid*mmul-fragCoord*mmul) + ppos + fC_Off*iResolution;
+
+    float4 val = to_float4_s(0.0f);
+    int am=0, ap=aa, j=0;
+    for (int j = -am; j <= ap; j++)
+        for (int i = -am; i <= ap; i++)
+            val += texelFetch( iChannel0, to_int2((int)(fragCoord.x)+i,(int)(fragCoord.y)+j), 0 );
+    float n=(float)((am+ap+1));
+    if (am+ap > 0) val /= n*n-2.0f;
+
+    if (aa == 0) val/=0.6f;
+
+    if (mono == 0) {
+        fragColor = val;
+    } else {
+        float v=(1.0f/liveval)*val.w;
+        fragColor = to_float4( v*0.9f, v*0.95f, v, 1.0f );
+    }
+
+  fragColor = to_float4_aw(swi3(fragColor,x,y,z) * (swi3(ColorOut,x,y,z) + 0.5f), ColorOut.w == 0.0 ? fragColor.w : ColorOut.w);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_SPACECheckbox = self:AddInput("KEY_SPACE", "KEY_SPACE", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_1Checkbox = self:AddInput("KEY_1", "KEY_1", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_ZCheckbox = self:AddInput("KEY_Z", "KEY_Z", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_XCheckbox = self:AddInput("KEY_X", "KEY_X", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_VCheckbox = self:AddInput("KEY_V", "KEY_V", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_MethodCheckbox = self:AddInput("KEY_Method", "KEY_Method", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_SpeedCheckbox = self:AddInput("KEY_Speed", "KEY_Speed", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_RIGHTCheckbox = self:AddInput("KEY_RIGHT", "KEY_RIGHT", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_LEFTCheckbox = self:AddInput("KEY_LEFT", "KEY_LEFT", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_DOWNCheckbox = self:AddInput("KEY_DOWN", "KEY_DOWN", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_UPCheckbox = self:AddInput("KEY_UP", "KEY_UP", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_MCheckbox = self:AddInput("KEY_M", "KEY_M", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_ENTERCheckbox = self:AddInput("KEY_ENTER", "KEY_ENTER", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InKEY_ACheckbox = self:AddInput("KEY_A", "KEY_A", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InPictureSlider = self:AddInput("Picture", "Picture", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 6,
+      INP_Default        = 0,
+      INP_Integer        = true,
+  })
+
+  InBlend1Slider = self:AddInput("Blend1", "Blend1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = 0.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0,
+      })
+
+  InBlend1OffSlider = self:AddInput("Blend1Off", "Blend1Off", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InBlend1MulSlider = self:AddInput("Blend1Mul", "Blend1Mul", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InModusButton = self:AddInput("Modus", "Modus", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "MultiButtonControl",
+      MBTNC_ForceButtons = true,
+      MBTNC_Type         = "Toggle", 
+      MBTNC_ShowName     = false,
+      { MBTNC_AddButton  = " Start", },  { MBTNC_AddButton  = "  Velo", },  { MBTNC_AddButton  = " Mass", },  { MBTNC_AddButton  = " InvMass", },  { MBTNC_AddButton  = " Special", }, 
+		  MBTNC_StretchToFit = true,
+      IC_NoLabel         = true,
+		  INP_Default        = 0,
+      IC_Visible         = true,
+  })
+
+  InPar1Point = self:AddInput("Par1", "Par1", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InGitterPoint = self:AddInput("Gitter", "Gitter", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InfC_OffPoint = self:AddInput("fC_Off", "fC_Off", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InMethodSlider = self:AddInput("Method", "Method", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 0.5,
+      })
+
+  InSpeedSlider = self:AddInput("Speed", "Speed", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.6,
+      })
+
+  InBrightnessSlider = self:AddInput("Brightness", "Brightness", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.994,
+      })
+
+  InNHSlider = self:AddInput("NH", "NH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InV1Slider = self:AddInput("V1", "V1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InV2Slider = self:AddInput("V2", "V2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InDensitySlider = self:AddInput("Density", "Density", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InLivevalSlider = self:AddInput("Liveval", "Liveval", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InDecimateSlider = self:AddInput("Decimate", "Decimate", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InColchSlider = self:AddInput("Colch", "Colch", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InStaypattSlider = self:AddInput("Staypatt", "Staypatt", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InRPSlider = self:AddInput("RP", "RP", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InGPSlider = self:AddInput("GP", "GP", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InBPSlider = self:AddInput("BP", "BP", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InRMSlider = self:AddInput("RM", "RM", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InGMSlider = self:AddInput("GM", "GM", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InBMSlider = self:AddInput("BM", "BM", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InRASlider = self:AddInput("RA", "RA", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InGASlider = self:AddInput("GA", "GA", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InBASlider = self:AddInput("BA", "BA", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+ 
+
+  self:BeginControlNest("ColorOut", "ColorOut", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColorOut",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColorOutColorR = self:AddInput("Red",   "ColorOutRed",   { INP_Default  = 0.5, IC_ControlID = 0, attrs})
+    InColorOutColorG = self:AddInput("Green", "ColorOutGreen", { INP_Default  = 0.5, IC_ControlID = 1, attrs})
+    InColorOutColorB = self:AddInput("Blue",  "ColorOutBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InColorOutColorA = self:AddInput("Alpha", "ColorOutAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InlivevalSlider = self:AddInput("liveval", "liveval", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 2.0,
+      })
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, LINK_Visible = false, INP_Required = false  })
+  InChannel2 = self:AddInput( "iChannel2",  "iChannel2",  { LINKID_DataType = "Image", LINK_Main = 3, LINK_Visible = false, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "AutomataXShowcase3X23X3Fuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "AutomataXShowcase3X23X3Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  iChannel2 = InChannel2:GetValue(req)
+
+  if iChannel2==nil then
+    iChannel2 = Image(imgattrs)
+    iChannel2:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.KEY_SPACE = InKEY_SPACECheckbox:GetValue(req).Value
+  params.KEY_1 = InKEY_1Checkbox:GetValue(req).Value
+  params.KEY_Z = InKEY_ZCheckbox:GetValue(req).Value
+  params.KEY_X = InKEY_XCheckbox:GetValue(req).Value
+  params.KEY_V = InKEY_VCheckbox:GetValue(req).Value
+  params.KEY_Method = InKEY_MethodCheckbox:GetValue(req).Value
+  params.KEY_Speed = InKEY_SpeedCheckbox:GetValue(req).Value
+  params.KEY_RIGHT = InKEY_RIGHTCheckbox:GetValue(req).Value
+  params.KEY_LEFT = InKEY_LEFTCheckbox:GetValue(req).Value
+  params.KEY_DOWN = InKEY_DOWNCheckbox:GetValue(req).Value
+  params.KEY_UP = InKEY_UPCheckbox:GetValue(req).Value
+  params.KEY_M = InKEY_MCheckbox:GetValue(req).Value
+  params.KEY_ENTER = InKEY_ENTERCheckbox:GetValue(req).Value
+  params.KEY_A = InKEY_ACheckbox:GetValue(req).Value
+  params.Picture = InPictureSlider:GetValue(req).Value
+  params.Blend1 = InBlend1Slider:GetValue(req).Value
+  params.Blend1Off = InBlend1OffSlider:GetValue(req).Value
+  params.Blend1Mul = InBlend1MulSlider:GetValue(req).Value
+  params.Modus = InModusButton:GetValue(req).Value
+  params.Par1 = {InPar1Point:GetValue(req).X,InPar1Point:GetValue(req).Y}
+  params.Gitter = {InGitterPoint:GetValue(req).X,InGitterPoint:GetValue(req).Y}
+  params.fC_Off = {InfC_OffPoint:GetValue(req).X,InfC_OffPoint:GetValue(req).Y}
+  params.Method = InMethodSlider:GetValue(req).Value
+  params.Speed = InSpeedSlider:GetValue(req).Value
+  params.Brightness = InBrightnessSlider:GetValue(req).Value
+  params.NH = InNHSlider:GetValue(req).Value
+  params.V1 = InV1Slider:GetValue(req).Value
+  params.V2 = InV2Slider:GetValue(req).Value
+  params.Density = InDensitySlider:GetValue(req).Value
+  params.Liveval = InLivevalSlider:GetValue(req).Value
+  params.Decimate = InDecimateSlider:GetValue(req).Value
+  params.Colch = InColchSlider:GetValue(req).Value
+  params.Staypatt = InStaypattSlider:GetValue(req).Value
+  params.RP = InRPSlider:GetValue(req).Value
+  params.GP = InGPSlider:GetValue(req).Value
+  params.BP = InBPSlider:GetValue(req).Value
+  params.RM = InRMSlider:GetValue(req).Value
+  params.GM = InGMSlider:GetValue(req).Value
+  params.BM = InBMSlider:GetValue(req).Value
+  params.RA = InRASlider:GetValue(req).Value
+  params.GA = InGASlider:GetValue(req).Value
+  params.BA = InBASlider:GetValue(req).Value
+ 
+  params.ColorOut = {
+    InColorOutColorR:GetValue(req).Value,
+    InColorOutColorG:GetValue(req).Value,
+    InColorOutColorB:GetValue(req).Value,InColorOutColorA:GetValue(req).Value
+  }
+  params.liveval = InlivevalSlider:GetValue(req).Value
+  
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+  
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddInput("iChannel2",iChannel2) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",Image_Buff_GlobalA)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",iChannel0)           -- TODO: add a better channel name    
+    nodeA:AddInput("iChannel2",Image_Buff_GlobalB)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "AutomataXShowcase3X23X3Fuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeB:AddInput("iChannel1", iChannel0)           -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "AutomataXShowcase3X23X3Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    node:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    node:AddInput("iChannel2", iChannel0)  -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+    
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

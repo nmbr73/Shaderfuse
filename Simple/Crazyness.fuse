@@ -1,0 +1,388 @@
+--[[--/*
+
+    craziness.fuse
+
+    Based on https://www.shadertoy.com/view/wdjSRc a WebGL
+    shader from shadertoy.com converted to DCTL and embeddet
+    into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73)
+    for use in DaFusion.
+
+    Shader created by spsherk_
+
+*/--]]--
+
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+ST_CrazynessParams =
+[[
+  float freq;
+  float r;
+  float g;
+  float b;
+  float a;
+  int   width;
+  int   height;
+  float iTime;
+  int   compOrder;
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+ST_CrazynessKernel =
+    [[
+
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+// 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+#if 1
+  #if defined(DEVICE_IS_METAL)
+    #define USE_NATIVE_METAL_IMPL   1
+  #elif defined(DEVICE_IS_CUDA)
+    #define USE_NATIVE_CUDA_IMPL    1
+  #elif defined(DEVICE_IS_OPENCL)
+    #define USE_NATIVE_OPENCL_IMPL  1
+  #endif
+#endif
+
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  #define swixy(V) (V).xy
+
+#else
+
+  #define swixy(V) to_float2((V).x,(V).y)
+
+#endif
+
+
+#if defined(USE_NATIVE_METAL_IMPL)
+  __DEVICE__ inline float length1f      ( float  x ) { return abs(x);    }
+  __DEVICE__ inline float length_float3 ( float3 v ) { return length(v); }
+#else
+  __DEVICE__ inline float length1f      ( float  x ) { return _fabs(x);                                 }
+  __DEVICE__ inline float length_float3 ( float3 v ) { return _sqrtf(v.x*v.x+v.y*v.y+v.z*v.z);          }
+#endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+    __DEVICE__ inline mat2 to_mat2    ( float  a, float  b, float c, float d) { return mat2(a,b,c,d);       }
+
+    __DEVICE__ inline float2  prod_float2_mat2( float2 v, mat2   m )  { return v*m; }
+
+#else
+
+  typedef struct
+  {
+    float2 r0;
+    float2 r1;
+
+  } mat2;
+
+  __DEVICE__ inline mat2 to_mat2    ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 prod_float2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+
+
+
+#endif // end of mat2 implementation
+
+
+//############################################################################
+// #define t iTime
+
+__DEVICE__ mat2 m(float a)
+{
+  float c=_cosf(a), s=_sinf(a);
+  mat2 r=to_mat2(c,-s,s,c);
+  return r;
+}
+
+__DEVICE__ float map(float3 p,float t)
+{
+    float2 px=to_float2(p.x,p.y);
+    px = prod_float2_mat2(px, m(t*0.4f));
+    px = prod_float2_mat2(px, m(t*0.3f));
+    float3 q = p*2.0f+t;
+    p.x=px.x; p.y=px.y;
+    return length_float3( p + to_float3_s(sin(t*0.7f)) )*log(length(p)+1.0f) + sin(q.x+sin(q.z+sin(q.y)))*5.5f - 1.0f;
+}
+
+
+__KERNEL__ void ST_CrazynessKernel(
+    __CONSTANTREF__ ST_CrazynessParams*  params,
+    __TEXTURE2D__                  iChannel0,
+    __TEXTURE2D_WRITE__            dst
+    )
+{
+
+  DEFINE_KERNEL_ITERATORS_XY(x, y);
+
+  if (x >= params->width || y >= params->height)
+    return;
+
+  // ----- Standard parameters
+  float2 fragCoord   = to_float2(x, y);
+  float2 iResolution = to_float2(params->width, params->height);
+  float  iTime       = params->iTime * params->freq;
+  float4 fragColor   = to_float4_s(0.0f);
+
+  float red          = params->r;
+  float green        = params->g;
+  float blue         = params->b;
+  float alpha        = params->a;
+
+  //##########################################################################
+
+// FORKED FROM Ether by nimitz (twitter: @stormoid)
+// https://www.shadertoy.com/view/MsjSW3
+
+
+	float2 p = swixy(fragCoord)/iResolution.y - to_float2(0.9f,0.5f);
+  float3 cl = to_float3_s(0.0f);
+  float d = 0.9f;
+
+  for(int i=0; i<=5; i++)
+  {
+
+    float3 px = to_float3(0.0f,0.0f,5.0f) + normalize(to_float3_aw(p, -1.0f))*d;
+    float rz = map(px,iTime);
+    float f =  clamp((rz - map(px+0.1f,iTime))*0.5f, -0.1f, 1.0f );
+//  float3 l = to_float3(0.1f,0.3f,0.4f) + to_float3(5.0f, 2.5f, 3.0f)*f;
+    float3 l = to_float3(red,green,blue) + to_float3(5.0f, 2.5f, 3.0f)*f;
+    cl = cl*l + (1.0f-smoothstep(0.0f, 2.5f, rz))*0.7f*l;
+    d += min(rz, 1.0f);
+	}
+  fragColor = to_float4_aw(cl, alpha);
+
+  //fragColor   = to_float4(0.0f,1.0f,0.0f,0.0f);
+
+  //##########################################################################
+
+  _tex2DVec4Write(dst, x, y, fragColor);
+
+}
+
+]]
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  --------------------------------------------
+  ShaderFuse.begin_create()
+  --------------------------------------------
+
+  ----- In/Out
+  InImage1 = self:AddInput("Image", "Image", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+    INP_Required = false
+  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+   InFreq = self:AddInput("Frequency", "Frequency", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 0.6,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 10.0,
+  })
+
+  self:BeginControlNest("Color", "Color", true, {})
+
+  InR = self:AddInput("Red", "Red", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.1,
+		ICS_Name = "Color",
+		IC_ControlGroup = 1,
+		IC_ControlID = 0,
+	})
+
+	InG = self:AddInput("Green", "Green", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.3,
+		IC_ControlGroup = 1,
+		IC_ControlID = 1,
+	})
+
+	InB = self:AddInput("Blue", "Blue", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 0.4,
+		IC_ControlGroup = 1,
+		IC_ControlID = 2,
+	})
+
+	InA = self:AddInput("Global Alpha", "GlobalAlpha", {
+		LINKID_DataType = "Number",
+		INPID_InputControl = "ColorControl",
+		INP_MinScale = 0.0,
+		INP_MaxScale = 1.0,
+		INP_Default  = 1.0,
+		IC_ControlGroup = 1,
+		IC_ControlID = 3,
+	})
+
+  self:EndControlNest()
+
+  --------------------------------------------
+  ShaderFuse.end_create()
+  --------------------------------------------
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate") -- get the frame rate of the comp set in the preferences
+
+    --This creates an image for us to work on.
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth = realwidth,
+    IMAT_OriginalHeight = realheight,
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+  }
+
+  if not req:IsStampOnly() then
+    imgattrs.IMG_ProxyScale = 1
+  end
+
+  if SourceDepth ~= 0 then
+    imgattrs.IMG_Depth = SourceDepth
+  end
+
+
+  -- Extern Texture or create a new one
+  if (InImage1:GetValue(req) ~= nil) then
+    src1 = InImage1:GetValue(req)
+  else
+    src1 = Image(imgattrs)
+    local p = Pixel({R=0,G=0,B=0,A=0}) -- Initial black Image to avoid see random picture from Memory
+    src1:Fill(p)
+  end
+
+  local dst = Image {IMG_Like = src1, IMG_DeferAlloc = true} -- create an Output Image
+
+
+  -- Interface for running DCTL-Code
+
+  node = DVIPComputeNode(req, "ST_CrazynessKernel", ST_CrazynessKernel, "ST_CrazynessParams", ST_CrazynessParams)
+
+
+  if not pcall(function ()  -- necessary to avoid memory leakage
+    params.freq         = InFreq:GetValue(req).Value
+    params.r            = InR:GetValue(req).Value
+    params.g            = InG:GetValue(req).Value
+    params.b            = InB:GetValue(req).Value
+    params.a            = InA:GetValue(req).Value
+    params.compOrder    = src1:IsMask() and 1 or 15
+    params.width        = src1.DataWindow:Width()
+    params.height       = src1.DataWindow:Height()
+    params.iTime        = req.Time / framerate
+    node:SetParamBlock(params)
+  end) then
+    params              = node:GetParamBlock(ST_CrazynessParams)
+    params.freq         = InFreq:GetValue(req).Value
+    params.r            = InR:GetValue(req).Value
+    params.g            = InG:GetValue(req).Value
+    params.b            = InB:GetValue(req).Value
+    params.a            = InA:GetValue(req).Value
+    params.compOrder    = src1:IsMask() and 1 or 15
+    params.width        = src1.DataWindow:Width()
+    params.height       = src1.DataWindow:Height()
+    params.iTime        = req.Time / framerate
+    node:SetParamBlock(params)
+  end
+
+
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+
+  node:AddInput("iChannel0", src1)
+  node:AddOutput("dst",      dst)
+
+  local success = node:RunSession(req)
+  if not success then
+    dst = nil
+    dump(node:GetErrorLog()) -- Errormessages from DCTL-Compiler
+  end
+  OutImage:Set(req, dst)
+end
+
+
+
+

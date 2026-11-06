@@ -1,0 +1,1065 @@
+--[[--/*
+
+  Bomlka.fuse
+
+  Based on https://www.shadertoy.com/view/mtXyD7 a WebGL shader created by lamogui.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+ #define mod_f2(value,divisor) fmod(value,divisor)
+
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define mod_f2(value,divisor) _fmod(value,divisor)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define distance_f3( p1, p2) distance(p1, p2)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define mod_f2(value,divisor) to_float2(mod_f((value).x, (divisor)),mod_f((value).y, (divisor)))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+__DEVICE__ float _powcf(float x, float y) {
+    float ret = _powf(x,y);
+    if (isnan(ret)) {
+        ret = 0.0001f;
+    }
+    return ret;
+}
+
+#define dLimit  0.00001f
+#define dFar    80.0f
+
+#define PI 3.14159265f
+
+#define M_SKY      0.0f
+#define M_FLOOR    1.0f
+#define M_B        2.0f
+#define M_BFOOT    3.0f
+#define M_BEYE     4.0f
+#define M_BHAT     5.0f
+#define M_BFIL     6.0f
+#define M_BKEY     7.0f
+#define M_TER      8.0f
+
+#define mmin( d, n, m ) ( n < d.x ) ? to_float2( n, m ) : d;
+
+__DEVICE__ float smin( float a, float b, float k )
+{
+  float h = _fmaxf( k-_fabs(a-b), 0.0f )/k;
+  return _fminf( a, b ) - h*h*h*k*(1.0f/6.0f);
+}
+
+__DEVICE__ float rand(float n){return fract(_sinf(n) * 43758.5453123f);}
+__DEVICE__ float3 noise3( float n ) {
+  return to_float3( rand( n ), rand(n*0.520f + 1.546f), rand(n*3.10f - 0.56f) );
+}
+__DEVICE__ float3 noise33( float3 n ) {
+  return to_float3( rand( n.x ), rand(n.y), rand(n.z) );
+}
+
+__DEVICE__ float box( float3 p, float3 b, float r )
+{
+  float3 q = abs_f3(p) - b;
+  return length(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f) - r;
+}
+
+__DEVICE__ mat2 rot( float a ) {
+  float c = _cosf( a );
+  float s = _sinf( a );
+  return to_mat2( c, s, -s, c );
+}
+
+__DEVICE__ float ell( float3 p, float3 r )
+{
+  float k0 = length(p/r);
+  float k1 = length(p/(r*r));
+  return k0*(k0-1.0f)/k1;
+}
+
+
+__DEVICE__ float rc( float3 p, float r1, float r2, float h )
+{
+  float b = (r1-r2)/h;
+  float a = _sqrtf(1.0f-b*b);
+  float2 q = to_float2( length(swi2(p,x,z)), p.y );
+  float k = dot(q,to_float2(-b,a));
+  if( k<0.0f ) return length(q) - r1;
+  if( k>a*h ) return length(q-to_float2(0.0f,h)) - r2;
+  return dot(q, to_float2(a,b) ) - r1;
+}
+
+__DEVICE__ float cyl( float3 p, float h, float r )
+{
+  float2 d = abs_f2(to_float2(length(swi2(p,x,z)),p.y)) - to_float2(r,h);
+  return _fminf(_fmaxf(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f)));
+}
+
+__DEVICE__ float ter( float3 p, float beat1, float beat2 ) {
+  float per = 6.0f;
+  float3 g = p;
+  float3 n = to_float3_cint( to_int3_cfloat( (g / per) ) );
+  swi2S(g,x,z,  mod_f2( swi2(g,x,z), per ) - per * 0.5f);
+
+  float t = per*0.5f;
+
+  t= cyl(g,10.0f* rand(n.x), 0.25f*per*rand(n.y+n.x));
+  g = p;
+  swi2S(g,x,z, mul_f2_mat2(swi2(g,x,z) , rot( 0.351f )));
+  n = to_float3_cint( to_int3_cfloat( (g / per) ) );
+
+  swi2S(g,x,z,  mod_f2( swi2(g,x,z), per ) - per * 0.5f);
+  t = _fminf(t,box(g, to_float3(0.5f,2.0f,0.1f) + 0.25f * per * noise3(n .x+n.y ), 0.21f * beat1));
+
+  g = p;
+  swi2S(g,x,z, mul_f2_mat2(swi2(g,x,z) , rot( -0.787f )));
+  n = to_float3_cint( to_int3_cfloat( (g / per) ) );
+  swi2S(g,x,z,  mod_f2( swi2(g,x,z), per ) - per * 0.5f);
+  t = _fminf(t,box(g, to_float3(0.5f,2.0f,0.1f) + 0.25f * per * noise3(-n.x+n.y), 0.21f * beat2));
+  t = _fmaxf( t, 13.0f-length( p));
+  return t;
+}
+
+__DEVICE__ float2 bomb( float3 p, float e, float m, float f1, float f2, float r, float kr ) {
+
+  float2 d = to_float2( 10.0f, M_SKY);
+  p.y -= 1.5f;
+
+  float c = ell( p, to_float3(1.0f,1.0f,1.0f));
+
+  float3 g = p;
+  swi2S(g,y,z, mul_f2_mat2(swi2(g,y,z) , rot(-0.2f * r)));
+
+  // fesses
+  //if( track_time > 69.05f ) {
+  //  float3 pc = g;
+  //  pc.y += 0.5f;
+  //  pc.z += 0.6f;
+  //  pc.x += 0.2f;
+  //  c = smin(c, ell( pc, to_float3(0.35f,0.4f,0.2f)), 0.2f);
+  //  pc.x -= 0.2f*2.0f;
+  //  c = smin(c, ell( pc, to_float3(0.35f,0.4f,0.2f)), 0.2f);
+  //}
+  d = mmin(d, c ,M_B);
+
+  float3 pe = g;
+  pe.x = -_fabs(pe.x);
+  swi2S(pe,y,z, mul_f2_mat2(swi2(pe,y,z) , rot( -0.5f)));
+  swi2S(pe,z,x, mul_f2_mat2(swi2(pe,z,x) , rot( -0.4f)));
+  pe = pe - to_float3(0.0f, 0.0f, 0.92f);
+  d = mmin( d, ell( pe, to_float3(0.25f,0.4f + 0.1f * e,0.1f) ), M_BEYE);
+
+  // foots
+  float3 pf = p;
+  float f = (pf.x > 0.0f) ? f1 : f2;
+  float del = PI/5.0f;
+  float af = _fmaxf(-PI/2.0f, -(f+del*f) + del );
+  swi2S(pf,y,z, mul_f2_mat2(swi2(pf,y,z) , rot( af )));
+  pf.x = _fabs( -pf.x );
+  pf.y += 1.0f;
+  pf.x -= 0.6f - _powcf(-pf.y,3.0f)*0.2f;
+  float df = cyl( pf , 0.5f, 0.2f);
+  pf.y += 0.5f;
+  swi2S(pf,y,z, mul_f2_mat2(swi2(pf,y,z) , rot(1.5f)));
+  if ( af > 0.0f ) {
+    swi2S(pf,y,z, mul_f2_mat2(swi2(pf,y,z) , rot(0.3f * (1.0f-_powcf( p.y, 2.0f )))));
+  }
+  df = smin( df, rc( pf, 0.25f, 0.3f, 0.5f), 0.1f );
+  df = _fmaxf(df, -0.1f + pf.z);
+  d = mmin( d, df, M_BFOOT);
+
+  // key
+  float3 pk = g;
+
+  swi2S(pk,y,z, mul_f2_mat2(swi2(pk,y,z) , rot(1.5f)));
+  swi2S(pk,z,x, mul_f2_mat2(swi2(pk,z,x) , rot( -kr * 2.0f*PI )));
+  pk.y += 1.0f;
+  float k = cyl(pk, 0.15f, 0.2f);
+  //pk.z = _fabs(-pk.z);
+  pk.z +=0.3f;
+  pk.y +=0.5f;
+  swi2S(pk,x,y, mul_f2_mat2(swi2(pk,x,y) , rot(1.5f)));
+  k = smin(k, _fmaxf( cyl( pk, 0.1f, 0.4f), -cyl( pk, 0.3f, 0.2f) ), 0.2f );
+  pk.z -=2.0f*0.3f;
+  k = smin(k, _fmaxf( cyl( pk, 0.1f, 0.4f), -cyl( pk, 0.3f, 0.2f) ), 0.2f );
+  d = mmin( d, k, M_BKEY );
+
+  // Hat
+  float3 ph = g;
+  ph.y -= 0.95f;
+  d = mmin( d, cyl( ph , 0.1f, 0.45f), M_BHAT);
+
+  float3 pi = ph;
+  d = mmin( d, cyl( ph + 0.1f*to_float3( ph.y*_cosf(ph.y * 10.0f), 0.0f, (m*3.0f+2.0f)*pi.y*pi.y*pi.y) , 1.0f, 0.1f + 0.01f * _powcf(cos(200.0f*pi.y),2.0f)), M_BFIL);
+
+  return d;
+}
+
+
+__DEVICE__ float2 map(float3 p, float iTime, float beat1, float beat2) {
+
+  float2 d = to_float2( 10.0f, M_SKY);
+
+  d = mmin( d, p.y, M_FLOOR );
+  d = mmin( d, ter(p,beat1,beat2), M_TER);
+
+  float3 g = p;
+  //if ( track_time > 36.0f ) {
+  swi2S(g,x,z, mul_f2_mat2(swi2(g,x,z) , rot(iTime * 0.8f)));
+  //}
+
+  float per = PI/4.0f;
+  float a = mod_f( _atan2f(g.z, g.x), per) - 0.5f * per;
+  float l = length(swi2(g,z,x)) ;
+
+  g.x = l * _cosf( a );
+  g.z = l * _sinf( a );
+  //if ( track_time < 28.1f || track_time > 36.1f) {
+  g.x -= 7.0f;
+  //} else if ( track_time < 32.0f ){
+  //  g.x -= 7.0f + 3.0f * _cosf(sequence_time*0.8f);
+  //} else {
+  //  g.x -= 7.0f - 3.0f * _cosf(sequence_time*0.8f);
+  //}
+
+//if ( track_time < 36.1f ) {
+//  swi2(g,z,x) *= rot(-PI/2.0f);
+//}
+  float2 b = bomb( g, beat1, beat2, beat1, beat2, _fmaxf(beat1, beat2), iTime );
+  d =  mmin( d, b.x, b.y );
+
+  return d;
+}
+
+__DEVICE__ float3 grad( in float3 p, float iTime, float beat1, float beat2 )
+{
+  float3 e = to_float3(0.01f, 0.0f, 0.0f);
+  return normalize( to_float3(
+    map(p+swi3(e,x,y,y),iTime, beat1, beat2).x-map(p-swi3(e,x,y,y),iTime, beat1, beat2).x,
+    map(p+swi3(e,y,x,y),iTime, beat1, beat2).x-map(p-swi3(e,y,x,y),iTime, beat1, beat2).x,
+    map(p+swi3(e,y,y,x),iTime, beat1, beat2).x-map(p-swi3(e,y,y,x),iTime, beat1, beat2).x
+  ) );
+}
+
+__DEVICE__ float4 rm(float3 ro, float3 rd, out float *st, float iTime, float beat1, float beat2)
+{
+  float3 p = ro;
+  float d;
+  float2 dmat = to_float2( 100000.0f, M_SKY);
+  *st = 1.0f;
+  for (float i = 0.0f; i < 150.0f; i++)
+  {
+    dmat = map(p,iTime, beat1, beat2);
+    d = distance_f3(ro, p);
+    if (_fabs(dmat.x) < dLimit || d > dFar)
+    {
+      *st = i/150.0f;
+      break;
+    }
+    p += rd * dmat.x;
+  }
+  return to_float4_aw(p, dmat.y);
+}
+
+
+__DEVICE__ float3 fogged( float3 c, float f ) {
+  return _mix( c, to_float3(0.529f, 0.808f, 0.922f ), f );
+}
+__DEVICE__ float foggedR( float r, float f ) {
+  return _mix( r, 0.0f, f );
+}
+
+
+__DEVICE__ float shade( out float3 *c, float m, float3 o, float3 p, float st, float3 n, float3 rd ) {
+
+  float f = 1.0f - _expf( - 0.1f * distance_f3(o,p) );
+
+  if ( m < M_SKY + 0.5f) {
+    *c = fogged( to_float3( 0.529f, 0.808f, 0.922f ), f );
+    return foggedR( 0.0f, f);
+  } else if (  m < M_FLOOR + 0.5f) {
+    *c = fogged( to_float3( 0.5f, 0.5f, 0.5f ), f);
+    return foggedR( 0.5f, f);
+  } else if ( m < M_B +0.5f) {
+    *c = fogged( to_float3( 0.01f, 0.01f, 0.01f ), f );
+    *c *=st;
+    //if ( track_time < 69.05f ) {
+      return foggedR( 0.2f, f);
+    //} else {
+    //  *c = _mix( *c, n * 0.5f + 0.5f, 0.1f);
+    //  return foggedR( 0.05f, f);
+    //}
+  } else if ( m < M_BFOOT +0.5f) {
+    *c = 0.8f*(1.0f-st)*fogged( to_float3( 1.0f, 0.5f, 0.0f ), f );
+    return 0.0f;
+  }  else if ( m < M_BEYE +0.5f) {
+    *c = fogged( to_float3( 1.0f, 1.0f, 1.0f ), f );
+    return foggedR( 0.05f, f );
+  } else if ( m < M_BHAT +0.5f) {
+    *c = fogged( to_float3( 0.0f, 0.5f, 1.0f ), f );
+    return foggedR( 0.5f, f);
+  } else if ( m < M_BFIL +0.5f) {
+    *c = fogged( _sqrtf(st)*_mix(to_float3( 0.0f, 0.0f, 0.0f ), to_float3( 1.0f, 1.0f, 1.0f ), 11.0f-_powcf(p.y,2.0f) ), f );
+    return 0.0f;
+  } else if ( m < M_BKEY +0.5f) {
+    *c = fogged( to_float3( 1.0f, 0.5f, 0.0f ), f );
+    return foggedR( 0.22f, f);
+  } else if (  m < M_TER + 0.5f) {
+    *c = fogged( st*to_float3( 0.5f, 0.5f, 0.5f ), f);
+    return foggedR( 0.5f, f);
+  }
+  return 0.0f;
+}
+
+
+
+
+
+__KERNEL__ void BomlkaFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+
+  // --------
+
+
+
+  mat2 dummy;
+
+
+  float beat1 = 0.0f;
+  float beat2 = 0.0f;
+
+  float3 color = to_float3_s(1.0f);
+  float2 uv = fragCoord/iResolution;
+  uv.x *= (iResolution.x)/(iResolution.y);
+  uv = uv *0.5f-0.5f;
+  float camTime= iTime *0.3f;
+  float camAmpl = 12.0f+2.0f*_sinf(iTime);
+  float3 ro = to_float3(camAmpl*_cosf(-camTime),5.5f+2.0f*_sinf(iTime),camAmpl*_sinf(-camTime));
+  float3 rd = normalize(to_float3_aw(uv, 0.5f));//rotate_dir(cam_rotation, normalize(to_float3_aw(uv,2.0f * cam_fov)));
+  swi2S(rd,x,z, mul_f2_mat2(swi2(rd,x,z) , rot(-PI/2.0f+camTime)));
+  swi2S(rd,x,y, mul_f2_mat2(swi2(rd,x,y) , rot(0.3f*_sinf(iTime))));
+  float3 n;
+  float4 pmat;
+
+  float period = 0.5f;
+
+  //for ( float n = 40.0f; n < 45.0f; ++n ) {
+  //  beat1 = _fmaxf(beat1, getNoteVelocity(n,5.0f) );
+  //}
+
+    beat1 = _expf( - 3.0f * mod_f( iTime, period ) / period );
+  //beat1 = _powcf( beat1*2.0f, 2.0f);
+  //if ( track_time > 28.1f ) {
+  //  for ( float n = 35.0f; n < 40.0f; ++n ) {
+  //    beat2 = _fmaxf(beat2, getNoteVelocity(n,5.0f) );
+  //  }
+  //  beat2 = _powcf( beat2*1.5f, 2.0f);
+  //}
+
+
+//_expf( - 10.0f * mod_f( sequence_time, period ) / period );
+  beat2 = _expf( - 3.0f * mod_f( iTime + period*0.5f, period ) / period );
+  //beat2 = _powcf( beat2*1.5f, 2.0f);
+  //snare = _fmaxf(
+  //         _fmaxf(
+  //          _fmaxf(getNoteVelocity(81.0f,4.0f),getNoteVelocity(74.0f,4.0f)),
+  //         getNoteVelocity(62.0f,4.0f)),
+  //        getNoteVelocity(86.0f,4.0f));
+
+
+  float r = 1.0f;
+  for (int i = 0; i < 3; i++)
+  {
+    float st;
+    pmat = rm(ro,rd, &st, iTime, beat1, beat2);
+    n = grad(swi3(pmat,x,y,z), iTime, beat1, beat2);
+    float3 cr = n * 0.5f + 0.5f;
+    r *= shade(&cr, pmat.w, ro, swi3(pmat,x,y,z), st, n, rd);
+
+    color *= ( ( 1.0f-r) * swi3(cr,x,y,z) * (1.0f-st*(r)) );
+
+    if ( r > 0.01f ) {
+      ro = swi3(pmat,x,y,z) + n*4.0f*dLimit;
+      rd = reflect(rd, n);
+    } else {
+      break;
+    }
+  }
+
+  color = pow_f3(color, to_float3_s(1.0f/2.2f));
+  //color *= 1.0f - smoothstep(71.5f, 72.5f, track_time);
+  //color= to_float3_aw(uv,1.0f);
+  fragColor = to_float4_aw(color,1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+
+
+  Sep3 = self:AddInput(string.rep("_", 52), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    { CCS_AddString = "BufferC", },
+    { CCS_AddString = "BufferD", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+      { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+      { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+      CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	{ CCS_AddString  = "int8", },
+	{ CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = false
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+  Image_Buff_GlobalC = Image(ImgAttrs_Global)
+  Image_Buff_GlobalD = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstC = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstD = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstI = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "BomlkaFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "BomlkaFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+    
+    
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+        node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",Image_Buff_GlobalC)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",Image_Buff_GlobalD)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "BomlkaFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeB:AddInput("iChannel1", Image_Buff_GlobalD)  -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+    
+
+    -------------------------- BufferC-Kernel----------------------------------------
+    local nodeC = DVIPComputeNode(req,
+      "BomlkaFuse__Buffer_C", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeC:SetParamBlock(params)
+
+    --nodeC:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeC)
+
+    nodeC:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeC:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeC:AddOutput("dst", dstC)
+
+    local success = nodeC:RunSession(req)
+    if not success then
+      dstC = nil
+      dump(nodeC:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalC = dstC --Recursiv Image	
+
+
+    -------------------------- BufferD-Kernel----------------------------------------
+    local nodeD = DVIPComputeNode(req,
+      "BomlkaFuse__Buffer_D", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeD:SetParamBlock(params)
+
+    --nodeD:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeD)
+
+    nodeD:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    nodeD:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeD:AddOutput("dst", dstD)
+
+    local success = nodeD:RunSession(req)
+    if not success then
+      dstD = nil
+      dump(nodeD:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalD = dstD --Recursiv Image	
+
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "BomlkaFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    node:AddInput("iChannel1", iChannel0)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+    if (InDebugImage:GetValue(req).Value == 3) then OutImage:Set(req, Image_Buff_GlobalC) end
+    if (InDebugImage:GetValue(req).Value == 4) then OutImage:Set(req, Image_Buff_GlobalD) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+    
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

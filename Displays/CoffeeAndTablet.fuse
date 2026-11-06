@@ -1,0 +1,1535 @@
+--[[--/*
+
+  CoffeeAndTablet.fuse
+
+  Based on https://www.shadertoy.com/view/lssGzn a WebGL shader created by P_Malin.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  Modi;
+  float  TexXY[2];
+  float  TexScale;
+  float  TexCupXY[2];
+  float  TexCupScale;
+  float  TexCupRatio;
+  float  TexFloorXY[2];
+  float  TexFloorScale;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  Exposure;
+  float  LightPosXY[2];
+  float  LightPosZ;
+  float  kFogDensity;
+  float  LightCol[4];
+  float  CupXY[2];
+  float  CupZ;
+  float  CupRot;
+  float  TabletXY[2];
+  float  TabletZ;
+  float  TabletRotY;
+  float  TabletRotX;
+  float  TabletRotZ;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define sqrt_f3(a) _sqrtf(a)
+ #define exp2_f3(a) _exp2f((a))
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define sqrt_f3(a) _sqrtf(a)
+ #define exp2_f3(a) _exp2f((a))
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define exp2_f3(a) to_float3(_exp2f((a).x), _exp2f((a).y), _exp2f((a).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Wood' to iChannel0
+// Connect Image 'Texture: Video' to iChannel1
+// Connect Image 'Texture: Nyancat' to iChannel2
+// Connect Image 'Texture: RGBA Noise Small' to iChannel3
+
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+// Coffee & Tablet - @P_Malin
+
+#define PI 3.141592654f
+
+//#define LOW_QUALITY
+
+//#define ENABLE_MONTE_CARLO
+#define ENABLE_REFLECTIONS  1
+#define ENABLE_FOG          2
+#define ENABLE_SPECULAR     4
+#define ENABLE_POINT_LIGHT  8
+#define ENABLE_POINT_LIGHT_FLARE 16
+
+#ifdef LOW_QUALITY
+
+#define kRaymarchMatIter 32
+
+#else
+
+#define kRaymarchMatIter 128
+
+#endif
+
+#ifdef ENABLE_MONTE_CARLO
+uniform sampler2D backbuffer;
+
+float4 gPixelRandom;
+float3 gRandomNormal;
+
+__DEVICE__ void CalcPixelRandom( const in float2 fragCoord, float seed )
+{
+  float2 vOffset = fract(_sinf(seed * 123.3f + to_float2(0.2f, 0.43f)) * 30.0f);
+  gPixelRandom = texture(iChannel3, fragCoord / 64.0f + vOffset);
+  gRandomNormal = normalize( swi3(gPixelRandom,x,y,z) - 0.5f);
+}
+
+#endif
+
+
+struct C_Ray
+{
+  float3 vOrigin;
+  float3 vDir;
+};
+
+struct C_HitInfo
+{
+  float3 vPos;
+  float fDistance;
+  float3 vObjectId;
+};
+
+struct C_Material
+{
+  float3 cAlbedo;
+  float fR0;
+  float fSmoothness;
+  float2 vParam;
+};
+
+__DEVICE__ float2 SinCos( const in float x )
+{
+  return to_float2(_sinf(x), _cosf(x));
+}
+
+__DEVICE__ float3 _RotateX( const in float3 vPos, const in float2 vSinCos )
+{
+  return to_float3( vPos.x, vSinCos.y * vPos.y + vSinCos.x * vPos.z, -vSinCos.x * vPos.y + vSinCos.y * vPos.z);
+}
+
+__DEVICE__ float3 _RotateY( const in float3 vPos, const in float2 vSinCos )
+{
+  return to_float3( vSinCos.y * vPos.x + vSinCos.x * vPos.z, vPos.y, -vSinCos.x * vPos.x + vSinCos.y * vPos.z );
+}
+
+__DEVICE__ float3 _RotateZ( const in float3 vPos, const in float2 vSinCos )
+{
+  return to_float3( vSinCos.y * vPos.x + vSinCos.x * vPos.y, -vSinCos.x * vPos.x + vSinCos.y * vPos.y, vPos.z);
+}
+
+__DEVICE__ float3 RotateX( const in float3 vPos, const in float fAngle )
+{
+  return _RotateX( vPos, SinCos(fAngle) );
+}
+
+__DEVICE__ float3 RotateY( const in float3 vPos, const in float fAngle )
+{
+  return _RotateY( vPos, SinCos(fAngle) );
+}
+
+__DEVICE__ float3 RotateZ( const in float3 vPos, const in float fAngle )
+{
+  return _RotateZ( vPos, SinCos(fAngle) );
+}
+
+__DEVICE__ float4 DistCombineUnion( const in float4 v1, const in float4 v2 )
+{
+  //if(v1.x < v2.x) return v1; else return v2;
+  return _mix(v1, v2, step(v2.x, v1.x));
+}
+
+__DEVICE__ float4 DistCombineIntersect( const in float4 v1, const in float4 v2 )
+{
+  return _mix(v2, v1, step(v2.x,v1.x));
+}
+
+__DEVICE__ float4 DistCombineSubtract( const in float4 v1, const in float4 v2 )
+{
+  return DistCombineIntersect(v1, to_float4(-v2.x, v2.y, v2.z, v2.w));
+}
+
+__DEVICE__ float GetDistanceYZTorus( const in float3 p, const in float r1, const in float r2 )
+{
+  float2 q = to_float2(length(swi2(p,y,z))-r1,p.x);
+  return length(q)-r2;
+}
+
+__DEVICE__ float GetDistanceRoundedBox( const in float3 vPos, const in float3 vSize, float fRadius )
+{
+  float3 vClosest = _fmaxf(_fminf(vPos, vSize), -1.0f*vSize);
+  return length(vClosest - vPos) - fRadius;
+}
+
+
+__DEVICE__ float GetDistanceMug( const in float3 vPos )
+{
+  float fDistCylinderOutside = length(swi2(vPos,x,z)) - 1.0f;
+  float fDistCylinderInterior = length(swi2(vPos,x,z)) - 0.9f;
+  float fTop = vPos.y - 1.0f;
+
+  float r1 = 0.6f;
+  float r2 = 0.15f;
+  float2 q = to_float2(length(swi2(vPos,x,y) + to_float2(1.2f, -0.1f))-r1,vPos.z);
+  float fDistHandle = length(q)-r2;
+
+  float fDistMug = _fmaxf(max(_fminf(fDistCylinderOutside, fDistHandle), fTop), -fDistCylinderInterior);
+  return fDistMug;
+}
+
+__DEVICE__ float GetDistanceCoffee( const in float3 vPos )
+{
+  float fTopCoffee = vPos.y - 0.7f;
+  float fDistCylinderCoffee = length(swi2(vPos,x,z)) - 0.95f;
+
+  float fDistCoffee = _fmaxf(fTopCoffee, fDistCylinderCoffee);
+  return fDistCoffee;
+}
+
+__DEVICE__ float4 GetDistanceTablet( const in float3 vPos )
+{
+  float3 vBevelPos = vPos - to_float3(0.0f, 1.71f, 0.0f);
+  float r = 1.0f;
+  float fBevelDist = GetDistanceRoundedBox( vBevelPos, to_float3(1.5f, 1.0f, 2.0f), r );
+
+  float3 vCasePos = vPos - to_float3(0.0f, 0.0f, 0.0f);
+  float fCaseDist = GetDistanceRoundedBox( vCasePos, to_float3(1.5f, 1.0f, 2.0f), 0.5f );
+
+  float4 vResult = to_float4(_fmaxf(fBevelDist, fCaseDist), 4.0f, vPos.x, vPos.z);
+
+  float4 vScreenDist = to_float4(-vPos.y, 5.0f, vPos.x, vPos.z);
+  vResult = DistCombineSubtract(vResult, vScreenDist);
+
+  float4 vButtonDist = to_float4( length(vPos + to_float3(0.0f, -0.25f, 2.1f)) - 0.3f, 5.0f, vPos.x, vPos.z);
+  vResult = DistCombineSubtract(vResult, vButtonDist);
+
+  return vResult;
+}
+
+// result is x=scene distance y=material or object id; zw are material specific parameters (maybe uv co-ordinates)
+__DEVICE__ float4 GetDistanceScene( const in float3 vPos, float4 Domains[3] )
+{
+  float4 vResult = to_float4(10000.0f, -1.0f, 0.0f, 0.0f);
+
+  float3 vMugDomain = vPos + (to_float3(2.4f, 0.0f, -2.0f) + swi3(Domains[0],x,y,z));
+  vMugDomain = RotateY(vMugDomain, 1.0f + Domains[0].w);
+
+  float4 vDistMug = to_float4( GetDistanceMug(vMugDomain), 2.0f, _atan2f(vMugDomain.z,vMugDomain.x), vMugDomain.y);
+  vResult = DistCombineUnion(vResult, vDistMug);
+
+  float4 vDistCoffee = to_float4( GetDistanceCoffee(vMugDomain), 3.0f, vMugDomain.x, vMugDomain.z);
+  vResult = DistCombineUnion(vResult, vDistCoffee);
+
+  float4 vDistFloor = to_float4(vPos.y + 1.0f, 1.0f, vPos.x, vPos.z);
+  vResult = DistCombineUnion(vResult, vDistFloor);
+
+  float3 vTabletDomain = vPos;
+  vTabletDomain += (to_float3(-0.8f, 0.7f, 0.0f) + swi3(Domains[1],x,y,z));
+  vTabletDomain = RotateY(vTabletDomain, -1.0f + Domains[1].w);
+  vTabletDomain = RotateX(vTabletDomain, Domains[2].x );
+  vTabletDomain = RotateZ(vTabletDomain, Domains[2].y );
+
+  float4 vDistTablet = GetDistanceTablet(vTabletDomain);
+  vResult = DistCombineUnion(vResult, vDistTablet);
+
+  return vResult;
+}
+
+__DEVICE__ struct C_Material GetObjectMaterial( const in float3 vObjId, in float3 vPos, float4 TexPar[3], __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel2 )
+{
+  struct C_Material mat;
+
+  if(vObjId.x < 1.5f)
+  {
+    // floor
+    vPos.x *= TexPar[1].w;       //ratio
+    swi2S(vPos,x,z, swi2(vPos,x,z) + swi2(TexPar[1],x,y)); // Offset
+    vPos*= TexPar[1].z;          // Scale
+
+    float4 cTextureSample = texture(iChannel0, swi2(vPos,x,z) * 0.2f);
+    mat.fR0 = 0.02f;
+    mat.cAlbedo = swi3(cTextureSample,x,y,z) * swi3(cTextureSample,x,y,z); // cheap gamma
+    mat.fSmoothness = mat.cAlbedo.x;
+  }
+  else
+  if(vObjId.x < 2.5f)
+  {
+    // mug
+    mat.fR0 = 0.05f;
+    mat.fSmoothness = 0.9f;
+    float2 vUV = swi2(vObjId,y,z) / to_float2(PI+0.68f, -2.0f) + to_float2(1.0f, 0.5f);
+    //vUV = clamp( vUV, 0.0f, 1.0f);
+    vUV = (vUV / (to_float2(6.0f,1.0f)) - to_float2(0.0f,0.0f));
+
+    vUV.x *= TexPar[2].w; //ratio
+    vUV += swi2((TexPar[2]),x,y); // Offset
+    vUV *= TexPar[2].z; // Scale
+
+    float4 cTextureSample = _tex2DVecN(iChannel2,vUV.x,1.0f-vUV.y,15);
+    
+    //cTextureSample = _tex2DVecN(iChannel2,vObjId.y,vObjId.z,15);
+    
+    float3 vColour = swi3(cTextureSample,x,y,z) * swi3(cTextureSample,x,y,z);
+    mat.cAlbedo = _mix(to_float3(0.05f, 0.35f, 0.75f), vColour, cTextureSample.w);
+  }
+  else
+  if(vObjId.x < 3.5f)
+  {
+    // coffee
+    mat.fR0 = 0.01f;
+    mat.fSmoothness = 1.0f;
+    mat.cAlbedo = to_float3(0.5f, 0.3f, 0.2f);
+  }
+  else
+  if(vObjId.x < 4.5f)
+  {
+    // tablet back
+    mat.fR0 = 0.25f;
+    mat.fSmoothness = 0.0f;
+    mat.cAlbedo = to_float3(0.8f, 0.8f, 0.8f);
+  }
+  else
+  {
+    // tablet screen
+    mat.fR0 = 0.01f;
+    mat.fSmoothness = 1.0f;
+    mat.cAlbedo = to_float3_s(0.025f);
+  }
+
+  return mat;
+}
+
+__DEVICE__ float3 GetSkyGradient( const in float3 vDir )
+{
+  float fBlend = vDir.y * 0.5f + 0.5f;
+  return _mix(to_float3(0.0f, 0.0f, 0.0f), to_float3(0.4f, 0.9f, 1.0f), fBlend);
+}
+
+__DEVICE__ float3 GetLightPos()
+{
+  float3 vLightPos = to_float3(0.0f, 1.0f, 3.0f);
+  #ifdef ENABLE_MONTE_CARLO
+  vLightPos += gRandomNormal * 0.2f;
+  #endif
+  return vLightPos;
+}
+
+__DEVICE__ float3 GetLightCol()
+{
+  return to_float3(32.0f, 6.0f, 1.0f);
+}
+
+__DEVICE__ float3 GetAmbientLight(const in float3 vNormal)
+{
+  return GetSkyGradient(vNormal);
+}
+
+//#define kFogDensity 0.025f
+__DEVICE__ void ApplyAtmosphere(inout float3 *col, const in struct C_Ray ray, const in struct C_HitInfo intersection, int Modi, float kFogDensity, float3 LightPos, float3 LightCol)
+{
+  if(Modi&ENABLE_FOG)
+  {
+    // fog
+    float fFogAmount = _expf(intersection.fDistance * -kFogDensity);
+    float3 cFog = GetSkyGradient(ray.vDir);
+    *col = _mix(cFog, *col, fFogAmount);
+  }
+
+  // glare from light (a bit hacky - use length of closest approach from ray to light)
+  if(Modi&ENABLE_POINT_LIGHT_FLARE)
+  {
+    float3 vToLight = (GetLightPos() + LightPos) - ray.vOrigin;
+    float fDot = dot(vToLight, ray.vDir);
+//    fDot = clamp(fDot, 0.0f, intersection.fDistance);
+
+    float3 vClosestPoint = ray.vOrigin + ray.vDir * fDot;
+    float fDist = length(vClosestPoint - (GetLightPos() + LightPos) );
+    //*col += GetLightCol() * 0.01f/ (fDist * fDist);
+    *col += LightCol * 0.01f/ (fDist * fDist);
+  }
+}
+
+__DEVICE__ float3 GetSceneNormal( const in float3 vPos, float4 Domains[3] )
+{
+  // tetrahedron normal
+  float fDelta = 0.025f;
+
+  float3 vOffset1 = to_float3( fDelta, -fDelta, -fDelta);
+  float3 vOffset2 = to_float3(-fDelta, -fDelta,  fDelta);
+  float3 vOffset3 = to_float3(-fDelta,  fDelta, -fDelta);
+  float3 vOffset4 = to_float3( fDelta,  fDelta,  fDelta);
+
+  float f1 = GetDistanceScene( vPos + vOffset1, Domains).x;
+  float f2 = GetDistanceScene( vPos + vOffset2, Domains).x;
+  float f3 = GetDistanceScene( vPos + vOffset3, Domains).x;
+  float f4 = GetDistanceScene( vPos + vOffset4, Domains).x;
+
+  float3 vNormal = vOffset1 * f1 + vOffset2 * f2 + vOffset3 * f3 + vOffset4 * f4;
+
+  return normalize( vNormal );
+}
+
+#define kRaymarchEpsilon 0.01f
+#define kRaymarchStartDistance 0.1f
+
+// This is an excellent resource on ray marching -> https://iquilezles.org/articles/distfunctions
+__DEVICE__ struct C_HitInfo Raymarch( const in struct C_Ray ray, struct C_HitInfo result, const float fMaxDist, const int maxIter, float4 Domains[3] )
+{
+  result.fDistance = kRaymarchStartDistance;
+  result.vObjectId.x = 0.0f;
+
+  for(int i=0;i<=kRaymarchMatIter;i++)
+  {
+    result.vPos = ray.vOrigin + ray.vDir * result.fDistance;
+    float4 vSceneDist = GetDistanceScene( result.vPos, Domains );
+    result.vObjectId = swi3(vSceneDist,y,z,w);
+
+    // abs allows backward stepping - should only be necessary for non uniform distance functions
+    if((_fabs(vSceneDist.x) <= kRaymarchEpsilon) || (result.fDistance >= fMaxDist) || (i > maxIter))
+    {
+      break;
+    }
+
+    result.fDistance = result.fDistance + vSceneDist.x;
+  }
+
+  if(result.fDistance >= fMaxDist)
+  {
+    result.vPos = ray.vOrigin + ray.vDir * result.fDistance;
+    result.vObjectId.x = 0.0f;
+    result.fDistance = 1000.0f;
+  }
+
+  return result;
+}
+
+__DEVICE__ float GetShadow( const in float3 vPos, const in float3 vLightDir, const in float fLightDistance, float4 Domains[3] )
+{
+  struct C_Ray shadowRay;
+  shadowRay.vDir = vLightDir;
+  shadowRay.vOrigin = vPos;
+
+  struct C_HitInfo shadowIntersect;
+  shadowIntersect = Raymarch(shadowRay, shadowIntersect, fLightDistance, 32, Domains);
+
+  return step(0.0f, shadowIntersect.fDistance) * step(fLightDistance, shadowIntersect.fDistance );
+}
+
+// http://en.wikipedia.org/wiki/Schlick's_approximation
+__DEVICE__ float Schlick( const in float3 vNormal, const in float3 vView, const in float fR0, const in float fSmoothFactor)
+{
+  float fDot = dot(vNormal, -1.0f*vView);
+  fDot = _fminf(_fmaxf((1.0f - fDot), 0.0f), 1.0f);
+  float fDot2 = fDot * fDot;
+  float fDot5 = fDot2 * fDot2 * fDot;
+  return fR0 + (1.0f - fR0) * fDot5 * fSmoothFactor;
+}
+
+__DEVICE__ float GetDiffuseIntensity(const in float3 vLightDir, const in float3 vNormal)
+{
+  return _fmaxf(0.0f, dot(vLightDir, vNormal));
+}
+
+__DEVICE__ float GetBlinnPhongIntensity(const in struct C_Ray ray, const in struct C_Material mat, const in float3 vLightDir, const in float3 vNormal)
+{
+  float3 vHalf = normalize(vLightDir - ray.vDir);
+  float fNdotH = _fmaxf(0.0f, dot(vHalf, vNormal));
+
+  float fSpecPower = _exp2f(4.0f + 6.0f * mat.fSmoothness);
+  float fSpecIntensity = (fSpecPower + 2.0f) * 0.125f;
+
+  return _powf(fNdotH, fSpecPower) * fSpecIntensity;
+}
+
+// use distance field to evaluate ambient occlusion
+__DEVICE__ float GetAmbientOcclusion(const in struct C_Ray ray, const in struct C_HitInfo intersection, const in float3 vNormal, float4 Domains[3])
+{
+  float3 vPos = intersection.vPos;
+
+  float fAmbientOcclusion = 1.0f;
+
+  float fDist = 0.0f;
+  for(int i=0; i<=5; i++)
+  {
+    fDist += 0.1f;
+
+    float4 vSceneDist = GetDistanceScene(vPos + vNormal * fDist, Domains);
+
+    fAmbientOcclusion *= 1.0f - _fmaxf(0.0f, (fDist - vSceneDist.x) * 0.2f / fDist );
+  }
+
+  return fAmbientOcclusion;
+}
+
+__DEVICE__ float3 GetObjectLighting(const in struct C_Ray ray, const in struct C_HitInfo intersection, const in struct C_Material material, const in float3 vNormal, const in float3 cReflection, float4 TexPar, int Modi, float3 LightPos, float3 LightCol, float4 Domains[3], __TEXTURE2D__ iChannel1)
+{
+  float3 cScene ;
+
+  float3 vSpecularReflection = to_float3_s(0.0f);
+  float3 vDiffuseReflection = to_float3_s(0.0f);
+
+  float fAmbientOcclusion = GetAmbientOcclusion(ray, intersection, vNormal, Domains);
+  float3 vAmbientLight = GetAmbientLight(vNormal) * fAmbientOcclusion;
+
+  vDiffuseReflection += vAmbientLight;
+
+  vSpecularReflection += cReflection * fAmbientOcclusion;
+
+  if(Modi&ENABLE_POINT_LIGHT)
+  {
+    float3 vLightPos = (GetLightPos() + LightPos);
+    float3 vToLight = vLightPos - intersection.vPos;
+    float3 vLightDir = normalize(vToLight);
+    float fLightDistance = length(vToLight);
+
+    float fAttenuation = 1.0f / (fLightDistance * fLightDistance);
+
+    float fShadowBias = 0.1f;
+    float fShadowFactor = GetShadow( intersection.vPos + vLightDir * fShadowBias, vLightDir, fLightDistance - fShadowBias, Domains );
+    float3 vIncidentLight = LightCol * fShadowFactor * fAttenuation;
+
+    vDiffuseReflection += GetDiffuseIntensity( vLightDir, vNormal ) * vIncidentLight;
+    vSpecularReflection += GetBlinnPhongIntensity( ray, material, vLightDir, vNormal ) * vIncidentLight;
+  } // ENABLE_POINT_LIGHT
+
+  vDiffuseReflection *= material.cAlbedo;
+
+  // emmissive glow from screen
+  if(intersection.vObjectId.x > 4.5f)
+  {
+    //float2 vScreenPos = intersection.swi2(vObjectId,z,y) * to_float2(-0.25f, -0.3f) + to_float2(0.54f, 0.5f);
+    float2 vScreenPos = swi2(intersection.vObjectId,z,y) * to_float2(-0.25f, -0.3f) + to_float2(0.54f, 0.5f);
+
+    // emissive brightness is 0 unless screen
+    float2 vMul = step(vScreenPos, to_float2_s(1.0f)) * step(to_float2_s(0.0f), vScreenPos);
+    float kScreenBrightness = 0.8f;
+    float fMul = vMul.x * vMul.y * kScreenBrightness;
+
+    vScreenPos.x *= TexPar.w; //ratio
+    vScreenPos += swi2(TexPar,x,y); // Offset
+    vScreenPos*= TexPar.z; // Scale
+
+    float3 cVideoColour = swi3(_tex2DVecN(iChannel1,vScreenPos.x,vScreenPos.y,15),x,y,z);
+    vDiffuseReflection += cVideoColour * cVideoColour * fMul; // cheap gamma correction
+  }
+
+
+  if(Modi&ENABLE_SPECULAR)
+  {
+    float fFresnel = Schlick(vNormal, ray.vDir, material.fR0, material.fSmoothness * 0.9f + 0.1f);
+    cScene = _mix(vDiffuseReflection , vSpecularReflection, fFresnel);
+  }
+  else
+    cScene = vDiffuseReflection;
+
+  return cScene;
+}
+
+__DEVICE__ float3 GetSceneColourSimple( const in struct C_Ray ray, float4 TexPar[3], int Modi, float kFogDensity, float3 LightPos, float3 LightCol, float4 Domains[3], __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2)
+{
+  struct C_HitInfo intersection;
+  intersection = Raymarch(ray, intersection, 16.0f, 32, Domains);
+
+  float3 cScene;
+
+  if(intersection.vObjectId.x < 0.5f)
+  {
+    cScene = GetSkyGradient(ray.vDir);
+  }
+  else
+  {
+    struct C_Material material = GetObjectMaterial(intersection.vObjectId, intersection.vPos, TexPar, iChannel0, iChannel2);
+    float3 vNormal = GetSceneNormal(intersection.vPos, Domains);
+
+    // use sky gradient instead of reflection
+    float3 cReflection = GetSkyGradient(reflect(ray.vDir, vNormal));
+
+    // apply lighting
+    cScene = GetObjectLighting(ray, intersection, material, vNormal, cReflection, TexPar[0], Modi, LightPos, LightCol, Domains, iChannel1 );
+  }
+
+  ApplyAtmosphere(&cScene, ray, intersection, Modi, kFogDensity, LightPos, LightCol);
+
+  return cScene;
+}
+
+__DEVICE__ float3 GetSceneColour( const in struct C_Ray ray, float4 TexPar[3], int Modi, float kFogDensity, float3 LightPos, float3 LightCol, float4 Domains[3], __TEXTURE2D__ iChannel0, __TEXTURE2D__ iChannel1, __TEXTURE2D__ iChannel2 )
+{
+  struct C_HitInfo intersection;
+  intersection = Raymarch(ray, intersection, 30.0f, 256, Domains);
+
+  float3 cScene;
+
+  if(intersection.vObjectId.x < 0.5f)
+  {
+    cScene = GetSkyGradient(ray.vDir);
+  }
+  else
+  {
+    struct C_Material material = GetObjectMaterial(intersection.vObjectId, intersection.vPos, TexPar, iChannel0, iChannel2);
+    float3 vNormal = GetSceneNormal(intersection.vPos, Domains);
+
+    #ifdef ENABLE_MONTE_CARLO
+    vNormal = normalize(vNormal + gRandomNormal / (5.0f + material.fSmoothness * 200.0f));
+    #endif
+
+    float3 cReflection;
+    if(Modi&ENABLE_REFLECTIONS)
+    {
+      // get colour from reflected ray
+      float fSepration = 0.05f;
+      struct C_Ray reflectRay;
+      reflectRay.vDir = reflect(ray.vDir, vNormal);
+      reflectRay.vOrigin = intersection.vPos + reflectRay.vDir * fSepration;
+
+      cReflection = GetSceneColourSimple(reflectRay, TexPar, Modi, kFogDensity, LightPos, LightCol, Domains, iChannel0, iChannel1, iChannel2);
+    }
+    else
+      cReflection = GetSkyGradient(reflect(ray.vDir, vNormal));
+
+    // apply lighting
+    cScene = GetObjectLighting(ray, intersection, material, vNormal, cReflection, TexPar[0], Modi, LightPos, LightCol, Domains, iChannel1 );
+  }
+
+  ApplyAtmosphere(&cScene, ray, intersection, Modi, kFogDensity, LightPos, LightCol);
+
+  return cScene;
+}
+
+__DEVICE__ void GetCameraRay( const in float3 vPos, const in float3 vForwards, const in float3 vWorldUp, const in float2 fragCoord, out struct C_Ray *ray, float2 iResolution)
+{
+  float2 vPixelCoord = fragCoord;
+  #ifdef ENABLE_MONTE_CARLO
+  vPixelCoord += swi2(gPixelRandom,z,w);
+  #endif
+  float2 vUV = ( vPixelCoord / iResolution );
+  float2 vViewCoord = vUV * 2.0f - 1.0f;
+
+  vViewCoord *= 0.75f;
+
+  float fRatio = iResolution.x / iResolution.y;
+
+  vViewCoord.y /= fRatio;
+
+  (*ray).vOrigin = vPos;
+
+  float3 vRight = normalize(cross(vForwards, vWorldUp));
+  float3 vUp = cross(vRight, vForwards);
+
+  (*ray).vDir = normalize( vRight * vViewCoord.x + vUp * vViewCoord.y + vForwards);
+}
+
+__DEVICE__ void GetCameraRayLookat( const in float3 vPos, const in float3 vInterest, const in float2 fragCoord, out struct C_Ray *ray, float2 iResolution)
+{
+  float3 vForwards = normalize(vInterest - vPos);
+  float3 vUp = to_float3(0.0f, 1.0f, 0.0f);
+
+  GetCameraRay(vPos, vForwards, vUp, fragCoord, ray, iResolution);
+}
+
+__DEVICE__ float3 OrbitPoint( const in float fHeading, const in float fElevation )
+{
+  return to_float3(_sinf(fHeading) * _cosf(fElevation), _sinf(fElevation), _cosf(fHeading) * _cosf(fElevation));
+}
+
+__DEVICE__ float3 Tonemap( const in float3 cCol )
+{
+  return to_float3_s(1.0f) - exp2_f3(-1.0f*cCol);
+}
+
+__KERNEL__ void CoffeeAndTabletFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2,  __TEXTURE2D__ iChannel3, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float  Modi = params->Modi;
+  float2 TexXY = to_float2(params->TexXY[0], params->TexXY[1]);
+  float  TexScale = params->TexScale;
+  float2 TexCupXY = to_float2(params->TexCupXY[0], params->TexCupXY[1]);
+  float  TexCupScale = params->TexCupScale;
+  float  TexCupRatio = params->TexCupRatio;
+  float2 TexFloorXY = to_float2(params->TexFloorXY[0], params->TexFloorXY[1]);
+  float  TexFloorScale = params->TexFloorScale;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float  Exposure = params->Exposure;
+  float2 LightPosXY = to_float2(params->LightPosXY[0], params->LightPosXY[1]);
+  float  LightPosZ = params->LightPosZ;
+  float  kFogDensity = params->kFogDensity;
+  float4 LightCol = to_float4(params->LightCol[0], params->LightCol[1], params->LightCol[2], params->LightCol[3]);
+  float2 CupXY = to_float2(params->CupXY[0], params->CupXY[1]);
+  float  CupZ = params->CupZ;
+  float  CupRot = params->CupRot;
+  float2 TabletXY = to_float2(params->TabletXY[0], params->TabletXY[1]);
+  float  TabletZ = params->TabletZ;
+  float  TabletRotY = params->TabletRotY;
+  float  TabletRotX = params->TabletRotX;
+  float  TabletRotZ = params->TabletRotZ;
+
+  // --------
+
+  LightCol *= 32.0f;
+
+  float4 Domains[3] = { to_float4(CupXY.x, CupXY.y, CupZ, CupRot),
+                        to_float4(TabletXY.x, TabletXY.y, TabletZ, TabletRotY),
+                        to_float4(TabletRotX, TabletRotZ, 0.0f, 0.0f)};
+
+
+  float ratio = iResolution.y/iResolution.x;
+  float4 TexPar[3] = {to_float4(TexXY.x, TexXY.y, TexScale, ratio),
+                      to_float4(TexFloorXY.x, TexFloorXY.y, TexFloorScale, ratio),
+                      to_float4(TexCupXY.x, TexCupXY.y, TexCupScale, TexCupRatio)};
+
+  #ifdef ENABLE_MONTE_CARLO
+  CalcPixelRandom( fragCoord, iTime );
+  #endif
+
+  struct C_Ray ray;
+
+  float2 mouse = swi2(iMouse,x,y) / iResolution;
+
+  // If we have never moved the mouse
+  if(iMouse.x <= 0.0f)
+  {
+    //swi2S(mouse,x,y, to_float2_s(0.5f));
+  }
+
+  float3 vCameraPos = OrbitPoint(-mouse.x * 14.0f + PI, (mouse.y) * PI * 0.2f + PI * 0.025f) * 7.0f - to_float3(0.0f, 0.9f, 0.0f);
+  #ifdef ENABLE_MONTE_CARLO
+  float fDepthOfField = 0.1f;
+  vCameraPos += gRandomNormal * 0.05f;
+  #endif
+
+  GetCameraRayLookat( vCameraPos, to_float3(0.0f, 0.0f, 0.0f)+to_float3_aw(ViewXY, ViewZ), fragCoord, &ray, iResolution);
+  //GetCameraRayLookat(to_float3(0.0f, 0.0f, -5.0f), to_float3(0.0f, 0.0f, 0.0f), ray);
+
+  float3 cScene = GetSceneColour( ray, TexPar, Modi, kFogDensity, to_float3_aw(LightPosXY, LightPosZ), swi3(LightCol,x,y,z), Domains, iChannel0, iChannel1, iChannel2);
+
+  float fExposure = 2.5f + Exposure;
+  cScene = cScene * fExposure;
+  float3 cCurr = Tonemap(cScene );
+
+  #ifdef ENABLE_MONTE_CARLO
+  float3 cPrev = swi3(texture(backbuffer, fragCoord / iResolution),x,y,z);
+  // would be nice to combine before tonemap but undoing a gamma=2.0f will do instead
+  cPrev = cPrev * cPrev;
+  // add noise to pixel value (helps values converge)
+  cPrev += (swi3(gPixelRandom,x,y,z) - 0.5f) * (1.0f / 255.0f);
+  cCurr = cCurr * cCurr;
+  // converge speed
+  //float fBlend = 8.0f/255.0f;
+  float fBlend = 1.0f;
+  float3 cFinal = _mix(cPrev, cCurr, fBlend);
+  // re-apply gamma 2.0
+  cFinal = sqrt_f3(cFinal);
+  #else
+  float3 cFinal = cCurr;
+  #endif
+
+  float fAlpha = 1.0f;
+
+  fragColor = to_float4_aw( cFinal, fAlpha );
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default  = 0,
+  })
+  InModiButton = self:AddInput("Modi", "Modi", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "MultiButtonControl",
+      MBTNC_ForceButtons = true,
+      MBTNC_Type         = "Toggle", 
+      MBTNC_ShowName     = false,
+      { MBTNC_AddButton  = " Reflect", },  { MBTNC_AddButton  = " Fog", },  { MBTNC_AddButton  = " Spec", },  { MBTNC_AddButton  = " Light", },  { MBTNC_AddButton  = " Flare", }, 
+		  MBTNC_StretchToFit = true,
+      IC_NoLabel         = true,
+		  INP_Default        = 0,
+      IC_Visible         = true,
+  })
+
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  InExposureSlider = self:AddInput("Exposure", "Exposure", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -2.0,
+      INP_MaxScale       = 5.0,
+      INP_Default        = 0.0,
+  })
+
+  InLightPosXYPoint = self:AddInput("LightPosXY", "LightPosXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InLightPosZSlider = self:AddInput("LightPosZ", "LightPosZ", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 0.0,
+  })
+
+  InkFogDensitySlider = self:AddInput("kFogDensity", "kFogDensity", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 0.35,
+      INP_Default        = 0.025,
+  })
+
+
+self:BeginControlNest("Textures", "Textures", false, {})
+
+  InTexXYPoint = self:AddInput("TexXY", "TexXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTexScaleSlider = self:AddInput("TexScale", "TexScale", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  InTexCupXYPoint = self:AddInput("TexCupXY", "TexCupXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTexCupScaleSlider = self:AddInput("TexCupScale", "TexCupScale", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  InTexCupRatioSlider = self:AddInput("TexCupRatio", "TexCupRatio", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 4.0,
+  })
+
+  InTexFloorXYPoint = self:AddInput("TexFloorXY", "TexFloorXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTexFloorScaleSlider = self:AddInput("TexFloorScale", "TexFloorScale", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = -10.0,
+      INP_MaxScale       = 10.0,
+      INP_Default        = 1.0,
+  })
+
+  self:EndControlNest()
+
+
+  self:BeginControlNest("LightCol", "LightCol", false, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "LightCol",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InLightColColorR = self:AddInput("Red",   "LightColRed",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InLightColColorG = self:AddInput("Green", "LightColGreen", { INP_Default  = 0.1875, IC_ControlID = 1, attrs})
+    InLightColColorB = self:AddInput("Blue",  "LightColBlue",  { INP_Default  = 0.03125, IC_ControlID = 2, attrs})
+    
+  self:EndControlNest()
+
+
+self:BeginControlNest("Domains", "Domains", false, {})
+
+  InCupXYPoint = self:AddInput("CupXY", "CupXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InCupZSlider = self:AddInput("CupZ", "CupZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InCupRotSlider = self:AddInput("CupRot", "CupRot", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0,
+      })
+
+  InTabletXYPoint = self:AddInput("TabletXY", "TabletXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTabletZSlider = self:AddInput("TabletZ", "TabletZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InTabletRotYSlider = self:AddInput("TabletRotY", "TabletRotY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -5.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 0.0,
+      })
+
+  InTabletRotXSlider = self:AddInput("TabletRotX", "TabletRotX", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -5.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 0.0,
+      })
+
+  InTabletRotZSlider = self:AddInput("TabletRotZ", "TabletRotZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -5.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 0.0,
+      })
+  
+  self:EndControlNest()
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+	  IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+  InChannel2 = self:AddInput( "iChannel2",  "iChannel2",  { LINKID_DataType = "Image", LINK_Main = 3, INP_Required = false  })
+  InChannel3 = self:AddInput( "iChannel3",  "iChannel3",  { LINKID_DataType = "Image", LINK_Visible = false, LINK_Main = 4, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ShaderFuse.end_create()
+
+end
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+
+  node = DVIPComputeNode(req,
+    "CoffeeAndTabletFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  iChannel2 = InChannel2:GetValue(req)
+
+  if iChannel2==nil then
+    iChannel2 = Image(imgattrs)
+    iChannel2:Fill(black)
+  end
+
+  iChannel3 = InChannel3:GetValue(req)
+
+  if iChannel3==nil then
+    iChannel3 = Image(imgattrs)
+    iChannel3:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+
+  params.Modi = InModiButton:GetValue(req).Value
+  params.TexXY = {InTexXYPoint:GetValue(req).X,InTexXYPoint:GetValue(req).Y}
+  params.TexScale = InTexScaleSlider:GetValue(req).Value
+  params.TexCupXY = {InTexCupXYPoint:GetValue(req).X,InTexCupXYPoint:GetValue(req).Y}
+  params.TexCupScale = InTexCupScaleSlider:GetValue(req).Value
+  params.TexCupRatio = InTexCupRatioSlider:GetValue(req).Value
+  params.TexFloorXY = {InTexFloorXYPoint:GetValue(req).X,InTexFloorXYPoint:GetValue(req).Y}
+  params.TexFloorScale = InTexFloorScaleSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.Exposure = InExposureSlider:GetValue(req).Value
+  params.LightPosXY = {InLightPosXYPoint:GetValue(req).X,InLightPosXYPoint:GetValue(req).Y}
+  params.LightPosZ = InLightPosZSlider:GetValue(req).Value
+  params.kFogDensity = InkFogDensitySlider:GetValue(req).Value
+  params.LightCol = {
+    InLightColColorR:GetValue(req).Value,
+    InLightColColorG:GetValue(req).Value,
+    InLightColColorB:GetValue(req).Value
+  }
+  params.CupXY = {InCupXYPoint:GetValue(req).X,InCupXYPoint:GetValue(req).Y}
+  params.CupZ = InCupZSlider:GetValue(req).Value
+  params.CupRot = InCupRotSlider:GetValue(req).Value
+  params.TabletXY = {InTabletXYPoint:GetValue(req).X,InTabletXYPoint:GetValue(req).Y}
+  params.TabletZ = InTabletZSlider:GetValue(req).Value
+  params.TabletRotY = InTabletRotYSlider:GetValue(req).Value
+  params.TabletRotX = InTabletRotXSlider:GetValue(req).Value
+  params.TabletRotZ = InTabletRotZSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+    local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+  node:AddInput("iChannel2",iChannel2) -- TODO: add a better channel name
+  node:AddInput("iChannel3",iChannel3) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+ 
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

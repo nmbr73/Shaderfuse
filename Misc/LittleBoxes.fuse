@@ -1,0 +1,2106 @@
+--[[--/*
+
+  LittleBoxes.fuse
+
+  Based on https://www.shadertoy.com/view/l3B3WD a WebGL shader created by wyatt.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iChannelResolution[4][2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   Reset;
+  bool   Option;
+  float  N;
+  float  dim;
+  float  F1;
+  float  F2;
+  float  F3;
+  float  F4;
+
+  float  Color1[4];
+  float  Color2[4];
+  bool   Tex1;
+  bool   AddTex1;
+  bool   Tex2;
+  bool   AddTex2;
+  bool   Tex3;
+  bool   AddTex3;
+  bool   Tex4;
+  bool   AddTex4;
+  bool   OptionI;
+  bool   Alpha;
+
+  float  Tex1XY[2];
+  float  Tex1Scale;
+  float  Tex2XY[2];
+  float  Tex2Scale;
+  float  Tex3XY[2];
+  float  Tex3Scale;
+  float  Tex4XY[2];
+  float  Tex4Scale;
+  float  RB;
+  float  H;
+  float  Smooth1;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+    #define swi3S(a,b,c,d,e) a.b##c##d = e
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+    #define swi3S(a,b,c,d,e) {float3 tmp = e; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z;}
+    #define swi4S(a,b,c,d,e,f) {float4 tmp = f; (a).b = tmp.x; (a).c = tmp.y; (a).d = tmp.z; (a).e = tmp.w;}
+
+  #endif
+
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+  #define mul_mat2_f2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+  __DEVICE__ inline float2 mul_mat2_f2( mat2 m, float2 v )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r1.x; t.y = v.x*m.r0.y + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+
+
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define sin_f4(i) sin(i)
+ #define abs_f2(a) _fabs(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define sin_f4(i) sin(i)
+ #define abs_f2(a) fabs(a)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define sin_f4(i) to_float4( _sinf((i).x), _sinf((i).y), _sinf((i).z), _sinf((i).w))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+
+//#define N 5.0f
+//#define dim 0.25f
+#ifdef ORG
+const float3 circles[41] = {
+                         to_float3(0,0,1),
+                         to_float3(0.828449f, 0.828449f,  0.1716f),
+                         to_float3(0.97042f,  0.97042f,    0.02995f),
+                         to_float3(0.58612986f,0.914268197f,0.08573f),
+                         to_float3(0.45330248f,0.948901589f,0.0511028358f),
+                         to_float3(0.37024959f,0.966959162f,0.03399144f),
+                         to_float3(0.31273385f,0.975663696f,0.0243671298f),
+                         to_float3(0.914268197f,0.58612986f,0.08573f),
+                         to_float3(0.948901589f,0.45330248f,0.0511028358f),
+                         to_float3(0.966959162f,0.37024959f,0.03399144f),
+                         to_float3(0.975663696f,0.31273385f,0.0243671298f),
+                         to_float3(-0.828449f, 0.828449f,  0.1716f),
+                         to_float3(-0.97042f,  0.97042f,    0.02995f),
+                         to_float3(-0.58612986f,0.914268197f,0.08573f),
+                         to_float3(-0.45330248f,0.948901589f,0.0511028358f),
+                         to_float3(-0.37024959f,0.966959162f,0.03399144f),
+                         to_float3(-0.31273385f,0.975663696f,0.0243671298f),
+                         to_float3(-0.914268197f,0.58612986f,0.08573f),
+                         to_float3(-0.948901589f,0.45330248f,0.0511028358f),
+                         to_float3(-0.966959162f,0.37024959f,0.03399144f),
+                         to_float3(-0.975663696f,0.31273385f,0.0243671298f),
+                         to_float3(-0.828449f, -0.828449f,  0.1716f),
+                         to_float3(-0.97042f,  -0.97042f,    0.02995f),
+                         to_float3(-0.58612986f,-0.914268197f,0.08573f),
+                         to_float3(-0.45330248f,-0.948901589f,0.0511028358f),
+                         to_float3(-0.37024959f,-0.966959162f,0.03399144f),
+                         to_float3(-0.31273385f,-0.975663696f,0.0243671298f),
+                         to_float3(-0.914268197f,-0.58612986f,0.08573f),
+                         to_float3(-0.948901589f,-0.45330248f,0.0511028358f),
+                         to_float3(-0.966959162f,-0.37024959f,0.03399144f),
+                         to_float3(-0.975663696f,-0.31273385f,0.0243671298f),
+                         to_float3(0.828449f, -0.828449f,  0.1716f),
+                         to_float3(0.97042f,  -0.97042f,    0.02995f),
+                         to_float3(0.58612986f,-0.914268197f,0.08573f),
+                         to_float3(0.45330248f,-0.948901589f,0.0511028358f),
+                         to_float3(0.37024959f,-0.966959162f,0.03399144f),
+                         to_float3(0.31273385f,-0.975663696f,0.0243671298f),
+                         to_float3(0.914268197f,-0.58612986f,0.08573f),
+                         to_float3(0.948901589f,-0.45330248f,0.0511028358f),
+                         to_float3(0.966959162f,-0.37024959f,0.03399144f),
+                         to_float3(0.975663696f,-0.31273385f,0.0243671298f)};
+#else
+  const float3 circles[41] = {
+                           {0,0,1},
+                           {0.828449f, 0.828449f,  0.1716f},
+                           {0.97042f,  0.97042f,    0.02995f},
+                           {0.58612986f,0.914268197f,0.08573f},
+                           {0.45330248f,0.948901589f,0.0511028358f},
+                           {0.37024959f,0.966959162f,0.03399144f},
+                           {0.31273385f,0.975663696f,0.0243671298f},
+                           {0.914268197f,0.58612986f,0.08573f},
+                           {0.948901589f,0.45330248f,0.0511028358f},
+                           {0.966959162f,0.37024959f,0.03399144f},
+                           {0.975663696f,0.31273385f,0.0243671298f},
+                           {-0.828449f, 0.828449f,  0.1716f},
+                           {-0.97042f,  0.97042f,    0.02995f},
+                           {-0.58612986f,0.914268197f,0.08573f},
+                           {-0.45330248f,0.948901589f,0.0511028358f},
+                           {-0.37024959f,0.966959162f,0.03399144f},
+                           {-0.31273385f,0.975663696f,0.0243671298f},
+                           {-0.914268197f,0.58612986f,0.08573f},
+                           {-0.948901589f,0.45330248f,0.0511028358f},
+                           {-0.966959162f,0.37024959f,0.03399144f},
+                           {-0.975663696f,0.31273385f,0.0243671298f},
+                           {-0.828449f, -0.828449f,  0.1716f},
+                           {-0.97042f,  -0.97042f,    0.02995f},
+                           {-0.58612986f,-0.914268197f,0.08573f},
+                           {-0.45330248f,-0.948901589f,0.0511028358f},
+                           {-0.37024959f,-0.966959162f,0.03399144f},
+                           {-0.31273385f,-0.975663696f,0.0243671298f},
+                           {-0.914268197f,-0.58612986f,0.08573f},
+                           {-0.948901589f,-0.45330248f,0.0511028358f},
+                           {-0.966959162f,-0.37024959f,0.03399144f},
+                           {-0.975663696f,-0.31273385f,0.0243671298f},
+                           {0.828449f, -0.828449f,  0.1716f},
+                           {0.97042f,  -0.97042f,    0.02995f},
+                           {0.58612986f,-0.914268197f,0.08573f},
+                           {0.45330248f,-0.948901589f,0.0511028358f},
+                           {0.37024959f,-0.966959162f,0.03399144f},
+                           {0.31273385f,-0.975663696f,0.0243671298f},
+                           {0.914268197f,-0.58612986f,0.08573f},
+                           {0.948901589f,-0.45330248f,0.0511028358f},
+                           {0.966959162f,-0.37024959f,0.03399144f},
+                           {0.975663696f,-0.31273385f,0.0243671298f}};
+#endif
+
+
+#define _A(U) texelFetch(iChannel0,to_int2_cfloat(U),0)
+
+#define R iResolution
+
+#define ei(a) to_mat2(_cosf(a),_sinf(a),-_sinf(a),_cosf(a))
+
+__DEVICE__ float roundBox ( float2 p, float2 b, float r, float H)
+{
+    //float2 h = 0.5f*to_float2(b.x,b.y)-r;
+    float2 h = H*to_float2(b.x,b.y)-r;
+    swi2S(p,x,y, abs_f2(swi2(p,x,y)));
+    swi2S(p,x,y, swi2(p,x,y)-clamp(swi2(p,x,y),-h,h));
+    return length(p)-r;
+}
+
+__DEVICE__ float2 integral (float X, float Y, float A, float B, float d) {
+
+  return to_float2 (
+      (
+          (B*_logf((-d-Y)*(-d-Y)+(+d-X)*(+d-X))-2.0f*A*_atan2f((+d-X)/(-d-Y),1.0f)) -
+          (B*_logf((-d-Y)*(-d-Y)+(-d-X)*(-d-X))-2.0f*A*_atan2f((-d-X)/(-d-Y),1.0f))
+      ) - (
+          (B*_logf((+d-Y)*(+d-Y)+(+d-X)*(+d-X))-2.0f*A*_atan2f((+d-X)/(+d-Y),1.0f)) -
+          (B*_logf((+d-Y)*(+d-Y)+(-d-X)*(-d-X))-2.0f*A*_atan2f((-d-X)/(+d-Y),1.0f))
+      )  ,
+      (
+          (-A*_logf((+d-Y)*(+d-Y)+(+d-X)*(+d-X))+2.0f*B*_atan2f((+d-Y)/(+d-X),1.0f)) -
+          (-A*_logf((-d-Y)*(-d-Y)+(+d-X)*(+d-X))+2.0f*B*_atan2f((-d-Y)/(+d-X),1.0f))
+      ) -  (
+          (-A*_logf((+d-Y)*(+d-Y)+(-d-X)*(-d-X))+2.0f*B*_atan2f((+d-Y)/(-d-X),1.0f)) -
+          (-A*_logf((-d-Y)*(-d-Y)+(-d-X)*(-d-X))+2.0f*B*_atan2f((-d-Y)/(-d-X),1.0f))
+      )
+  );
+}
+
+__DEVICE__ float2 fd_grad_integral (float X, float Y, float A, float B, float d) {
+    float e = 1e-4;
+    float2 px = integral(X+e,Y,A,B,d);
+    float2 nx = integral(X-e,Y,A,B,d);
+    float2 py = integral(X,Y+e,A,B,d);
+    float2 ny = integral(X,Y-e,A,B,d);
+
+    return 4.0f*to_float2(px.x-nx.x,py.x-ny.y);
+}
+
+__DEVICE__ float2 grad_integral (float X, float Y, float A, float B, float d) {
+    return to_float2(
+         (
+            (
+                -2.0f*B*(+d-X)/( (+d-X)*(+d-X)+(-d-Y)*(-d-Y) ) -
+                -2.0f*A/(-d-Y)/( (+d-X)*(+d-X)/(-d-Y)/(-d-Y)+1.0f)
+            ) - (
+                -2.0f*B*(-d-X)/( (-d-X)*(-d-X)+(-d-Y)*(-d-Y) ) -
+                -2.0f*A/(-d-Y)/( (-d-X)*(-d-X)/(-d-Y)/(-d-Y)+1.0f)
+            )
+         ) - (
+            (
+                -2.0f*B*(+d-X)/( (+d-X)*(+d-X)+(+d-Y)*(+d-Y) ) -
+                -2.0f*A/(+d-Y)/( (+d-X)*(+d-X)/(+d-Y)/(+d-Y)+1.0f)
+            ) - (
+                -2.0f*B*(-d-X)/( (-d-X)*(-d-X)+(+d-Y)*(+d-Y) ) -
+                -2.0f*A/(+d-Y)/( (-d-X)*(-d-X)/(+d-Y)/(+d-Y)+1.0f)
+            )
+         ) ,
+
+          (
+            (
+                -2.0f*A*(+d-X)/( (+d-X)*(+d-X)+(+d-Y)*(+d-Y) ) -
+                -2.0f*B/(+d-Y)/( (+d-X)*(+d-X)/(+d-Y)/(+d-Y)+1.0f)
+            ) - (
+                -2.0f*A*(+d-X)/( (-d-X)*(-d-X)+(-d-Y)*(-d-Y) ) -
+                -2.0f*B/(-d-Y)/( (+d-X)*(+d-X)/(-d-Y)/(-d-Y)+1.0f)
+            )
+         ) - (
+            (
+                -2.0f*A*(-d-X)/( (-d-X)*(-d-X)+(+d-Y)*(+d-Y) ) -
+                -2.0f*B/(+d-Y)/( (-d-X)*(-d-X)/(+d-Y)/(+d-Y)+1.0f)
+            ) - (
+                -2.0f*A*(-d-X)/( (-d-X)*(-d-X)+(-d-Y)*(-d-Y) ) -
+                -2.0f*B/(-d-Y)/( (-d-X)*(-d-X)/(-d-Y)/(-d-Y)+1.0f)
+            )
+         )
+    );
+}
+
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Previsualization: Buffer D' to iChannel0
+
+
+
+__DEVICE__ void impulse (float4 p, float4 v, float2 pos, float2 im, float2 dv, inout float4 *f) {
+    im -= 0.2f*dv;
+    swi2S(*f,x,y, swi2(*f,x,y) + 0.2f*im * dot(normalize(swi2(p,x,y)-pos),normalize(im)));
+    (*f).z  += 0.8f*dot(to_float2(im.y,-im.x),normalize(swi2(p,x,y)-pos));
+}
+
+__KERNEL__ void LittleBoxesFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 Q   = to_float4_s(0.0f);
+  float2 U   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   Option = params->Option;
+  float  N = params->N;
+  float  dim = params->dim;
+  float  F1 = params->F1;
+  float  F2 = params->F2;
+  float  F3 = params->F3;
+  float  F4 = params->F4;
+
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  bool   Tex1 = params->Tex1;
+  bool   AddTex1 = params->AddTex1;
+  bool   Tex2 = params->Tex2;
+  bool   AddTex2 = params->AddTex2;
+  bool   Tex3 = params->Tex3;
+  bool   AddTex3 = params->AddTex3;
+  bool   Tex4 = params->Tex4;
+  bool   AddTex4 = params->AddTex4;
+  bool   OptionI = params->OptionI;
+  bool   Alpha = params->Alpha;
+
+  float2 Tex1XY = to_float2(params->Tex1XY[0], params->Tex1XY[1]);
+  float  Tex1Scale = params->Tex1Scale;
+  float2 Tex2XY = to_float2(params->Tex2XY[0], params->Tex2XY[1]);
+  float  Tex2Scale = params->Tex2Scale;
+  float2 Tex3XY = to_float2(params->Tex3XY[0], params->Tex3XY[1]);
+  float  Tex3Scale = params->Tex3Scale;
+  float2 Tex4XY = to_float2(params->Tex4XY[0], params->Tex4XY[1]);
+  float  Tex4Scale = params->Tex4Scale;
+  float  RB = params->RB;
+  float  H = params->H;
+  float  Smooth1 = params->Smooth1;
+
+  // --------
+
+
+    float4 FOff = {F1,F2,F3,F4};
+
+    U+=0.5f;
+
+    U = _floor(U);
+    if (U.y>1.0f||U.x>=N)
+    {
+      _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+      //discard;
+    }
+    float4 p = _A(to_float2(U.x,0));
+    float4 v = _A(to_float2(U.x,1));
+
+    float2 m = mul_f2_mat2(to_float2(0,1),ei(p.z));
+
+
+    float4 f = to_float4(0,-0.0002f,0,0) + FOff;
+    for (int j = 0; j < 41; j++) {
+        float3 c = dim*circles[j];
+        swi2S(c,x,y, mul_f2_mat2(swi2(c,x,y) , ei(p.z)));
+        swi2S(c,x,y, swi2(c,x,y) + swi2(p,x,y));
+        for (float i = 0.0f; i < N; i++) if (i!=U.x) {
+            float4 p1 = _A(to_float2(i,0));
+            float4 v1 = _A(to_float2(i,1));
+
+            if(Option)
+            {
+              float2 r = swi2(p1,x,y)-swi2(c,x,y);
+              r = mul_f2_mat2(r,ei(-p1.z));
+              float2 fp = 0.001f*m*(mul_f2_mat2(fd_grad_integral(r.x,r.y,0.0f,1.0f,dim),ei(p1.z)));
+
+              if (j == 0) {
+                swi2S(f,x,y, swi2(f,x,y) + fp);
+              }
+              else impulse(p,v,swi2(c,x,y),fp,to_float2_s(0),&f);
+            }
+
+            if (length(swi2(p,x,y)-swi2(p1,x,y))<=4.0f*dim)
+            for (int k = 0; k < 41; k++) {
+                float3 c1 = dim*circles[k];
+                swi2S(c1,x,y, mul_f2_mat2(swi2(c1,x,y) , ei(p1.z)));
+                swi2S(c1,x,y, swi2(c1,x,y) + swi2(p1,x,y));
+                if (length(swi2(c,x,y)-swi2(c1,x,y))<c.z+c1.z) {
+                    float2 pos = (swi2(c,x,y)*c.z+swi2(c1,x,y)*c1.z)/(c.z+c1.z);
+                    float2 im = 0.2f*(length(swi2(c,x,y)-swi2(c1,x,y))-c.z-c1.z)*normalize(swi2(c1,x,y)-swi2(c,x,y));
+                    float2 w = swi2(p,x,y)-pos;
+                    w = to_float2(-w.y,w.x);
+                    float2 dv = swi2(v,x,y) + w*v.z;
+                    float2 w1 = swi2(p1,x,y)-pos;
+                    w = to_float2(-w.y,w.x);
+                    float2 dv1 = swi2(v1,x,y) + w1*v1.z;
+                    impulse(p,v,pos,im,(dv-dv1),&f);
+                }
+            }
+        }
+        if (c.y-c.z<-0.75f) {
+            float2 pos = to_float2(c.x,-0.75f);
+            float2 im = to_float2(0,-0.2f*(c.y-c.z+0.75f));
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+        float bx = R.x/R.y;
+        if (c.x-c.z<-bx) {
+            float2 pos = to_float2(-bx,c.y);
+            float2 im = to_float2(-0.2f*(c.x-c.z+bx),0);
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+        if (c.x+c.z>+bx) {
+            float2 pos = to_float2(+bx,c.y);
+            float2 im = to_float2(+0.2f*(c.x+c.z-bx),0);
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+    }
+
+    float dt = 1.0f;
+    float2 mo = 2.0f*(swi2(iMouse,x,y)-0.5f*R)/R.y;
+    if (iMouse.z>0.0f&&length(swi2(p,x,y)-mo)<dim) swi2S(f,x,y, swi2(f,x,y) + (0.1f*(mo-swi2(p,x,y)) - 0.01f*swi2(v,x,y)));
+
+    swi3S(v,x,y,z, swi3(v,x,y,z) +    dt*swi3(f,x,y,z) - dt*0.0001f*swi3(v,x,y,z));
+    swi3S(p,x,y,z, swi3(p,x,y,z) + 0.5f*dt*swi3(f,x,y,z) + dt*swi3(v,x,y,z));
+
+    if (iFrame < 1 || Reset) {
+        swi2S(p,x,y, to_float2(U.x/(N-1.0f)*2.0f-1.0f,0.5f-0.5f*U.x/(N-1.0f)));
+        p.z =3.0f+U.x;
+        v = to_float4_s(0);
+    }
+
+    if (U.y < 1.0f) Q = p; else Q = v;
+
+
+    _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer B                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer B 'Previsualization: Buffer A' to iChannel0
+
+
+__KERNEL__ void LittleBoxesFuse__Buffer_B(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 Q   = to_float4_s(0.0f);
+  float2 U   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   Option = params->Option;
+  float  N = params->N;
+  float  dim = params->dim;
+  float  F1 = params->F1;
+  float  F2 = params->F2;
+  float  F3 = params->F3;
+  float  F4 = params->F4;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  bool   Tex1 = params->Tex1;
+  bool   AddTex1 = params->AddTex1;
+  bool   Tex2 = params->Tex2;
+  bool   AddTex2 = params->AddTex2;
+  bool   Tex3 = params->Tex3;
+  bool   AddTex3 = params->AddTex3;
+  bool   Tex4 = params->Tex4;
+  bool   AddTex4 = params->AddTex4;
+  bool   OptionI = params->OptionI;
+  bool   Alpha = params->Alpha;
+
+  float2 Tex1XY = to_float2(params->Tex1XY[0], params->Tex1XY[1]);
+  float  Tex1Scale = params->Tex1Scale;
+  float2 Tex2XY = to_float2(params->Tex2XY[0], params->Tex2XY[1]);
+  float  Tex2Scale = params->Tex2Scale;
+  float2 Tex3XY = to_float2(params->Tex3XY[0], params->Tex3XY[1]);
+  float  Tex3Scale = params->Tex3Scale;
+  float2 Tex4XY = to_float2(params->Tex4XY[0], params->Tex4XY[1]);
+  float  Tex4Scale = params->Tex4Scale;
+  float  RB = params->RB;
+  float  H = params->H;
+  float  Smooth1 = params->Smooth1;
+
+  // --------
+
+    float4 FOff = {F1,F2,F3,F4};
+
+    U+=0.5f;
+
+    U = _floor(U);
+    if (U.y>1.0f||U.x>=N)
+    {
+      //discard;
+      _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+    }
+    float4 p = _A(to_float2(U.x,0));
+    float4 v = _A(to_float2(U.x,1));
+
+    float2 m = mul_f2_mat2(to_float2(0,1),ei(p.z));
+
+
+    float4 f = to_float4(0,-0.0002f,0,0) + FOff;
+    for (int j = 0; j < 41; j++) {
+        float3 c = dim*circles[j];
+        swi2S(c,x,y, mul_f2_mat2(swi2(c,x,y) , ei(p.z)));
+        swi2S(c,x,y, swi2(c,x,y) + swi2(p,x,y));
+        for (float i = 0.0f; i < N; i++) if (i!=U.x) {
+            float4 p1 = _A(to_float2(i,0));
+            float4 v1 = _A(to_float2(i,1));
+
+            if(Option)
+            {
+              float2 r = swi2(p1,x,y)-swi2(c,x,y);
+              r = mul_f2_mat2(r,ei(-p1.z));
+              float2 fp = 0.001f*m*(mul_f2_mat2(fd_grad_integral(r.x,r.y,0.0f,1.0f,dim),ei(p1.z)));
+
+              if (j == 0) {
+                swi2S(f,x,y, swi2(f,x,y) + fp);
+              }
+              else impulse(p,v,swi2(c,x,y),fp,to_float2_s(0),&f);
+            }
+
+            if (length(swi2(p,x,y)-swi2(p1,x,y))<=4.0f*dim)
+            for (int k = 0; k < 41; k++) {
+                float3 c1 = dim*circles[k];
+                swi2S(c1,x,y, mul_f2_mat2(swi2(c1,x,y) , ei(p1.z)));
+                swi2S(c1,x,y, swi2(c1,x,y) + swi2(p1,x,y));
+                if (length(swi2(c,x,y)-swi2(c1,x,y))<c.z+c1.z) {
+                    float2 pos = (swi2(c,x,y)*c.z+swi2(c1,x,y)*c1.z)/(c.z+c1.z);
+                    float2 im = 0.2f*(length(swi2(c,x,y)-swi2(c1,x,y))-c.z-c1.z)*normalize(swi2(c1,x,y)-swi2(c,x,y));
+                    float2 w = swi2(p,x,y)-pos;
+                    w = to_float2(-w.y,w.x);
+                    float2 dv = swi2(v,x,y) + w*v.z;
+                    float2 w1 = swi2(p1,x,y)-pos;
+                    w = to_float2(-w.y,w.x);
+                    float2 dv1 = swi2(v1,x,y) + w1*v1.z;
+                    impulse(p,v,pos,im,(dv-dv1),&f);
+                }
+            }
+        }
+        if (c.y-c.z<-0.75f) {
+            float2 pos = to_float2(c.x,-0.75f);
+            float2 im = to_float2(0,-0.2f*(c.y-c.z+0.75f));
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+        float bx = R.x/R.y;
+        if (c.x-c.z<-bx) {
+            float2 pos = to_float2(-bx,c.y);
+            float2 im = to_float2(-0.2f*(c.x-c.z+bx),0);
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+        if (c.x+c.z>+bx) {
+            float2 pos = to_float2(+bx,c.y);
+            float2 im = to_float2(+0.2f*(c.x+c.z-bx),0);
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+    }
+
+    float dt = 1.0f;
+    float2 mo = 2.0f*(swi2(iMouse,x,y)-0.5f*R)/R.y;
+    if (iMouse.z>0.0f&&length(swi2(p,x,y)-mo)<dim) swi2S(f,x,y, swi2(f,x,y) + 0.1f*(mo-swi2(p,x,y)) - 0.01f*swi2(v,x,y));
+
+    swi3S(v,x,y,z, swi3(v,x,y,z) +    dt*swi3(f,x,y,z) - dt*0.0001f*swi3(v,x,y,z));
+    swi3S(p,x,y,z, swi3(p,x,y,z) + 0.5f*dt*swi3(f,x,y,z) + dt*swi3(v,x,y,z));
+
+
+    if (iFrame < 1 || Reset) {
+        swi2S(p,x,y, to_float2(U.x/(N-1.0f)*2.0f-1.0f,0.5f-0.5f*U.x/(N-1.0f)));
+        p.z =3.0f+U.x;
+        v = to_float4_s(0);
+    }
+
+    if (U.y < 1.0f) Q = p;
+    else Q = v;
+
+    _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer C                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer C 'Previsualization: Buffer B' to iChannel0
+
+
+
+__KERNEL__ void LittleBoxesFuse__Buffer_C(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 Q   = to_float4_s(0.0f);
+  float2 U   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   Option = params->Option;
+  float  N = params->N;
+  float  dim = params->dim;
+  float  F1 = params->F1;
+  float  F2 = params->F2;
+  float  F3 = params->F3;
+  float  F4 = params->F4;
+
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  bool   Tex1 = params->Tex1;
+  bool   AddTex1 = params->AddTex1;
+  bool   Tex2 = params->Tex2;
+  bool   AddTex2 = params->AddTex2;
+  bool   Tex3 = params->Tex3;
+  bool   AddTex3 = params->AddTex3;
+  bool   Tex4 = params->Tex4;
+  bool   AddTex4 = params->AddTex4;
+  bool   OptionI = params->OptionI;
+  bool   Alpha = params->Alpha;
+  
+  float2 Tex1XY = to_float2(params->Tex1XY[0], params->Tex1XY[1]);
+  float  Tex1Scale = params->Tex1Scale;
+  float2 Tex2XY = to_float2(params->Tex2XY[0], params->Tex2XY[1]);
+  float  Tex2Scale = params->Tex2Scale;
+  float2 Tex3XY = to_float2(params->Tex3XY[0], params->Tex3XY[1]);
+  float  Tex3Scale = params->Tex3Scale;
+  float2 Tex4XY = to_float2(params->Tex4XY[0], params->Tex4XY[1]);
+  float  Tex4Scale = params->Tex4Scale;
+  float  RB = params->RB;
+  float  H = params->H;
+  float  Smooth1 = params->Smooth1;
+
+  // --------
+
+    float4 FOff = {F1,F2,F3,F4};
+
+    U+=0.5f;
+
+    U = _floor(U);
+    if (U.y>1.0f||U.x>=N)
+    {
+      _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+      //discard;
+    }
+    float4 p = _A(to_float2(U.x,0));
+    float4 v = _A(to_float2(U.x,1));
+
+    float2 m = mul_f2_mat2(to_float2(0,1),ei(p.z));
+
+
+    float4 f = to_float4(0,-0.0002f,0,0) + FOff;
+    for (int j = 0; j < 41; j++) {
+        float3 c = dim*circles[j];
+        swi2S(c,x,y, mul_f2_mat2(swi2(c,x,y) , ei(p.z)));
+        swi2S(c,x,y, swi2(c,x,y) + swi2(p,x,y));
+        for (float i = 0.0f; i < N; i++) if (i!=U.x) {
+            float4 p1 = _A(to_float2(i,0));
+            float4 v1 = _A(to_float2(i,1));
+
+            if(Option)
+            {
+              float2 r = swi2(p1,x,y)-swi2(c,x,y);
+              r = mul_f2_mat2(r,ei(-p1.z));
+              float2 fp = 0.001f*m*(mul_f2_mat2(fd_grad_integral(r.x,r.y,0.0f,1.0f,dim),ei(p1.z)));
+
+              if (j == 0) {
+                swi2S(f,x,y, swi2(f,x,y) + fp);
+              }
+              else impulse(p,v,swi2(c,x,y),fp,to_float2_s(0),&f);
+            }
+
+            if (length(swi2(p,x,y)-swi2(p1,x,y))<=4.0f*dim)
+            for (int k = 0; k < 41; k++) {
+                float3 c1 = dim*circles[k];
+                swi2S(c1,x,y, mul_f2_mat2(swi2(c1,x,y) , ei(p1.z)));
+                swi2S(c1,x,y, swi2(c1,x,y) + swi2(p1,x,y));
+                if (length(swi2(c,x,y)-swi2(c1,x,y))<c.z+c1.z) {
+                    float2 pos = (swi2(c,x,y)*c.z+swi2(c1,x,y)*c1.z)/(c.z+c1.z);
+                    float2 im = 0.2f*(length(swi2(c,x,y)-swi2(c1,x,y))-c.z-c1.z)*normalize(swi2(c1,x,y)-swi2(c,x,y));
+                    float2 w = swi2(p,x,y)-pos;
+                    w = to_float2(-w.y,w.x);
+                    float2 dv = swi2(v,x,y) + w*v.z;
+                    float2 w1 = swi2(p1,x,y)-pos;
+                    w = to_float2(-w.y,w.x);
+                    float2 dv1 = swi2(v1,x,y) + w1*v1.z;
+                    impulse(p,v,pos,im,(dv-dv1),&f);
+                }
+            }
+        }
+        if (c.y-c.z<-0.75f) {
+            float2 pos = to_float2(c.x,-0.75f);
+            float2 im = to_float2(0,-0.2f*(c.y-c.z+0.75f));
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+        float bx = R.x/R.y;
+        if (c.x-c.z<-bx) {
+            float2 pos = to_float2(-bx,c.y);
+            float2 im = to_float2(-0.2f*(c.x-c.z+bx),0);
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+        if (c.x+c.z>+bx) {
+            float2 pos = to_float2(+bx,c.y);
+            float2 im = to_float2(+0.2f*(c.x+c.z-bx),0);
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+    }
+
+    float dt = 1.0f;
+    float2 mo = 2.0f*(swi2(iMouse,x,y)-0.5f*R)/R.y;
+    if (iMouse.z>0.0f&&length(swi2(p,x,y)-mo)<dim) swi2S(f,x,y, swi2(f,x,y) + 0.1f*(mo-swi2(p,x,y)) - 0.01f*swi2(v,x,y));
+
+    swi3S(v,x,y,z, swi3(v,x,y,z) +      dt*swi3(f,x,y,z) - dt*0.0001f*swi3(v,x,y,z));
+    swi3S(p,x,y,z, swi3(p,x,y,z) + 0.5f*dt*swi3(f,x,y,z) + dt*swi3(v,x,y,z));
+
+
+    if (iFrame < 1 || Reset) {
+        swi2S(p,x,y, to_float2(U.x/(N-1.0f)*2.0f-1.0f,0.5f-0.5f*U.x/(N-1.0f)));
+        p.z =3.0f+U.x;
+        v = to_float4_s(0);
+    }
+
+    if (U.y < 1.0f) Q = p; else Q = v;
+
+    _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+}
+// ----------------------------------------------------------------------------------
+// - Buffer D                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer D 'Previsualization: Buffer C' to iChannel0
+
+
+__KERNEL__ void LittleBoxesFuse__Buffer_D(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 Q   = to_float4_s(0.0f);
+  float2 U   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   Option = params->Option;
+  float  N = params->N;
+  float  dim = params->dim;
+  float  F1 = params->F1;
+  float  F2 = params->F2;
+  float  F3 = params->F3;
+  float  F4 = params->F4;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  bool   Tex1 = params->Tex1;
+  bool   AddTex1 = params->AddTex1;
+  bool   Tex2 = params->Tex2;
+  bool   AddTex2 = params->AddTex2;
+  bool   Tex3 = params->Tex3;
+  bool   AddTex3 = params->AddTex3;
+  bool   Tex4 = params->Tex4;
+  bool   AddTex4 = params->AddTex4;
+  bool   OptionI = params->OptionI;
+  bool   Alpha = params->Alpha;
+
+  float2 Tex1XY = to_float2(params->Tex1XY[0], params->Tex1XY[1]);
+  float  Tex1Scale = params->Tex1Scale;
+  float2 Tex2XY = to_float2(params->Tex2XY[0], params->Tex2XY[1]);
+  float  Tex2Scale = params->Tex2Scale;
+  float2 Tex3XY = to_float2(params->Tex3XY[0], params->Tex3XY[1]);
+  float  Tex3Scale = params->Tex3Scale;
+  float2 Tex4XY = to_float2(params->Tex4XY[0], params->Tex4XY[1]);
+  float  Tex4Scale = params->Tex4Scale;
+  float  RB = params->RB;
+  float  H = params->H;
+  float  Smooth1 = params->Smooth1;
+
+  // --------
+
+    float4 FOff = {F1,F2,F3,F4};
+
+    U+=0.5f;
+
+    U = _floor(U);
+    if (U.y>1.0f||U.x>=N)
+    {
+      _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+      //discard;
+    }
+    float4 p = _A(to_float2(U.x,0));
+    float4 v = _A(to_float2(U.x,1));
+
+    float2 m = mul_f2_mat2(to_float2(0,1),ei(p.z));
+
+
+    float4 f = to_float4(0,-0.0002f,0,0) + FOff;
+    for (int j = 0; j < 41; j++) {
+        float3 c = dim*circles[j];
+        swi2S(c,x,y, mul_f2_mat2(swi2(c,x,y) , ei(p.z)));
+        swi2S(c,x,y, swi2(c,x,y) + swi2(p,x,y));
+        for (float i = 0.0f; i < N; i++) if (i!=U.x) {
+            float4 p1 = _A(to_float2(i,0));
+            float4 v1 = _A(to_float2(i,1));
+
+            if(Option)
+            {
+              float2 r = swi2(p1,x,y)-swi2(c,x,y);
+              r = mul_f2_mat2(r,ei(-p1.z));
+              float2 fp = 0.001f*m*(mul_f2_mat2(fd_grad_integral(r.x,r.y,0.0f,1.0f,dim),ei(p1.z)));
+
+              if (j == 0) {
+                swi2S(f,x,y, swi2(f,x,y) + fp);
+              }
+              else impulse(p,v,swi2(c,x,y),fp,to_float2_s(0),&f);
+            }
+
+            if (length(swi2(p,x,y)-swi2(p1,x,y))<=4.0f*dim)
+            for (int k = 0; k < 41; k++) {
+                float3 c1 = dim*circles[k];
+                swi2S(c1,x,y, mul_f2_mat2(swi2(c1,x,y) , ei(p1.z)));
+                swi2S(c1,x,y, swi2(c1,x,y) + swi2(p1,x,y));
+                if (length(swi2(c,x,y)-swi2(c1,x,y))<c.z+c1.z) {
+                    float2 pos = (swi2(c,x,y)*c.z+swi2(c1,x,y)*c1.z)/(c.z+c1.z);
+                    float2 im = 0.2f*(length(swi2(c,x,y)-swi2(c1,x,y))-c.z-c1.z)*normalize(swi2(c1,x,y)-swi2(c,x,y));
+                    float2 w = swi2(p,x,y)-pos;
+                    w = to_float2(-w.y,w.x);
+                    float2 dv = swi2(v,x,y) + w*v.z;
+                    float2 w1 = swi2(p1,x,y)-pos;
+                    w = to_float2(-w.y,w.x);
+                    float2 dv1 = swi2(v1,x,y) + w1*v1.z;
+                    impulse(p,v,pos,im,(dv-dv1),&f);
+                }
+            }
+        }
+        if (c.y-c.z<-0.75f) {
+            float2 pos = to_float2(c.x,-0.75f);
+            float2 im = to_float2(0,-0.2f*(c.y-c.z+0.75f));
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+        float bx = R.x/R.y;
+        if (c.x-c.z<-bx) {
+            float2 pos = to_float2(-bx,c.y);
+            float2 im = to_float2(-0.2f*(c.x-c.z+bx),0);
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+        if (c.x+c.z>+bx) {
+            float2 pos = to_float2(+bx,c.y);
+            float2 im = to_float2(+0.2f*(c.x+c.z-bx),0);
+            float2 w = swi2(p,x,y)-pos;
+            w = to_float2(-w.y,w.x);
+            float2 dv = swi2(v,x,y) + w*v.z;
+            impulse(p,v,pos,im,dv,&f);
+        }
+    }
+
+    float dt = 1.0f;
+    float2 mo = 2.0f*(swi2(iMouse,x,y)-0.5f*R)/R.y;
+    if (iMouse.z>0.0f&&length(swi2(p,x,y)-mo)<dim) swi2S(f,x,y, swi2(f,x,y) + 0.1f*(mo-swi2(p,x,y)) - 0.01f*swi2(v,x,y));
+
+    swi3S(v,x,y,z, swi3(v,x,y,z) +      dt*swi3(f,x,y,z) - dt*0.0001f*swi3(v,x,y,z));
+    swi3S(p,x,y,z, swi3(p,x,y,z) + 0.5f*dt*swi3(f,x,y,z) + dt*swi3(v,x,y,z));
+
+    if (iFrame < 1 || Reset) {
+        swi2S(p,x,y, to_float2(U.x/(N-1.0f)*2.0f-1.0f,0.5f-0.5f*U.x/(N-1.0f)));
+        p.z =3.0f+U.x;
+        v = to_float4_s(0);
+    }
+
+    if (U.y < 1.0f) Q = p; else Q = v;
+
+    _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+// Connect Image 'Texture: Picture' to iChannel1
+// Connect Image 'Texture: Picture' to iChannel2
+// Connect Image 'Texture: Picture' to iChannel3
+// Connect Image 'Texture: Picture' to iChannel4
+
+
+__KERNEL__ void LittleBoxesFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1,  __TEXTURE2D__ iChannel2,  __TEXTURE2D__ iChannel3,  __TEXTURE2D__ iChannel4, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+
+  float2 iChannelResolution[5];
+  iChannelResolution[0] = to_float2(params->iChannelResolution[0][0], params->iChannelResolution[0][1]);
+  iChannelResolution[1] = to_float2(params->iChannelResolution[1][0], params->iChannelResolution[1][1]);
+  iChannelResolution[2] = to_float2(params->iChannelResolution[2][0], params->iChannelResolution[2][1]);
+  iChannelResolution[3] = to_float2(params->iChannelResolution[3][0], params->iChannelResolution[3][1]);
+  iChannelResolution[4] = to_float2(params->iChannelResolution[4][0], params->iChannelResolution[4][1]);
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 Q   = to_float4_s(0.0f);
+  float2 U   = to_float2(fusion_x,fusion_y);
+
+
+  bool   Reset = params->Reset;
+  bool   Option = params->Option;
+  float  N = params->N;
+  float  dim = params->dim;
+  float  F1 = params->F1;
+  float  F2 = params->F2;
+  float  F3 = params->F3;
+  float  F4 = params->F4;
+  float4 Color1 = to_float4(params->Color1[0], params->Color1[1], params->Color1[2], params->Color1[3]);
+  float4 Color2 = to_float4(params->Color2[0], params->Color2[1], params->Color2[2], params->Color2[3]);
+  bool   Tex1 = params->Tex1;
+  bool   AddTex1 = params->AddTex1;
+  bool   Tex2 = params->Tex2;
+  bool   AddTex2 = params->AddTex2;
+  bool   Tex3 = params->Tex3;
+  bool   AddTex3 = params->AddTex3;
+  bool   Tex4 = params->Tex4;
+  bool   AddTex4 = params->AddTex4;
+  bool   OptionI = params->OptionI;
+  bool   Alpha = params->Alpha;
+
+  float2 Tex1XY = to_float2(params->Tex1XY[0], params->Tex1XY[1]);
+  float  Tex1Scale = params->Tex1Scale;
+  float2 Tex2XY = to_float2(params->Tex2XY[0], params->Tex2XY[1]);
+  float  Tex2Scale = params->Tex2Scale;
+  float2 Tex3XY = to_float2(params->Tex3XY[0], params->Tex3XY[1]);
+  float  Tex3Scale = params->Tex3Scale;
+  float2 Tex4XY = to_float2(params->Tex4XY[0], params->Tex4XY[1]);
+  float  Tex4Scale = params->Tex4Scale;
+  float  RB = params->RB;
+  float  H = params->H;
+  float  Smooth1 = params->Smooth1;
+
+  // --------
+
+    U+=0.5f;
+
+    Tex1XY += to_float2(0.25f,0.2f);
+    Tex2XY += to_float2(0.25f,0.2f);
+    Tex3XY += to_float2(0.25f,0.2f);
+    Tex4XY += to_float2(0.25f,0.2f);
+
+    float ratio = iResolution.y/iResolution.x;
+
+    U = 2.0f*(U-0.5f*R)/R.y;
+    float d = 1e9, rb = 0.0f, Qw = 0.0f;
+    Q = to_float4_s(0);
+    for (float i = 0.0f; i < N; i++ ) {
+            float4 q = _A(to_float2(i,0));
+            float2 v = swi2(q,x,y) - U;
+            v = mul_f2_mat2(v,ei(-q.z));
+            rb = roundBox(v,to_float2_s(2.0f*dim-0.02f),0.01f+RB, H);
+            float4 dQ = _fmaxf(4.0f*sin_f4(_atan2f(v.y,v.x)+Color1)*(1.0f-_expf(-dot(v,v)))+
+                        sin_f4(-2.0f+Color2+0.5f*i), to_float4_s(0.0f));
+
+            if(Tex1 && i == 0.0f)
+            {
+              float2 tuv = (v+Tex1XY)*Tex1Scale;
+              tuv.x*= iChannelResolution[0].y / iChannelResolution[0].x;
+
+              float4 tex = texture(iChannel1, tuv);
+
+              if(AddTex1)
+                 dQ += tex;
+              else
+                 dQ = tex;
+            }
+
+            if(Tex2 && i == 1.0f)
+            {
+              float2 tuv = (v+Tex2XY)*Tex2Scale;
+              tuv.x*= iChannelResolution[1].y / iChannelResolution[1].x;
+
+              float4 tex = texture(iChannel2, tuv);
+
+              if(AddTex2)
+                 dQ += tex;
+              else
+                 dQ = tex;
+            }
+
+            if(Tex3 && i == 2.0f)
+            {
+              float2 tuv = (v+Tex3XY)*Tex3Scale;
+              tuv.x*= iChannelResolution[2].y / iChannelResolution[2].x;
+              float4 tex = texture(iChannel3, tuv);
+
+              if(AddTex3)
+                 dQ += tex;
+              else
+                 dQ = tex;
+            }
+
+            if(Tex4 && i == 3.0f)
+            {
+              float2 tuv = (v+Tex4XY)*Tex4Scale;
+              tuv.x*= iChannelResolution[3].y / iChannelResolution[3].x;
+              float4 tex = texture(iChannel4, tuv);
+
+              if(AddTex4)
+                 dQ += tex;
+              else
+                 dQ = tex;
+            }
+
+            dQ *= 0.5f+0.75f*smoothstep(0.02f,0.0f,_fabs(rb));
+            dQ *= _expf(-10.0f*_fmaxf(rb,0.0f));// * (1.0f-rb);
+            Q += 0.7f*dQ;
+
+            if(OptionI)
+            {
+              float2 m = to_float2(0,1);
+              swi2S(Q,x,y, swi2(Q,x,y) + 0.1f*mul_f2_mat2(integral(v.x,v.y,m.x,m.y,dim),ei(q.z)));
+            }
+
+            //Q += to_float4_s(1.0f-rb)/N;
+            //Qw = _fmaxf((smoothstep(1.0f, 0.0f, rb)), Qw);
+            //Qw = _fmaxf((smoothstep(Smooth2, Smooth1, rb)), Qw);
+            Qw = _fmaxf((step(Smooth1, 1.0f-rb)), Qw);
+
+    }
+    if (U.y > -0.75f) Q += to_float4(0.2f,0.1f,0.3f,1);
+
+    //Q = to_float4_s(smoothstep(1.0f, 0.0f, rb));//to_float4_s(1.0f-rb));
+
+    if(Alpha)
+    {
+      Q.w = Qw;
+      if(Q.w == 0.0f) Q = to_float4_s(0.0f);
+    }
+
+    _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, Q);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InOptionCheckbox = self:AddInput("Option", "Option", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InNSlider = self:AddInput("N", "N", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 5.0,
+      })
+
+  IndimSlider = self:AddInput("dim", "dim", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.25,
+      })
+
+  InF1Slider = self:AddInput("F1", "F1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.001,
+          INP_MaxScale       = 0.001,
+          INP_Default        = 0.0,
+      })
+
+  InF2Slider = self:AddInput("F2", "F2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.001,
+          INP_MaxScale       = 0.001,
+          INP_Default        = 0.0,
+      })
+
+  InF3Slider = self:AddInput("F3", "F3", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.001,
+          INP_MaxScale       = 0.001,
+          INP_Default        = 0.0,
+      })
+
+  InF4Slider = self:AddInput("F4", "F4", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -0.001,
+          INP_MaxScale       = 0.001,
+          INP_Default        = 0.0,
+      })
+
+  self:BeginControlNest("Color1", "Color1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor1ColorR = self:AddInput("Red",   "Color1Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColor1ColorG = self:AddInput("Green", "Color1Green", { INP_Default  = 2.0, IC_ControlID = 1, attrs})
+    InColor1ColorB = self:AddInput("Blue",  "Color1Blue",  { INP_Default  = 3.0, IC_ControlID = 2, attrs})
+    InColor1ColorA = self:AddInput("Alpha", "Color1Alpha", { INP_Default  = 4.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Color2", "Color2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Color2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColor2ColorR = self:AddInput("Red",   "Color2Red",   { INP_Default  = 1.0, IC_ControlID = 0, attrs})
+    InColor2ColorG = self:AddInput("Green", "Color2Green", { INP_Default  = 2.0, IC_ControlID = 1, attrs})
+    InColor2ColorB = self:AddInput("Blue",  "Color2Blue",  { INP_Default  = 3.0, IC_ControlID = 2, attrs})
+    InColor2ColorA = self:AddInput("Alpha", "Color2Alpha", { INP_Default  = 4.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InTex1Checkbox = self:AddInput("Tex1", "Tex1", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAddTex1Checkbox = self:AddInput("AddTex1", "AddTex1", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTex2Checkbox = self:AddInput("Tex2", "Tex2", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAddTex2Checkbox = self:AddInput("AddTex2", "AddTex2", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTex3Checkbox = self:AddInput("Tex3", "Tex3", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAddTex3Checkbox = self:AddInput("AddTex3", "AddTex3", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTex4Checkbox = self:AddInput("Tex4", "Tex4", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAddTex4Checkbox = self:AddInput("AddTex4", "AddTex4", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InOptionICheckbox = self:AddInput("OptionI", "OptionI", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InAlphaCheckbox = self:AddInput("Alpha", "Alpha", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+
+  InTex1XYPoint = self:AddInput("Tex1XY", "Tex1XY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTex1ScaleSlider = self:AddInput("Tex1Scale", "Tex1Scale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.0,
+      })
+
+  InTex2XYPoint = self:AddInput("Tex2XY", "Tex2XY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTex2ScaleSlider = self:AddInput("Tex2Scale", "Tex2Scale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.0,
+      })
+
+  InTex3XYPoint = self:AddInput("Tex3XY", "Tex3XY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTex3ScaleSlider = self:AddInput("Tex3Scale", "Tex3Scale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.0,
+      })
+
+  InTex4XYPoint = self:AddInput("Tex4XY", "Tex4XY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTex4ScaleSlider = self:AddInput("Tex4Scale", "Tex4Scale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.0,
+      })
+
+  InRBSlider = self:AddInput("RB", "RB", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0,
+      })
+
+  InHSlider = self:AddInput("H", "H", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.5,
+      })
+
+  InSmooth1Slider = self:AddInput("Smooth1", "Smooth1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 1.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    { CCS_AddString = "BufferB", },
+    { CCS_AddString = "BufferC", },
+    { CCS_AddString = "BufferD", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Main = 2, INP_Required = false  })
+  InChannel2 = self:AddInput( "iChannel2",  "iChannel2",  { LINKID_DataType = "Image", LINK_Main = 3, INP_Required = false  })
+  InChannel3 = self:AddInput( "iChannel3",  "iChannel3",  { LINKID_DataType = "Image", LINK_Main = 4, INP_Required = false  })
+  InChannel4 = self:AddInput( "iChannel4",  "iChannel4",  { LINKID_DataType = "Image", LINK_Main = 5, LINK_Visible = false, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+  Image_Buff_GlobalB = Image(ImgAttrs_Global)
+  Image_Buff_GlobalC = Image(ImgAttrs_Global)
+  Image_Buff_GlobalD = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstB = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstC = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstD = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+	dstI = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "LittleBoxesFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "LittleBoxesFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  iChannel2 = InChannel2:GetValue(req)
+
+  if iChannel2==nil then
+    iChannel2 = Image(imgattrs)
+    iChannel2:Fill(black)
+  end
+
+  iChannel3 = InChannel3:GetValue(req)
+
+  if iChannel3==nil then
+    iChannel3 = Image(imgattrs)
+    iChannel3:Fill(black)
+  end
+
+  iChannel4 = InChannel4:GetValue(req)
+
+  if iChannel4==nil then
+    iChannel4 = Image(imgattrs)
+    iChannel4:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.Option = InOptionCheckbox:GetValue(req).Value
+  params.N = InNSlider:GetValue(req).Value
+  params.dim = IndimSlider:GetValue(req).Value
+  params.F1 = InF1Slider:GetValue(req).Value
+  params.F2 = InF2Slider:GetValue(req).Value
+  params.F3 = InF3Slider:GetValue(req).Value
+  params.F4 = InF4Slider:GetValue(req).Value
+
+  params.Color1 = {
+    InColor1ColorR:GetValue(req).Value,
+    InColor1ColorG:GetValue(req).Value,
+    InColor1ColorB:GetValue(req).Value,InColor1ColorA:GetValue(req).Value
+  }
+  params.Color2 = {
+    InColor2ColorR:GetValue(req).Value,
+    InColor2ColorG:GetValue(req).Value,
+    InColor2ColorB:GetValue(req).Value,InColor2ColorA:GetValue(req).Value
+  }
+  params.Tex1 = InTex1Checkbox:GetValue(req).Value
+  params.AddTex1 = InAddTex1Checkbox:GetValue(req).Value
+  params.Tex2 = InTex2Checkbox:GetValue(req).Value
+  params.AddTex2 = InAddTex2Checkbox:GetValue(req).Value
+  params.Tex3 = InTex3Checkbox:GetValue(req).Value
+  params.AddTex3 = InAddTex3Checkbox:GetValue(req).Value
+  params.Tex4 = InTex4Checkbox:GetValue(req).Value
+  params.AddTex4 = InAddTex4Checkbox:GetValue(req).Value
+  params.OptionI = InOptionICheckbox:GetValue(req).Value
+  params.Alpha = InAlphaCheckbox:GetValue(req).Value
+  params.Tex1XY = {InTex1XYPoint:GetValue(req).X,InTex1XYPoint:GetValue(req).Y}
+  params.Tex1Scale = InTex1ScaleSlider:GetValue(req).Value
+  params.Tex2XY = {InTex2XYPoint:GetValue(req).X,InTex2XYPoint:GetValue(req).Y}
+  params.Tex2Scale = InTex2ScaleSlider:GetValue(req).Value
+  params.Tex3XY = {InTex3XYPoint:GetValue(req).X,InTex3XYPoint:GetValue(req).Y}
+  params.Tex3Scale = InTex3ScaleSlider:GetValue(req).Value
+  params.Tex4XY = {InTex4XYPoint:GetValue(req).X,InTex4XYPoint:GetValue(req).Y}
+  params.Tex4Scale = InTex4ScaleSlider:GetValue(req).Value
+  params.RB = InRBSlider:GetValue(req).Value
+  params.H = InHSlider:GetValue(req).Value
+  params.Smooth1 = InSmooth1Slider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+  params.iChannelResolution[0][0] = iChannel0.DataWindow:Width()    
+  params.iChannelResolution[0][1] = iChannel0.DataWindow:Height()   
+  params.iChannelResolution[1][0] = iChannel1.DataWindow:Width()    
+  params.iChannelResolution[1][1] = iChannel1.DataWindow:Height()   
+  params.iChannelResolution[2][0] = iChannel2.DataWindow:Width()    
+  params.iChannelResolution[2][1] = iChannel2.DataWindow:Height()   
+  params.iChannelResolution[3][0] = iChannel3.DataWindow:Width()    
+  params.iChannelResolution[3][1] = iChannel3.DataWindow:Height()   
+
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+    
+    
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddInput("iChannel2",iChannel2) -- TODO: add a better channel name
+    node:AddInput("iChannel3",iChannel3) -- TODO: add a better channel name
+    node:AddInput("iChannel4",iChannel4) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel1",Image_Buff_GlobalD)  -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+  -------------------------- BufferB-Kernel----------------------------------------
+    local nodeB = DVIPComputeNode(req,
+      "LittleBoxesFuse__Buffer_B", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeB:SetParamBlock(params)
+
+    --nodeB:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeB)
+    
+    nodeB:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    nodeB:AddOutput("dst", dstB)
+
+    local success = nodeB:RunSession(req)
+    if not success then
+      dstB = nil
+      dump(nodeB:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalB = dstB --Recursiv Image	
+    
+
+    -------------------------- BufferC-Kernel----------------------------------------
+    local nodeC = DVIPComputeNode(req,
+      "LittleBoxesFuse__Buffer_C", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeC:SetParamBlock(params)
+
+    --nodeC:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeC)
+
+    nodeC:AddInput("iChannel1", Image_Buff_GlobalB)  -- Anpassen !!
+    nodeC:AddOutput("dst", dstC)
+
+    local success = nodeC:RunSession(req)
+    if not success then
+      dstC = nil
+      dump(nodeC:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalC = dstC --Recursiv Image	
+
+
+    -------------------------- BufferD-Kernel----------------------------------------
+    local nodeD = DVIPComputeNode(req,
+      "LittleBoxesFuse__Buffer_D", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+    
+    nodeD:SetParamBlock(params)
+
+    --nodeD:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeD)
+
+    nodeD:AddInput("iChannel0", Image_Buff_GlobalC)  -- Anpassen !!
+    nodeD:AddOutput("dst", dstD)
+
+    local success = nodeD:RunSession(req)
+    if not success then
+      dstD = nil
+      dump(nodeD:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalD = dstD --Recursiv Image	
+
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "LittleBoxesFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    node:AddInput("iChannel1", iChannel0)           -- Anpassen !!
+    node:AddInput("iChannel2", iChannel1)           -- Anpassen !!
+    node:AddInput("iChannel3", iChannel2)           -- Anpassen !!
+    node:AddInput("iChannel4", iChannel3)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+    if (InDebugImage:GetValue(req).Value == 2) then OutImage:Set(req, Image_Buff_GlobalB) end
+    if (InDebugImage:GetValue(req).Value == 3) then OutImage:Set(req, Image_Buff_GlobalC) end
+    if (InDebugImage:GetValue(req).Value == 4) then OutImage:Set(req, Image_Buff_GlobalD) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+    
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

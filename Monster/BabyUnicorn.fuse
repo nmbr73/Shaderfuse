@@ -1,0 +1,3323 @@
+--[[--/*
+
+  BabyUnicorn.fuse
+
+  Based on https://www.shadertoy.com/view/NXtSW8 a WebGL shader created by Cotterzz.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  float  iTimeDelta;
+  int    iFrame;
+
+  bool   REST_POSE;
+  bool   SHOW_GROUND;
+  bool   IDLE_DEMO;
+  bool   Reset;
+  bool   Tex;
+  int    CAM_MODE;
+  float  CAM_YAW;
+  float  CAM_SWING;
+  float  CAM_RATE;
+  float  WALK_SPEED;
+  float  RUN_SPEED;
+  float  ACCEL;
+  float  DECEL;
+  float  AIM_FOLLOW;
+  float  DEMO_EVERY;
+  float  DEMO_LOOK_AT;
+  float  DEMO_LOOK_LEN;
+  float  DEMO_RUN_LEN;
+  float  CAM_ELEV;
+  float  VIEW_HALF_H;
+  float  Cam_Target[4];
+  float  Bound_C[4];
+  float  BOUND_R;
+  float  GROUND_Y;
+  float  HIP_X;
+  float  FOOT_X;
+  float  FRONT_Y;
+  float  FRONT_Z;
+  float  REAR_Y;
+  float  REAR_Z;
+  float  FRONT_STANCE;
+  float  REAR_STANCE;
+  float  UPPER_LEN;
+  float  LOWER_LEN;
+  float  FRONT_R;
+  float  REAR_R;
+  float  KNEE_R;
+  float  SHIN_R;
+  float  ANKLE_R;
+  float  ANKLE_H;
+  float  HOOF_TOE;
+  float  HOOF_HEEL;
+  float  LEG_TOP;
+  float  Neck_PIVOT[4];
+  float  NECK_LEN;
+  float  NECK_TILT;
+  float  NECK_R0;
+  float  NECK_R1;
+  float  HEAD_PITCH;
+  float  Skull_C[4];
+  float  SKULL_R;
+  float  Muzzle_A[4];
+  float  Muzzle_B[4];
+  float  NoSTRIL[4];
+  float  NOSTRIL_R;
+  float  Nose_C[4];
+  float  Blush_C[4];
+  float  Head_BOUND_C[4];
+  float  HEAD_BOUND_R;
+  float  Horn_BASE[4];
+  float  Horn_DIR[4];
+  float  Horn_PERP[4];
+  float  HORN_LEN;
+  float  HORN_R;
+  float  HORN_TWIST;
+  float  Eye_C[4];
+  float  EYE_R;
+  float  LID_R;
+  float  Eye_DIR[4];
+  float  Eye_UP[4];
+  float  LID_UP_OPEN;
+  float  LID_LOW;
+  float  BLINK_EVERY;
+  float  BLINK_LEN;
+  float  AIM_REACH;
+  float  AIM_BIAS;
+  float  LOOK_YAW_MAX;
+  float  LOOK_UP_MAX;
+  float  LOOK_DOWN_MAX;
+  float  LOOK_NECK;
+  float  Hair_COLOR[4];
+  float  MANE_THICK;
+  float  TAIL_THICK;
+  float  HAIR_ROUND;
+  float  ViewXY[2];
+  float  ViewZ;
+  float  TexXY[2];
+  float  TexScale;
+  float  TexThres;
+  float  ColIris1[4];
+  float  ColIris2[4];
+  float  ColHooves[4];
+  float  ColHorn[4];
+  float  ColCoat[4];
+  float  ColNose[4];
+  float  ColBlush[4];
+  float  ColLid1[4];
+  float  ColLid2[4];
+  float  ColNoStril[4];
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat2 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float2x2 mat2;
+
+  #define to_mat2(A,B,C,D)   mat2((A),(B),(C),(D))
+
+  #define mul_f2_mat2(A,B)   ((A)*(B))
+
+#else
+
+  typedef struct { float2 r0; float2 r1; } mat2;
+
+  __DEVICE__ inline mat2 to_mat2      ( float  a, float  b, float c, float d)  { mat2 t; t.r0.x = a; t.r0.y = b; t.r1.x = c; t.r1.y = d;         return t; }
+
+  __DEVICE__ inline float2 mul_f2_mat2( float2 v, mat2 m )
+  {
+    float2 t; t.x = v.x*m.r0.x + v.y*m.r0.y; t.y = v.x*m.r1.x + v.y*m.r1.y; return t;
+  }
+
+#endif // end of mat2 implementation
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) { return (B*A); }
+  __DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) { return (A*B); }
+  __DEVICE__ inline mat3 mul_mat3_mat3( mat3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_mat3_f3( mat3 B, float3 A) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r1.x + A.z * B.r2.x;
+    C.y = A.x * B.r0.y + A.y * B.r1.y + A.z * B.r2.y;
+    C.z = A.x * B.r0.z + A.y * B.r1.z + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+    return C;
+  }
+
+__DEVICE__ mat3 mul_mat3_mat3( mat3 B, mat3 A)
+{
+   float r[3][3];
+   float a[3][3] = {{A.r0.x, A.r0.y, A.r0.z},
+                    {A.r1.x, A.r1.y, A.r1.z},
+                    {A.r2.x, A.r2.y, A.r2.z}};
+   float b[3][3] = {{B.r0.x, B.r0.y, B.r0.z},
+                    {B.r1.x, B.r1.y, B.r1.z},
+                    {B.r2.x, B.r2.y, B.r2.z}};
+
+  for( int i = 0; i < 3; ++i)
+  {
+   for( int j = 0; j < 3; ++j)
+   {
+     r[i][j] = 0.0f;
+     for( int k = 0; k < 3; ++k)
+     {
+       r[i][j] = r[i][j] + a[i][k] * b[k][j];
+     }
+   }
+  }
+  mat3 R = to_mat3(r[0][0], r[0][1], r[0][2],
+                   r[1][0], r[1][1], r[1][2],
+                  r[2][0], r[2][1], r[2][2]);
+  return R;
+}
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define mod_f(a,b) _fmod(a,b)
+ #define sign_f(a) sign(a)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_CUDA)
+   #define radians(a) a * M_PI/180.0f
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+#define texelFetch(ch, uv, a) texture(ch, (make_float2((uv).x,(uv).y)+0.5f)/iResolution)
+
+
+#define AA           1   // 2 = 2x2 supersampling
+
+#ifdef GLOBALS
+// PART 1 - COMMON
+#define REST_POSE    0   // 1 = bind pose, no animation
+#define SHOW_GROUND  1   // scrolling treadmill guide (analytic plane, not in the SDF)
+
+#define CAM_MODE     1   // 0 = fixed at CAM_YAW, 1 = slow sway about CAM_YAW, 2 = continuous orbit
+#define IDLE_DEMO    1   // 1 = until the first click it glances at you and runs through its gaits now and then
+
+// camera
+const float CAM_YAW   = 1.0f;     // 0 = front, PI/2 = side (unicorn faces right)
+const float CAM_SWING = 0.6f;     // CAM_MODE 1: sway amplitude (radians)
+const float CAM_RATE  = 0.17f;    // CAM_MODE 1 / 2: radians per second
+
+// interaction
+const float WALK_SPEED    = 0.20f;   // gait speed when idle   (about 0.2f = walk, 0.6f = trot, 1 = gallop)
+const float RUN_SPEED     = 1.00f;   // gait speed it accelerates toward while the button is held
+const float ACCEL         = 0.20f;   // speed units per second while held (walk -> gallop in 4 s)
+const float DECEL         = 0.35f;   // speed units per second after release
+const float AIM_FOLLOW    = 10.0f;   // how quickly the gaze chases the pointer (1/s)
+const float DEMO_EVERY    = 16.0f;   // IDLE_DEMO: period
+const float DEMO_LOOK_AT  = 4.0f;    // IDLE_DEMO: glance at the viewer starts here ...
+const float DEMO_LOOK_LEN = 2.5f;    //            ... and lasts this long
+const float DEMO_RUN_LEN  = 7.0f;    // IDLE_DEMO: accelerates for the last seconds of each period
+
+#endif
+
+#define PI   3.14159265f
+#define TAU  6.28318531f
+
+__DEVICE__ float camYaw(float t, int CAM_MODE, float CAM_YAW, float CAM_SWING, float CAM_RATE) {
+  if (CAM_MODE == 0)
+    return CAM_YAW;
+  else if (CAM_MODE == 1)
+    return CAM_YAW + CAM_SWING * _sinf(CAM_RATE * t);
+  else
+    return CAM_YAW + CAM_RATE * t;
+}
+
+struct Gait {
+    float speed;        // 0..1 input
+    float amp;          // master gain for secondary motion
+    float cadence;      // full cycles per second
+    float duty;         // fraction of the cycle a hoof is planted
+    float frontLag;     // phase of a front leg relative to the hind leg on the same side
+    float pairSplit;    // phase of a right leg relative to the left leg of the same pair
+    float stride;       // distance a planted hoof travels under the body
+    float lift;         // swing clearance
+    float strikePitch;  // hoof pitch at touchdown (- = toe up)
+    float toeOffPitch;  // hoof pitch at lift-off  (+ = heel up)
+    float kick;         // hoof folds back early in the swing
+    float rise;         // body height offset
+    float bob;          // 2x per cycle: + = highest at mid-stance (walk), - = lowest (trot)
+    float bound;        // 1x per cycle: gallop, highest in the suspension phase
+    float rock;         // 1x per cycle: gallop, body pitches hind -> front
+    float reach;        // gallop: neck stretches forward
+    float lean;         // forward pitch of the body
+    float nod;          // head / neck nod
+    float roll;
+    float sway;         // lateral weight shift
+    float yaw;          // spine twist
+};
+
+// gait settings.
+//   walk   : four beats            LH, LF, RH, RF
+//   trot   : two beats, diagonals  LH+RF, RH+LF, short flight phases
+//   gallop : four quick beats      LH, RH, LF, RF, then all four hooves off the ground
+// Leg phase = fract(cycle + offset), touchdown at phase 0:
+//   LH = 0,  RH = pairSplit,  LF = frontLag,  RF = frontLag + pairSplit
+__DEVICE__ struct Gait gaitFromSpeed(float s) {
+
+    float trot = smoothstep(0.30f, 0.50f, s);
+    float gal  = smoothstep(0.70f, 0.90f, s);
+    struct Gait g;
+    g.speed       = s;
+    g.amp         = 1.0f;
+    g.cadence     = 1.0f + 1.9f * _fminf(s, 0.6f) + 0.4f * _fmaxf(s - 0.6f, 0.0f);
+    g.duty        = _mix(_mix(0.68f, 0.42f, smoothstep(0.15f, 0.55f, s)), 0.32f, gal);
+    g.frontLag    = _mix(_mix(0.75f, 0.50f, trot), 0.58f, gal);
+    g.pairSplit   = _mix(0.50f, 0.88f, gal);
+    g.stride      = _mix(0.45f, 2.00f, s);
+    g.lift        = _mix(0.15f, 0.40f, smoothstep(0.0f, 0.5f, s)) + 0.20f * gal;
+    g.strikePitch = -0.10f;
+    g.toeOffPitch = _mix(0.25f, 0.60f, s);
+    g.kick        = _mix(0.30f, 0.80f, s);
+    g.rise        = -0.12f * s;
+    g.bob         = _mix(0.03f, -0.11f, trot) * (1.0f - gal);
+    g.bound       = 0.16f * gal;
+    g.rock        = 0.10f * gal;
+    g.reach       = 0.18f * gal;
+    g.lean        = 0.03f * s;
+    g.nod         = _mix(0.06f, 0.025f, trot) * (1.0f - gal);
+    g.roll        = _mix(0.03f, 0.015f, s) * (1.0f - 0.7f * gal);
+    g.sway        = _mix(0.06f, 0.02f, s) * (1.0f - gal);
+    g.yaw         = _mix(0.04f, 0.02f, s) * (1.0f - gal);
+    return g;
+}
+// ----------------------------------------------------------------------------------
+// - Buffer A                                                                       -
+// ----------------------------------------------------------------------------------
+// Connect Buffer A 'Previsualization: Buffer A' to iChannel0
+// Connect Buffer A 'Texture: Picture' to iChannel1
+
+// State
+//   pixel (0,0) : x = cycle phase (0..1)      y = ground distance (wrapped to 2)
+//                 z = gait speed              w = unused
+//   pixel (1,0) : xy = smoothed pointer, same units as the Image uv (y in -1..1)
+//                 z = "glance at the viewer" weight (idle demo)
+//                 w = look weight (0 = straight ahead, 1 = at the pointer)
+__KERNEL__ void BabyUnicornFuse__Buffer_A(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float  iTimeDelta  = params->iTimeDelta;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   REST_POSE = params->REST_POSE;
+  bool   SHOW_GROUND = params->SHOW_GROUND;
+  bool   IDLE_DEMO = params->IDLE_DEMO;
+  bool   Reset = params->Reset;
+  bool   Tex = params->Tex;
+  int    CAM_MODE = params->CAM_MODE;
+  float  CAM_YAW = params->CAM_YAW;
+  float  CAM_SWING = params->CAM_SWING;
+  float  CAM_RATE = params->CAM_RATE;
+  float  WALK_SPEED = params->WALK_SPEED;
+  float  RUN_SPEED = params->RUN_SPEED;
+  float  ACCEL = params->ACCEL;
+  float  DECEL = params->DECEL;
+  float  AIM_FOLLOW = params->AIM_FOLLOW;
+  float  DEMO_EVERY = params->DEMO_EVERY;
+  float  DEMO_LOOK_AT = params->DEMO_LOOK_AT;
+  float  DEMO_LOOK_LEN = params->DEMO_LOOK_LEN;
+  float  DEMO_RUN_LEN = params->DEMO_RUN_LEN;
+  float  CAM_ELEV = params->CAM_ELEV;
+  float  VIEW_HALF_H = params->VIEW_HALF_H;
+  float4 Cam_Target = to_float4(params->Cam_Target[0], params->Cam_Target[1], params->Cam_Target[2], params->Cam_Target[3]);
+  float4 Bound_C = to_float4(params->Bound_C[0], params->Bound_C[1], params->Bound_C[2], params->Bound_C[3]);
+  float  BOUND_R = params->BOUND_R;
+  float  GROUND_Y = params->GROUND_Y;
+  float  HIP_X = params->HIP_X;
+  float  FOOT_X = params->FOOT_X;
+  float  FRONT_Y = params->FRONT_Y;
+  float  FRONT_Z = params->FRONT_Z;
+  float  REAR_Y = params->REAR_Y;
+  float  REAR_Z = params->REAR_Z;
+  float  FRONT_STANCE = params->FRONT_STANCE;
+  float  REAR_STANCE = params->REAR_STANCE;
+  float  UPPER_LEN = params->UPPER_LEN;
+  float  LOWER_LEN = params->LOWER_LEN;
+  float  FRONT_R = params->FRONT_R;
+  float  REAR_R = params->REAR_R;
+  float  KNEE_R = params->KNEE_R;
+  float  SHIN_R = params->SHIN_R;
+  float  ANKLE_R = params->ANKLE_R;
+  float  ANKLE_H = params->ANKLE_H;
+  float  HOOF_TOE = params->HOOF_TOE;
+  float  HOOF_HEEL = params->HOOF_HEEL;
+  float  LEG_TOP = params->LEG_TOP;
+  float4 Neck_PIVOT = to_float4(params->Neck_PIVOT[0], params->Neck_PIVOT[1], params->Neck_PIVOT[2], params->Neck_PIVOT[3]);
+  float  NECK_LEN = params->NECK_LEN;
+  float  NECK_TILT = params->NECK_TILT;
+  float  NECK_R0 = params->NECK_R0;
+  float  NECK_R1 = params->NECK_R1;
+  float  HEAD_PITCH = params->HEAD_PITCH;
+  float4 Skull_C = to_float4(params->Skull_C[0], params->Skull_C[1], params->Skull_C[2], params->Skull_C[3]);
+  float  SKULL_R = params->SKULL_R;
+  float4 Muzzle_A = to_float4(params->Muzzle_A[0], params->Muzzle_A[1], params->Muzzle_A[2], params->Muzzle_A[3]);
+  float4 Muzzle_B = to_float4(params->Muzzle_B[0], params->Muzzle_B[1], params->Muzzle_B[2], params->Muzzle_B[3]);
+  float4 NoSTRIL = to_float4(params->NoSTRIL[0], params->NoSTRIL[1], params->NoSTRIL[2], params->NoSTRIL[3]);
+  float  NOSTRIL_R = params->NOSTRIL_R;
+  float4 Nose_C = to_float4(params->Nose_C[0], params->Nose_C[1], params->Nose_C[2], params->Nose_C[3]);
+  float4 Blush_C = to_float4(params->Blush_C[0], params->Blush_C[1], params->Blush_C[2], params->Blush_C[3]);
+  float4 Head_BOUND_C = to_float4(params->Head_BOUND_C[0], params->Head_BOUND_C[1], params->Head_BOUND_C[2], params->Head_BOUND_C[3]);
+  float  HEAD_BOUND_R = params->HEAD_BOUND_R;
+  float4 Horn_BASE = to_float4(params->Horn_BASE[0], params->Horn_BASE[1], params->Horn_BASE[2], params->Horn_BASE[3]);
+  float4 Horn_DIR = to_float4(params->Horn_DIR[0], params->Horn_DIR[1], params->Horn_DIR[2], params->Horn_DIR[3]);
+  float4 Horn_PERP = to_float4(params->Horn_PERP[0], params->Horn_PERP[1], params->Horn_PERP[2], params->Horn_PERP[3]);
+  float  HORN_LEN = params->HORN_LEN;
+  float  HORN_R = params->HORN_R;
+  float  HORN_TWIST = params->HORN_TWIST;
+  float4 Eye_C = to_float4(params->Eye_C[0], params->Eye_C[1], params->Eye_C[2], params->Eye_C[3]);
+  float  EYE_R = params->EYE_R;
+  float  LID_R = params->LID_R;
+  float4 Eye_DIR = to_float4(params->Eye_DIR[0], params->Eye_DIR[1], params->Eye_DIR[2], params->Eye_DIR[3]);
+  float4 Eye_UP = to_float4(params->Eye_UP[0], params->Eye_UP[1], params->Eye_UP[2], params->Eye_UP[3]);
+  float  LID_UP_OPEN = params->LID_UP_OPEN;
+  float  LID_LOW = params->LID_LOW;
+  float  BLINK_EVERY = params->BLINK_EVERY;
+  float  BLINK_LEN = params->BLINK_LEN;
+  float  AIM_REACH = params->AIM_REACH;
+  float  AIM_BIAS = params->AIM_BIAS;
+  float  LOOK_YAW_MAX = params->LOOK_YAW_MAX;
+  float  LOOK_UP_MAX = params->LOOK_UP_MAX;
+  float  LOOK_DOWN_MAX = params->LOOK_DOWN_MAX;
+  float  LOOK_NECK = params->LOOK_NECK;
+  float4 Hair_COLOR = to_float4(params->Hair_COLOR[0], params->Hair_COLOR[1], params->Hair_COLOR[2], params->Hair_COLOR[3]);
+  float  MANE_THICK = params->MANE_THICK;
+  float  TAIL_THICK = params->TAIL_THICK;
+  float  HAIR_ROUND = params->HAIR_ROUND;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float2 TexXY = to_float2(params->TexXY[0], params->TexXY[1]);
+  float  TexScale = params->TexScale;
+  float  TexThres = params->TexThres;
+  float4 ColIris1 = to_float4(params->ColIris1[0], params->ColIris1[1], params->ColIris1[2], params->ColIris1[3]);
+  float4 ColIris2 = to_float4(params->ColIris2[0], params->ColIris2[1], params->ColIris2[2], params->ColIris2[3]);
+  float4 ColHooves = to_float4(params->ColHooves[0], params->ColHooves[1], params->ColHooves[2], params->ColHooves[3]);
+  float4 ColHorn = to_float4(params->ColHorn[0], params->ColHorn[1], params->ColHorn[2], params->ColHorn[3]);
+  float4 ColCoat = to_float4(params->ColCoat[0], params->ColCoat[1], params->ColCoat[2], params->ColCoat[3]);
+  float4 ColNose = to_float4(params->ColNose[0], params->ColNose[1], params->ColNose[2], params->ColNose[3]);
+  float4 ColBlush = to_float4(params->ColBlush[0], params->ColBlush[1], params->ColBlush[2], params->ColBlush[3]);
+  float4 ColLid1 = to_float4(params->ColLid1[0], params->ColLid1[1], params->ColLid1[2], params->ColLid1[3]);
+  float4 ColLid2 = to_float4(params->ColLid2[0], params->ColLid2[1], params->ColLid2[2], params->ColLid2[3]);
+  float4 ColNoStril = to_float4(params->ColNoStril[0], params->ColNoStril[1], params->ColNoStril[2], params->ColNoStril[3]);
+
+  // --------
+
+    fragCoord+=0.5f;
+
+    int2 ip = to_int2_cfloat(fragCoord);
+    float4 s0 = texelFetch(iChannel0, to_int2(0, 0), 0);
+    float4 s1 = texelFetch(iChannel0, to_int2(1, 0), 0);
+    if (iFrame == 0 || Reset) { s0 = to_float4(0.0f, 0.0f, WALK_SPEED, 0.0f); s1 = to_float4_s(0.0f); }
+    float dt   = clamp(iTimeDelta, 0.0f, 0.05f);          // cap after tab switches / stalls
+    bool  held = iMouse.z > 0.0f;
+    bool  demoRun  = false;
+    bool  demoLook = false;
+    if (IDLE_DEMO)
+    {
+      bool  untouched = iMouse.x == 0.0f && iMouse.y == 0.0f && iMouse.z == 0.0f;
+      float td = mod_f(iTime, DEMO_EVERY);
+      demoLook = untouched && td > DEMO_LOOK_AT && td < DEMO_LOOK_AT + DEMO_LOOK_LEN;
+      demoRun  = untouched && td > DEMO_EVERY - DEMO_RUN_LEN;
+    }
+    // pointer: snaps on a fresh press (head is not turned yet), then eases
+    float2  ptr    = swi2(s1,x,y);
+    float glance = s1.z;
+    float look   = s1.w;
+    if (held) {
+        float2 m = (2.0f * swi2(iMouse,x,y) - iResolution) / iResolution.y;
+        ptr = look < 0.03f ? m : _mix(ptr, m, 1.0f - _expf(-AIM_FOLLOW * dt));
+    }
+    look   = _mix(look,   (held || demoLook) ? 1.0f : 0.0f, 1.0f - _expf(-(held ? 8.0f : 3.0f) * dt));
+    glance = _mix(glance, (demoLook && !held) ? 1.0f : 0.0f, 1.0f - _expf(-6.0f * dt));
+    // gait: steady acceleration while held (walk -> trot -> gallop), steady slow-down otherwise
+    bool  run    = held || demoRun;
+    float target = run ? RUN_SPEED : WALK_SPEED;
+    float speed  = s0.z + clamp(target - s0.z, -DECEL * dt, ACCEL * dt);
+    struct Gait  g      = gaitFromSpeed(speed);
+    float phase  = mod_f(s0.x + dt * g.cadence, 1.0f);
+    float dist   = mod_f(s0.y + dt * g.cadence * g.stride / g.duty, 2.0f);
+    if (ip.y > 0 || ip.x > 1) fragColor = to_float4_s(0.0f);
+    else if (ip.x == 0)       fragColor = to_float4(phase, dist, speed, 0.0f);
+    else                      fragColor = to_float4(ptr.x, ptr.y, glance, look);
+
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Previsualization: Buffer A' to iChannel0
+// Connect Image 'Texture: Picture' to iChannel1
+
+//  BABY UNICORN
+//
+//  Hierarchy                    pivot
+//    body (root)                gPelvis     rump + barrel + chest, tail plate
+//      neck                     NECK_PIVOT  carries the mane plate
+//        head                   gHeadPos    skull, muzzle, eyes, eyelids, horn, top of the mane
+//      hip / shoulder x4        inside the body
+//        upper leg              hip -> knee (front: bends forward) / hock (rear: bends back)
+//          lower leg            knee -> ankle
+//            hoof               pivots at the ankle, rolls heel -> toe
+#ifdef GLOBALS
+// view
+const float CAM_ELEV    = 0.14f;                 // 0 = dead level
+const float VIEW_HALF_H = 5.6f;                  // ortho half height, model units
+const float3  CAM_TARGET  = to_float3(0.0f, 0.65f, 0.2f);
+const float3  BOUND_C     = to_float3(0.0f, 0.60f, 0.2f);
+const float BOUND_R     = 6.5f;
+// rig constants (rest pose, body space == world space at rest)
+const float GROUND_Y     = -3.0f;                // sole plane
+// legs
+const float HIP_X        = 0.62f;                // half spacing of hips / shoulders
+const float FOOT_X       = 0.60f;                // half track width
+const float FRONT_Y      = -0.42f;               // shoulder joint
+const float FRONT_Z      =  1.00f;
+const float REAR_Y       = -0.55f;               // hip joint
+const float REAR_Z       = -0.95f;
+const float FRONT_STANCE =  0.05f;               // mid-stance hoof position relative to its joint
+const float REAR_STANCE  = -0.25f;
+const float UPPER_LEN    = 1.15f;                // hip -> knee
+const float LOWER_LEN    = 1.10f;                // knee -> ankle
+const float FRONT_R      = 0.46f;                // upper leg radius at the shoulder
+const float REAR_R       = 0.58f;                // upper leg radius at the hip (haunch)
+const float KNEE_R       = 0.33f;
+const float SHIN_R       = 0.30f;
+const float ANKLE_R      = 0.27f;
+const float ANKLE_H      = 0.45f;                // ankle height above the sole
+const float HOOF_TOE     = 0.45f;                // sole contact when the heel lifts
+const float HOOF_HEEL    = 0.30f;                // sole contact when the toe lifts
+const float LEG_TOP      = 0.40f;                // cull world y that no part of a leg ever rises above
+// neck / head
+const float3  NECK_PIVOT = to_float3(0.0f, 0.50f, 1.20f); // body space
+const float NECK_LEN   = 1.70f;
+const float NECK_TILT  = 0.45f;                  // forward from vertical
+const float NECK_R0    = 0.90f;
+const float NECK_R1    = 0.62f;
+const float HEAD_PITCH = 0.35f;                  // nose down, relative to the body
+// head space: origin = poll (top of the neck), +Z = face forward
+const float3  SKULL_C    = to_float3(0.0f, 0.15f, 0.35f);
+const float SKULL_R    = 1.00f;
+const float3  MUZZLE_A   = to_float3(0.0f, -0.34f, 0.80f);
+const float3  MUZZLE_B   = to_float3(0.0f, -0.52f, 1.75f);
+const float3  NOSTRIL    = to_float3(0.216f, -0.352f, 2.144f);   // x mirrored
+const float NOSTRIL_R  = 0.085f;
+const float3  NOSE_C     = to_float3(0.0f, -0.52f, 2.10f);       // centre of the pink nose patch
+const float3  BLUSH_C    = to_float3(0.72f, -0.07f, 1.00f);      // x mirrored
+const float3  HEAD_BOUND_C = to_float3(0.0f, 0.90f, 0.80f);      // cull sphere round everything on the head
+const float HEAD_BOUND_R = 2.30f;
+// horn
+const float3  HORN_BASE  = to_float3(0.0f, 0.86f, 0.86f);
+const float3  HORN_DIR   = to_float3(0.0f, 0.9292f, 0.3697f);
+const float3  HORN_PERP  = to_float3(0.0f, -0.3697f, 0.9292f);
+const float HORN_LEN   = 2.2f;
+const float HORN_R     = 0.24f;
+const float HORN_TWIST = 7.5f;                   // groove pitch = PI / HORN_TWIST
+// eyes / eyelids (head space, x mirrored)
+const float3  EYE_C       = to_float3(0.518f, 0.335f, 0.845f);
+const float EYE_R       = 0.42f;
+const float LID_R       = 0.46f;
+const float3  EYE_DIR     = to_float3(0.6995f, 0.2498f, 0.6695f);   // outward from the skull centre
+const float3  EYE_UP      = to_float3(-0.1804f, 0.9683f, -0.1727f); // up, across the eye (perpendicular to EYE_DIR)
+const float LID_UP_OPEN = 0.95f;                 // upper lid edge, angle above the eye axis
+const float LID_LOW     = 1.05f;                 // lower lid edge, angle below the eye axis (fixed)
+const float BLINK_EVERY = 3.3f;                  // seconds
+const float BLINK_LEN   = 0.28f;
+// looking at the pointer
+const float AIM_REACH     = 5.0f;                // pointer this far from the head (on screen) = gaze lies in the screen plane
+const float AIM_BIAS      = 0.15f;               // pull toward straight ahead
+const float LOOK_YAW_MAX  = 1.25f;               // joint limits relative to the body
+const float LOOK_UP_MAX   = 0.60f;
+const float LOOK_DOWN_MAX = -0.60f;
+const float LOOK_NECK     = 0.45f;               // share of the yaw taken by the neck
+// mane / tail: flat plates in the unicorn's centre plane
+const float3  HAIR_COLOR = to_float3(0.42f, 0.16f, 0.80f);
+const float MANE_THICK = 0.13f;                  // half thickness
+const float TAIL_THICK = 0.15f;
+const float HAIR_ROUND = 0.05f;                  // edge rounding
+
+#endif
+
+// materials
+const float MAT_SKIN = 0.0f;
+const float MAT_HAIR = 1.0f;
+const float MAT_HORN = 2.0f;
+const float MAT_HOOF = 3.0f;
+const float MAT_EYE  = 4.0f;
+
+// sdfs
+__DEVICE__ float sdSphere(float3 p, float r) { return length(p) - r; }
+// capsule with a linearly varying radius (slightly inexact, the march is relaxed to cope)
+__DEVICE__ float sdStick(float3 p, float3 a, float3 b, float ra, float rb) {
+    float3  pa = p - a;
+    float3  ba = b - a;
+    float h  = clamp(dot(pa, ba) / dot(ba, ba), 0.0f, 1.0f);
+    return length(pa - ba * h) - _mix(ra, rb, h);
+}
+// the same in 2D
+__DEVICE__ float sdStick2(float2 p, float2 a, float2 b, float ra, float rb) {
+    float2  pa = p - a;
+    float2  ba = b - a;
+    float h  = clamp(dot(pa, ba) / dot(ba, ba), 0.0f, 1.0f);
+    return length(pa - ba * h) - _mix(ra, rb, h);
+}
+// turns a 2D distance into a plate of half thickness h (x = across the plate), rounded edges
+__DEVICE__ float opPlate(float d2, float x, float h, float HAIR_ROUND) {
+    float2 w = to_float2(d2, _fabs(x) - h) + HAIR_ROUND;
+    return _fminf(_fmaxf(w.x, w.y), 0.0f) + length(_fmaxf(w, to_float2_s(0.0f))) - HAIR_ROUND;
+}
+// exact 2D triangle (iq)
+__DEVICE__ float sdTriangle(float2 p, float2 p0, float2 p1, float2 p2) {
+    float2 e0 = p1 - p0, e1 = p2 - p1, e2 = p0 - p2;
+    float2 v0 = p  - p0, v1 = p  - p1, v2 = p  - p2;
+    float2 pq0 = v0 - e0 * clamp(dot(v0, e0) / dot(e0, e0), 0.0f, 1.0f);
+    float2 pq1 = v1 - e1 * clamp(dot(v1, e1) / dot(e1, e1), 0.0f, 1.0f);
+    float2 pq2 = v2 - e2 * clamp(dot(v2, e2) / dot(e2, e2), 0.0f, 1.0f);
+    float s = sign_f(e0.x * e2.y - e0.y * e2.x);
+    float2 d = _fminf(_fminf(to_float2(dot(pq0, pq0), s * (v0.x * e0.y - v0.y * e0.x)),
+                             to_float2(dot(pq1, pq1), s * (v1.x * e1.y - v1.y * e1.x))),
+                             to_float2(dot(pq2, pq2), s * (v2.x * e2.y - v2.y * e2.x)));
+    return -_sqrtf(d.x) * sign_f(d.y);
+}
+__DEVICE__ float softMin(float a, float b, float k) {
+    float h = _fmaxf(k - _fabs(a - b), 0.0f) / k;
+    return _fminf(a, b) - h * h * k * 0.25f;
+}
+__DEVICE__ float opSmoothUnion(float d1, float d2, float k) {
+    float h = clamp(0.5f + 0.5f * (d2 - d1) / k, 0.0f, 1.0f);
+    return _mix(d2, d1, h) - k * h * (1.0f - h);
+}
+__DEVICE__ float opSmoothSubtraction(float d1, float d2, float k) {
+    float h = clamp(0.5f - 0.5f * (d2 + d1) / k, 0.0f, 1.0f);
+    return _mix(d2, -d1, h) + k * h * (1.0f - h);
+}
+// used as  v * rotateN(a)  -> rotates the sample point by +a,
+// i.e. the OBJECT turns by -a. Pose code below passes negated angles.
+// The other way round,  rotateN(a) * v  takes a child-space vector to its parent.
+__DEVICE__ mat3 rotateX(float a) { float c = _cosf(a), s = _sinf(a); return to_mat3(1, 0, 0, 0, c, -s, 0, s, c); }
+__DEVICE__ mat3 rotateY(float a) { float c = _cosf(a), s = _sinf(a); return to_mat3(c, 0, s, 0, 1, 0, -s, 0, c); }
+__DEVICE__ mat3 rotateZ(float a) { float c = _cosf(a), s = _sinf(a); return to_mat3(c, -s, 0, s, c, 0, 0, 0, 1); }
+//  pose state (written once per pixel, matrices are used as  v * M)
+struct Leg {
+    float3  hip;
+    float3  knee;
+    float3  ankle;
+    float2  footCS;    // cos / sin of hoof pitch
+};
+
+#ifdef GLOBALS
+float3  gPelvis;
+mat3  gBodyRot, gNeckRot, gHeadRot;   // neck and head are both relative to the body
+float3  gHeadPos;                       // head pivot, body space
+float2  gLidU, gLidL;                   // sin / cos of the upper / lower eyelid angle
+float gGroundScroll;
+struct Leg   gLegFL, gLegFR, gLegRL, gLegRR;
+#endif
+
+__DEVICE__ float3 toBody(float3 p, float3 gPelvis, mat3 gBodyRot)  { return mul_f3_mat3((p - gPelvis) , gBodyRot); }
+__DEVICE__ float3 toNeck(float3 pb, float3 NECK_PIVOT, mat3 gNeckRot) { return mul_f3_mat3((pb - NECK_PIVOT) , gNeckRot); }
+__DEVICE__ float3 toHead(float3 pb, float3 gHeadPos, mat3 gHeadRot) { return mul_f3_mat3((pb - gHeadPos) , gHeadRot); }
+//  parts
+__DEVICE__ float sdEyes(float3 p, float3 EYE_C, float EYE_R) {                       // head space
+    p.x = _fabs(p.x);
+    return sdSphere(p - EYE_C, EYE_R);
+}
+// e = offset from the eye centre. Both components are > 0 inside the opening:
+//   x = below the edge of the upper lid, y = above the edge of the lower lid
+__DEVICE__ float2 lidOpening(float3 e, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL) {
+    float2 q = to_float2(dot(e, EYE_DIR), dot(e, EYE_UP));
+    return to_float2(q.x * gLidU.x - q.y * gLidU.y,
+                     q.x * gLidL.x + q.y * gLidL.y);
+}
+// Eyelids: a thick shell round the eyeball with a wedge cut out of it.
+__DEVICE__ float sdEyelids(float3 p, float3 EYE_C, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL) {                    // head space
+    p.x = _fabs(p.x);
+    float3 e = p - EYE_C;
+    float2 o = lidOpening(e, EYE_DIR, EYE_UP, gLidU, gLidL);
+    return _fmaxf(sdSphere(e, LID_R), _fminf(o.x, o.y));
+}
+// spiral horn - cone with radius groove along a helix
+__DEVICE__ float sdHorn(float3 p, float3 HORN_BASE, float3 HORN_DIR, float3 HORN_PERP, float HORN_LEN, float HORN_R, float HORN_TWIST) {                       // head space
+    float3  e  = p - HORN_BASE;
+    float3  q  = to_float3(e.x, dot(e, HORN_DIR), dot(e, HORN_PERP));   // q.y runs along the horn
+    float y  = clamp(q.y, 0.0f, HORN_LEN);
+    float f  = _fabs(_sinf(0.5f * _atan2f(q.z, q.x) + HORN_TWIST * y));
+    float r  = HORN_R * (1.0f - 0.94f * y / HORN_LEN) * (0.78f + 0.22f * f);
+    float d  = length(swi2(q,x,z)) - r;
+    float dy = q.y - y;
+    return (d < 0.0f && dy == 0.0f) ? d : length(to_float2(_fmaxf(d, 0.0f), dy));
+}
+__DEVICE__ float sdHeadSkin(float3 p, float3 SKULL_C, float SKULL_R, float3 MUZZLE_A, float3 MUZZLE_B, float3 NOSTRIL, float NOSTRIL_R, float3 EYE_C, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL) {                   // head space
+    float3  q = to_float3(_fabs(p.x), p.y, p.z);
+    float d = opSmoothUnion(sdSphere(p - SKULL_C, SKULL_R),
+                            sdStick(p, MUZZLE_A, MUZZLE_B, 0.58f, 0.48f), 0.35f);
+    d = opSmoothSubtraction(sdSphere(q - NOSTRIL, NOSTRIL_R), d, 0.05f);
+    return opSmoothUnion(d, sdEyelids(p, EYE_C, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL), 0.05f);
+}
+__DEVICE__ float sdTorso(float3 pb) {                     // body space
+    float rump   = sdSphere(pb - to_float3(0.0f, 0.00f, -1.05f), 1.20f);
+    float chest  = sdSphere(pb - to_float3(0.0f, 0.05f,  1.00f), 1.10f);
+    float barrel = sdStick(pb, to_float3(0.0f, -0.12f, -0.90f), to_float3(0.0f, -0.10f, 0.85f), 1.00f, 0.98f);
+    return opSmoothUnion(opSmoothUnion(rump, chest, 0.4f), barrel, 0.35f);
+}
+// mane
+__DEVICE__ float sdManeNeck(float3 pn, float MANE_THICK, float HAIR_ROUND) {
+    float2  q = swi2(pn,y,z);
+    float d = sdTriangle(q, to_float2(1.75f, -0.50f), to_float2(1.15f, -0.62f), to_float2( 0.79f, -1.56f));
+    d = _fminf(d, sdTriangle(q, to_float2(1.15f, -0.62f), to_float2(0.55f, -0.74f), to_float2( 0.22f, -1.52f)));
+    d = _fminf(d, sdTriangle(q, to_float2(0.55f, -0.74f), to_float2(0.00f, -0.86f), to_float2(-0.28f, -1.45f)));
+    return opPlate(d, pn.x, MANE_THICK, HAIR_ROUND);
+}
+__DEVICE__ float sdManeHead(float3 ph, float MANE_THICK, float HAIR_ROUND) {
+    float d = sdTriangle(swi2(ph,y,z), to_float2(1.02f, 0.55f), to_float2(0.30f, -0.62f), to_float2(1.35f, -1.15f));
+    return opPlate(d, ph.x, MANE_THICK, HAIR_ROUND);
+}
+// tail
+__DEVICE__ float sdTail(float3 pb, float TAIL_THICK, float HAIR_ROUND) {
+    float d2 = _fminf(sdStick2(swi2(pb,y,z), to_float2(0.50f, -2.05f), to_float2( 0.80f, -2.95f), 0.28f, 0.50f),
+                      sdStick2(swi2(pb,y,z), to_float2(0.80f, -2.95f), to_float2(-1.60f, -3.70f), 0.50f, 0.07f));
+    return opPlate(d2, pb.x, TAIL_THICK, HAIR_ROUND);
+}
+// hoof space: origin = ankle, sole plane y = -ANKLE_H, toe toward +Z
+__DEVICE__ float sdHoof(float3 q, float ANKLE_H) {
+    float d = sdStick(q, to_float3(0.0f, -0.10f, 0.0f), to_float3(0.0f, -ANKLE_H, 0.07f), 0.31f, 0.42f);
+    return _fmaxf(d, -(q.y + ANKLE_H));
+}
+// world space. Returns (upper leg, lower leg, hoof) so that map() can fillet the
+// upper leg into the body and give the hoof its own material.
+__DEVICE__ float3 sdLeg(float3 p, struct Leg leg, float rHip, float ANKLE_H, float KNEE_R, float SHIN_R, float ANKLE_R) {
+    float upper = sdStick(p, leg.hip,  leg.knee,  rHip,   KNEE_R);
+    float lower = sdStick(p, leg.knee, leg.ankle, SHIN_R, ANKLE_R);
+    float3  q = p - leg.ankle;
+    swi2S(q,y,z, to_float2(leg.footCS.x * q.y + leg.footCS.y * q.z,
+                           leg.footCS.x * q.z - leg.footCS.y * q.y));
+    return to_float3(upper, lower, sdHoof(q, ANKLE_H));
+}
+// returns (distance, material).
+// The head group and the leg group are only evaluated near them; further away a
+// cheap lower bound of their distance is used instead
+__DEVICE__ float2 mapFull(float3 p, float3 gPelvis, mat3 gBodyRot, float3 NECK_PIVOT, float3 gHeadPos, float NECK_R0, float NECK_R1, float MANE_THICK, float HAIR_ROUND, mat3 gNeckRot, float TAIL_THICK, mat3 gHeadRot,
+                          float3 HEAD_BOUND_C, float HEAD_BOUND_R, float3 SKULL_C, float SKULL_R, float3 MUZZLE_A, float3 MUZZLE_B, float3 NOSTRIL, float NOSTRIL_R, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL,
+                          float3 EYE_C, float EYE_R, float3 HORN_BASE, float3 HORN_DIR, float3 HORN_PERP, float HORN_LEN, float HORN_R, float HORN_TWIST, float LEG_TOP, struct Leg gLegFL, struct Leg gLegFR, struct Leg gLegRL, struct Leg gLegRR, float FRONT_R, float REAR_R,
+                          float ANKLE_H, float KNEE_R, float SHIN_R, float ANKLE_R) {
+    float3  pb   = toBody(p, gPelvis, gBodyRot);
+    float skin = sdTorso(pb);
+    skin = opSmoothUnion(skin, sdStick(pb, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1), 0.30f);
+    float hair = _fminf(sdManeNeck(toNeck(pb, NECK_PIVOT, gNeckRot), MANE_THICK, HAIR_ROUND), sdTail(pb, TAIL_THICK, HAIR_ROUND));
+    float eyes = 1e5f;
+    float horn = 1e5f;
+    float hoof = 1e5f;
+    // head group
+    float3  ph = toHead(pb, gHeadPos, gHeadRot);
+    float hb = length(ph - HEAD_BOUND_C) - HEAD_BOUND_R;
+    if (hb < 0.5f) {
+        skin = opSmoothUnion(skin, sdHeadSkin(ph, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, EYE_C, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL), 0.15f);
+        eyes = sdEyes(ph, EYE_C, EYE_R);
+        horn = sdHorn(ph, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST);
+        hair = _fminf(hair, sdManeHead(ph, MANE_THICK, HAIR_ROUND));
+    } else {
+        skin = _fminf(skin, hb);
+    }
+    // leg group
+    float lb = p.y - LEG_TOP;
+    if (lb < 0.5f) {
+        float3 lFL = sdLeg(p, gLegFL, FRONT_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+        float3 lFR = sdLeg(p, gLegFR, FRONT_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+        float3 lRL = sdLeg(p, gLegRL, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+        float3 lRR = sdLeg(p, gLegRR, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+        float upper = _fminf(_fminf(lFL.x, lFR.x), _fminf(lRL.x, lRR.x));
+        float lower = _fminf(_fminf(lFL.y, lFR.y), _fminf(lRL.y, lRR.y));
+        hoof = _fminf(_fminf(lFL.z, lFR.z), _fminf(lRL.z, lRR.z));
+        skin = opSmoothUnion(skin, upper, 0.30f);     // shoulder / haunch fillet
+        skin = opSmoothUnion(skin, lower, 0.10f);     // knee
+    } else {
+        skin = _fminf(skin, lb);
+    }
+    float2 res = to_float2(skin, MAT_SKIN);
+    if (hoof < res.x) res = to_float2(hoof, MAT_HOOF);
+    if (eyes < res.x) res = to_float2(eyes, MAT_EYE);
+    if (horn < res.x) res = to_float2(horn, MAT_HORN);
+    if (hair < res.x) res = to_float2(hair, MAT_HAIR);
+    return res;
+}
+__DEVICE__ float map(float3 p, float3 gPelvis, mat3 gBodyRot, float3 NECK_PIVOT, float3 gHeadPos, float NECK_R0, float NECK_R1, float MANE_THICK, float HAIR_ROUND, mat3 gNeckRot, float TAIL_THICK, mat3 gHeadRot,
+                     float3 HEAD_BOUND_C, float HEAD_BOUND_R, float3 SKULL_C, float SKULL_R, float3 MUZZLE_A, float3 MUZZLE_B, float3 NOSTRIL, float NOSTRIL_R, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL,
+                     float3 EYE_C, float EYE_R, float3 HORN_BASE, float3 HORN_DIR, float3 HORN_PERP, float HORN_LEN, float HORN_R, float HORN_TWIST, float LEG_TOP, struct Leg gLegFL, struct Leg gLegFR, struct Leg gLegRL, struct Leg gLegRR, float FRONT_R, float REAR_R,
+                     float ANKLE_H, float KNEE_R, float SHIN_R, float ANKLE_R) { return mapFull(p, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot,
+                                                                                                HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL,
+                                                                                                EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H).x; }
+    // pose
+    // ph = this leg's phase, 0 = touchdown, ph < duty = planted
+__DEVICE__ struct Leg solveLeg(float side, bool front, float ph, struct Gait g, float FRONT_STANCE, float REAR_STANCE, float HOOF_HEEL, float HOOF_TOE, float FOOT_X, float GROUND_Y, float ANKLE_H, float HIP_X, float FRONT_Y, float FRONT_Z, float REAR_Y, float REAR_Z,
+                               float3 gPelvis, mat3 gBodyRot, float UPPER_LEN, float LOWER_LEN  ) {
+
+    float zMid = front ? FRONT_Z + FRONT_STANCE : REAR_Z + REAR_STANCE;
+    float zRef, lift, pitch;
+    if (ph < g.duty) {
+        // stance: the hoof is carried straight back at ground speed
+        float u = ph / g.duty;
+        zRef  = zMid + g.stride * (0.5f - u);
+        lift  = 0.0f;
+        pitch = g.strikePitch * (1.0f - smoothstep(0.0f, 0.2f, u))
+              + g.toeOffPitch * smoothstep(0.6f, 1.0f, u);
+    } else {
+        // swing: leaves and lands at ground speed (no skid), so it overshoots slightly at both ends.
+        // Lift and hoof fold are one smooth hump each, peaking at mid-swing.
+        float v  = (ph - g.duty) / (1.0f - g.duty);
+        float m  = _fminf((1.0f - g.duty) / g.duty, 2.2f);
+        float e  = v * v * (3.0f - 2.0f * v) - m * v * (2.0f * v - 1.0f) * (v - 1.0f);
+        float sw = _sinf(PI * v);
+        zRef  = zMid + g.stride * (e - 0.5f);
+        lift  = g.lift * sw * sw;
+        pitch = _mix(g.toeOffPitch, g.strikePitch, smoothstep(0.0f, 1.0f, v)) + g.kick * sw * sw;
+    }
+    // the rigid hoof pivots on its toe when the heel lifts (pitch > 0) and on its
+    // heel when the toe lifts (pitch < 0); the contact slides between the two
+    // rather than jumping, so the ankle velocity stays continuous
+    float cp = _cosf(pitch);
+    float sp = _sinf(pitch);
+    float pz = _mix(-HOOF_HEEL, HOOF_TOE, smoothstep(-0.15f, 0.15f, pitch));
+    struct Leg leg;
+    leg.footCS = to_float2(cp, sp);
+    leg.ankle  = to_float3(side * FOOT_X,
+                           GROUND_Y + lift + ANKLE_H * cp + pz * sp,
+                           zRef + pz * (1.0f - cp) + ANKLE_H * sp);
+    float3 hb = front ? to_float3(side * HIP_X, FRONT_Y, FRONT_Z) : to_float3(side * HIP_X, REAR_Y, REAR_Z);
+    leg.hip = gPelvis + mul_mat3_f3(gBodyRot , hb);
+    // two-bone IK in the plane x = forward, y = up.
+    // Front legs knee bends forward. Rear legs - backward.
+    // The reach is soft-limited so the knee never snaps straight; if the ankle is
+    // still out of reach the lower leg simply stretches to it.
+    float bend = front ? 1.0f : -1.0f;
+    float2  d   = swi2(leg.ankle,z,y) - swi2(leg.hip,z,y);
+    float len = length(d);
+    float2  dir = d / _fmaxf(len, 1e-4f);
+    float r   = softMin(len, UPPER_LEN + LOWER_LEN - 0.02f, 0.25f);
+    r         = _fmaxf(r, _fabs(UPPER_LEN - LOWER_LEN) + 0.02f);
+    float ca  = (UPPER_LEN * UPPER_LEN + r * r - LOWER_LEN * LOWER_LEN) / (2.0f * UPPER_LEN * r);
+    float sa  = _sqrtf(_fmaxf(1.0f - ca * ca, 0.0f));
+    float2  k   = swi2(leg.hip,z,y) + UPPER_LEN * (ca * dir + bend * sa * to_float2(-dir.y, dir.x));
+    leg.knee  = to_float3(_mix(leg.hip.x, leg.ankle.x, 0.5f), k.y, k.x);
+    return leg;
+}
+// 2D pointer -> 3D gaze direction (world space).
+//   o = pointer position relative to the head on screen, in world units.
+// Think of a glass dome of radius AIM_REACH sitting over the head, seen from the
+// camera. The pointer picks the point of the dome underneath it and the head is
+// turned toward it:
+//    pointer on the head      -> looks straight out of the screen (at the viewer)
+//    pointer AIM_REACH away   -> gaze lies flat in the screen plane, toward the pointer
+// Which half of the dome (toward / away from the camera) follows where the unicorn
+// is facing, blended softly so an orbiting camera never makes it flip; a pointer
+// behind it swings the gaze out of the screen plane instead.
+__DEVICE__ float3 lookDirection(float2 o, float3 camRight, float3 camUp, float3 camBack, float AIM_REACH, float AIM_BIAS) {
+    float2  a  = o / AIM_REACH;
+    float al = length(a);
+    if (al > 1.0f) a /= al;
+    float2  fwd2  = to_float2(camRight.z, camUp.z);                 // "forward" as it appears on screen
+    float depth = _fmaxf(_sqrtf(_fmaxf(1.0f - dot(a, a), 0.0f)),    // the dome
+                  _fmaxf(-dot(a, fwd2), 0.0f));                     // pointer behind: swing round
+    float side  = clamp(3.0f * camBack.z + 0.5f, -1.0f, 1.0f);      // toward (+) or away from (-) the camera
+    return normalize(a.x * camRight + a.y * camUp + side * depth * camBack
+                     + to_float3(0.0f, 0.0f, AIM_BIAS));
+}
+__DEVICE__ void setPose(struct Gait g, float cyc, float2 ptr, float look, float glance, float3 camRight, float3 camUp, float3 camBack,
+                        inout float3 *gPelvis, inout mat3 *gBodyRot, inout struct Leg *gLegFL, inout struct Leg *gLegFR, inout struct Leg *gLegRL, inout struct Leg *gLegRR,
+                        float FRONT_STANCE, float REAR_STANCE, float HOOF_HEEL, float HOOF_TOE, float FOOT_X, float GROUND_Y, float ANKLE_H, float HIP_X, float FRONT_Y, float FRONT_Z, float REAR_Y, float REAR_Z,
+                        float UPPER_LEN, float LOWER_LEN, float NECK_TILT, float3 NECK_PIVOT, float NECK_LEN, float3 CAM_TARGET, float VIEW_HALF_H, float LOOK_YAW_MAX, float LOOK_DOWN_MAX, float LOOK_UP_MAX, float LOOK_NECK,
+                        inout mat3 *gNeckRot, inout float3 *gHeadPos, float HEAD_PITCH, inout mat3 *gHeadRot, float AIM_REACH, float AIM_BIAS) {
+    float phRL = fract(cyc);
+    float phRR = fract(cyc + g.pairSplit);
+    float phFL = fract(cyc + g.frontLag);
+    float phFR = fract(cyc + g.frontLag + g.pairSplit);
+    float a1 = TAU * (phRL - 0.5f * g.duty);          // 1x per cycle, 0 = left hind mid-stance
+    float a2 = 2.0f * a1;                             // 2x per cycle
+    float ay = a1 + 0.5f * PI;                        // 1x per cycle, 0 = left hind furthest forward
+    float ag = TAU * cyc;                             // 1x per cycle, 0 = left hind touchdown (gallop clock)
+    float k  = g.amp;
+    // body: walk / trot = bob twice per cycle, weight shift, roll, spine twist.
+    // gallop = one bound per cycle (highest in the suspension phase, about 0.91f of the
+    // cycle) and a rocking pitch: nose up while the hind legs push (about 0.16f),
+    // nose down while the front legs carry (about 0.66f).
+    float lean = g.lean + k * 0.4f * g.nod * _sinf(a2 - 0.6f) - g.rock * _cosf(ag - TAU * 0.16f);
+    float roll = -g.roll * _cosf(a1);
+    float yaw  = -g.yaw  * _cosf(ay);
+    *gPelvis  = to_float3(g.sway * _cosf(a1),
+                          g.rise + g.bob * _cosf(a2) + g.bound * _cosf(ag - TAU * 0.91f),
+                          0.0f);
+    *gBodyRot = mul_mat3_mat3(mul_mat3_mat3(rotateY(-yaw) , rotateX(-lean)) , rotateZ(-roll));
+    *gLegFL = solveLeg( 1.0f, true,  phFL, g, FRONT_STANCE, REAR_STANCE, HOOF_HEEL, HOOF_TOE, FOOT_X, GROUND_Y, ANKLE_H, HIP_X, FRONT_Y, FRONT_Z, REAR_Y, REAR_Z, *gPelvis, *gBodyRot, UPPER_LEN, LOWER_LEN);
+    *gLegFR = solveLeg(-1.0f, true,  phFR, g, FRONT_STANCE, REAR_STANCE, HOOF_HEEL, HOOF_TOE, FOOT_X, GROUND_Y, ANKLE_H, HIP_X, FRONT_Y, FRONT_Z, REAR_Y, REAR_Z, *gPelvis, *gBodyRot, UPPER_LEN, LOWER_LEN);
+    *gLegRL = solveLeg( 1.0f, false, phRL, g, FRONT_STANCE, REAR_STANCE, HOOF_HEEL, HOOF_TOE, FOOT_X, GROUND_Y, ANKLE_H, HIP_X, FRONT_Y, FRONT_Z, REAR_Y, REAR_Z, *gPelvis, *gBodyRot, UPPER_LEN, LOWER_LEN);
+    *gLegRR = solveLeg(-1.0f, false, phRR, g, FRONT_STANCE, REAR_STANCE, HOOF_HEEL, HOOF_TOE, FOOT_X, GROUND_Y, ANKLE_H, HIP_X, FRONT_Y, FRONT_Z, REAR_Y, REAR_Z, *gPelvis, *gBodyRot, UPPER_LEN, LOWER_LEN);
+    // look-at
+    // 1.0f where the head is on screen (before any turning)
+    float neckFwd = -0.5f * lean + k * g.nod * _sinf(a2 - 1.2f) + g.reach;   // + = forward / down
+    mat3  neck0   = rotateX(-(NECK_TILT + neckFwd));
+    float3  headW   = *gPelvis + mul_mat3_f3(*gBodyRot , (NECK_PIVOT + mul_mat3_f3(neck0 , to_float3(0.0f, NECK_LEN, 0.0f))));
+    float2  headS   = to_float2(dot(headW - CAM_TARGET, camRight), dot(headW - CAM_TARGET, camUp));
+    // 2.0f wanted gaze direction in world space (glance = 1 : straight at the viewer)
+    float3  dW = lookDirection((ptr * VIEW_HALF_H - headS) * (1.0f - glance), camRight, camUp, camBack, AIM_REACH, AIM_BIAS);
+    // 3.0f joint limits, relative to the body; anything behind is pushed to the nearest edge
+    float3  db = mul_f3_mat3(dW , *gBodyRot);
+    db.z = _fmaxf(db.z, 0.25f);
+    float aimYaw   = look * clamp(_atan2f(db.x, db.z), -LOOK_YAW_MAX, LOOK_YAW_MAX);          // + = unicorn's left
+    float aimPitch = look * clamp(_atan2f(db.y, length(swi2(db,x,z))), LOOK_DOWN_MAX, LOOK_UP_MAX);  // + = up
+    // neck: nods with the stride, counters the rocking of the gallop, takes part of
+    // the turn, straightens up when looking high
+    float neckYaw   = LOOK_NECK * aimYaw;
+    float neckPitch = NECK_TILT + neckFwd - 0.30f * aimPitch;
+    *gNeckRot = mul_mat3_mat3(mul_mat3_mat3(rotateY(-neckYaw) , rotateZ(-0.4f * roll)) , rotateX(-neckPitch));
+    *gHeadPos = NECK_PIVOT + mul_mat3_f3(*gNeckRot , to_float3(0.0f, NECK_LEN, 0.0f));
+    // head (relative to the body): counter-steers the spine twist, does the rest of the turn,
+    // cocks to one side a little when it looks round, pokes its nose out at a gallop
+    float headYaw   = aimYaw - 0.8f * yaw;
+    float headPitch = HEAD_PITCH * (1.0f - 0.4f * look) - aimPitch - 0.6f * lean - 0.6f * g.reach
+                    + k * 0.5f * g.nod * _sinf(a2 - 2.0f);               // + = nose down
+    float headRoll  = 0.4f * roll + 0.15f * aimYaw;
+    *gHeadRot = mul_mat3_mat3(mul_mat3_mat3(rotateY(-headYaw) , rotateX(-headPitch)) , rotateZ(-headRoll));
+}
+// periodic blink, 0 = open, 1 = shut
+__DEVICE__ float blinkAmount(float t, float BLINK_EVERY, float BLINK_LEN) {
+    float seg = _floor(t / BLINK_EVERY);
+    float jit = fract(_sinf(seg * 91.7f) * 437.5f);                 // random start inside the slot
+    float x   = (t - seg * BLINK_EVERY - 0.5f - 2.0f * jit) / BLINK_LEN;
+    float tri = 1.0f - _fabs(2.0f * clamp(x, 0.0f, 1.0f) - 1.0f);       // 0 -> 1 -> 0 over the blink
+    return smoothstep(0.0f, 0.7f, tri);                            // quick shut, short hold, open
+}
+//  materials
+__DEVICE__ void shadeParams(float3 p, out float3 *alb, out float *shn, out float *spk, float3 gPelvis, mat3 gBodyRot, float3 NECK_PIVOT, float3 gHeadPos, float NECK_R0, float NECK_R1, float MANE_THICK, float HAIR_ROUND, mat3 gNeckRot, float TAIL_THICK, mat3 gHeadRot,
+                            float3 HEAD_BOUND_C, float HEAD_BOUND_R, float3 SKULL_C, float SKULL_R, float3 MUZZLE_A, float3 MUZZLE_B, float3 NOSTRIL, float NOSTRIL_R, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL,
+                            float3 EYE_C, float EYE_R, float3 HORN_BASE, float3 HORN_DIR, float3 HORN_PERP, float HORN_LEN, float HORN_R, float HORN_TWIST, float LEG_TOP, struct Leg gLegFL, struct Leg gLegFR, struct Leg gLegRL, struct Leg gLegRR, float FRONT_R, float REAR_R,
+                            float ANKLE_H, float KNEE_R, float SHIN_R, float ANKLE_R, float3 HAIR_COLOR, float3 NOSE_C, float3 BLUSH_C, bool Tex, float4 TexPar, float TexThres, float3 Colors[10], __TEXTURE2D__ iChannel1) {
+    float2 res = mapFull(p, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot,
+                         HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL,
+                         EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+    float ssssssssssssssssssssssssssssssssssssssssss;
+
+    float3 ph  = toHead(toBody(p, gPelvis, gBodyRot), gHeadPos, gHeadRot);
+    float3 q   = to_float3(_fabs(ph.x), ph.y, ph.z);
+    if (res.y > 3.5f) {
+        // eye: white, big violet-blue iris (lighter toward the bottom), pupil
+        float3  e  = normalize(q - EYE_C);
+        float c    = dot(e, EYE_DIR);
+        float up   = dot(e, EYE_UP);
+        //float3  iris = _mix(to_float3(0.30f, 0.35f, 1.00f), to_float3(0.10f, 0.02f, 0.30f), smoothstep(-0.55f, 0.35f, up));
+        float3  iris = _mix(Colors[0], Colors[1], smoothstep(-0.55f, 0.35f, up));
+
+        *alb = _mix(to_float3_s(0.85f), iris, smoothstep(0.50f, 0.56f, c));
+        *alb = _mix(*alb, to_float3_s(0.005f), smoothstep(0.80f, 0.86f, c));
+        *shn = 90.0f; *spk = 2.0f;
+    } else if (res.y > 2.5f) {
+        *alb = Colors[2];//to_float3_s(0.015f);                       // black hooves
+        *shn = 60.0f; *spk = 0.5f;
+    } else if (res.y > 1.5f) {
+        *alb = Colors[3];//to_float3(1.00f, 0.68f, 0.24f);            // golden horn
+        *shn = 60.0f; *spk = 0.9f;
+    } else if (res.y > 0.5f) {
+        *alb = HAIR_COLOR;                                // mane / tail
+        *shn = 30.0f; *spk = 0.25f;
+    } else {
+        *alb = Colors[4];//to_float3(0.74f, 0.72f, 0.76f);            // white coat
+
+          if (Tex)
+          {
+            float3  pb   = toBody(p, gPelvis, gBodyRot);
+            float2 tuv = ((swi2(pb,y,z)+swi2(TexPar,x,y))*to_float2(TexPar.w,1.0f))*TexPar.z;
+
+            float skin = sdTorso(pb);
+
+            if (texture(iChannel1, tuv).w > 0.0f && skin < TexThres)
+            {
+              *alb = swi3(texture(iChannel1, tuv),x,y,z);
+
+              //float3 Textur = swi3(texture(iChannel1, tuv),x,y,z);
+              //float3  pb   = toBody(p, gPelvis, gBodyRot);
+              //float skin = sdTorso(pb);
+              //*alb = _mix(Textur, *alb,  skin);
+            }
+          }
+
+
+        *shn = 24.0f; *spk = 0.10f;
+        // pink nose, cheek blush
+        float nose  = 1.0f - smoothstep(0.30f, 0.62f, length(ph - NOSE_C));
+        //*alb = _mix(*alb, to_float3(0.95f, 0.55f, 0.62f), 0.7f * nose);
+        *alb = _mix(*alb, Colors[5], 0.7f * nose);
+        float blush = 1.0f - smoothstep(0.10f, 0.30f, length(q - BLUSH_C));
+        //*alb = _mix(*alb, to_float3(1.00f, 0.30f, 0.42f), 0.5f * blush);
+        *alb = _mix(*alb, Colors[6], 0.5f * blush);
+        // eyelids, with a dark lash line along the edge of the upper lid
+        float3 e = q - EYE_C;
+        if (length(e) < LID_R + 0.035f) {
+            *alb = Colors[7];//to_float3(0.70f, 0.62f, 0.78f);
+            float2 o = lidOpening(e, EYE_DIR, EYE_UP, gLidU, gLidL);
+            if (o.x < o.y && o.x > -0.05f) *alb = Colors[8];//to_float3(0.02f, 0.01f, 0.04f);
+        }
+        if (sdSphere(q - NOSTRIL, NOSTRIL_R) < 0.03f) *alb = Colors[9];//to_float3(0.22f, 0.07f, 0.10f);
+    }
+}
+//  minimal renderer
+__DEVICE__ float march(float3 ro, float3 rd, float t, float tMax, float3 gPelvis, mat3 gBodyRot, float3 NECK_PIVOT, float3 gHeadPos, float NECK_R0, float NECK_R1, float MANE_THICK, float HAIR_ROUND, mat3 gNeckRot, float TAIL_THICK, mat3 gHeadRot,
+                       float3 HEAD_BOUND_C, float HEAD_BOUND_R, float3 SKULL_C, float SKULL_R, float3 MUZZLE_A, float3 MUZZLE_B, float3 NOSTRIL, float NOSTRIL_R, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL,
+                       float3 EYE_C, float EYE_R, float3 HORN_BASE, float3 HORN_DIR, float3 HORN_PERP, float HORN_LEN, float HORN_R, float HORN_TWIST, float LEG_TOP, struct Leg gLegFL, struct Leg gLegFR, struct Leg gLegRL, struct Leg gLegRR, float FRONT_R, float REAR_R,
+                       float ANKLE_H, float KNEE_R, float SHIN_R, float ANKLE_R) {
+    for (int i = 0; i < 80; i++) {
+        float d = map(ro + rd * t, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+        if (d < 0.004f) return t;
+        t += 0.7f * d;               // tapered sticks / horn grooves are not exact distances
+        if (t > tMax) break;
+    }
+    return -1.0f;
+}
+__DEVICE__ float3 calcNormal(float3 p, float3 gPelvis, mat3 gBodyRot, float3 NECK_PIVOT, float3 gHeadPos, float NECK_R0, float NECK_R1, float MANE_THICK, float HAIR_ROUND, mat3 gNeckRot, float TAIL_THICK, mat3 gHeadRot,
+                             float3 HEAD_BOUND_C, float HEAD_BOUND_R, float3 SKULL_C, float SKULL_R, float3 MUZZLE_A, float3 MUZZLE_B, float3 NOSTRIL, float NOSTRIL_R, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL,
+                             float3 EYE_C, float EYE_R, float3 HORN_BASE, float3 HORN_DIR, float3 HORN_PERP, float HORN_LEN, float HORN_R, float HORN_TWIST, float LEG_TOP, struct Leg gLegFL, struct Leg gLegFR, struct Leg gLegRL, struct Leg gLegRR, float FRONT_R, float REAR_R,
+                             float ANKLE_H, float KNEE_R, float SHIN_R, float ANKLE_R) {
+    const float2 e = to_float2(1.0f, -1.0f) * 0.004f;
+    return normalize(swi3(e,x,y,y) * map(p + swi3(e,x,y,y), gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H) + swi3(e,y,y,x) * map(p + swi3(e,y,y,x), gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H) +
+                     swi3(e,y,x,y) * map(p + swi3(e,y,x,y), gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H) + swi3(e,x,x,x) * map(p + swi3(e,x,x,x), gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H));
+}
+__DEVICE__ float calcAO(float3 p, float3 n, float3 gPelvis, mat3 gBodyRot, float3 NECK_PIVOT, float3 gHeadPos, float NECK_R0, float NECK_R1, float MANE_THICK, float HAIR_ROUND, mat3 gNeckRot, float TAIL_THICK, mat3 gHeadRot,
+                        float3 HEAD_BOUND_C, float HEAD_BOUND_R, float3 SKULL_C, float SKULL_R, float3 MUZZLE_A, float3 MUZZLE_B, float3 NOSTRIL, float NOSTRIL_R, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL,
+                        float3 EYE_C, float EYE_R, float3 HORN_BASE, float3 HORN_DIR, float3 HORN_PERP, float HORN_LEN, float HORN_R, float HORN_TWIST, float LEG_TOP, struct Leg gLegFL, struct Leg gLegFR, struct Leg gLegRL, struct Leg gLegRR, float FRONT_R, float REAR_R,
+                        float ANKLE_H, float KNEE_R, float SHIN_R, float ANKLE_R) {
+    float occ = 0.0f;
+    float w = 1.0f;
+    for (int i = 1; i <= 3; i++) {
+        float h = 0.15f * (float)(i);
+        occ += w * (h - map(p + n * h, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H));
+        w *= 0.6f;
+    }
+    return clamp(1.0f - 1.2f * occ, 0.0f, 1.0f);
+}
+// twilight gradient with a few soft twinkling stars
+__DEVICE__ float3 background(float2 uv, float iTime) {
+    float3  col = _mix(to_float3(0.030f, 0.025f, 0.070f), to_float3(0.120f, 0.070f, 0.170f),
+                       clamp(0.5f + 0.45f * uv.y, 0.0f, 1.0f));
+    float2  gc  = uv * 6.0f;
+    float2  id  = _floor(gc);
+    float hs  = fract(_sinf(dot(id, to_float2(127.1f, 311.7f))) * 43758.5453f);
+    float2  c   = 0.5f + 0.3f * (to_float2(fract(hs * 17.3f), fract(hs * 91.7f)) - 0.5f);
+    float r   = length(fract(gc) - c);
+    float tw  = 0.55f + 0.45f * _sinf(iTime * (1.0f + 2.0f * hs) + 50.0f * hs);
+    float star = step(0.6f, hs) * tw * (1.0f - smoothstep(0.0f, 0.07f, r));
+    return col + 0.6f * star * to_float3(0.9f, 0.8f, 1.0f);
+}
+
+__DEVICE__ mat2 rot(float a){ return to_mat2(_cosf(a),_sinf(a),-_sinf(a),_cosf(a)); }
+
+
+__DEVICE__ float3 render(float2 uv, float3 camRight, float3 camUp, float3 camBack, float3 gPelvis, mat3 gBodyRot, float3 NECK_PIVOT, float3 gHeadPos, float NECK_R0, float NECK_R1, float MANE_THICK, float HAIR_ROUND, mat3 gNeckRot, float TAIL_THICK, mat3 gHeadRot,
+                         float3 HEAD_BOUND_C, float HEAD_BOUND_R, float3 SKULL_C, float SKULL_R, float3 MUZZLE_A, float3 MUZZLE_B, float3 NOSTRIL, float NOSTRIL_R, float LID_R, float3 EYE_DIR, float3 EYE_UP, float2 gLidU, float2 gLidL,
+                         float3 EYE_C, float EYE_R, float3 HORN_BASE, float3 HORN_DIR, float3 HORN_PERP, float HORN_LEN, float HORN_R, float HORN_TWIST, float LEG_TOP, struct Leg gLegFL, struct Leg gLegFR, struct Leg gLegRL, struct Leg gLegRR, float FRONT_R, float REAR_R,
+                         float ANKLE_H, float KNEE_R, float SHIN_R, float ANKLE_R,
+                         float3 HAIR_COLOR, float3 NOSE_C, float3 BLUSH_C, bool SHOW_GROUND, float GROUND_Y, float gGroundScroll, float3 CAM_TARGET, float VIEW_HALF_H, float3 BOUND_C, float BOUND_R, float iTime, float2 iResolution, inout float3 *DebugF3, inout float *DebugF, float3 View, bool Tex, float4 TexPar, float TexThres, float3 Colors[10], __TEXTURE2D__ iChannel1) {
+    float3 rd  = -camBack;                                   // orthographic: parallel rays
+    float3 ro  = CAM_TARGET + VIEW_HALF_H * (uv.x * camRight + uv.y * camUp) + 40.0f * camBack;
+
+    //#############################################################
+    mat2 rx = rot(View.x);
+    mat2 ry = rot(View.y);
+    mat2 rz = rot(View.z);
+
+    swi2S(ro,y,z, mul_f2_mat2(swi2(ro,y,z) , rx));
+    swi2S(rd,y,z, mul_f2_mat2(swi2(rd,y,z) , rx));
+    swi2S(ro,x,z, mul_f2_mat2(swi2(ro,x,z) , ry));
+    swi2S(rd,x,z, mul_f2_mat2(swi2(rd,x,z) , ry));
+    swi2S(ro,x,y, mul_f2_mat2(swi2(ro,x,y) , rz));
+    swi2S(rd,x,y, mul_f2_mat2(swi2(rd,x,y) , rz));
+    //###############################################################
+
+
+    float3 col = background(uv, iTime);
+    // march only inside the bounding sphere
+    float t  = -1.0f;
+    float3  oc = ro - BOUND_C;
+    float b  = dot(oc, rd);
+    float h  = b * b - dot(oc, oc) + BOUND_R * BOUND_R;
+
+    //############################## DEBUGGING #########################################
+    //*DebugF3 = uv.x * camRight + uv.y * camUp;
+    //*DebugF = VIEW_HALF_H;
+
+    if (h > 0.0f) {
+        h = _sqrtf(h);
+        t = march(ro, rd, _fmaxf(-b - h, 0.0f), -b + h, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+    }
+
+
+    float3 n = to_float3_s(0.0f), p = to_float3_s(0.0f);
+    float ao = 0.0f;
+
+    if (t > 0.0f) {
+        //float3
+        p = ro + rd * t;
+        //float3
+        n = calcNormal(p, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+        float3  alb;
+        float shn, spk;
+        shadeParams(p, &alb, &shn, &spk, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H, HAIR_COLOR, NOSE_C, BLUSH_C,  Tex, TexPar, TexThres, Colors, iChannel1);
+        float3  L   = normalize(0.45f * camRight + 0.75f * camUp + 0.50f * camBack);
+        float ndl = dot(n, L);
+        float dif = _fmaxf(ndl, 0.0f);
+        float sky = 0.5f + 0.5f * n.y;
+        //float
+        ao  = calcAO(p, n, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H);
+        float spe = _powf(_fmaxf(dot(n, normalize(L + camBack)), 0.0f), shn) * spk;
+        float rim = _powf(1.0f - _fmaxf(dot(n, camBack), 0.0f), 3.0f);
+        float3  lin = 0.95f * dif * to_float3(1.00f, 0.96f, 0.90f)                              // warm key
+                    + ao * _mix(to_float3(0.22f, 0.19f, 0.32f), to_float3(0.36f, 0.38f, 0.50f), sky)    // lavender fill
+                    + 0.22f * ao * rim * to_float3(0.75f, 0.70f, 1.00f);
+        col = alb * lin + spe * step(0.0f, ndl);
+    }
+
+
+    float3  pb   = toBody(p, gPelvis, gBodyRot);
+    float skin = sdTorso(pb);
+    *DebugF3 = to_float3_s(skin);//n;
+
+
+    if (SHOW_GROUND)
+    {
+      if (rd.y < -1e-3f) {
+          float tg = (GROUND_Y - ro.y) / rd.y;
+          if (t < 0.0f || tg < t) {
+              float3  pg = ro + rd * tg;
+              float a  = (1.0f - smoothstep(2.45f, 2.60f, _fabs(pg.x))) * (1.0f - smoothstep(4.0f, 7.0f, _fabs(pg.z - 0.2f)));
+              if (a > 0.0f) {
+                  float zz   = pg.z + gGroundScroll;
+                  float aaw  = _fmaxf(2.0f * VIEW_HALF_H / iResolution.y * (_fabs(camRight.z) + _fabs(camUp.z - rd.z * camUp.y / rd.y)), 1e-3f);
+                  float tick = smoothstep(0.46f - aaw, 0.46f, _fabs(fract(zz) - 0.5f)) * (1.0f - smoothstep(0.3f, 0.6f, aaw));
+                  float3  belt = _mix(to_float3(0.14f, 0.12f, 0.20f), to_float3(0.18f, 0.15f, 0.25f), mod_f(_floor(zz), 2.0f));
+                  belt  = _mix(belt, to_float3(0.45f, 0.40f, 0.55f), tick);
+                  belt *= 0.35f + 0.65f * clamp(map(pg, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot, HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL, EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R, ANKLE_H, KNEE_R, SHIN_R, ANKLE_H) / 1.2f, 0.0f, 1.0f);   // contact darkening
+                  col = _mix(col, belt, a);
+              }
+          }
+      }
+    }
+    return col;
+}
+__KERNEL__ void BabyUnicornFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0,  __TEXTURE2D__ iChannel1, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  float  iTimeDelta  = params->iTimeDelta;
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+  bool   REST_POSE = params->REST_POSE;
+  bool   SHOW_GROUND = params->SHOW_GROUND;
+  bool   IDLE_DEMO = params->IDLE_DEMO;
+  bool   Reset = params->Reset;
+  bool   Tex = params->Tex;
+  int    CAM_MODE = params->CAM_MODE;
+  float  CAM_YAW = params->CAM_YAW;
+  float  CAM_SWING = params->CAM_SWING;
+  float  CAM_RATE = params->CAM_RATE;
+  float  WALK_SPEED = params->WALK_SPEED;
+  float  RUN_SPEED = params->RUN_SPEED;
+  float  ACCEL = params->ACCEL;
+  float  DECEL = params->DECEL;
+  float  AIM_FOLLOW = params->AIM_FOLLOW;
+  float  DEMO_EVERY = params->DEMO_EVERY;
+  float  DEMO_LOOK_AT = params->DEMO_LOOK_AT;
+  float  DEMO_LOOK_LEN = params->DEMO_LOOK_LEN;
+  float  DEMO_RUN_LEN = params->DEMO_RUN_LEN;
+  float  CAM_ELEV = params->CAM_ELEV;
+  float  VIEW_HALF_H = params->VIEW_HALF_H;
+  float4 Cam_Target = to_float4(params->Cam_Target[0], params->Cam_Target[1], params->Cam_Target[2], params->Cam_Target[3]);
+  float4 Bound_C = to_float4(params->Bound_C[0], params->Bound_C[1], params->Bound_C[2], params->Bound_C[3]);
+  float  BOUND_R = params->BOUND_R;
+  float  GROUND_Y = params->GROUND_Y;
+  float  HIP_X = params->HIP_X;
+  float  FOOT_X = params->FOOT_X;
+  float  FRONT_Y = params->FRONT_Y;
+  float  FRONT_Z = params->FRONT_Z;
+  float  REAR_Y = params->REAR_Y;
+  float  REAR_Z = params->REAR_Z;
+  float  FRONT_STANCE = params->FRONT_STANCE;
+  float  REAR_STANCE = params->REAR_STANCE;
+  float  UPPER_LEN = params->UPPER_LEN;
+  float  LOWER_LEN = params->LOWER_LEN;
+  float  FRONT_R = params->FRONT_R;
+  float  REAR_R = params->REAR_R;
+  float  KNEE_R = params->KNEE_R;
+  float  SHIN_R = params->SHIN_R;
+  float  ANKLE_R = params->ANKLE_R;
+  float  ANKLE_H = params->ANKLE_H;
+  float  HOOF_TOE = params->HOOF_TOE;
+  float  HOOF_HEEL = params->HOOF_HEEL;
+  float  LEG_TOP = params->LEG_TOP;
+  float4 Neck_PIVOT = to_float4(params->Neck_PIVOT[0], params->Neck_PIVOT[1], params->Neck_PIVOT[2], params->Neck_PIVOT[3]);
+  float  NECK_LEN = params->NECK_LEN;
+  float  NECK_TILT = params->NECK_TILT;
+  float  NECK_R0 = params->NECK_R0;
+  float  NECK_R1 = params->NECK_R1;
+  float  HEAD_PITCH = params->HEAD_PITCH;
+  float4 Skull_C = to_float4(params->Skull_C[0], params->Skull_C[1], params->Skull_C[2], params->Skull_C[3]);
+  float  SKULL_R = params->SKULL_R;
+  float4 Muzzle_A = to_float4(params->Muzzle_A[0], params->Muzzle_A[1], params->Muzzle_A[2], params->Muzzle_A[3]);
+  float4 Muzzle_B = to_float4(params->Muzzle_B[0], params->Muzzle_B[1], params->Muzzle_B[2], params->Muzzle_B[3]);
+  float4 NoSTRIL = to_float4(params->NoSTRIL[0], params->NoSTRIL[1], params->NoSTRIL[2], params->NoSTRIL[3]);
+  float  NOSTRIL_R = params->NOSTRIL_R;
+  float4 Nose_C = to_float4(params->Nose_C[0], params->Nose_C[1], params->Nose_C[2], params->Nose_C[3]);
+  float4 Blush_C = to_float4(params->Blush_C[0], params->Blush_C[1], params->Blush_C[2], params->Blush_C[3]);
+  float4 Head_BOUND_C = to_float4(params->Head_BOUND_C[0], params->Head_BOUND_C[1], params->Head_BOUND_C[2], params->Head_BOUND_C[3]);
+  float  HEAD_BOUND_R = params->HEAD_BOUND_R;
+  float4 Horn_BASE = to_float4(params->Horn_BASE[0], params->Horn_BASE[1], params->Horn_BASE[2], params->Horn_BASE[3]);
+  float4 Horn_DIR = to_float4(params->Horn_DIR[0], params->Horn_DIR[1], params->Horn_DIR[2], params->Horn_DIR[3]);
+  float4 Horn_PERP = to_float4(params->Horn_PERP[0], params->Horn_PERP[1], params->Horn_PERP[2], params->Horn_PERP[3]);
+  float  HORN_LEN = params->HORN_LEN;
+  float  HORN_R = params->HORN_R;
+  float  HORN_TWIST = params->HORN_TWIST;
+  float4 Eye_C = to_float4(params->Eye_C[0], params->Eye_C[1], params->Eye_C[2], params->Eye_C[3]);
+  float  EYE_R = params->EYE_R;
+  float  LID_R = params->LID_R;
+  float4 Eye_DIR = to_float4(params->Eye_DIR[0], params->Eye_DIR[1], params->Eye_DIR[2], params->Eye_DIR[3]);
+  float4 Eye_UP = to_float4(params->Eye_UP[0], params->Eye_UP[1], params->Eye_UP[2], params->Eye_UP[3]);
+  float  LID_UP_OPEN = params->LID_UP_OPEN;
+  float  LID_LOW = params->LID_LOW;
+  float  BLINK_EVERY = params->BLINK_EVERY;
+  float  BLINK_LEN = params->BLINK_LEN;
+  float  AIM_REACH = params->AIM_REACH;
+  float  AIM_BIAS = params->AIM_BIAS;
+  float  LOOK_YAW_MAX = params->LOOK_YAW_MAX;
+  float  LOOK_UP_MAX = params->LOOK_UP_MAX;
+  float  LOOK_DOWN_MAX = params->LOOK_DOWN_MAX;
+  float  LOOK_NECK = params->LOOK_NECK;
+  float4 Hair_COLOR = to_float4(params->Hair_COLOR[0], params->Hair_COLOR[1], params->Hair_COLOR[2], params->Hair_COLOR[3]);
+  float  MANE_THICK = params->MANE_THICK;
+  float  TAIL_THICK = params->TAIL_THICK;
+  float  HAIR_ROUND = params->HAIR_ROUND;
+  float2 ViewXY = to_float2(params->ViewXY[0], params->ViewXY[1]);
+  float  ViewZ = params->ViewZ;
+  float2 TexXY = to_float2(params->TexXY[0], params->TexXY[1]);
+  float  TexScale = params->TexScale;
+  float  TexThres = params->TexThres;
+  float4 ColIris1 = to_float4(params->ColIris1[0], params->ColIris1[1], params->ColIris1[2], params->ColIris1[3]);
+  float4 ColIris2 = to_float4(params->ColIris2[0], params->ColIris2[1], params->ColIris2[2], params->ColIris2[3]);
+  float4 ColHooves = to_float4(params->ColHooves[0], params->ColHooves[1], params->ColHooves[2], params->ColHooves[3]);
+  float4 ColHorn = to_float4(params->ColHorn[0], params->ColHorn[1], params->ColHorn[2], params->ColHorn[3]);
+  float4 ColCoat = to_float4(params->ColCoat[0], params->ColCoat[1], params->ColCoat[2], params->ColCoat[3]);
+  float4 ColNose = to_float4(params->ColNose[0], params->ColNose[1], params->ColNose[2], params->ColNose[3]);
+  float4 ColBlush = to_float4(params->ColBlush[0], params->ColBlush[1], params->ColBlush[2], params->ColBlush[3]);
+  float4 ColLid1 = to_float4(params->ColLid1[0], params->ColLid1[1], params->ColLid1[2], params->ColLid1[3]);
+  float4 ColLid2 = to_float4(params->ColLid2[0], params->ColLid2[1], params->ColLid2[2], params->ColLid2[3]);
+  float4 ColNoStril = to_float4(params->ColNoStril[0], params->ColNoStril[1], params->ColNoStril[2], params->ColNoStril[3]);
+
+  // --------
+
+    float3 Colors[10] = {swi3(ColIris1,x,y,z),swi3(ColIris2,x,y,z),swi3(ColHooves,x,y,z),swi3(ColHorn,x,y,z),swi3(ColCoat,x,y,z),swi3(ColNose,x,y,z),swi3(ColBlush,x,y,z),swi3(ColLid1,x,y,z),swi3(ColLid2,x,y,z),swi3(ColNoStril,x,y,z)};
+
+    float ratio = iResolution.y/iResolution.x;
+    float4 TexPar = {TexXY.x, TexXY.y, TexScale, ratio};
+
+    float3 View = to_float3_aw(ViewXY, ViewZ);
+
+    float3 CAM_TARGET = swi3(Cam_Target,x,y,z);
+    float3 BOUND_C = swi3(Bound_C,x,y,z);
+    float3 NECK_PIVOT = swi3(Neck_PIVOT,x,y,z);
+    float3 SKULL_C = swi3(Skull_C,x,y,z);
+    float3 MUZZLE_A = swi3(Muzzle_A,x,y,z);
+    float3 MUZZLE_B = swi3(Muzzle_B,x,y,z);
+    float3 NOSTRIL  = swi3(NoSTRIL ,x,y,z);
+    float3 NOSE_C       = swi3(Nose_C      ,x,y,z);
+    float3 BLUSH_C      = swi3(Blush_C     ,x,y,z);
+    float3 HEAD_BOUND_C = swi3(Head_BOUND_C,x,y,z);
+    float3 HORN_BASE = swi3(Horn_BASE,x,y,z);
+    float3 HORN_DIR  = swi3(Horn_DIR ,x,y,z);
+    float3 HORN_PERP = swi3(Horn_PERP,x,y,z);
+    float3 EYE_C = swi3(Eye_C,x,y,z);
+    float3 EYE_DIR = swi3(Eye_DIR,x,y,z);
+    float3 EYE_UP = swi3(Eye_UP,x,y,z);
+    float3 HAIR_COLOR = swi3(Hair_COLOR,x,y,z);
+
+    float3  gPelvis = to_float3_s(0.0f);
+    mat3  gBodyRot, gNeckRot, gHeadRot;   // neck and head are both relative to the body
+    float3  gHeadPos = to_float3_s(0.0f);                       // head pivot, body space
+    float2  gLidU, gLidL;                   // sin / cos of the upper / lower eyelid angle
+    float gGroundScroll = 0.0f;
+    struct Leg   gLegFL, gLegFR, gLegRL, gLegRR;
+
+
+    // state from Buffer A
+    float4  s0   = texelFetch(iChannel0, to_int2(0, 0), 0);   // phase, ground distance, speed, -
+    float4  s1   = texelFetch(iChannel0, to_int2(1, 0), 0);   // pointer xy, glance, look weight
+    float cyc    = s0.x;
+    float speed  = s0.z;
+    float glance = s1.z;
+    float look   = s1.w;
+    gGroundScroll = s0.y;
+    // ortho camera (yaw 0 = front, PI/2 = side with the unicorn facing right)
+    float yaw = camYaw(iTime, CAM_MODE, CAM_YAW, CAM_SWING, CAM_RATE);
+    float cy = _cosf(yaw), sy = _sinf(yaw), ce = _cosf(CAM_ELEV), se = _sinf(CAM_ELEV);
+    float3 camBack  = to_float3(-sy * ce, se, cy * ce);
+    float3 camRight = to_float3(cy, 0.0f, sy);
+    float3 camUp    = cross(camBack, camRight);
+    // pose: evaluated once here, never inside the SDF
+    struct Gait g = gaitFromSpeed(speed);
+    if (REST_POSE)
+    {
+      g.speed = 0.0f; g.amp = 0.0f; g.stride = 0.0f; g.lift = 0.0f;
+      g.strikePitch = 0.0f; g.toeOffPitch = 0.0f; g.kick = 0.0f;
+      g.rise = 0.0f; g.bob = 0.0f; g.bound = 0.0f; g.rock = 0.0f; g.reach = 0.0f;
+      g.lean = 0.0f; g.nod = 0.0f; g.roll = 0.0f; g.sway = 0.0f; g.yaw = 0.0f;
+      cyc = 0.0f;
+      gGroundScroll = 0.0f;
+      look = 0.0f;
+      glance = 0.0f;
+    }
+    setPose(g, cyc, swi2(s1,x,y), look, glance, camRight, camUp, camBack, &gPelvis, &gBodyRot, &gLegFL, &gLegFR, &gLegRL, &gLegRR,
+                        FRONT_STANCE, REAR_STANCE, HOOF_HEEL, HOOF_TOE, FOOT_X, GROUND_Y, ANKLE_H, HIP_X, FRONT_Y, FRONT_Z, REAR_Y, REAR_Z,
+                        UPPER_LEN, LOWER_LEN, NECK_TILT, NECK_PIVOT, NECK_LEN, CAM_TARGET, VIEW_HALF_H, LOOK_YAW_MAX, LOOK_DOWN_MAX, LOOK_UP_MAX, LOOK_NECK,
+                        &gNeckRot, &gHeadPos, HEAD_PITCH, &gHeadRot, AIM_REACH, AIM_BIAS);
+
+    // eyelids: the upper lid comes down to meet the lower one
+    float lidA = _mix(LID_UP_OPEN, 0.02f - LID_LOW, blinkAmount(iTime, BLINK_EVERY, BLINK_LEN));
+    gLidU = to_float2(_sinf(lidA), _cosf(lidA));
+    gLidL = to_float2(_sinf(LID_LOW), _cosf(LID_LOW));
+
+
+    float DebugF;
+    float3 DebugF3;
+
+    float3 col = to_float3_s(0.0f);
+    for (int j = 0; j < AA; j++)
+    for (int i = 0; i < AA; i++) {
+        float2 o   = (to_float2((float)(i), (float)(j)) + 0.5f) / (float)(AA) - 0.5f;
+        float2 uvs = (2.0f * (fragCoord + o) - iResolution) / iResolution.y;
+        col += render(uvs, camRight, camUp, camBack, gPelvis, gBodyRot, NECK_PIVOT, gHeadPos, NECK_R0, NECK_R1, MANE_THICK, HAIR_ROUND, gNeckRot, TAIL_THICK, gHeadRot,
+                         HEAD_BOUND_C, HEAD_BOUND_R, SKULL_C, SKULL_R, MUZZLE_A, MUZZLE_B, NOSTRIL, NOSTRIL_R, LID_R, EYE_DIR, EYE_UP, gLidU, gLidL,
+                         EYE_C, EYE_R, HORN_BASE, HORN_DIR, HORN_PERP, HORN_LEN, HORN_R, HORN_TWIST, LEG_TOP, gLegFL, gLegFR, gLegRL, gLegRR, FRONT_R, REAR_R,
+                         ANKLE_H, KNEE_R, SHIN_R, ANKLE_H,
+                         HAIR_COLOR, NOSE_C, BLUSH_C, SHOW_GROUND, GROUND_Y, gGroundScroll, CAM_TARGET, VIEW_HALF_H, BOUND_C, BOUND_R, iTime, iResolution, &DebugF3, &DebugF, View, Tex, TexPar, TexThres, Colors, iChannel1);
+    }
+    col /= (float)(AA * AA);
+    col = pow_f3(col, to_float3_s(0.4545f));
+    fragColor = to_float4_aw(col, 1.0f);
+
+    //Debug
+    //fragColor = to_float4_aw(gPelvis,1.0f) + to_float4_s(0.5f);
+   //fragColor = to_float4_aw(HEAD_BOUND_C,1.0f);
+   //fragColor = to_float4_aw(gHeadPos,1.0f);
+   //fragColor = to_float4_aw(DebugF3,1.0f);// - to_float4_s(2.5f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    --INP_Passive = true,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+
+
+  InREST_POSECheckbox = self:AddInput("REST_POSE", "REST_POSE", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InSHOW_GROUNDCheckbox = self:AddInput("SHOW_GROUND", "SHOW_GROUND", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InIDLE_DEMOCheckbox = self:AddInput("IDLE_DEMO", "IDLE_DEMO", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 1,
+  })
+
+  InResetCheckbox = self:AddInput("Reset", "Reset", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InTexCheckbox = self:AddInput("Tex", "Tex", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InCAM_MODESlider = self:AddInput("CAM_MODE", "CAM_MODE", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0,
+      INP_MaxScale       = 2,
+      INP_Default        = 1,
+      INP_Integer        = true,
+  })
+
+  InCAM_YAWSlider = self:AddInput("CAM_YAW", "CAM_YAW", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.0,
+      })
+
+  InCAM_SWINGSlider = self:AddInput("CAM_SWING", "CAM_SWING", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 0.6,
+      })
+
+  InCAM_RATESlider = self:AddInput("CAM_RATE", "CAM_RATE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.17,
+      })
+
+  InWALK_SPEEDSlider = self:AddInput("WALK_SPEED", "WALK_SPEED", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.20,
+      })
+
+  InRUN_SPEEDSlider = self:AddInput("RUN_SPEED", "RUN_SPEED", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.00,
+      })
+
+  InACCELSlider = self:AddInput("ACCEL", "ACCEL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.20,
+      })
+
+  InDECELSlider = self:AddInput("DECEL", "DECEL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.35,
+      })
+
+  InAIM_FOLLOWSlider = self:AddInput("AIM_FOLLOW", "AIM_FOLLOW", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 10.0,
+      })
+
+  InDEMO_EVERYSlider = self:AddInput("DEMO_EVERY", "DEMO_EVERY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 30.0,
+          INP_Default        = 16.0,
+      })
+
+  InDEMO_LOOK_ATSlider = self:AddInput("DEMO_LOOK_AT", "DEMO_LOOK_AT", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 4.0,
+      })
+
+  InDEMO_LOOK_LENSlider = self:AddInput("DEMO_LOOK_LEN", "DEMO_LOOK_LEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.5,
+      })
+
+  InDEMO_RUN_LENSlider = self:AddInput("DEMO_RUN_LEN", "DEMO_RUN_LEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 15.0,
+          INP_Default        = 7.0,
+      })
+
+  InCAM_ELEVSlider = self:AddInput("CAM_ELEV", "CAM_ELEV", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.14,
+      })
+
+  InVIEW_HALF_HSlider = self:AddInput("VIEW_HALF_H", "VIEW_HALF_H", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 5.6,
+      })
+
+  self:BeginControlNest("Cam_Target", "Cam_Target", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Cam_Target",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InCam_TargetColorR = self:AddInput("Red",   "Cam_TargetRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InCam_TargetColorG = self:AddInput("Green", "Cam_TargetGreen", { INP_Default  = 0.65, IC_ControlID = 1, attrs})
+    InCam_TargetColorB = self:AddInput("Blue",  "Cam_TargetBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InCam_TargetColorA = self:AddInput("Alpha", "Cam_TargetAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+
+
+  InBOUND_RSlider = self:AddInput("BOUND_R", "BOUND_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 6.5,
+      })
+
+  InGROUND_YSlider = self:AddInput("GROUND_Y", "GROUND_Y", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = -3.0,
+      })
+
+  InHIP_XSlider = self:AddInput("HIP_X", "HIP_X", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.62,
+      })
+
+  InFOOT_XSlider = self:AddInput("FOOT_X", "FOOT_X", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.60,
+      })
+
+  InFRONT_YSlider = self:AddInput("FRONT_Y", "FRONT_Y", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -2.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = -0.42,
+      })
+
+  InFRONT_ZSlider = self:AddInput("FRONT_Z", "FRONT_Z", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 1.00,
+      })
+
+  InREAR_YSlider = self:AddInput("REAR_Y", "REAR_Y", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -3.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = -0.55,
+      })
+
+  InREAR_ZSlider = self:AddInput("REAR_Z", "REAR_Z", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -3.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = -0.95,
+      })
+
+  InFRONT_STANCESlider = self:AddInput("FRONT_STANCE", "FRONT_STANCE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.05,
+      })
+
+  InREAR_STANCESlider = self:AddInput("REAR_STANCE", "REAR_STANCE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = -0.25,
+      })
+
+  InUPPER_LENSlider = self:AddInput("UPPER_LEN", "UPPER_LEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.15,
+      })
+
+  InLOWER_LENSlider = self:AddInput("LOWER_LEN", "LOWER_LEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.10,
+      })
+
+  InFRONT_RSlider = self:AddInput("FRONT_R", "FRONT_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.46,
+      })
+
+  InREAR_RSlider = self:AddInput("REAR_R", "REAR_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.58,
+      })
+
+  InKNEE_RSlider = self:AddInput("KNEE_R", "KNEE_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.33,
+      })
+
+  InSHIN_RSlider = self:AddInput("SHIN_R", "SHIN_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.30,
+      })
+
+  InANKLE_RSlider = self:AddInput("ANKLE_R", "ANKLE_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.27,
+      })
+
+  InANKLE_HSlider = self:AddInput("ANKLE_H", "ANKLE_H", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.45,
+      })
+
+  InHOOF_TOESlider = self:AddInput("HOOF_TOE", "HOOF_TOE", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.45,
+      })
+
+  InHOOF_HEELSlider = self:AddInput("HOOF_HEEL", "HOOF_HEEL", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.30,
+      })
+
+  InLEG_TOPSlider = self:AddInput("LEG_TOP", "LEG_TOP", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.40,
+      })
+
+  self:BeginControlNest("Neck_PIVOT", "Neck_PIVOT", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Neck_PIVOT",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InNeck_PIVOTColorR = self:AddInput("Red",   "Neck_PIVOTRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InNeck_PIVOTColorG = self:AddInput("Green", "Neck_PIVOTGreen", { INP_Default  = 0.50, IC_ControlID = 1, attrs})
+    InNeck_PIVOTColorB = self:AddInput("Blue",  "Neck_PIVOTBlue",  { INP_Default  = 1.20, IC_ControlID = 2, attrs})
+    InNeck_PIVOTColorA = self:AddInput("Alpha", "Neck_PIVOTAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InNECK_LENSlider = self:AddInput("NECK_LEN", "NECK_LEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.70,
+      })
+
+  InNECK_TILTSlider = self:AddInput("NECK_TILT", "NECK_TILT", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.45,
+      })
+
+  InNECK_R0Slider = self:AddInput("NECK_R0", "NECK_R0", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.90,
+      })
+
+  InNECK_R1Slider = self:AddInput("NECK_R1", "NECK_R1", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.62,
+      })
+
+  InHEAD_PITCHSlider = self:AddInput("HEAD_PITCH", "HEAD_PITCH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.35,
+      })
+
+
+
+
+  InSKULL_RSlider = self:AddInput("SKULL_R", "SKULL_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.0,
+      })
+
+  self:BeginControlNest("Muzzle_A", "Muzzle_A", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Muzzle_A",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMuzzle_AColorR = self:AddInput("Red",   "Muzzle_ARed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InMuzzle_AColorG = self:AddInput("Green", "Muzzle_AGreen", { INP_Default  = -0.34, IC_ControlID = 1, attrs})
+    InMuzzle_AColorB = self:AddInput("Blue",  "Muzzle_ABlue",  { INP_Default  = 0.80, IC_ControlID = 2, attrs})
+    InMuzzle_AColorA = self:AddInput("Alpha", "Muzzle_AAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Muzzle_B", "Muzzle_B", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Muzzle_B",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InMuzzle_BColorR = self:AddInput("Red",   "Muzzle_BRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InMuzzle_BColorG = self:AddInput("Green", "Muzzle_BGreen", { INP_Default  = -0.52, IC_ControlID = 1, attrs})
+    InMuzzle_BColorB = self:AddInput("Blue",  "Muzzle_BBlue",  { INP_Default  = 1.75, IC_ControlID = 2, attrs})
+    InMuzzle_BColorA = self:AddInput("Alpha", "Muzzle_BAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("NoSTRIL", "NoSTRIL", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "NoSTRIL",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InNoSTRILColorR = self:AddInput("Red",   "NoSTRILRed",   { INP_Default  = 0.216, IC_ControlID = 0, attrs})
+    InNoSTRILColorG = self:AddInput("Green", "NoSTRILGreen", { INP_Default  = -0.352, IC_ControlID = 1, attrs})
+    InNoSTRILColorB = self:AddInput("Blue",  "NoSTRILBlue",  { INP_Default  = 2.144, IC_ControlID = 2, attrs})
+    InNoSTRILColorA = self:AddInput("Alpha", "NoSTRILAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InNOSTRIL_RSlider = self:AddInput("NOSTRIL_R", "NOSTRIL_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.085,
+      })
+
+
+
+
+  self:BeginControlNest("Horn_BASE", "Horn_BASE", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Horn_BASE",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHorn_BASEColorR = self:AddInput("Red",   "Horn_BASERed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InHorn_BASEColorG = self:AddInput("Green", "Horn_BASEGreen", { INP_Default  = 0.86, IC_ControlID = 1, attrs})
+    InHorn_BASEColorB = self:AddInput("Blue",  "Horn_BASEBlue",  { INP_Default  = 0.86, IC_ControlID = 2, attrs})
+    InHorn_BASEColorA = self:AddInput("Alpha", "Horn_BASEAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Horn_DIR", "Horn_DIR", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Horn_DIR",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHorn_DIRColorR = self:AddInput("Red",   "Horn_DIRRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InHorn_DIRColorG = self:AddInput("Green", "Horn_DIRGreen", { INP_Default  = 0.9292, IC_ControlID = 1, attrs})
+    InHorn_DIRColorB = self:AddInput("Blue",  "Horn_DIRBlue",  { INP_Default  = 0.3697, IC_ControlID = 2, attrs})
+    InHorn_DIRColorA = self:AddInput("Alpha", "Horn_DIRAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Horn_PERP", "Horn_PERP", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Horn_PERP",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHorn_PERPColorR = self:AddInput("Red",   "Horn_PERPRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InHorn_PERPColorG = self:AddInput("Green", "Horn_PERPGreen", { INP_Default  = -0.3697, IC_ControlID = 1, attrs})
+    InHorn_PERPColorB = self:AddInput("Blue",  "Horn_PERPBlue",  { INP_Default  = 0.9292, IC_ControlID = 2, attrs})
+    InHorn_PERPColorA = self:AddInput("Alpha", "Horn_PERPAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InHORN_LENSlider = self:AddInput("HORN_LEN", "HORN_LEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.2,
+      })
+
+  InHORN_RSlider = self:AddInput("HORN_R", "HORN_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.24,
+      })
+
+  InHORN_TWISTSlider = self:AddInput("HORN_TWIST", "HORN_TWIST", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 7.5,
+      })
+
+
+
+  InLID_RSlider = self:AddInput("LID_R", "LID_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.6,
+      })
+
+  self:BeginControlNest("Eye_DIR", "Eye_DIR", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Eye_DIR",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InEye_DIRColorR = self:AddInput("Red",   "Eye_DIRRed",   { INP_Default  = 0.6995, IC_ControlID = 0, attrs})
+    InEye_DIRColorG = self:AddInput("Green", "Eye_DIRGreen", { INP_Default  = 0.2498, IC_ControlID = 1, attrs})
+    InEye_DIRColorB = self:AddInput("Blue",  "Eye_DIRBlue",  { INP_Default  = 0.6695, IC_ControlID = 2, attrs})
+    InEye_DIRColorA = self:AddInput("Alpha", "Eye_DIRAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Eye_UP", "Eye_UP", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Eye_UP",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InEye_UPColorR = self:AddInput("Red",   "Eye_UPRed",   { INP_Default  = -0.1804, IC_ControlID = 0, attrs})
+    InEye_UPColorG = self:AddInput("Green", "Eye_UPGreen", { INP_Default  = 0.9683, IC_ControlID = 1, attrs})
+    InEye_UPColorB = self:AddInput("Blue",  "Eye_UPBlue",  { INP_Default  = -0.1727, IC_ControlID = 2, attrs})
+    InEye_UPColorA = self:AddInput("Alpha", "Eye_UPAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InLID_UP_OPENSlider = self:AddInput("LID_UP_OPEN", "LID_UP_OPEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.95,
+      })
+
+  InLID_LOWSlider = self:AddInput("LID_LOW", "LID_LOW", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.05,
+      })
+
+  InBLINK_EVERYSlider = self:AddInput("BLINK_EVERY", "BLINK_EVERY", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 3.3,
+      })
+
+  InBLINK_LENSlider = self:AddInput("BLINK_LEN", "BLINK_LEN", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.28,
+      })
+
+  InAIM_REACHSlider = self:AddInput("AIM_REACH", "AIM_REACH", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 5.0,
+      })
+
+  InAIM_BIASSlider = self:AddInput("AIM_BIAS", "AIM_BIAS", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.15,
+      })
+
+  InLOOK_YAW_MAXSlider = self:AddInput("LOOK_YAW_MAX", "LOOK_YAW_MAX", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 3.0,
+          INP_Default        = 1.25,
+      })
+
+  InLOOK_UP_MAXSlider = self:AddInput("LOOK_UP_MAX", "LOOK_UP_MAX", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.60,
+      })
+
+  InLOOK_DOWN_MAXSlider = self:AddInput("LOOK_DOWN_MAX", "LOOK_DOWN_MAX", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -2.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = -0.60,
+      })
+
+  InLOOK_NECKSlider = self:AddInput("LOOK_NECK", "LOOK_NECK", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.45,
+      })
+
+
+
+  InMANE_THICKSlider = self:AddInput("MANE_THICK", "MANE_THICK", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.13,
+      })
+
+  InTAIL_THICKSlider = self:AddInput("TAIL_THICK", "TAIL_THICK", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.15,
+      })
+
+  InHAIR_ROUNDSlider = self:AddInput("HAIR_ROUND", "HAIR_ROUND", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.05,
+      })
+
+  InViewXYPoint = self:AddInput("ViewXY", "ViewXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InViewZSlider = self:AddInput("ViewZ", "ViewZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InTexXYPoint = self:AddInput("TexXY", "TexXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InTexScaleSlider = self:AddInput("TexScale", "TexScale", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 1.0,
+      })
+
+  InTexThresSlider = self:AddInput("TexThres", "TexThres", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "ScrewControl",
+          INP_MinScale       = -2.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.1,
+      })
+
+
+self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("Bound_C", "Bound_C", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Bound_C",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBound_CColorR = self:AddInput("Red",   "Bound_CRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InBound_CColorG = self:AddInput("Green", "Bound_CGreen", { INP_Default  = 0.60, IC_ControlID = 1, attrs})
+    InBound_CColorB = self:AddInput("Blue",  "Bound_CBlue",  { INP_Default  = 0.2, IC_ControlID = 2, attrs})
+    InBound_CColorA = self:AddInput("Alpha", "Bound_CAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+
+  self:BeginControlNest("Skull_C", "Skull_C", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Skull_C",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InSkull_CColorR = self:AddInput("Red",   "Skull_CRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InSkull_CColorG = self:AddInput("Green", "Skull_CGreen", { INP_Default  = 0.15, IC_ControlID = 1, attrs})
+    InSkull_CColorB = self:AddInput("Blue",  "Skull_CBlue",  { INP_Default  = 0.35, IC_ControlID = 2, attrs})
+    InSkull_CColorA = self:AddInput("Alpha", "Skull_CAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Nose_C", "Nose_C", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Nose_C",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InNose_CColorR = self:AddInput("Red",   "Nose_CRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InNose_CColorG = self:AddInput("Green", "Nose_CGreen", { INP_Default  = -0.52, IC_ControlID = 1, attrs})
+    InNose_CColorB = self:AddInput("Blue",  "Nose_CBlue",  { INP_Default  = 2.10, IC_ControlID = 2, attrs})
+    InNose_CColorA = self:AddInput("Alpha", "Nose_CAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Blush_C", "Blush_C", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Blush_C",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBlush_CColorR = self:AddInput("Red",   "Blush_CRed",   { INP_Default  = 0.72, IC_ControlID = 0, attrs})
+    InBlush_CColorG = self:AddInput("Green", "Blush_CGreen", { INP_Default  = -0.07, IC_ControlID = 1, attrs})
+    InBlush_CColorB = self:AddInput("Blue",  "Blush_CBlue",  { INP_Default  = 1.00, IC_ControlID = 2, attrs})
+    InBlush_CColorA = self:AddInput("Alpha", "Blush_CAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("Head_BOUND_C", "Head_BOUND_C", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Head_BOUND_C",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHead_BOUND_CColorR = self:AddInput("Red",   "Head_BOUND_CRed",   { INP_Default  = 0.0, IC_ControlID = 0, attrs})
+    InHead_BOUND_CColorG = self:AddInput("Green", "Head_BOUND_CGreen", { INP_Default  = 0.90, IC_ControlID = 1, attrs})
+    InHead_BOUND_CColorB = self:AddInput("Blue",  "Head_BOUND_CBlue",  { INP_Default  = 0.80, IC_ControlID = 2, attrs})
+    InHead_BOUND_CColorA = self:AddInput("Alpha", "Head_BOUND_CAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InHEAD_BOUND_RSlider = self:AddInput("HEAD_BOUND_R", "HEAD_BOUND_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.3,
+      })
+
+  self:BeginControlNest("Eye_C", "Eye_C", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Eye_C",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InEye_CColorR = self:AddInput("Red",   "Eye_CRed",   { INP_Default  = 0.518, IC_ControlID = 0, attrs})
+    InEye_CColorG = self:AddInput("Green", "Eye_CGreen", { INP_Default  = 0.335, IC_ControlID = 1, attrs})
+    InEye_CColorB = self:AddInput("Blue",  "Eye_CBlue",  { INP_Default  = 0.845, IC_ControlID = 2, attrs})
+    InEye_CColorA = self:AddInput("Alpha", "Eye_CAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  InEYE_RSlider = self:AddInput("EYE_R", "EYE_R", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.42,
+      })
+
+  self:BeginControlNest("Hair_COLOR", "Hair_COLOR", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "Hair_COLOR",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InHair_COLORColorR = self:AddInput("Red",   "Hair_COLORRed",   { INP_Default  = 0.42, IC_ControlID = 0, attrs})
+    InHair_COLORColorG = self:AddInput("Green", "Hair_COLORGreen", { INP_Default  = 0.16, IC_ControlID = 1, attrs})
+    InHair_COLORColorB = self:AddInput("Blue",  "Hair_COLORBlue",  { INP_Default  = 0.80, IC_ControlID = 2, attrs})
+    InHair_COLORColorA = self:AddInput("Alpha", "Hair_COLORAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+
+  self:BeginControlNest("ColIris1", "ColIris1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColIris1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColIris1ColorR = self:AddInput("Red",   "ColIris1Red",   { INP_Default  = 0.30, IC_ControlID = 0, attrs})
+    InColIris1ColorG = self:AddInput("Green", "ColIris1Green", { INP_Default  = 0.35, IC_ControlID = 1, attrs})
+    InColIris1ColorB = self:AddInput("Blue",  "ColIris1Blue",  { INP_Default  = 1.00, IC_ControlID = 2, attrs})
+    InColIris1ColorA = self:AddInput("Alpha", "ColIris1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColIris2", "ColIris2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColIris2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColIris2ColorR = self:AddInput("Red",   "ColIris2Red",   { INP_Default  = 0.10, IC_ControlID = 0, attrs})
+    InColIris2ColorG = self:AddInput("Green", "ColIris2Green", { INP_Default  = 0.02, IC_ControlID = 1, attrs})
+    InColIris2ColorB = self:AddInput("Blue",  "ColIris2Blue",  { INP_Default  = 0.30, IC_ControlID = 2, attrs})
+    InColIris2ColorA = self:AddInput("Alpha", "ColIris2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColHooves", "ColHooves", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColHooves",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColHoovesColorR = self:AddInput("Red",   "ColHoovesRed",   { INP_Default  = 0.015, IC_ControlID = 0, attrs})
+    InColHoovesColorG = self:AddInput("Green", "ColHoovesGreen", { INP_Default  = 0.015, IC_ControlID = 1, attrs})
+    InColHoovesColorB = self:AddInput("Blue",  "ColHoovesBlue",  { INP_Default  = 0.015, IC_ControlID = 2, attrs})
+    InColHoovesColorA = self:AddInput("Alpha", "ColHoovesAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColHorn", "ColHorn", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColHorn",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColHornColorR = self:AddInput("Red",   "ColHornRed",   { INP_Default  = 1.00, IC_ControlID = 0, attrs})
+    InColHornColorG = self:AddInput("Green", "ColHornGreen", { INP_Default  = 0.68, IC_ControlID = 1, attrs})
+    InColHornColorB = self:AddInput("Blue",  "ColHornBlue",  { INP_Default  = 0.24, IC_ControlID = 2, attrs})
+    InColHornColorA = self:AddInput("Alpha", "ColHornAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColCoat", "ColCoat", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColCoat",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColCoatColorR = self:AddInput("Red",   "ColCoatRed",   { INP_Default  = 0.74, IC_ControlID = 0, attrs})
+    InColCoatColorG = self:AddInput("Green", "ColCoatGreen", { INP_Default  = 0.72, IC_ControlID = 1, attrs})
+    InColCoatColorB = self:AddInput("Blue",  "ColCoatBlue",  { INP_Default  = 0.76, IC_ControlID = 2, attrs})
+    InColCoatColorA = self:AddInput("Alpha", "ColCoatAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColNose", "ColNose", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColNose",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColNoseColorR = self:AddInput("Red",   "ColNoseRed",   { INP_Default  = 0.95, IC_ControlID = 0, attrs})
+    InColNoseColorG = self:AddInput("Green", "ColNoseGreen", { INP_Default  = 0.55, IC_ControlID = 1, attrs})
+    InColNoseColorB = self:AddInput("Blue",  "ColNoseBlue",  { INP_Default  = 0.62, IC_ControlID = 2, attrs})
+    InColNoseColorA = self:AddInput("Alpha", "ColNoseAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColBlush", "ColBlush", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColBlush",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColBlushColorR = self:AddInput("Red",   "ColBlushRed",   { INP_Default  = 1.00, IC_ControlID = 0, attrs})
+    InColBlushColorG = self:AddInput("Green", "ColBlushGreen", { INP_Default  = 0.30, IC_ControlID = 1, attrs})
+    InColBlushColorB = self:AddInput("Blue",  "ColBlushBlue",  { INP_Default  = 0.42, IC_ControlID = 2, attrs})
+    InColBlushColorA = self:AddInput("Alpha", "ColBlushAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColLid1", "ColLid1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColLid1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColLid1ColorR = self:AddInput("Red",   "ColLid1Red",   { INP_Default  = 0.70, IC_ControlID = 0, attrs})
+    InColLid1ColorG = self:AddInput("Green", "ColLid1Green", { INP_Default  = 0.62, IC_ControlID = 1, attrs})
+    InColLid1ColorB = self:AddInput("Blue",  "ColLid1Blue",  { INP_Default  = 0.78, IC_ControlID = 2, attrs})
+    InColLid1ColorA = self:AddInput("Alpha", "ColLid1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColLid2", "ColLid2", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColLid2",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColLid2ColorR = self:AddInput("Red",   "ColLid2Red",   { INP_Default  = 0.02, IC_ControlID = 0, attrs})
+    InColLid2ColorG = self:AddInput("Green", "ColLid2Green", { INP_Default  = 0.01, IC_ControlID = 1, attrs})
+    InColLid2ColorB = self:AddInput("Blue",  "ColLid2Blue",  { INP_Default  = 0.04, IC_ControlID = 2, attrs})
+    InColLid2ColorA = self:AddInput("Alpha", "ColLid2Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("ColNoStril", "ColNoStril", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "ColNoStril",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InColNoStrilColorR = self:AddInput("Red",   "ColNoStrilRed",   { INP_Default  = 0.22, IC_ControlID = 0, attrs})
+    InColNoStrilColorG = self:AddInput("Green", "ColNoStrilGreen", { INP_Default  = 0.07, IC_ControlID = 1, attrs})
+    InColNoStrilColorB = self:AddInput("Blue",  "ColNoStrilBlue",  { INP_Default  = 0.10, IC_ControlID = 2, attrs})
+    InColNoStrilColorA = self:AddInput("Alpha", "ColNoStrilAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+self:EndControlNest()
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  InDebugImage = self:AddInput("DebugImage", "DebugImage", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_Default = 0.0,
+    INP_Integer = true,
+    ICD_Width = 1,
+    { CCS_AddString = "Final", },
+    { CCS_AddString = "BufferA", },
+    CC_LabelPosition = "Horizontal",
+  })
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer     = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+	  INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+	  { CCS_AddString  = "int8", },
+	  { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+  InChannel1 = self:AddInput( "iChannel1",  "iChannel1",  { LINKID_DataType = "Image", LINK_Visible = false, LINK_Main = 2, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+MULTIBUFFER = true
+if MULTIBUFFER then   -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  ImgAttrs_Global = {
+          { IMG_Channel = "Red", },
+          { IMG_Channel = "Green", },
+          { IMG_Channel = "Blue", },
+          { IMG_Channel = "Alpha", },
+          IMG_Width = Width,
+          IMG_Height = Height,
+          IMG_DeferAlloc = false,
+          }
+
+  Image_Buff_GlobalA = Image(ImgAttrs_Global)
+end
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  dstA = Image {IMG_Like = dst, IMG_DeferAlloc = true}
+end
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA = DVIPComputeNode(req,
+    "BabyUnicornFuse__Buffer_A", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+else
+    node = DVIPComputeNode(req,
+    "BabyUnicornFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+end
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  iChannel1 = InChannel1:GetValue(req)
+
+  if iChannel1==nil then
+    iChannel1 = Image(imgattrs)
+    iChannel1:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iTimeDelta = 1/framerate
+  params.iFrame = req.Time
+
+
+  params.REST_POSE = InREST_POSECheckbox:GetValue(req).Value
+  params.SHOW_GROUND = InSHOW_GROUNDCheckbox:GetValue(req).Value
+  params.IDLE_DEMO = InIDLE_DEMOCheckbox:GetValue(req).Value
+  params.Reset = InResetCheckbox:GetValue(req).Value
+  params.Tex = InTexCheckbox:GetValue(req).Value
+  params.CAM_MODE = InCAM_MODESlider:GetValue(req).Value
+  params.CAM_YAW = InCAM_YAWSlider:GetValue(req).Value
+  params.CAM_SWING = InCAM_SWINGSlider:GetValue(req).Value
+  params.CAM_RATE = InCAM_RATESlider:GetValue(req).Value
+  params.WALK_SPEED = InWALK_SPEEDSlider:GetValue(req).Value
+  params.RUN_SPEED = InRUN_SPEEDSlider:GetValue(req).Value
+  params.ACCEL = InACCELSlider:GetValue(req).Value
+  params.DECEL = InDECELSlider:GetValue(req).Value
+  params.AIM_FOLLOW = InAIM_FOLLOWSlider:GetValue(req).Value
+  params.DEMO_EVERY = InDEMO_EVERYSlider:GetValue(req).Value
+  params.DEMO_LOOK_AT = InDEMO_LOOK_ATSlider:GetValue(req).Value
+  params.DEMO_LOOK_LEN = InDEMO_LOOK_LENSlider:GetValue(req).Value
+  params.DEMO_RUN_LEN = InDEMO_RUN_LENSlider:GetValue(req).Value
+  params.CAM_ELEV = InCAM_ELEVSlider:GetValue(req).Value
+  params.VIEW_HALF_H = InVIEW_HALF_HSlider:GetValue(req).Value
+  params.Cam_Target = {
+    InCam_TargetColorR:GetValue(req).Value,
+    InCam_TargetColorG:GetValue(req).Value,
+    InCam_TargetColorB:GetValue(req).Value,InCam_TargetColorA:GetValue(req).Value
+  }
+  params.Bound_C = {
+    InBound_CColorR:GetValue(req).Value,
+    InBound_CColorG:GetValue(req).Value,
+    InBound_CColorB:GetValue(req).Value,InBound_CColorA:GetValue(req).Value
+  }
+  params.BOUND_R = InBOUND_RSlider:GetValue(req).Value
+  params.GROUND_Y = InGROUND_YSlider:GetValue(req).Value
+  params.HIP_X = InHIP_XSlider:GetValue(req).Value
+  params.FOOT_X = InFOOT_XSlider:GetValue(req).Value
+  params.FRONT_Y = InFRONT_YSlider:GetValue(req).Value
+  params.FRONT_Z = InFRONT_ZSlider:GetValue(req).Value
+  params.REAR_Y = InREAR_YSlider:GetValue(req).Value
+  params.REAR_Z = InREAR_ZSlider:GetValue(req).Value
+  params.FRONT_STANCE = InFRONT_STANCESlider:GetValue(req).Value
+  params.REAR_STANCE = InREAR_STANCESlider:GetValue(req).Value
+  params.UPPER_LEN = InUPPER_LENSlider:GetValue(req).Value
+  params.LOWER_LEN = InLOWER_LENSlider:GetValue(req).Value
+  params.FRONT_R = InFRONT_RSlider:GetValue(req).Value
+  params.REAR_R = InREAR_RSlider:GetValue(req).Value
+  params.KNEE_R = InKNEE_RSlider:GetValue(req).Value
+  params.SHIN_R = InSHIN_RSlider:GetValue(req).Value
+  params.ANKLE_R = InANKLE_RSlider:GetValue(req).Value
+  params.ANKLE_H = InANKLE_HSlider:GetValue(req).Value
+  params.HOOF_TOE = InHOOF_TOESlider:GetValue(req).Value
+  params.HOOF_HEEL = InHOOF_HEELSlider:GetValue(req).Value
+  params.LEG_TOP = InLEG_TOPSlider:GetValue(req).Value
+  params.Neck_PIVOT = {
+    InNeck_PIVOTColorR:GetValue(req).Value,
+    InNeck_PIVOTColorG:GetValue(req).Value,
+    InNeck_PIVOTColorB:GetValue(req).Value,InNeck_PIVOTColorA:GetValue(req).Value
+  }
+  params.NECK_LEN = InNECK_LENSlider:GetValue(req).Value
+  params.NECK_TILT = InNECK_TILTSlider:GetValue(req).Value
+  params.NECK_R0 = InNECK_R0Slider:GetValue(req).Value
+  params.NECK_R1 = InNECK_R1Slider:GetValue(req).Value
+  params.HEAD_PITCH = InHEAD_PITCHSlider:GetValue(req).Value
+  params.Skull_C = {
+    InSkull_CColorR:GetValue(req).Value,
+    InSkull_CColorG:GetValue(req).Value,
+    InSkull_CColorB:GetValue(req).Value,InSkull_CColorA:GetValue(req).Value
+  }
+  params.SKULL_R = InSKULL_RSlider:GetValue(req).Value
+  params.Muzzle_A = {
+    InMuzzle_AColorR:GetValue(req).Value,
+    InMuzzle_AColorG:GetValue(req).Value,
+    InMuzzle_AColorB:GetValue(req).Value,InMuzzle_AColorA:GetValue(req).Value
+  }
+  params.Muzzle_B = {
+    InMuzzle_BColorR:GetValue(req).Value,
+    InMuzzle_BColorG:GetValue(req).Value,
+    InMuzzle_BColorB:GetValue(req).Value,InMuzzle_BColorA:GetValue(req).Value
+  }
+  params.NoSTRIL = {
+    InNoSTRILColorR:GetValue(req).Value,
+    InNoSTRILColorG:GetValue(req).Value,
+    InNoSTRILColorB:GetValue(req).Value,InNoSTRILColorA:GetValue(req).Value
+  }
+  params.NOSTRIL_R = InNOSTRIL_RSlider:GetValue(req).Value
+  params.Nose_C = {
+    InNose_CColorR:GetValue(req).Value,
+    InNose_CColorG:GetValue(req).Value,
+    InNose_CColorB:GetValue(req).Value,InNose_CColorA:GetValue(req).Value
+  }
+  params.Blush_C = {
+    InBlush_CColorR:GetValue(req).Value,
+    InBlush_CColorG:GetValue(req).Value,
+    InBlush_CColorB:GetValue(req).Value,InBlush_CColorA:GetValue(req).Value
+  }
+  params.Head_BOUND_C = {
+    InHead_BOUND_CColorR:GetValue(req).Value,
+    InHead_BOUND_CColorG:GetValue(req).Value,
+    InHead_BOUND_CColorB:GetValue(req).Value,InHead_BOUND_CColorA:GetValue(req).Value
+  }
+  params.HEAD_BOUND_R = InHEAD_BOUND_RSlider:GetValue(req).Value
+  params.Horn_BASE = {
+    InHorn_BASEColorR:GetValue(req).Value,
+    InHorn_BASEColorG:GetValue(req).Value,
+    InHorn_BASEColorB:GetValue(req).Value,InHorn_BASEColorA:GetValue(req).Value
+  }
+  params.Horn_DIR = {
+    InHorn_DIRColorR:GetValue(req).Value,
+    InHorn_DIRColorG:GetValue(req).Value,
+    InHorn_DIRColorB:GetValue(req).Value,InHorn_DIRColorA:GetValue(req).Value
+  }
+  params.Horn_PERP = {
+    InHorn_PERPColorR:GetValue(req).Value,
+    InHorn_PERPColorG:GetValue(req).Value,
+    InHorn_PERPColorB:GetValue(req).Value,InHorn_PERPColorA:GetValue(req).Value
+  }
+  params.HORN_LEN = InHORN_LENSlider:GetValue(req).Value
+  params.HORN_R = InHORN_RSlider:GetValue(req).Value
+  params.HORN_TWIST = InHORN_TWISTSlider:GetValue(req).Value
+  params.Eye_C = {
+    InEye_CColorR:GetValue(req).Value,
+    InEye_CColorG:GetValue(req).Value,
+    InEye_CColorB:GetValue(req).Value,InEye_CColorA:GetValue(req).Value
+  }
+  params.EYE_R = InEYE_RSlider:GetValue(req).Value
+  params.LID_R = InLID_RSlider:GetValue(req).Value
+  params.Eye_DIR = {
+    InEye_DIRColorR:GetValue(req).Value,
+    InEye_DIRColorG:GetValue(req).Value,
+    InEye_DIRColorB:GetValue(req).Value,InEye_DIRColorA:GetValue(req).Value
+  }
+  params.Eye_UP = {
+    InEye_UPColorR:GetValue(req).Value,
+    InEye_UPColorG:GetValue(req).Value,
+    InEye_UPColorB:GetValue(req).Value,InEye_UPColorA:GetValue(req).Value
+  }
+  params.LID_UP_OPEN = InLID_UP_OPENSlider:GetValue(req).Value
+  params.LID_LOW = InLID_LOWSlider:GetValue(req).Value
+  params.BLINK_EVERY = InBLINK_EVERYSlider:GetValue(req).Value
+  params.BLINK_LEN = InBLINK_LENSlider:GetValue(req).Value
+  params.AIM_REACH = InAIM_REACHSlider:GetValue(req).Value
+  params.AIM_BIAS = InAIM_BIASSlider:GetValue(req).Value
+  params.LOOK_YAW_MAX = InLOOK_YAW_MAXSlider:GetValue(req).Value
+  params.LOOK_UP_MAX = InLOOK_UP_MAXSlider:GetValue(req).Value
+  params.LOOK_DOWN_MAX = InLOOK_DOWN_MAXSlider:GetValue(req).Value
+  params.LOOK_NECK = InLOOK_NECKSlider:GetValue(req).Value
+  params.Hair_COLOR = {
+    InHair_COLORColorR:GetValue(req).Value,
+    InHair_COLORColorG:GetValue(req).Value,
+    InHair_COLORColorB:GetValue(req).Value,InHair_COLORColorA:GetValue(req).Value
+  }
+  params.MANE_THICK = InMANE_THICKSlider:GetValue(req).Value
+  params.TAIL_THICK = InTAIL_THICKSlider:GetValue(req).Value
+  params.HAIR_ROUND = InHAIR_ROUNDSlider:GetValue(req).Value
+  params.ViewXY = {InViewXYPoint:GetValue(req).X,InViewXYPoint:GetValue(req).Y}
+  params.ViewZ = InViewZSlider:GetValue(req).Value
+  params.TexXY = {InTexXYPoint:GetValue(req).X,InTexXYPoint:GetValue(req).Y}
+  params.TexScale = InTexScaleSlider:GetValue(req).Value
+  params.TexThres = InTexThresSlider:GetValue(req).Value
+  params.ColIris1 = {
+    InColIris1ColorR:GetValue(req).Value,
+    InColIris1ColorG:GetValue(req).Value,
+    InColIris1ColorB:GetValue(req).Value,InColIris1ColorA:GetValue(req).Value
+  }
+  params.ColIris2 = {
+    InColIris2ColorR:GetValue(req).Value,
+    InColIris2ColorG:GetValue(req).Value,
+    InColIris2ColorB:GetValue(req).Value,InColIris2ColorA:GetValue(req).Value
+  }
+  params.ColHooves = {
+    InColHoovesColorR:GetValue(req).Value,
+    InColHoovesColorG:GetValue(req).Value,
+    InColHoovesColorB:GetValue(req).Value,InColHoovesColorA:GetValue(req).Value
+  }
+  params.ColHorn = {
+    InColHornColorR:GetValue(req).Value,
+    InColHornColorG:GetValue(req).Value,
+    InColHornColorB:GetValue(req).Value,InColHornColorA:GetValue(req).Value
+  }
+  params.ColCoat = {
+    InColCoatColorR:GetValue(req).Value,
+    InColCoatColorG:GetValue(req).Value,
+    InColCoatColorB:GetValue(req).Value,InColCoatColorA:GetValue(req).Value
+  }
+  params.ColNose = {
+    InColNoseColorR:GetValue(req).Value,
+    InColNoseColorG:GetValue(req).Value,
+    InColNoseColorB:GetValue(req).Value,InColNoseColorA:GetValue(req).Value
+  }
+  params.ColBlush = {
+    InColBlushColorR:GetValue(req).Value,
+    InColBlushColorG:GetValue(req).Value,
+    InColBlushColorB:GetValue(req).Value,InColBlushColorA:GetValue(req).Value
+  }
+  params.ColLid1 = {
+    InColLid1ColorR:GetValue(req).Value,
+    InColLid1ColorG:GetValue(req).Value,
+    InColLid1ColorB:GetValue(req).Value,InColLid1ColorA:GetValue(req).Value
+  }
+  params.ColLid2 = {
+    InColLid2ColorR:GetValue(req).Value,
+    InColLid2ColorG:GetValue(req).Value,
+    InColLid2ColorB:GetValue(req).Value,InColLid2ColorA:GetValue(req).Value
+  }
+  params.ColNoStril = {
+    InColNoStrilColorR:GetValue(req).Value,
+    InColNoStrilColorG:GetValue(req).Value,
+    InColNoStrilColorB:GetValue(req).Value,InColNoStrilColorA:GetValue(req).Value
+  }
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:SetParamBlock(params)
+    --nodeA:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, nodeA)
+  else   
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+    
+    node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+    node:AddInput("iChannel1",iChannel1) -- TODO: add a better channel name
+    node:AddOutput("dst", dst)
+  end
+  
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    nodeA:AddInput("iChannel0",Image_Buff_GlobalA)  -- Anpassen !!
+    nodeA:AddInput("iChannel1",iChannel0)           -- Anpassen !!
+    nodeA:AddOutput("dst", dstA)
+
+    local ok = nodeA:RunSession(req)
+
+    if (not ok) then
+      dstA = nil
+      dump(nodeA:GetErrorLog())
+    end
+    
+    Image_Buff_GlobalA = dstA
+
+    -------------------------- ImageKernel----------------------------------------
+    node = DVIPComputeNode(req,
+      "BabyUnicornFuse", ShaderCompatibilityCode..ShaderKernelCode,
+      "Params", ShaderParameters
+    )
+
+    node:SetParamBlock(params)
+    --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    DefineEdges(edges, node)
+
+    node:AddInput("iChannel0", Image_Buff_GlobalA)  -- Anpassen !!
+    node:AddInput("iChannel1", iChannel0)           -- Anpassen !!
+    node:AddOutput("dst", dst)
+ 
+  end -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+  
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  
+    --Debugging
+  if MULTIBUFFER then  -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER
+    InDebugImage:SetAttrs({ IC_Visible = true })
+    
+    if (InDebugImage:GetValue(req).Value == 1) then OutImage:Set(req, Image_Buff_GlobalA) end
+  else
+    InDebugImage:SetAttrs({ IC_Visible = false })
+  end
+  
+  collectgarbage();
+end
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */

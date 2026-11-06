@@ -1,0 +1,1395 @@
+--[[--/*
+
+  LetSSelfReflect.fuse
+
+  Based on https://www.shadertoy.com/view/XfyXRV a WebGL shader created by mrange.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  rotation_speed;
+  float  poly_U;
+  float  poly_V;
+  float  poly_W;
+  int    poly_type;
+  float  poly_zoom;
+  float  inner_sphere;
+  float  refr_index;
+  float  TOLERANCE2;
+  float  MAX_RAY_LENGTH2;
+  float  NORM_OFF2;
+  float  TOLERANCE3;
+  float  MAX_RAY_LENGTH3;
+  float  NORM_OFF3;
+  float  RayOrgXY[2];
+  float  RayOrgZ;
+  float  SunCol[4];
+  float  BottomBoxCol[4];
+  float  TopBoxCol[4];
+  float  GlowCol0[4];
+  float  GlowCol1[4];
+  float  BeerCol[4];
+  float  Poly_pabXY[2];
+  float  Poly_pabZ;
+  float  Poly_pbcXY[2];
+  float  Poly_pbcZ;
+  float  Poly_pcaXY[2];
+  float  Poly_pcaZ;
+  float  refmul;
+  float  refoff;
+  float  refmul2;
+  float  refoff2;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float a, float b, float c, float d, float e, float f, float g, float h, float i)
+  {
+    return mat3(a,b,c,d,e,f,g,h,i);
+  }
+
+  __DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) { return (A*B); }
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+  __DEVICE__ inline mat3 to_mat3( float  a, float  b, float c,   float d, float e, float f,   float g, float h, float i)
+  {
+    mat3 t;
+    t.r0.x = a; t.r0.y = b; t.r0.z = c;
+    t.r1.x = d; t.r1.y = e; t.r1.z = f;
+    t.r2.x = g; t.r2.y = h; t.r2.z = i;
+    return t;
+  }
+
+__DEVICE__ inline float3 mul_f3_mat3( float3 A, mat3 B) {
+    float3 C;
+
+    C.x = A.x * B.r0.x + A.y * B.r0.y + A.z * B.r0.z;
+    C.y = A.x * B.r1.x + A.y * B.r1.y + A.z * B.r1.z;
+    C.z = A.x * B.r2.x + A.y * B.r2.y + A.z * B.r2.z;
+    return C;
+  }
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f3(A) fract(A)
+
+ #define sin_f2(i) sin(i)
+ #define cos_f2(i) cos(i)
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define exp_f3(a) _expf((a))
+ #define sign_f(a) sign(a)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define sin_f2(i) sin(i)
+ #define cos_f2(i) cos(i)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define exp_f3(a) _expf((a))
+ #define sign_f(a) sign(a)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f3(A) to_float3(fract((A).x),fract((A).y),fract((A).z))
+ #define sin_f2(i) to_float2( _sinf((i).x), _sinf((i).y))
+ #define cos_f2(i) to_float2( _cosf((i).x), _cosf((i).y))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define exp_f3(a) to_float3(_expf((a).x), _expf((a).y),_expf((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+// CC0: Let's self reflect
+//  Always enjoyed the videos of Platonic solids with inner mirrors
+//  I made some previous attempts but thought I make another attempt it
+
+// Reducing the alias effects on the inner reflections turned out to be a bit tricky.
+//  Simplest solution is just to run run fullscreen on a 4K screen ;)
+
+// Function to generate the solid found here: https://www.shadertoy.com/view/MsKGzw
+
+// Tinker with these parameters to create different solids
+// -------------------------------------------------------
+
+
+#define MAX_BOUNCES2        6
+// -------------------------------------------------------
+
+
+
+#define TIME        iTime
+#define RESOLUTION  iResolution
+#define PI          3.141592654
+#define TAU         (2.0f*PI)
+
+// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
+
+__DEVICE__ float3 hsv2rgb(float3 c) {
+  const float4 hsv2rgb_K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+
+  float3 p = abs_f3(fract_f3(swi3(c,x,x,x) + swi3(hsv2rgb_K,x,y,z)) * 6.0f - swi3(hsv2rgb_K,w,w,w));
+  return c.z * _mix(swi3(hsv2rgb_K,x,x,x), clamp(p - swi3(hsv2rgb_K,x,x,x), 0.0f, 1.0f), c.y);
+}
+// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
+//  Macro version of above to enable compile-time constants
+#define HSV2RGB(c)  (c.z * _mix(swi3(hsv2rgb_K,x,x,x), clamp(abs_f3(fract_f3(swi3(c,x,x,x) + swi3(hsv2rgb_K,x,y,z)) * 6.0f - swi3(hsv2rgb_K,w,w,w)) - swi3(hsv2rgb_K,x,x,x), 0.0f, 1.0f), c.y))
+
+//#define TOLERANCE2          0.0005f
+//#define MAX_RAY_LENGTH2   10.0f
+#define MAX_RAY_MARCHES2    50
+//#define NORM_OFF2           0.005f
+#define BACKSTEP2
+
+//#define TOLERANCE3          0.0005f
+//#define MAX_RAY_LENGTH3     10.0f
+#define MAX_RAY_MARCHES3    90
+//#define NORM_OFF3           0.005f
+
+//const float3 rayOrigin    = to_float3(0.0f, 1.0f, -5.0f);
+//const float3 sunDir       = normalize(-rayOrigin);
+//
+//const float4 hsv2rgb_K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+//const float3 sunCol       = HSV2RGB(to_float3(0.06f , 0.90f, 1E-2))*1.0f;
+//const float3 bottomBoxCol = HSV2RGB(to_float3(0.66f, 0.80f, 0.5f))*1.0f;
+//const float3 topBoxCol    = HSV2RGB(to_float3(0.60f, 0.90f, 1.0f))*1.0f;
+//const float3 glowCol0     = HSV2RGB(to_float3(0.05f , 0.7f, 1E-3))*1.0f;
+//const float3 glowCol1     = HSV2RGB(to_float3(0.95f, 0.7f, 1E-3))*1.0f;
+//const float3 beerCol      = -HSV2RGB(to_float3(0.15f+0.5f, 0.7f, 2.0f));
+//const float rrefr_index = 1.0f/refr_index;
+
+
+// License: Unknown, author: knighty, found: https://www.shadertoy.com/view/MsKGzw
+//const float poly_cospin     = _cosf(PI/(float)(poly_type));
+//const float poly_scospin    = _sqrtf(0.75f-poly_cospin*poly_cospin);
+//const float3  poly_nc       = to_float3(-0.5f, -poly_cospin, poly_scospin);
+//const float3  poly_pab      = to_float3(0.0f, 0.0f, 1.0f);
+//const float3  poly_pbc_     = to_float3(poly_scospin, 0.0f, 0.5f);
+//const float3  poly_pca_     = to_float3(0.0f, poly_scospin, poly_cospin);
+//const float3  poly_p        = normalize((poly_U*poly_pab+poly_V*poly_pbc_+poly_W*poly_pca_));
+//const float3  poly_pbc      = normalize(poly_pbc_);
+//const float3  poly_pca      = normalize(poly_pca_);
+//
+//mat3 g_rot;
+//float2 g_gd;
+
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/articles/noacos/
+__DEVICE__ mat3 rot(float3 d, float3 z) {
+  float3  v = cross( z, d );
+  float c = dot( z, d );
+  float k = 1.0f/(1.0f+c);
+
+  return to_mat3( v.x*v.x*k + c,     v.y*v.x*k - v.z,    v.z*v.x*k + v.y,
+                  v.x*v.y*k + v.z,   v.y*v.y*k + c,      v.z*v.y*k - v.x,
+                  v.x*v.z*k - v.y,   v.y*v.z*k + v.x,    v.z*v.z*k + c    );
+}
+
+// License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
+__DEVICE__ float3 aces_approx(float3 v) {
+  v = _fmaxf(v, to_float3_s(0.0f));
+  v *= 0.6f;
+  float a = 2.51f;
+  float b = 0.03f;
+  float c = 2.43f;
+  float d = 0.59f;
+  float e = 0.14f;
+  return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0f, 1.0f);
+}
+
+__DEVICE__ float sphere(float3 p, float r) {
+  return length(p) - r;
+}
+
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/articles/distfunctions/
+__DEVICE__ float box(float2 p, float2 b) {
+  float2 d = abs_f2(p)-b;
+  return length(_fmaxf(d, to_float2_s(0.0f))) + _fminf(_fmaxf(d.x,d.y),0.0f);
+}
+
+// License: Unknown, author: knighty, found: https://www.shadertoy.com/view/MsKGzw
+__DEVICE__ void poly_fold(inout float3 *pos, int poly_type, float3 poly_nc) {
+  float3 p = *pos;
+
+  for(int i = 0; i < poly_type; ++i){
+    swi2S(p,x,y, abs_f2(swi2(p,x,y)));
+    p    -= 2.0f*_fminf(0.0f, dot(p,poly_nc)) * poly_nc;
+  }
+
+  *pos = p;
+}
+
+__DEVICE__ float poly_plane(float3 pos, float3 poly_pab, float3 poly_pbc, float3 poly_pca) {
+  float d0 = dot(pos, poly_pab);
+  float d1 = dot(pos, poly_pbc);
+  float d2 = dot(pos, poly_pca);
+  float d = d0;
+  d = _fmaxf(d, d1);
+  d = _fmaxf(d, d2);
+  return d;
+}
+
+__DEVICE__ float poly_corner(float3 pos) {
+  float d = length(pos) - 0.0125f;
+  return d;
+}
+
+__DEVICE__ float dot2(float3 p) {
+  return dot(p, p);
+}
+
+__DEVICE__ float poly_edge(float3 pos, float3 poly_nc) {
+  float dla = dot2(pos-_fminf(0.0f, pos.x)*to_float3(1.0f, 0.0f, 0.0f));
+  float dlb = dot2(pos-_fminf(0.0f, pos.y)*to_float3(0.0f, 1.0f, 0.0f));
+  float dlc = dot2(pos-_fminf(0.0f, dot(pos, poly_nc))*poly_nc);
+  return _sqrtf(_fminf(_fminf(dla, dlb), dlc))-2E-3;
+}
+
+__DEVICE__ float3 shape(float3 pos, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, mat3 g_rot) {
+  pos = mul_f3_mat3(pos, g_rot);
+  pos /= poly_zoom;
+  poly_fold(&pos, poly_type, poly_nc);
+  pos -= poly_p;
+
+  return to_float3(poly_plane(pos, poly_pab, poly_pbc, poly_pca), poly_edge(pos, poly_nc), poly_corner(pos))*poly_zoom;
+}
+
+__DEVICE__ float3 render0(float3 ro, float3 rd, float3 bottomBoxCol, float3 topBoxCol, float3 sunCol, float3 sunDir) {
+  float3 col = to_float3_s(0.0f);
+
+  float srd  = sign_f(rd.y);
+  float tp   = -(ro.y-6.0f)/_fabs(rd.y);
+
+  if (srd < 0.0f) {
+    col += bottomBoxCol*_expf(-0.5f*(length(swi2((ro + tp*rd),x,z))));
+  }
+
+  if (srd > 0.0f) {
+    float3 pos  = ro + tp*rd;
+    float2 pp = swi2(pos,x,z);
+    float db = box(pp, to_float2(5.0f, 9.0f))-3.0f;
+
+    col += topBoxCol*rd.y*rd.y*smoothstep(0.25f, 0.0f, db);
+    col += 0.2f*topBoxCol*_expf(-0.5f*_fmaxf(db, 0.0f));
+    col += 0.05f*sqrt_f3(topBoxCol)*_fmaxf(-db, 0.0f);
+  }
+
+
+  col += sunCol/(1.001f-dot(sunDir, rd));
+  return col;
+}
+
+__DEVICE__ float df2(float3 p, inout float2 *g_gd, float inner_sphere, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, mat3 g_rot) {
+  float3 ds = shape(p, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot);
+  float d2 = ds.y-5E-3;
+  float d0 = _fminf(-ds.x, d2);
+  float d1 = sphere(p, inner_sphere);
+  *g_gd = _fminf(*g_gd, to_float2(d2, d1));
+  float d = (_fminf(d0, d1));
+  return d;
+}
+
+__DEVICE__ float rayMarch2(float3 ro, float3 rd, float tinit, inout float2 *g_gd, float inner_sphere, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, float TOLERANCE2, mat3 g_rot) {
+  float t = tinit;
+#if defined(BACKSTEP2)
+  float2 dti = to_float2(1e10,0.0f);
+#endif
+  int i;
+  for (i = 0; i < MAX_RAY_MARCHES2; ++i) {
+    float d = df2(ro + rd*t, g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot);
+#if defined(BACKSTEP2)
+    if (d<dti.x) { dti=to_float2(d,t); }
+#endif
+    // Bouncing in a closed shell, will never miss
+    if (d < TOLERANCE2/* || t > MAX_RAY_LENGTH3 */) {
+      break;
+    }
+    t += d;
+  }
+#if defined(BACKSTEP2)
+  if(i==MAX_RAY_MARCHES2) { t=dti.y; };
+#endif
+  return t;
+}
+
+__DEVICE__ float3 normal2(float3 pos, inout float2 *g_gd, float inner_sphere, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, float NORM_OFF2, mat3 g_rot) {
+  float2  eps = to_float2(NORM_OFF2,0.0f);
+  float3 nor;
+  nor.x = df2(pos+swi3(eps,x,y,y), g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot) - df2(pos-swi3(eps,x,y,y), g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot);
+  nor.y = df2(pos+swi3(eps,y,x,y), g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot) - df2(pos-swi3(eps,y,x,y), g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot);
+  nor.z = df2(pos+swi3(eps,y,y,x), g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot) - df2(pos-swi3(eps,y,y,x), g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot);
+  return normalize(nor);
+}
+
+
+__DEVICE__ float3 _refract_f3(float3 I, float3 N, float eta, float refmul, float refoff) {
+   float dotNI = dot(N, I);
+   float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+   if (k < 0.0f) {
+     return to_float3_s(0.0);
+   }
+   return eta * I - (eta * dotNI * _sqrtf(k)) * N * refmul + refoff; //+0.5f;   * -01.50f;(MarchingCubes)  - 0.15f; (GlassDuck)
+}
+
+
+
+
+__DEVICE__ float3 render2(float3 ro, float3 rd, float db, inout float2 *g_gd, float inner_sphere, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, float TOLERANCE2, float NORM_OFF2,
+                          float rrefr_index, float3 beerCol, float3 glowCol1, mat3 g_rot, float3 bottomBoxCol, float3 topBoxCol, float3 sunCol, float3 sunDir, float refmul, float refoff) {
+  float3 agg = to_float3_s(0.0f);
+  float ragg = 1.0f;
+  float tagg = 0.0f;
+
+  for (int bounce = 0; bounce < MAX_BOUNCES2; ++bounce) {
+    if (ragg < 0.1f) break;
+    *g_gd      = to_float2_s(1E3);
+    float t2  = rayMarch2(ro, rd, _fminf(db+0.05f, 0.3f), g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, TOLERANCE2, g_rot);
+    float2 gd2  = *g_gd;
+    tagg      += t2;
+
+    float3 p2   = ro+rd*t2;
+    float3 n2   = normal2(p2, g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, NORM_OFF2, g_rot);
+    float3 r2   = reflect(rd, n2);
+    float3 rr2  = _refract_f3(rd, n2, rrefr_index, refmul, refoff);
+    float fre2= 1.0f+dot(n2,rd);
+
+    float3 beer = ragg*exp_f3(0.2f*beerCol*tagg);
+    agg += glowCol1*beer*((1.0f+tagg*tagg*4E-2f)*6.0f/_fmaxf(gd2.x, 5E-4f+tagg*tagg*2E-4f/ragg));
+    float3 ocol = 0.2f*beer*render0(p2, rr2, bottomBoxCol, topBoxCol, sunCol, sunDir);
+    if (gd2.y <= TOLERANCE2) {
+      ragg *= 1.0f-0.9f*fre2;
+    } else {
+      agg     += ocol;
+      ragg    *= 0.8f;
+    }
+
+    ro        = p2;
+    rd        = r2;
+    db        = gd2.x;
+  }
+
+  return agg;
+}
+
+__DEVICE__ float df3(float3 p, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, inout float2 *g_gd, mat3 g_rot) {
+  float3 ds = shape(p, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_rot);
+  *g_gd = _fminf(*g_gd, swi2(ds,y,z));
+  const float sw = 0.02f;
+  float d1 = _fminf(ds.y, ds.z)-sw;
+  float d0 = ds.x;
+  d0 = _fminf(d0, ds.y);
+  d0 = _fminf(d0, ds.z);
+  return d0;
+}
+
+__DEVICE__ float rayMarch3(float3 ro, float3 rd, float tinit, out int *iter, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, inout float2 *g_gd, float TOLERANCE3, float MAX_RAY_LENGTH3, mat3 g_rot) {
+  float t = tinit;
+  int i;
+  for (i = 0; i < MAX_RAY_MARCHES3; ++i) {
+    float d = df3(ro + rd*t, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, g_rot);
+    if (d < TOLERANCE3 || t > MAX_RAY_LENGTH3) {
+      break;
+    }
+    t += d;
+  }
+  *iter = i;
+  return t;
+}
+
+__DEVICE__ float3 normal3(float3 pos, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, inout float2 *g_gd, float NORM_OFF3, mat3 g_rot) {
+  float2  eps = to_float2(NORM_OFF3,0.0f);
+  float3 nor;
+  nor.x = df3(pos+swi3(eps,x,y,y), poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, g_rot) - df3(pos-swi3(eps,x,y,y), poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, g_rot);
+  nor.y = df3(pos+swi3(eps,y,x,y), poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, g_rot) - df3(pos-swi3(eps,y,x,y), poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, g_rot);
+  nor.z = df3(pos+swi3(eps,y,y,x), poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, g_rot) - df3(pos-swi3(eps,y,y,x), poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, g_rot);
+  return normalize(nor);
+}
+
+__DEVICE__ float3 render3(float3 ro, float3 rd, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, inout float2 *g_gd, float TOLERANCE3, float MAX_RAY_LENGTH3, float NORM_OFF3,
+                          float refr_index,
+                          float inner_sphere, float TOLERANCE2, float NORM_OFF2, float rrefr_index, float3 beerCol, float3 glowCol1, float3 glowCol0, mat3 g_rot,
+                          float3 bottomBoxCol, float3 topBoxCol, float3 sunCol, float3 sunDir, float refmul, float refoff, float refmul2, float refoff2) {
+  int iter;
+
+  float3 skyCol = render0(ro, rd, bottomBoxCol, topBoxCol, sunCol, sunDir);
+  float3 col  = skyCol;
+
+  *g_gd      = to_float2_s(1E3);
+  float t1  = rayMarch3(ro, rd, 0.1f, &iter, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, TOLERANCE3, MAX_RAY_LENGTH3, g_rot);
+  float2 gd1  = *g_gd;
+  float3 p1   = ro+t1*rd;
+  float3 n1   = normal3(p1, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, NORM_OFF3, g_rot);
+  float3 r1   = reflect(rd, n1);
+  float3 rr1  = _refract_f3(rd, n1, refr_index, refmul2, refoff2);
+  float fre1= 1.0f+dot(rd, n1);
+  fre1 *= fre1;
+
+  float ifo = _mix(0.5f, 1.0f, smoothstep(1.0f, 0.9f, (float)(iter)/(float)(MAX_RAY_MARCHES3)));
+
+  if (t1 < MAX_RAY_LENGTH3) {
+    col = render0(p1, r1, bottomBoxCol, topBoxCol, sunCol, sunDir)*(0.5f+0.5f*fre1)*ifo;
+    float3 icol = render2(p1, rr1, gd1.x, g_gd, inner_sphere, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, TOLERANCE2, NORM_OFF2, rrefr_index, beerCol, glowCol1, g_rot, bottomBoxCol, topBoxCol, sunCol, sunDir, refmul, refoff);
+    //if (gd1.x > TOLERANCE3 && gd1.y > TOLERANCE3 && rr1 != to_float3_s(0.0f)) {
+      if (gd1.x > TOLERANCE3 && gd1.y > TOLERANCE3 && rr1.x != 0.0f && rr1.y != 0.0f && rr1.z != 0.0f ) {
+      col += icol*(1.0f-0.75f*fre1)*ifo;
+    }
+  }
+
+  col += (glowCol0+1.0f*fre1*(glowCol0))/_fmaxf(gd1.x, 3E-4f);
+  return col;
+
+}
+
+
+__DEVICE__ float3 effect(float2 p, float2 pp, float poly_zoom, int poly_type, float3 poly_nc, float3 poly_pab, float3 poly_pbc, float3 poly_pca, float3 poly_p, inout float2 *g_gd, float TOLERANCE3, float MAX_RAY_LENGTH3, float NORM_OFF3,
+                         float refr_index,
+                         float inner_sphere, float TOLERANCE2, float NORM_OFF2, float rrefr_index, float3 beerCol, float3 glowCol1, float3 glowCol0, mat3 g_rot,
+                         float3 bottomBoxCol, float3 topBoxCol, float3 sunCol, float3 sunDir, float3 rayOrigin, float refmul, float refoff, float refmul2, float refoff2) {
+  const float fov = 2.0f;
+
+  const float3 up = to_float3(0.0f, 1.0f, 0.0f);
+  const float3 la   = to_float3_s(0.0f);
+
+  const float3 ww = normalize(normalize(la-rayOrigin));
+  const float3 uu = normalize(cross(up, ww));
+  const float3 vv = cross(ww, uu);
+
+  float3 rd = normalize(-p.x*uu + p.y*vv + fov*ww);
+
+  float3 col = to_float3_s(0.0f);
+  col = render3(rayOrigin, rd, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, g_gd, TOLERANCE3, MAX_RAY_LENGTH3, NORM_OFF3, refr_index,
+                inner_sphere, TOLERANCE2, NORM_OFF2, rrefr_index, beerCol, glowCol1, glowCol0, g_rot, bottomBoxCol, topBoxCol, sunCol, sunDir, refmul, refoff, refmul2, refoff2);
+
+  col -= 2E-2f*to_float3(2.0f,3.0f,1.0f)*(length(p)+0.25f);
+  col = aces_approx(col);
+  col = sqrt_f3(col);
+  return col;
+}
+
+__KERNEL__ void LetSSelfReflectFuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  float  rotation_speed = params->rotation_speed;
+  float  poly_U = params->poly_U;
+  float  poly_V = params->poly_V;
+  float  poly_W = params->poly_W;
+  int    poly_type = params->poly_type;
+  float  poly_zoom = params->poly_zoom;
+  float  inner_sphere = params->inner_sphere;
+  float  refr_index = params->refr_index;
+  float  TOLERANCE2 = params->TOLERANCE2;
+  float  MAX_RAY_LENGTH2 = params->MAX_RAY_LENGTH2;
+  float  NORM_OFF2 = params->NORM_OFF2;
+  float  TOLERANCE3 = params->TOLERANCE3;
+  float  MAX_RAY_LENGTH3 = params->MAX_RAY_LENGTH3;
+  float  NORM_OFF3 = params->NORM_OFF3;
+  float2 RayOrgXY = to_float2(params->RayOrgXY[0], params->RayOrgXY[1]);
+  float  RayOrgZ = params->RayOrgZ;
+  float4 SunCol = to_float4(params->SunCol[0], params->SunCol[1], params->SunCol[2], params->SunCol[3]);
+  float4 BottomBoxCol = to_float4(params->BottomBoxCol[0], params->BottomBoxCol[1], params->BottomBoxCol[2], params->BottomBoxCol[3]);
+  float4 TopBoxCol = to_float4(params->TopBoxCol[0], params->TopBoxCol[1], params->TopBoxCol[2], params->TopBoxCol[3]);
+  float4 GlowCol0 = to_float4(params->GlowCol0[0], params->GlowCol0[1], params->GlowCol0[2], params->GlowCol0[3]);
+  float4 GlowCol1 = to_float4(params->GlowCol1[0], params->GlowCol1[1], params->GlowCol1[2], params->GlowCol1[3]);
+  float4 BeerCol = to_float4(params->BeerCol[0], params->BeerCol[1], params->BeerCol[2], params->BeerCol[3]);
+  float2 Poly_pabXY = to_float2(params->Poly_pabXY[0], params->Poly_pabXY[1]);
+  float  Poly_pabZ = params->Poly_pabZ;
+  float2 Poly_pbcXY = to_float2(params->Poly_pbcXY[0], params->Poly_pbcXY[1]);
+  float  Poly_pbcZ = params->Poly_pbcZ;
+  float2 Poly_pcaXY = to_float2(params->Poly_pcaXY[0], params->Poly_pcaXY[1]);
+  float  Poly_pcaZ = params->Poly_pcaZ;
+  float  refmul = params->refmul;
+  float  refoff = params->refoff;
+  float  refmul2 = params->refmul2;
+  float  refoff2 = params->refoff2;
+
+  // --------
+
+//CONNECT_SLIDER0(rotation_speed, -1.0f, 2.0f, 0.25f);
+//CONNECT_SLIDER1(poly_U, -1.0f, 5.0f, 1.0f);  // [0, inf]
+//CONNECT_SLIDER2(poly_V, -1.0f, 5.0f, 0.5f);  // [0, inf]
+//CONNECT_SLIDER3(poly_W, -1.0f, 5.0f, 1.0f);  // [0, inf]
+//CONNECT_INTSLIDER0(poly_type, 2, 5, 3);     // [2, 5]
+//CONNECT_SLIDER4(poly_zoom   , -1.0f, 5.0f, 2.0f);
+//CONNECT_SLIDER5(inner_sphere, -1.0f, 5.0f, 1.0f);
+//CONNECT_SLIDER6(refr_index  , -1.0f, 2.0f, 0.9f);
+//
+//CONNECT_SLIDER7(TOLERANCE2      , -1.0f, 1.0f, 0.0005f);
+//CONNECT_SLIDER8(MAX_RAY_LENGTH2 , -1.0f, 20.0f, 10.0f);
+//CONNECT_SLIDER9(NORM_OFF2       , -1.0f, 1.0f, 0.005f);
+//CONNECT_SLIDER10(TOLERANCE3      , -1.0f, 1.0f, 0.0005f);
+//CONNECT_SLIDER11(MAX_RAY_LENGTH3 , -1.0f, 20.0f, 10.0f);
+//CONNECT_SLIDER12(NORM_OFF3       , -1.0f, 1.0f, 0.005f);
+//
+//CONNECT_POINT0(RayOrgXY, 0.0f, 0.0f );
+//CONNECT_SLIDER13(RayOrgZ, -10.0f, 10.0f, 0.0f);
+
+      float3 rayOrigin    = to_float3(0.0f, 1.0f, -5.0f) + to_float3_aw(RayOrgXY, RayOrgZ);
+      float3 sunDir       = normalize(-rayOrigin);
+
+//CONNECT_COLOR0(SunCol      , 0.06f , 0.90f, 0.01f, 1.0f);
+//CONNECT_COLOR1(BottomBoxCol, 0.66f, 0.80f, 0.5f, 1.0f);
+//CONNECT_COLOR2(TopBoxCol   , 0.60f, 0.90f, 1.0f, 1.0f);
+//CONNECT_COLOR3(GlowCol0    , 0.05f , 0.7f, 0.001f, 1.0f);
+//CONNECT_COLOR4(GlowCol1    , 0.95f, 0.7f, 0.001f, 1.0f);
+//CONNECT_COLOR5(BeerCol     , 0.65f, 0.7f, 2.0f, 1.0f);
+
+const float4 hsv2rgb_K = to_float4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+      float3 sunCol       =  HSV2RGB(swi3(SunCol      ,x,y,z)); //to_float3(0.06f , 0.90f, 1E-2))*1.0f;
+      float3 bottomBoxCol =  HSV2RGB(swi3(BottomBoxCol,x,y,z)); //to_float3(0.66f, 0.80f, 0.5f))*1.0f;
+      float3 topBoxCol    =  HSV2RGB(swi3(TopBoxCol   ,x,y,z)); //to_float3(0.60f, 0.90f, 1.0f))*1.0f;
+      float3 glowCol0     =  HSV2RGB(swi3(GlowCol0    ,x,y,z)); //to_float3(0.05f , 0.7f, 1E-3))*1.0f;
+      float3 glowCol1     =  HSV2RGB(swi3(GlowCol1    ,x,y,z)); //to_float3(0.95f, 0.7f, 1E-3))*1.0f;
+      float3 beerCol      = -1.0f*HSV2RGB(swi3(BeerCol     ,x,y,z)); //to_float3(0.15f+0.5f, 0.7f, 2.0f));
+
+      float rrefr_index = 1.0f/refr_index;
+
+//CONNECT_POINT1(Poly_pabXY, 0.0f, 0.0f );
+//CONNECT_SLIDER14(Poly_pabZ, -10.0f, 10.0f, 0.0f);
+//CONNECT_POINT2(Poly_pbcXY, 0.0f, 0.0f );
+//CONNECT_SLIDER15(Poly_pbcZ, -10.0f, 10.0f, 0.0f);
+//CONNECT_POINT3(Poly_pcaXY, 0.0f, 0.0f );
+//CONNECT_SLIDER16(Poly_pcaZ, -10.0f, 10.0f, 0.0f);
+
+
+// License: Unknown, author: knighty, found: https://www.shadertoy.com/view/MsKGzw
+      float poly_cospin     = _cosf(PI/(float)(poly_type));
+      float poly_scospin    = _sqrtf(0.75f-poly_cospin*poly_cospin);
+      float3  poly_nc       = to_float3(-0.5f, -poly_cospin, poly_scospin);
+      float3  poly_pab      = to_float3(0.0f, 0.0f, 1.0f) + to_float3_aw(Poly_pabXY, Poly_pabZ);
+      float3  poly_pbc_     = to_float3(poly_scospin, 0.0f, 0.5f)  + to_float3_aw(Poly_pbcXY, Poly_pbcZ);
+      float3  poly_pca_     = to_float3(0.0f, poly_scospin, poly_cospin) + to_float3_aw(Poly_pcaXY, Poly_pcaZ);
+      float3  poly_p        = normalize((poly_U*poly_pab+poly_V*poly_pbc_+poly_W*poly_pca_));
+      float3  poly_pbc      = normalize(poly_pbc_);
+      float3  poly_pca      = normalize(poly_pca_);
+
+  //mat3 g_rot;
+  float2 g_gd = to_float2_s(0.0f);
+
+  float2 q = fragCoord/RESOLUTION;
+  float2 p = -1.0f + 2.0f * q;
+  float2 pp = p;
+  p.x *= RESOLUTION.x/RESOLUTION.y;
+
+  float a = TIME*rotation_speed;
+  //float3 r0 = to_float3(1.0f, sin_f2(to_float2(_sqrtf(0.5f), 1.0f)*a));
+  float3 r0 = to_float3(1.0f, _sinf(_sqrtf(0.5f))*a, _sinf(1.0f)*a);
+  float3 r1 = to_float3_aw(cos_f2(to_float2(_sqrtf(0.5f), 1.0f)*0.913f*a), 1.0f);
+  //mat3 Rot = rot(normalize(r0), normalize(r1));
+  mat3 g_rot = rot(normalize(r0), normalize(r1)); //rot;
+
+  float3 col = effect(p, pp, poly_zoom, poly_type, poly_nc, poly_pab, poly_pbc, poly_pca, poly_p, &g_gd, TOLERANCE3, MAX_RAY_LENGTH3, NORM_OFF3, refr_index,
+                      inner_sphere, TOLERANCE2, NORM_OFF2, rrefr_index, beerCol, glowCol1, glowCol0, g_rot, bottomBoxCol, topBoxCol, sunCol, sunDir, rayOrigin, refmul, refoff, refmul2, refoff2);
+
+  fragColor = to_float4_aw(col, 1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  Inrotation_speedSlider = self:AddInput("rotation_speed", "rotation_speed", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.25,
+      })
+
+  Inpoly_USlider = self:AddInput("poly_U", "poly_U", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 1.0,
+      })
+
+  Inpoly_VSlider = self:AddInput("poly_V", "poly_V", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 0.5,
+      })
+
+  Inpoly_WSlider = self:AddInput("poly_W", "poly_W", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 1.0,
+      })
+
+  Inpoly_typeSlider = self:AddInput("poly_type", "poly_type", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 2,
+      INP_MaxScale       = 5,
+      INP_Default        = 3,
+      INP_Integer        = true,
+  })
+
+  Inpoly_zoomSlider = self:AddInput("poly_zoom", "poly_zoom", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 2.0,
+      })
+
+  Ininner_sphereSlider = self:AddInput("inner_sphere", "inner_sphere", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 5.0,
+          INP_Default        = 1.0,
+      })
+
+  Inrefr_indexSlider = self:AddInput("refr_index", "refr_index", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 2.0,
+          INP_Default        = 0.9,
+      })
+
+  InTOLERANCE2Slider = self:AddInput("TOLERANCE2", "TOLERANCE2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0005,
+      })
+
+  InMAX_RAY_LENGTH2Slider = self:AddInput("MAX_RAY_LENGTH2", "MAX_RAY_LENGTH2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 10.0,
+      })
+
+  InNORM_OFF2Slider = self:AddInput("NORM_OFF2", "NORM_OFF2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.005,
+      })
+
+  InTOLERANCE3Slider = self:AddInput("TOLERANCE3", "TOLERANCE3", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.0005,
+      })
+
+  InMAX_RAY_LENGTH3Slider = self:AddInput("MAX_RAY_LENGTH3", "MAX_RAY_LENGTH3", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 20.0,
+          INP_Default        = 10.0,
+      })
+
+  InNORM_OFF3Slider = self:AddInput("NORM_OFF3", "NORM_OFF3", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 1.0,
+          INP_Default        = 0.005,
+      })
+
+  InRayOrgXYPoint = self:AddInput("RayOrgXY", "RayOrgXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InRayOrgZSlider = self:AddInput("RayOrgZ", "RayOrgZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  
+  self:BeginControlNest("Colors", "Colors", false, {})
+  self:BeginControlNest("SunCol", "SunCol", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "SunCol",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InSunColColorR = self:AddInput("Red",   "SunColRed",   { INP_Default  = 0.06, IC_ControlID = 0, attrs})
+    InSunColColorG = self:AddInput("Green", "SunColGreen", { INP_Default  = 0.90, IC_ControlID = 1, attrs})
+    InSunColColorB = self:AddInput("Blue",  "SunColBlue",  { INP_Default  = 0.01, IC_ControlID = 2, attrs})
+    InSunColColorA = self:AddInput("Alpha", "SunColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("BottomBoxCol", "BottomBoxCol", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "BottomBoxCol",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBottomBoxColColorR = self:AddInput("Red",   "BottomBoxColRed",   { INP_Default  = 0.66, IC_ControlID = 0, attrs})
+    InBottomBoxColColorG = self:AddInput("Green", "BottomBoxColGreen", { INP_Default  = 0.80, IC_ControlID = 1, attrs})
+    InBottomBoxColColorB = self:AddInput("Blue",  "BottomBoxColBlue",  { INP_Default  = 0.5, IC_ControlID = 2, attrs})
+    InBottomBoxColColorA = self:AddInput("Alpha", "BottomBoxColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("TopBoxCol", "TopBoxCol", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "TopBoxCol",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InTopBoxColColorR = self:AddInput("Red",   "TopBoxColRed",   { INP_Default  = 0.60, IC_ControlID = 0, attrs})
+    InTopBoxColColorG = self:AddInput("Green", "TopBoxColGreen", { INP_Default  = 0.90, IC_ControlID = 1, attrs})
+    InTopBoxColColorB = self:AddInput("Blue",  "TopBoxColBlue",  { INP_Default  = 1.0, IC_ControlID = 2, attrs})
+    InTopBoxColColorA = self:AddInput("Alpha", "TopBoxColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("GlowCol0", "GlowCol0", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "GlowCol0",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InGlowCol0ColorR = self:AddInput("Red",   "GlowCol0Red",   { INP_Default  = 0.05, IC_ControlID = 0, attrs})
+    InGlowCol0ColorG = self:AddInput("Green", "GlowCol0Green", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InGlowCol0ColorB = self:AddInput("Blue",  "GlowCol0Blue",  { INP_Default  = 0.001, IC_ControlID = 2, attrs})
+    InGlowCol0ColorA = self:AddInput("Alpha", "GlowCol0Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("GlowCol1", "GlowCol1", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "GlowCol1",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InGlowCol1ColorR = self:AddInput("Red",   "GlowCol1Red",   { INP_Default  = 0.95, IC_ControlID = 0, attrs})
+    InGlowCol1ColorG = self:AddInput("Green", "GlowCol1Green", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InGlowCol1ColorB = self:AddInput("Blue",  "GlowCol1Blue",  { INP_Default  = 0.001, IC_ControlID = 2, attrs})
+    InGlowCol1ColorA = self:AddInput("Alpha", "GlowCol1Alpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+
+  self:BeginControlNest("BeerCol", "BeerCol", true, {})
+
+    ctrl_grp_cnt = (ctrl_grp_cnt==nil) and 1 or (ctrl_grp_cnt+1)
+
+    attrs = {
+      ICS_Name = "BeerCol",
+      LINKID_DataType = "Number",
+      INPID_InputControl = "ColorControl",
+      INP_MinScale = 0.0,
+      INP_MaxScale = 1.0,
+      IC_ControlGroup = ctrl_grp_cnt,
+    }
+
+    InBeerColColorR = self:AddInput("Red",   "BeerColRed",   { INP_Default  = 0.65, IC_ControlID = 0, attrs})
+    InBeerColColorG = self:AddInput("Green", "BeerColGreen", { INP_Default  = 0.7, IC_ControlID = 1, attrs})
+    InBeerColColorB = self:AddInput("Blue",  "BeerColBlue",  { INP_Default  = 2.0, IC_ControlID = 2, attrs})
+    InBeerColColorA = self:AddInput("Alpha", "BeerColAlpha", { INP_Default  = 1.0, IC_ControlID = 3, attrs})
+
+  self:EndControlNest()
+  self:EndControlNest()
+
+  InPoly_pabXYPoint = self:AddInput("Poly_pabXY", "Poly_pabXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InPoly_pabZSlider = self:AddInput("Poly_pabZ", "Poly_pabZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InPoly_pbcXYPoint = self:AddInput("Poly_pbcXY", "Poly_pbcXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InPoly_pbcZSlider = self:AddInput("Poly_pbcZ", "Poly_pbcZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InPoly_pcaXYPoint = self:AddInput("Poly_pcaXY", "Poly_pcaXY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InPoly_pcaZSlider = self:AddInput("Poly_pcaZ", "Poly_pcaZ", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InrefmulSlider = self:AddInput("refmul", "refmul", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InrefoffSlider = self:AddInput("refoff", "refoff", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  Inrefmul2Slider = self:AddInput("refmul2", "refmul2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  Inrefoff2Slider = self:AddInput("refoff2", "refoff2", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -1.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+
+
+  Sep3 = self:AddInput(string.rep("_", 152), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  node = DVIPComputeNode(req,
+    "LetSSelfReflectFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+
+  params = node:GetParamBlock(ShaderParameters)
+
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.rotation_speed = Inrotation_speedSlider:GetValue(req).Value
+  params.poly_U = Inpoly_USlider:GetValue(req).Value
+  params.poly_V = Inpoly_VSlider:GetValue(req).Value
+  params.poly_W = Inpoly_WSlider:GetValue(req).Value
+  params.poly_type = Inpoly_typeSlider:GetValue(req).Value
+  params.poly_zoom = Inpoly_zoomSlider:GetValue(req).Value
+  params.inner_sphere = Ininner_sphereSlider:GetValue(req).Value
+  params.refr_index = Inrefr_indexSlider:GetValue(req).Value
+  params.TOLERANCE2 = InTOLERANCE2Slider:GetValue(req).Value
+  params.MAX_RAY_LENGTH2 = InMAX_RAY_LENGTH2Slider:GetValue(req).Value
+  params.NORM_OFF2 = InNORM_OFF2Slider:GetValue(req).Value
+  params.TOLERANCE3 = InTOLERANCE3Slider:GetValue(req).Value
+  params.MAX_RAY_LENGTH3 = InMAX_RAY_LENGTH3Slider:GetValue(req).Value
+  params.NORM_OFF3 = InNORM_OFF3Slider:GetValue(req).Value
+  params.RayOrgXY = {InRayOrgXYPoint:GetValue(req).X,InRayOrgXYPoint:GetValue(req).Y}
+  params.RayOrgZ = InRayOrgZSlider:GetValue(req).Value
+  params.SunCol = {
+    InSunColColorR:GetValue(req).Value,
+    InSunColColorG:GetValue(req).Value,
+    InSunColColorB:GetValue(req).Value,InSunColColorA:GetValue(req).Value
+  }
+  params.BottomBoxCol = {
+    InBottomBoxColColorR:GetValue(req).Value,
+    InBottomBoxColColorG:GetValue(req).Value,
+    InBottomBoxColColorB:GetValue(req).Value,InBottomBoxColColorA:GetValue(req).Value
+  }
+  params.TopBoxCol = {
+    InTopBoxColColorR:GetValue(req).Value,
+    InTopBoxColColorG:GetValue(req).Value,
+    InTopBoxColColorB:GetValue(req).Value,InTopBoxColColorA:GetValue(req).Value
+  }
+  params.GlowCol0 = {
+    InGlowCol0ColorR:GetValue(req).Value,
+    InGlowCol0ColorG:GetValue(req).Value,
+    InGlowCol0ColorB:GetValue(req).Value,InGlowCol0ColorA:GetValue(req).Value
+  }
+  params.GlowCol1 = {
+    InGlowCol1ColorR:GetValue(req).Value,
+    InGlowCol1ColorG:GetValue(req).Value,
+    InGlowCol1ColorB:GetValue(req).Value,InGlowCol1ColorA:GetValue(req).Value
+  }
+  params.BeerCol = {
+    InBeerColColorR:GetValue(req).Value,
+    InBeerColColorG:GetValue(req).Value,
+    InBeerColColorB:GetValue(req).Value,InBeerColColorA:GetValue(req).Value
+  }
+  params.Poly_pabXY = {InPoly_pabXYPoint:GetValue(req).X,InPoly_pabXYPoint:GetValue(req).Y}
+  params.Poly_pabZ = InPoly_pabZSlider:GetValue(req).Value
+  params.Poly_pbcXY = {InPoly_pbcXYPoint:GetValue(req).X,InPoly_pbcXYPoint:GetValue(req).Y}
+  params.Poly_pbcZ = InPoly_pbcZSlider:GetValue(req).Value
+  params.Poly_pcaXY = {InPoly_pcaXYPoint:GetValue(req).X,InPoly_pcaXYPoint:GetValue(req).Y}
+  params.Poly_pcaZ = InPoly_pcaZSlider:GetValue(req).Value
+  params.refmul = InrefmulSlider:GetValue(req).Value
+  params.refoff = InrefoffSlider:GetValue(req).Value
+  params.refmul2 = Inrefmul2Slider:GetValue(req).Value
+  params.refoff2 = Inrefoff2Slider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+-- */

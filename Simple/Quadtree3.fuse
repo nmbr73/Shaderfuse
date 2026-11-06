@@ -1,0 +1,357 @@
+--[[--/*
+
+  Quadtree3.fuse
+
+  Based on https://www.shadertoy.com/view/lljSDy a WebGL shader created by FabriceNeyret2.
+  Converted to DCTL and embeddet into a Lua Fuse by nmbr73 (https://www.youtube.com/c/nmbr73).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  Alpha;
+  float  Blue;
+  float  Smooth;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+  #else
+
+  #endif
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #else // Generic
+
+    #define fract(a) ((a)-_floor(a))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+
+
+__KERNEL__ void Quadtree3Fuse(__CONSTANTREF__ Params*  params, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 o   = to_float4_s(0.0f);
+  float2 U   = to_float2(fusion_x,fusion_y);
+
+
+  float  Alpha = params->Alpha;
+  float  Blue = params->Blue;
+  float  Smooth = params->Smooth;
+
+  // --------
+
+
+
+    o -= o;
+    float r=0.1f, t=iTime, H = iResolution.y;
+    U /=  H;                              // object : disc(P,r)
+    float2 P = 0.5f+0.5f*to_float2(_cosf(t),_sinf(t*0.7f)), fU;
+    U*=0.5f; P*=0.5f;                         // unzoom for the whole domain falls within [0,1]^n
+
+    o.z= Blue;  // o.z = 0.25f;                            // backgroud = cold blue
+    o.w= Alpha; //o.w = 1.0f;
+
+    for (int i=0; i<7; i++) {             // to the infinity, and beyond ! :-)
+        fU = _fminf(U,1.0f-U); if (_fminf(fU.x,fU.y) < 3.0f*r/H) { o-=1.0f; break; } // cell border
+        if (length(P-0.5f) - r > 0.7f) break; // cell is out of the shape
+
+        // --- iterate to child cell
+        fU = step(to_float2_s(0.5f),U);                  // select child
+        U = 2.0f*U - fU;                    // go to new local frame
+        P = 2.0f*P - fU;  r *= 2.0f;
+
+        o += 0.13f;                         // getting closer, getting hotter
+    }
+
+//  float gb = smoothstep(0.9f,1.0f,length(P-U)/r); // draw object
+  float gb = smoothstep(Smooth,1.0f,length(P-U)/r); // draw object
+  o.y *= gb;
+  o.z *= gb;
+  //o.gb *= smoothstep(0.9f,1.0f,length(P-U)/r); // draw object
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, o);
+
+}
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- In/Out
+
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+  ----- Inspector Panel Controls
+
+
+  -- Speed Slider
+
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  InAlphaSlider = self:AddInput("Alpha", "Alpha", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 1.0,
+  })
+
+  InBlueSlider = self:AddInput("Blue", "Blue", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.25,
+  })
+
+  InSmoothSlider = self:AddInput("Smooth", "Smooth", {
+      LINKID_DataType    = "Number",
+      INPID_InputControl = "SliderControl",
+      INP_MinScale       = 0.0,
+      INP_MaxScale       = 1.0,
+      INP_Default        = 0.9,
+  })
+
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+
+function Process(req)
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+  local node = DVIPComputeNode(req,
+    "Quadtree3Fuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  params = node:GetParamBlock(ShaderParameters)
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+
+  params.Alpha = InAlphaSlider:GetValue(req).Value
+  params.Blue = InBlueSlider:GetValue(req).Value
+  params.Smooth = InSmoothSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  -- Set parameters and add I/O
+
+  node:SetParamBlock(params)
+  node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  node:AddOutput("dst", dst)
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+-- function NotifyChanged(inp, param, time)
+-- 	if (param ~= nil) then
+-- 		if (param.Value == 1) then
+-- 			if (inp == ...) then
+--         ...
+-- 			end
+-- 		end
+-- 	end
+-- end
+
+
+-- */
+
+

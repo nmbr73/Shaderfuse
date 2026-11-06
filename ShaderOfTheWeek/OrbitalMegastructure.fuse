@@ -1,0 +1,2253 @@
+--[[--/*
+
+  OrbitalMegastructure.fuse
+
+  Based on https://www.shadertoy.com/view/WlKXzm a WebGL shader created by otaviogood.
+  Converted to DCTL and embeddet into a Lua Fuse by JiPi (https://www.youtube.com/c/JiPi_YT).
+  Place this file in your Fusion's and/or DaVinci Resolve's 'Fuses/' folder to use it.
+
+*/--]]--
+
+
+
+
+-- /*
+local ShaderFuse = require("Shaderfuse/ShaderFuse")
+ShaderFuse.init()
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Registry declaration
+-- // ------------------------------------------------------------------------
+
+FuRegisterClass(ShaderFuse.FuRegister.Name, CT_SourceTool, {
+  ShaderFuse.FuRegister.Attributes,
+
+  REG_NoObjMatCtrls      = true,
+  REG_NoMotionBlurCtrls  = true,
+  REG_Source_GlobalCtrls = false,
+  REG_Source_SizeCtrls   = true,
+  REG_Source_AspectCtrls = true,
+  REG_Source_DepthCtrls  = true,
+  REG_OpNoMask           = true,
+  REG_TimeVariant        = true,
+  })
+
+
+
+-- // ------------------------------------------------------------------------
+-- // DCTL kernel parameters
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderParameters =
+[[
+
+  float  iResolution[2];
+  float  iTime;
+  float  iMouse[4];
+  int    iFrame;
+  bool   AntiAlias;
+  float  View1XY[2];
+  float  View1Z;
+  float  View2XY[2];
+  float  View2Z;
+  float  View3XY[2];
+  float  View3Z;
+
+  int    width,height;
+  int    compOrder;
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel compatibility code
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderCompatibilityCode =
+[[
+
+
+#if defined(DEVICE_IS_METAL)
+  #define in
+  #define out thread
+  #define inout thread
+#else
+  #define in
+  #define out
+  #define inout
+#endif
+
+#undef USE_NATIVE_METAL_IMPL
+#undef USE_NATIVE_CUDA_IMPL
+#undef USE_NATIVE_OPENCL_IMPL
+
+  // 0 to use the generic implementations; 1 for Metal, OpenCL, Cuda specific code if existing
+
+  #if 1
+    #if defined(DEVICE_IS_METAL)
+      #define USE_NATIVE_METAL_IMPL   1
+    #elif defined(DEVICE_IS_CUDA)
+      #define USE_NATIVE_CUDA_IMPL    1
+    #elif defined(DEVICE_IS_OPENCL)
+      #define USE_NATIVE_OPENCL_IMPL  1
+    #endif
+  #endif
+
+  #if defined(USE_NATIVE_METAL_IMPL)
+
+    #define swi2(A,a,b)     (A).a##b
+    #define swi3(A,a,b,c)   (A).a##b##c
+
+    #define swi2S(a,b,c,d)   a.b##c = d
+
+  #else
+
+    #define swi2(A,a,b)     to_float2((A).a,(A).b)
+    #define swi3(A,a,b,c)   to_float3((A).a,(A).b,(A).c)
+
+    #define swi2S(a,b,c,d)   {float2 tmp = d; (a).b = tmp.x; (a).c = tmp.y;}
+
+  #endif
+
+// ----------------------------------------------------------------------------------------------------------
+// mat3 implementation
+// ----------------------------------------------------------------------------------------------------------
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+  typedef float3x3 mat3;
+
+#else
+
+  typedef struct { float3 r0; float3 r1; float3 r2; } mat3;
+
+#endif // end of mat3 implementation
+
+#if defined(USE_NATIVE_METAL_IMPL)
+
+ #define fract_f2(A) fract(A)
+
+ #define mod_f(a,b)  fmod((a),(b))
+
+ #define abs_f2(a) _fabs(a)
+ #define abs_f3(a) _fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f(a) sign(a)
+ #define sign_f2(a) sign(a)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) pow(a,b)
+
+#else
+
+  #if defined(USE_NATIVE_OPENCL_IMPL)
+
+    #define reflect(I,N) (I-2.0f*dot(N,I)*N)
+
+    #define fract(a) ((a)-_floor(a))  // oder Pointer bauen: gentype fract(gentype x, gentype *itpr)
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define mod_f(a,b) _fmod(a,b)
+ #define abs_f2(a) fabs(a)
+ #define abs_f3(a) fabs(a)
+ #define sqrt_f3(a) _sqrtf(a)
+ #define sign_f(a) sign(a)
+ #define sign_f2(a) sign(a)
+ #define distance_f3( p1, p2) distance(p1, p2)
+ #define pow_f3(a,b) pow(a,b)
+
+ #else // Generic
+
+ #if defined(DEVICE_IS_OPENCL)
+   __DEVICE__ float3 reflect(float3 I, float3 N) {return I - 2.0f * dot(N, I) * N;}
+ #endif
+
+    #define fract(a) ((a)-_floor(a))
+
+ #define fract_f2(A) to_float2(fract((A).x),fract((A).y))
+ #define mod_f(a,b) ((a)-(b)*_floor((a)/(b)))
+ #define abs_f2(a) to_float2(_fabs((a).x), _fabs((a).y))
+ #define abs_f3(a) to_float3(_fabs((a).x), _fabs((a).y),_fabs((a).z))
+ #define sqrt_f3(a) to_float3(_sqrtf((a).x),_sqrtf((a).y),_sqrtf((a).z))
+ #define sign_f(a) (a==0.0f?0.0f:a>0.0f?1.0f:-1.0f)
+ #define sign_f2(a) to_float2((a).x==0.0f?0.0f:(a).x>0.0f?1.0f:-1.0f, (a).y==0.0f?0.0f:(a).y>0.0f?1.0f:-1.0f)
+ #define distance_f3(pt1,pt2) _sqrtf(dot(pt2 - pt1,pt2 - pt1))
+ #define pow_f3(a,b) to_float3(_powf((a).x,(b).x),_powf((a).y,(b).y),_powf((a).z,(b).z))
+
+  #endif
+
+#endif
+
+
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- DCTL kernel implementation
+-- // ------------------------------------------------------------------------
+
+-- */
+ShaderKernelCode =
+[[
+
+// ----------------------------------------------------------------------------------
+// - Common                                                                         -
+// ----------------------------------------------------------------------------------
+#define texture(ch,uv) _tex2DVecN(ch, (uv).x, (uv).y, 15)
+
+#define _saturatef(a) clamp(a, 0.0f, 1.0f)
+#define PI 3.14159265f
+
+// Makes compile times much faster.
+// Forces for loops to not unroll because compiler thinks the zero is not a constant.
+#define ZERO_TRICK 0 //_fmaxf(0, -iFrame)
+
+__DEVICE__ float2 Rotate(float2 v, float rad)
+{
+  float cos = _cosf(rad);
+  float sin = _sinf(rad);
+  return to_float2(cos * v.x - sin * v.y, sin * v.x + cos * v.y);
+}
+__DEVICE__ float3 RotateX(float3 v, float rad)
+{
+  float cos = _cosf(rad);
+  float sin = _sinf(rad);
+  return to_float3(v.x, cos * v.y + sin * v.z, -sin * v.y + cos * v.z);
+}
+__DEVICE__ float3 RotateY(float3 v, float rad)
+{
+  float cos = _cosf(rad);
+  float sin = _sinf(rad);
+  return to_float3(cos * v.x - sin * v.z, v.y, sin * v.x + cos * v.z);
+}
+__DEVICE__ float3 RotateZ(float3 v, float rad)
+{
+  float cos = _cosf(rad);
+  float sin = _sinf(rad);
+  return to_float3(cos * v.x + sin * v.y, -sin * v.x + cos * v.y, v.z);
+}
+// Find 2 perpendicular vectors to the input vector.
+__DEVICE__ mat3 MakeBasis(float3 normal) {
+    mat3 result;
+    result.r0 = normal;
+    if (_fabs(normal.y) > 0.5f) {
+        result.r1 = normalize(cross(normal, to_float3(1.0f, 0.0f, 0.0f)));
+    } else {
+        result.r1 = normalize(cross(normal, to_float3(0.0f, 1.0f, 0.0f)));
+    }
+    result.r2 = normalize(cross(normal, result.r1));
+    return result;
+}
+
+// This is the main hash function that should produce a non-repeating
+// pseudo-random sequence for 2^31 iterations.
+__DEVICE__ uint SmallHashA(in uint seed) {
+    return (seed ^ 1057926937u) * 3812423987u ^ ((seed*seed) * 4000000007u);
+}
+// This is an extra hash function to clean things up a little.
+__DEVICE__ uint SmallHashB(in uint seed) {
+    return (seed ^ 2156034509u) * 3699529241u;
+}
+
+// Hash the random state to get a random float ranged [0..1]
+__DEVICE__ float RandFloat(inout uint *randomState) {
+    // Check with Math.fround(0xffffff) in javascript.
+    const float invMax24Bit = 1.0f / (float)(0xffffff);
+
+    *randomState = SmallHashA(*randomState);
+    // Add these 2 lines for extra randomness. And change last line to tempState.
+    //uint tempState = (randomState << 13) | (randomState >> 19);
+    //tempState = SmallHashB(tempState);
+    return (float)((*randomState>>8) & 0xffffffu) * invMax24Bit;
+}
+// Hash the random state to get 2 random floats ranged [0..1]
+// Reduced precision to 16 bits per component.
+__DEVICE__ float2 RandVec2(inout uint *randomState) {
+    *randomState = SmallHashA(*randomState);
+    uint tempState = (*randomState << 13) | (*randomState >> 19);
+    tempState = SmallHashB(tempState);
+    return to_float2(tempState & 0xffffu, (tempState >> 16) & 0xffffu) / (float)(0xffff);
+}
+// Hash the random state to get 3 random floats ranged [0..1]
+// Reduced precision to 10 bits per component.
+__DEVICE__ float3 RandVec3(inout uint *randomState) {
+    *randomState = SmallHashA(*randomState);
+    uint tempState = (*randomState << 13) | (*randomState >> 19);
+    tempState = SmallHashB(tempState);
+    return to_float3((tempState >> 2) & 0x3ffu,
+                     (tempState >> 12) & 0x3ffu,
+                     (tempState >> 22) & 0x3ffu) / (float)(0x3ffu);
+}
+
+// Returns a random float from [0..1]
+__DEVICE__ float HashFloat(uint seed) {
+    // Check with Math.fround(0xffffff) in javascript.
+    const float invMax24Bit = 1.0f / (float)(0xffffff);
+
+    seed = SmallHashA(seed);
+    return (float)((seed >> 8) & 0xffffffu) * invMax24Bit;
+}
+// Reduced precision to 16 bits per component.
+__DEVICE__ float2 HashVec2(uint seed) {
+    seed = SmallHashA(seed);
+    seed = (seed << 13) | (seed >> 19);
+    seed = SmallHashB(seed);
+    return to_float2(seed & 0xffffu, (seed >> 16) & 0xffffu) / (float)(0xffff);
+}
+// Reduced precision to 10 bits per component.
+__DEVICE__ float3 HashVec3(uint seed) {
+    seed = SmallHashA(seed);
+    seed = (seed << 13) | (seed >> 19);
+    seed = SmallHashB(seed);
+    return to_float3((seed >> 2) & 0x3ffu,
+                     (seed >> 12) & 0x3ffu,
+                     (seed >> 22) & 0x3ffu) / (float)(0x3ffu);
+}
+// Reduced precision to ** 6 ** bits per component.
+__DEVICE__ float4 HashVec4(uint seed) {
+    seed = SmallHashA(seed);
+    seed = (seed << 13) | (seed >> 19);
+    seed = SmallHashB(seed);
+    return to_float4((seed >> 8) & 0x3fu,
+                     (seed >> 14) & 0x3fu,
+                     (seed >> 20) & 0x3fu,
+                     (seed >> 26) & 0x3fu) / (float)(0x3fu);
+}
+__DEVICE__ float HashFloatI2(int2 seed2) {
+    return HashFloat((uint)(seed2.x ^ (seed2.y * 65537)));
+}
+__DEVICE__ float2 HashVec2I2(int2 seed2) {
+    return HashVec2((uint)(seed2.x ^ (seed2.y * 65537)));
+}
+__DEVICE__ float3 HashVec3I2(int2 seed2) {
+    return HashVec3((uint)(seed2.x ^ (seed2.y * 65537)));
+}
+__DEVICE__ float4 HashVec4I2(int2 seed2) {
+    return HashVec4((uint)(seed2.x ^ (seed2.y * 65537)));
+}
+
+__DEVICE__ void SetRandomSeed(in float2 fragCoord, in float2 iResolution, in int iFrame, inout uint *randomState) {
+    uint primex = max((uint)(iResolution.x), 5003u);  // This prime is far from any 2^x
+    *randomState  = (uint)(fragCoord.x);
+    *randomState += (uint)(fragCoord.y) * primex;
+    *randomState += (uint)(iFrame) * primex * (uint)(iResolution.y);
+    // This shouldn't really be an if condition.
+    // This should be true for any application that's not debugging things.
+    //if (hashedSeed) {
+    RandFloat(randomState);
+    //}
+}
+
+// ---- Procedural textures ----
+
+__DEVICE__ float3 mingrad(float3 a, float3 b) {
+    if (a.x < b.x) return a;
+    else return b;
+}
+
+__DEVICE__ float3 dCircle(float2 uv, float rad) {
+    float2 grad = normalize(uv);
+    return to_float3(length(uv) - rad, grad.x, grad.y);
+}
+
+__DEVICE__ float3 dBox(float2 uv, float2 rad) {
+    float2 grad = (_fabs(uv.x*rad.y) > _fabs(uv.y*rad.x)) ? to_float2(1, 0) : to_float2(0, 1);
+    grad *= sign_f2(uv);
+
+    float2 dist = abs_f2(uv) - rad;
+    float d = _fminf(_fmaxf(dist.x, dist.y), 0.0f) + length(_fmaxf(dist, to_float2_s(0.0f)));
+    return to_float3(d, grad.x, grad.y);
+
+    //return to_float3_aw(length(uv) - rad, grad);
+}
+
+__DEVICE__ float4 texPanels(float2 uv, out float3 *normal) {
+
+    float4 hash  = HashVec4I2(to_int2(_floor(uv.x+0.0f), _floor(uv.y+0.0f)));
+    float4 hash2 = HashVec4I2(to_int2(hash.x *8192.0f, hash.y *8192.0f));
+    float4 hash3 = HashVec4I2(to_int2(hash2.x*8192.0f, hash2.y*8192.0f));
+    int2 fl = to_int2(_floor(uv.x),_floor(uv.y));
+    float2 centered = fract_f2(uv) - 0.5f;
+    float2 radOut = 0.35f*swi2(hash2,x,y) + 0.1f;
+    radOut *= (float)((fl.x&1) ^ (fl.y&1)) *0.25f+0.75f;  // Checkerboard scale it so it looks less repetitive
+    if (hash.z > 0.99f) radOut.x = radOut.y;
+    float radThick = 1.0f / 32.0f;
+    // Jitter it as much as possible without going out of radius.
+    float2 jitterPos = centered + (swi2(hash,x,y)*2.0f-1.0f)*(0.5f-radOut);
+    float3 dc;
+    if (hash.z > 0.99f) dc = dCircle(jitterPos, radOut.x - radThick);
+    else dc = dBox(jitterPos, (radOut - radThick));
+    float d = _saturatef(dc.x/radThick);
+    if ((d <= 0.0f) || (d >= 1.0f)) swi2S(dc,y,z, to_float2_s(0.0f));
+
+    *normal = normalize(to_float3_aw(swi2(dc,y,z), 1.0f));
+    return to_float4_aw(to_float3(1, 1, 1)-d*0.1f, 0.1f-d*0.05f);// to_float3(swi3(hash3,x,y,z)*(1.0f-d));
+}
+
+#define ANTIALIASING_SAMPLES 1
+__DEVICE__ float4 texSolarPanels(float2 uv, out float3 *normal, bool AntiAlias) {
+    float4 hash = HashVec4I2(to_int2(_floor(uv.x+0.5f), _floor(uv.y+0.25f)));
+    int2 fl = to_int2(_floor(uv.x), _floor(uv.y));
+    float2 centered = fract_f2(uv) - 0.5f;
+    float radThick = 1.0f / 64.0f;
+    float3 dc = dBox(centered, to_float2(0.02f,0.55f) - radThick);
+    dc.x = _saturatef(dc.x/radThick);
+    radThick *= 0.5f;
+    float3 dc2 = dBox(centered - to_float2(0, 0.25f), to_float2(0.55f,0.0125f) - radThick);
+    dc2.x = _saturatef(dc2.x/radThick);
+    float3 dc3 = dBox(centered + to_float2(0, 0.25f), to_float2(0.55f,0.0125f) - radThick);
+    dc3.x = _saturatef(dc3.x/radThick);
+    dc2 = mingrad(dc3, dc2);
+    dc = mingrad(dc, dc2);
+    float d = dc.x;
+    if ((d <= 0.0f) || (d >= 1.0f)) swi2S(dc,y,z, to_float2_s(0.0f));
+
+    *normal = normalize(to_float3_aw(swi2(dc,y,z) + to_float2(_fabs(_sinf((uv.x + 0.5f)*PI)*0.1f), 0.0f), 1.0f));
+    float pad = (d < 1.0f) ? 1.0f : 0.0f;
+    float4 padCol = _mix(to_float4(1,1,1,0.25f)*0.5f, to_float4(0.7f, 0.5f, 0.1f, 0.5f)*0.25f, hash.x);
+    //float maxDelta = _fmaxf(dFdy(uv.x), dFdy(uv.y));
+    //return to_float4_aw(to_float3_s(1.0f)* maxDelta, 0.0f);
+
+//#if ANTIALIASING_SAMPLES == 1
+    if(AntiAlias)
+      return _mix(to_float4(0.01f, 0.015f, 0.1f, 0.8f), to_float4(0.7f, 0.5f, 0.1f, 0.5f)*0.5f, 0.1f);
+//#endif
+    else
+      return _mix(to_float4(0.01f, 0.015f, 0.1f, 0.8f), padCol, pad);
+}
+
+__DEVICE__ float4 texHex(float2 uv, out float3 *normal) {
+    float4 hash = HashVec4I2(to_int2(_floor(uv.x+0.0f), _floor(uv.y+0.0f)));
+    int2 fl = to_int2(_floor(uv.x),_floor(uv.y));
+    float2 centered = fract_f2(uv) - 0.5f;
+
+    float repx = _fabs(fract(uv.x)-0.5f)*2.0f;
+    float repy = _fabs(fract(uv.y)-0.5f)*2.0f;
+
+    *normal = normalize(to_float3(0,0,1.0f));
+    return to_float4_aw(to_float3(repx, repy, 1),0.0f);
+}
+
+
+// ----------------------------------------------------------------------------------
+// - Image                                                                          -
+// ----------------------------------------------------------------------------------
+// Connect Image 'Texture: Lichen' to iChannel0
+
+
+
+/*--------------------------------------------------------------------------------------
+License CC0 - http://creativecommons.org/publicdomain/zero/1.0f/
+To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
+----------------------------------------------------------------------------------------
+^ This means do ANYTHING YOU WANT with this code. Because we are programmers, not lawyers.
+-Otavio Good
+*/
+
+// Space station rotation rate
+#define ROT_SPEED -0.05f
+// I approximated this one based on watching videos from the ISS.
+#define EARTH_ROT_SPEED 0.002f
+#define earthRad  6371.0f // 6371 km
+// Low earth orbit - approximate ISS altitude in km. ISS isn't constant altitude, so...
+#define earthPos (normalize(to_float3(-6500,-6400,-3400)) * (earthRad + 408.0f))
+
+// ---- noise functions ----
+__DEVICE__ float v31(float3 a)
+{
+    return a.x + a.y * 37.0f + a.z * 521.0f;
+}
+__DEVICE__ float v21(float2 a)
+{
+    return a.x + a.y * 37.0f;
+}
+__DEVICE__ float Hash11(float a)
+{
+    return fract(_sinf(a)*10403.9f);
+}
+__DEVICE__ float Hash21(float2 uv)
+{
+    float f = uv.x + uv.y * 37.0f;
+    return fract(_sinf(f)*104003.9f);
+}
+__DEVICE__ float2 Hash22(float2 uv)
+{
+    float f = uv.x + uv.y * 37.0f;
+    return fract(_cosf(f)*to_float2(10003.579f, 37049.7f));
+}
+__DEVICE__ float2 Hash12(float f)
+{
+    return fract(_cosf(f)*to_float2(10003.579f, 37049.7f));
+}
+__DEVICE__ float Hash1d(float u)
+{
+    return fract(_sinf(u)*143.9f);  // scale this down to kill the jitters
+}
+__DEVICE__ float Hash2d(float2 uv)
+{
+    float f = uv.x + uv.y * 37.0f;
+    return fract(_sinf(f)*104003.9f);
+}
+__DEVICE__ float Hash3d(float3 uv)
+{
+    float f = uv.x + uv.y * 37.0f + uv.z * 521.0f;
+    return fract(_sinf(f)*110003.9f);
+}
+__DEVICE__ float mixP(float f0, float f1, float a)
+{
+    return _mix(f0, f1, a*a*(3.0f-2.0f*a));
+}
+
+__DEVICE__ float noise2d(float2 uv)
+{
+    const float2 zeroOne = to_float2(0.0f, 1.0f);
+    float2 fr = fract(swi2(uv,x,y));
+    float2 fl = _floor(swi2(uv,x,y));
+    float h00 = Hash2d(fl);
+    float h10 = Hash2d(fl + swi2(zeroOne,y,x));
+    float h01 = Hash2d(fl + zeroOne);
+    float h11 = Hash2d(fl + swi2(zeroOne,y,y));
+    return mixP(mixP(h00, h10, fr.x), mixP(h01, h11, fr.x), fr.y);
+}
+__DEVICE__ float noise(float3 uv)
+{
+    const float2 zeroOne = to_float2(0.0f, 1.0f);
+    float3 fr = fract(swi3(uv,x,y,z));
+    float3 fl = _floor(swi3(uv,x,y,z));
+    float h000 = Hash3d(fl);
+    float h100 = Hash3d(fl + swi3(zeroOne,y,x,x));
+    float h010 = Hash3d(fl + swi3(zeroOne,x,y,x));
+    float h110 = Hash3d(fl + swi3(zeroOne,y,y,x));
+    float h001 = Hash3d(fl + swi3(zeroOne,x,x,y));
+    float h101 = Hash3d(fl + swi3(zeroOne,y,x,y));
+    float h011 = Hash3d(fl + swi3(zeroOne,x,y,y));
+    float h111 = Hash3d(fl + swi3(zeroOne,y,y,y));
+    return mixP(
+           mixP(mixP(h000, h100, fr.x),
+                mixP(h010, h110, fr.x), fr.y),
+           mixP(mixP(h001, h101, fr.x),
+                mixP(h011, h111, fr.x), fr.y)
+           , fr.z);
+}
+// -------------------------
+
+
+// This function basically is a procedural environment map that makes the sun
+__DEVICE__ float3 GetSunColorSmall(float3 rayDir, float3 sunDir, float3 sunCol)
+{
+  float3 localRay = normalize(rayDir);
+  float dist = 1.0f - (dot(localRay, sunDir) * 0.5f + 0.5f);
+  float sunIntensity = 0.05f / dist;
+    //sunIntensity += _expf(-dist*150.0f)*7000.0f;
+  sunIntensity = _fminf(sunIntensity, 40000.0f);
+  return sunCol * sunIntensity*0.01f;
+}
+
+__DEVICE__ float4 tex3d(float3 pos, float3 normal, __TEXTURE2D__ iChannel2)
+{
+  // loook up texture, blended across xyz axis based on normal.
+  float4 texX = texture(iChannel2, swi2(pos,y,z)*4.0f);
+  float4 texY = texture(iChannel2, swi2(pos,x,z)*4.0f);
+  float4 texZ = texture(iChannel2, swi2(pos,x,y)*4.0f);
+  //vec4 texX = cubicTex(swi2(pos,y,z));
+  //vec4 texY = cubicTex(swi2(pos,x,z));
+  //vec4 texZ = cubicTex(swi2(pos,x,y));
+  float4 tex = _mix(texX, texZ, _fabs(normal.z*normal.z));
+  tex = _mix(tex, texY, _fabs(normal.y*normal.y));//.zxyw;
+  return tex*tex;
+}
+struct RayHit
+{
+    float3 normMin, normMax;
+    float tMin, tMax;
+    float3 hitMin, hitMax;
+};
+//const float bignum = 256.0f*256.0f*256.0f;
+#define bignum  (256.0f*256.0f*256.0f)
+__DEVICE__ struct RayHit NewRayHit()
+{
+    struct RayHit rh;
+    rh.tMin = bignum;
+    rh.tMax = bignum;
+    rh.hitMin = to_float3_s(0.0f);
+    rh.hitMax = to_float3_s(0.0f);
+    rh.normMin = to_float3_s(0.0f);
+    rh.normMax = to_float3_s(0.0f);
+    return rh;
+}
+// note: There are faster ways to intersect a sphere.
+__DEVICE__ struct RayHit SphereIntersect2(float3 pos, float3 dirVecPLZNormalizeMeFirst, float3 spherePos, float rad)
+{
+    struct RayHit rh = NewRayHit();
+    float3 delta = spherePos - pos;
+    float projdist = dot(delta, dirVecPLZNormalizeMeFirst);
+    float3 proj = dirVecPLZNormalizeMeFirst * projdist;
+    float3 bv = proj - delta;
+    float b = length(bv);
+    if (b > rad) {
+        //rh.tMin = bignum;
+        //rh.tMax = bignum;
+        return rh;
+    }
+    float x = _sqrtf(rad*rad - b*b);
+    rh.tMin = projdist - x;
+    if (rh.tMin < 0.0f) {
+        rh.tMin = bignum;
+        return rh;
+    }
+    rh.tMax = projdist + x;
+    rh.hitMin = pos + dirVecPLZNormalizeMeFirst * rh.tMin;
+    rh.hitMax = pos + dirVecPLZNormalizeMeFirst * rh.tMax;
+    rh.normMin = normalize(rh.hitMin - spherePos);
+    rh.normMax = normalize(spherePos - rh.hitMax);
+    return rh;
+}
+
+// This function renders the earth.
+__DEVICE__ float3 GetEnvMapSpace(float3 camPos, float3 rayDir, float3 sunDir, float3 sunCol, float sunShadow, float iTime, __TEXTURE2D__ iChannel2)
+{
+    float3 finalColor;
+    float3 atmosphereColor = to_float3(70.0f, 150.0f, 240.0f)/400.0f;
+    //float hit = SphereIntersect(camPos, normalize(rayVec), earthPos, earthRad);
+    struct RayHit rh = SphereIntersect2(camPos, normalize(rayDir), earthPos, earthRad);
+    struct RayHit rh2 = SphereIntersect2(camPos, normalize(rayDir), earthPos, earthRad + 77.0f);
+    if (rh.tMin < rh.tMax)
+    {
+        float3 intersection = rh.hitMin;// camPos + rayVec * hit;
+        float3 normal = rh.normMin;// normalize(intersection - earthPos);
+        float3 rotNormal = RotateX(normal, iTime*EARTH_ROT_SPEED+0.05f); // This is the "right way" if I'm using 3d textures.
+//      float3 rotNormal = (normal + iTime*EARTH_ROT_SPEED).yzz; // This is the hacky 2d texture way.
+
+        //finalColor = swi3(texture(iChannel2, to_float2(normal.z, normal.y)),x,y,z);
+        float3 surface = to_float3(0.01f, 0.03f, 0.081f);
+        float3 landTex = swi3(texture(iChannel2, swi2(rotNormal,x,y) * 0.25f + to_float2(0.0f, _sinf(rotNormal.z*2.0f)*0.25f)),x,y,z);
+        float3 land = landTex*to_float3(0.19f,0.22f,0.16f)*0.4f;
+        float3 landDry = swi3(landTex,y,z,x)*to_float3(0.31f,0.26f,0.22f)*0.33f;
+        land = _mix(land, landDry, _saturatef(pow(landTex.y+0.4f,20.0f)));
+        float landMask = landTex.y*1.3f;
+        landMask += texture(iChannel2, swi2(rotNormal,y,z) * to_float2(0.25f,0.333f)).y*1.3f;
+        landMask = _saturatef(_powf(landMask-0.1f, 60.0f));
+        surface=_mix(surface,land,landMask);
+
+        //float clouds = texture(iChannel2, swi2(normal,x,z)*4.0f*0.75f).y * texture(iChannel2, -swi2(normal,x,z)*3.75f*4.0f).z*4.5f;
+        //surface += clouds*clouds*0.125f;
+//        surface += tex3d(normal * 0.75f /*+ to_float3_aw(0, _sinf(normal.x), 0)*/, normal).yyy * tex3d(-swi3(normal,x,y,z) * 3.75f, normal, iChannel2).zzz*4.5f;
+        float clouds = tex3d(rotNormal * 0.5f, rotNormal, iChannel2).y *
+                       tex3d((-1.0f*swi3(rotNormal,x,y,z) + to_float3_s(_sinf(rotNormal.y*15.0f)*0.02f)    ) * 3.75f, rotNormal, iChannel2).z *
+                       4.5f;
+        surface += clouds;
+
+//        surface += tex3d(rotNormal * 0.5f, rotNormal, iChannel2).yyy *
+//                   tex3d((-swi3(rotNormal,x,y,z)    + to_float3_s(_sinf(rotNormal.y*15.0f)*0.02f)    ) * 3.75f, rotNormal, iChannel2).zzz *
+//                   4.5f;
+//        surface += texture(iChannel2, Rotate(swi2(rotNormal,x,z),1.0f) * 2.5f).yyy *
+  //                 texture(iChannel2, (swi2(rotNormal,z,x)     + to_float2(0.0f, _sinf(rotNormal.z*60.0f)*0.005f)     ) * to_float2(13.75f,11.0f)).zzz *
+    //               (0.2f+texture(iChannel2, swi2(rotNormal,y,z) * to_float2(37.75f,39.0f)).xxx*0.8f) *
+      //             1.5f;
+        //surface = texture(iChannel2, (swi2(rotNormal,z,x)     + to_float2(0.0f, _sinf(rotNormal.z*80.0f)*0.005f)     )).xyz*0.5f;
+        float d = dot(normal, normalize(camPos - intersection));
+
+        float atmosphere = 1.0f - d;
+        atmosphere = _powf(atmosphere, 3.0f);
+        atmosphere = atmosphere * 0.9f + 0.1f;
+        surface = _mix(surface, atmosphereColor, atmosphere);
+        finalColor = surface;
+        //finalColor = to_float3_s(1.0f) * d;
+        //finalColor = normal * 0.5f + 0.5f;
+    }
+    else
+    {
+        // Our ray trace hit nothing, so draw sky.
+        finalColor = GetSunColorSmall(rayDir, sunDir, sunCol) * sunShadow;
+    }
+    if ((rh2.tMin < rh2.tMax)) {
+        float3 a = rh2.hitMin;
+        float3 b = rh2.hitMax;
+        if (rh.tMin < rh.tMax) {
+            b = rh.hitMin;
+        }
+        //finalColor = _mix(fogColor, finalColor, _expf(-t*0.02f));
+        finalColor += pow_f3(_saturatef(0.044f * atmosphereColor * _expf(distance_f3(a,b)*0.0018f)), to_float3_s(2.0f));
+    }
+    return finalColor;
+}
+__DEVICE__ float3 GetEnvMapSpaceGlossy(float3 camPos, float3 rayDir, float3 sunDir, float3 sunCol, float sunShadow)
+{
+    float3 finalColor;
+    float3 atmosphereColor = to_float3(70.0f, 130.0f, 240.0f)/355.0f;
+
+    float dSun = _fmaxf(0.0f, dot(rayDir, sunDir));
+    dSun = _powf(dSun,7.0f);
+    float dEarth = dot(rayDir, normalize(earthPos)) * 0.5f + 0.5f;
+    dEarth = _powf(dEarth,3.0f)*0.6f;
+
+    //d1 = _powf(d1,7.0f)*2.0f;
+    finalColor = sunCol * dSun * sunShadow + atmosphereColor * dEarth;
+    return finalColor;
+}
+
+
+
+// min function that supports materials in the y component
+__DEVICE__ float2 matmin_f2(float2 a, float2 b)
+{
+    if (a.x < b.x) return a;
+    else return b;
+}
+__DEVICE__ float2 matmax_f2(float2 a, float2 b)
+{
+    if (a.x > b.x) return a;
+    else return b;
+}
+__DEVICE__ void matmin(inout float *distA, inout uint *matA, float distB, uint matB) {
+    if (*distA > distB) {
+        *distA = distB;
+        *matA = matB;
+    }
+}
+__DEVICE__ void matmax(inout float *distA, inout uint *matA, float distB, uint matB) {
+    if (*distA < distB) {
+        *distA = distB;
+        *matA = matB;
+    }
+}
+
+// ---- shapes defined by distance fields ----
+// See this site for a reference to more distance functions...
+// https://iquilezles.org/articles/distfunctions
+
+// signed box distance field
+__DEVICE__ float sdBox(float3 p, float3 radius)
+{
+  float3 dist = abs_f3(p) - radius;
+  return _fminf(_fmaxf(dist.x, _fmaxf(dist.y, dist.z)), 0.0f) + length(_fmaxf(dist, to_float3_s(0.0f)));
+}
+
+// capped cylinder distance field
+__DEVICE__ float cylCap(float3 p, float r, float lenRad)
+{
+    float a = length(swi2(p,x,y)) - r;
+    a = _fmaxf(a, _fabs(p.z) - lenRad);
+    return a;
+}
+__DEVICE__ float sdHexPrism( float3 p, float2 h )
+{
+  const float3 k = to_float3(-0.8660254f, 0.5f, 0.57735f);
+  p = abs_f3(p);
+  swi2S(p,x,y, swi2(p,x,y) - 2.0f*_fminf(dot(swi2(k,x,y), swi2(p,x,y)), 0.0f)*swi2(k,x,y));
+  float2 d = to_float2(
+                       length(swi2(p,x,y)-to_float2(clamp(p.x,-k.z*h.x,k.z*h.x), h.x))*sign_f(p.y-h.x),
+                       p.z-h.y );
+  return _fminf(_fmaxf(d.x,d.y),0.0f) + length(_fmaxf(d,to_float2_s(0.0f)));
+}
+
+__DEVICE__ float sdCone( float3 p, float2 c, float h )
+{
+  float q = length(swi2(p,x,z));
+  return _fmaxf(dot(swi2(c,x,y),to_float2(q,p.y)),-h-p.y);
+}
+
+// k should be negative. -4.0f works nicely.
+// smooth blending function
+__DEVICE__ float smin(float a, float b, float k)
+{
+  return _log2f(exp2(k*a)+_exp2f(k*b))/k;
+}
+
+#define Repeat(a, len) (mod_f(a, len) - 0.5f * len)
+__DEVICE__ float3 RepeatX_f3(float3 a, float len) {
+    return to_float3(mod_f(a.x, len) - 0.5f * len, a.y, a.z);
+}
+__DEVICE__ float2 RepeatX(float2 a, float len) {
+    return to_float2(mod_f(a.x, len) - 0.5f * len, a.y);
+}
+__DEVICE__ float3 RepeatY_f3(float3 a, float len) {
+    return to_float3(a.x, mod_f(a.y, len) - 0.5f * len, a.z);
+}
+__DEVICE__ float2 RepeatY(float2 a, float len) {
+    return to_float2(a.x, mod_f(a.y, len) - 0.5f * len);
+}
+__DEVICE__ float3 RepeatZ(float3 a, float len) {
+    return to_float3_aw(swi2(a,x,y), mod_f(a.z, len) - 0.5f * len);
+}
+
+__DEVICE__ float3 FlipX_f3(float3 a, float rad) {
+    return to_float3(_fabs(a.x) - rad, a.y, a.z);
+}
+__DEVICE__ float3 FlipY_f3(float3 a, float rad) {
+    return to_float3(a.x, _fabs(a.y) - rad, a.z);
+}
+__DEVICE__ float3 FlipZ_f3(float3 a, float rad) {
+    return to_float3_aw(swi2(a,x,y), _fabs(a.z) - rad);
+}
+__DEVICE__ float2 FlipX(float2 a, float rad) {
+    return to_float2(_fabs(a.x) - rad, a.y);
+}
+__DEVICE__ float2 FlipY(float2 a, float rad) {
+    return to_float2(a.x, _fabs(a.y) - rad);
+}
+__DEVICE__ float Flip(float a, float rad) {
+    return _fabs(a) - rad;
+}
+
+__DEVICE__ float3 Symmetric4X(float3 p, float rad) {
+    return to_float3(p.x, _fmaxf(_fabs(p.y), _fabs(p.z)) - rad, _fmaxf(_fabs(p.z), _fabs(p.y)) - rad);
+}
+__DEVICE__ float3 Symmetric4Y(float3 p, float rad) {
+    return to_float3(_fmaxf(_fabs(p.x), _fabs(p.z)) - rad, p.y, _fmaxf(_fabs(p.z), _fabs(p.x)) - rad);
+}
+__DEVICE__ float3 Symmetric4Z(float3 p, float rad) {
+    return to_float3_aw(_fmaxf(abs_f2(swi2(p,x,y)), abs_f2(swi2(p,y,x))) - rad, p.z);
+}
+
+__DEVICE__ float3 cylTransform(float3 p) {
+    float3 result = p;
+    result.x = 26.0f*(_atan2f(p.z, p.x)/ PI);
+    result.z = length(swi2(p,x,z));
+    return result;
+}
+
+__DEVICE__ float repsDouble(float a)
+{
+    return _fabs(a * 2.0f - 1.0f);
+}
+__DEVICE__ float2 repsDouble_f2(float2 a)
+{
+    return abs_f2(a * 2.0f - 1.0f);
+}
+__DEVICE__ float2 mapSpiral(float2 uv)
+{
+    float len = length(uv);
+    float at = _atan2f(uv.x, uv.y);
+    at = at / PI;
+    float dist = (fract(_logf(len)+at*0.5f)-0.5f) * 2.0f;
+    //dist += _sinf(at*32.0f)*0.05f;
+    // at is [-1..1]
+    // dist is [-1..1]
+    at = repsDouble(at);
+    at = repsDouble(at);
+    return to_float2(dist, at);
+}
+
+__DEVICE__ float length8_f3( float3 p ) { p=p*p; p=p*p; p=p*p; return _powf(p.x+p.y+p.z,1.0f/8.0f); }
+__DEVICE__ float length8( float2 p ) { p=p*p; p=p*p; p=p*p; return _powf(p.x+p.y,1.0f/8.0f); }
+__DEVICE__ float lengthM( float3 p ) {
+    float temp = _fabs(p.x) + _fabs(p.y) + _fabs(p.z);
+    temp *= 0.5773f;
+    return temp;
+}
+__DEVICE__ float sdTorus( float3 p, float2 t )
+{
+  float2 q = to_float2(length8(swi2(p,x,z))-t.x,p.y);
+  return length(q)-t.y;
+}
+__DEVICE__ float sdTorusHard( float3 p, float2 t )
+{
+  float2 q = to_float2(length(swi2(p,x,z))-t.x,p.y);
+  return length8(q)-t.y;
+}
+
+__DEVICE__ float sdRoundBox( float3 p, float3 b, float r )
+{
+  float3 q = abs_f3(p) - b;
+  return lengthM(_fmaxf(q,to_float3_s(0.0f))) + _fminf(_fmaxf(q.x,_fmaxf(q.y,q.z)),0.0f) - r;
+}
+
+__DEVICE__ float Truss(float3 p, float bigRad, float smallRad, float rungRad, float size) {
+    // Bounding box for faster marching when far away
+    float bound = sdBox(p, to_float3(size, size, rungRad) + bigRad);
+    if (bound > size*0.5f) return bound;
+
+    float d = length(FlipY(FlipX(swi2(p,x,y), size), size)) - bigRad;
+    // 4-way symmetric
+    float3 rep4 = to_float3_aw( _fmaxf(abs_f2(swi2(p,x,y)), abs_f2(swi2(p,y,x))) - size, Repeat(p.z, size*2.0f));
+    float d2 = length(swi2(rep4,x,z)) - smallRad;
+    d = _fminf(d, d2);
+
+    float3 rot = RotateX(p, PI*0.25f);
+    rot = FlipX_f3(rot, size);
+    rot.z += 1.414f*0.5f*size;
+    rot = RepeatZ(rot, 1.414f*size);
+    d2 = length(swi2(rot,x,z)) - smallRad;
+    d2 = _fmaxf(d2, Flip(p.y, size));
+    d = _fminf(d, d2);
+
+    rot = RotateY(p, PI*0.25f);
+    rot = FlipY_f3(rot, size);
+    rot.z += 1.414f*0.5f*size;
+    rot = RepeatZ(rot, 1.414f*size);
+    d2 = length(swi2(rot,y,z)) - smallRad;
+    d2 = _fmaxf(d2, Flip(p.x, size));
+    d = _fminf(d, d2);
+    d = _fmaxf(d, Flip(p.z, rungRad));
+    return d;
+}
+
+// Low numbers are assumed to be in the cylinder inner or outer transform.
+#define matFloor    1u
+#define matWall     2u
+#define matPipe     3u
+#define matChrome   4u
+#define matGlossyRough  5u
+#define matSideWindows  6u
+#define matYellow   7u
+#define matBoring   8u
+#define matDome     9u
+
+// High numbers should be in world space transform.
+#define matSolarPanel  100u
+#define matSpoke       101u
+
+#define matRGB         202u
+
+__DEVICE__ uint SetMatRGB(uint r, uint g, uint b) {
+    return matRGB | (r << 24) | (g << 16) | (b << 8);
+}
+__DEVICE__ bool IsMatRGB(uint m) {
+    return (m & 0xffu) == matRGB;
+}
+__DEVICE__ float3 GetMatRGB(uint m) {
+    return to_float3((float)((m >> 24) & 0xffu), (float)((m >> 16) & 0xffu), (float)((m >> 8) & 0xffu));
+}
+
+
+__DEVICE__ void Dish(float3 p, out float *dist, out uint *mat) {
+    //*dist = length(p + to_float3(0.125f,0,0)) - 0.3f;
+    //if (*dist > 0.1f) return;
+    float d = sdTorusHard(FlipY_f3(p, 0.03f), to_float2(0.1f, 0.01f));
+    *dist = d;
+    *mat = matGlossyRough;
+    d = length(p + to_float3(0.32f,0,0)) - 0.22f;
+    d = _fmaxf(d, -(length(p + to_float3(0.43f,0,0)) - 0.25f));
+    d = _fmaxf(d, -p.x-0.25f);
+    float d2 = length(swi2(p,y,z)) - 0.15f;
+    d = _fmaxf(d, d2)*0.7f; // This multiplier is a total hack because the distance field is breaking down.
+    matmin(dist, mat, d, SetMatRGB(90u,90u,90u));
+
+    float3 pr = RotateZ(p + to_float3(0.37f, 0, 0), PI * 0.25f);
+    d = length(swi2(pr,x,z)) - 0.01f;
+    d = _fmaxf(d, Flip(pr.y+0.107f, 0.11f));
+    matmin(dist, mat, d, SetMatRGB(128u,128u,128u));
+    d2 = cylCap(swi3(p,y,z,x) + to_float3(0,0,0.38f), 0.035f, 0.005f);
+    matmin(dist, mat, d2, matGlossyRough);
+}
+
+
+// pint is an integer pair saying which city block you are on
+__DEVICE__ void CityBlock(float3 p, int2 pint, out float *dist, out uint *mat)
+{
+    // A collection of nice colors for the long landing bay looking things on the ring.
+    // Is this slowing my framerate?
+    const uint niceColors[4] = {
+                                matRGB | (76u << 24) | (67u << 16) | (8u << 8),
+                                matRGB | (76u << 24) | (10u << 16) | (4u << 8),
+                                matRGB | (50u << 24) | (96u << 16) | (86u << 8),
+                                matRGB | (10u << 24) | ( 7u << 16) | (3u << 8)
+                               };
+
+
+    // Get random numbers for this block by hashing the city block variable
+    float4 rand;
+    rand = HashVec4I2(pint);
+    float4 rand2 = HashVec4I2(to_int2(rand.z*8192.0f, rand.w*8192.0f)+pint*127);
+    float4 rand3 = HashVec4I2(pint + 8192);
+    float4 randBig = HashVec4I2((to_int2(pint.x >> 1, pint.y >> 3)) + 1024);
+    float4 randBigger = HashVec4I2((to_int2(pint.x >> 2, pint.y >> 2)) + 2048);
+
+    float downtown = _saturatef(40.0f / length(to_float2(pint.x,(    (pint.y+50)%100-50    )*8)));
+    //vec2 distAndMat;
+    if (randBigger.w < 0.97f) {
+        if (randBig.w > 0.15f) {
+            // Radius of the building
+            float baseRad;// = 0.02f + (rand.x) * 0.1f;
+            //baseRad = _floor(baseRad * 20.0f+0.5f)/20.0f;  // try to snap this for window texture
+            baseRad=0.48f * _fmaxf(0.1f,1.0f-rand.x);
+
+            // make position relative to the middle of the block
+            float3 baseCenter = p - to_float3(0.5f + (0.5f-baseRad)*(rand.y*2.0f-1.0f)*0.7f, 0.0f, 0.5f + (0.5f-baseRad)*(rand.z*2.0f-1.0f)*0.7f);
+            float height = rand.w*0.5f + 0.1f; // height of first building block
+            // Make the city skyline higher in the middle of the city.
+            //downtown = texture(iChannel2,to_float2(pint)*0.01f).x;
+            height *= downtown*1.8f;
+            //height += 0.25f;  // minimum building height
+            //height *= rand.x*1.93f;// baseRad-0.15f;
+            //height += _sinf(iTime + pint.x);  // animate the building heights if you're feeling silly
+            height = _floor(height*20.0f)*0.05f;  // height is in floor units - each floor is 0.05f high.
+            float d = sdBox(baseCenter, to_float3(baseRad, height, baseRad)-0.02f) - 0.02f; // large building piece
+            //d /= _fmaxf(1.0f, height*2.0f);
+
+            // floor
+            d = _fminf(d, p.y);
+
+            //if (length(swi2(pint,x,y)) > 8.0f) return to_float2(d, mat);  // Hack to LOD in the distance
+
+            // height of second building section
+            float height2 = rand.y * 0.3f;
+            height2 = _floor(height2*20.0f)*0.05f;  // floor units
+            rand2 = _floor(rand2*20.0f)*0.05f;  // floor units
+            // side pieces of building
+            d = _fminf(d, sdBox(baseCenter - to_float3(0.0f, height, 0.0f), to_float3(baseRad, height2 - rand2.y, baseRad*0.4f)-0.02f)-0.02f);
+            d = _fminf(d, sdBox(baseCenter - to_float3(0.0f, height, 0.0f), to_float3(baseRad*0.4f, height2 - rand2.x, baseRad)-0.02f)-0.02f);
+            // second building section
+            if (rand2.y > 0.5f)
+            {
+                d = _fminf(d, sdBox(baseCenter - to_float3(0.0f, height, 0.0f), to_float3(baseRad*0.8f*(rand2.y+0.1f), height2, baseRad*0.8f*(rand2.z+0.1f))));
+                // subtract off piece from top so it looks like there's a wall around the roof.
+                //float topWidth = baseRad;
+                //if (height2 > 0.0f) topWidth = baseRad * 0.8f;
+                //d = _fmaxf(d, -sdBox(baseCenter - to_float3(0.0f, height+height2, 0.0f), to_float3(topWidth-0.5f*rand.w, 0.01f, topWidth-0.5f*rand.x)));
+            }
+            else
+            {
+                // Pointy top section of building
+                if (rand2.z > 0.5f) d = _fminf(d, sdHexPrism(swi3((baseCenter - to_float3(0.0f, height, 0.0f)),x,z,y), to_float2(baseRad*0.7f, height2))-0.05f);
+            }
+            // mini elevator shaft boxes on top of building
+            //d = _fminf(d, sdBox(baseCenter - to_float3((rand.x-0.5f)*baseRad, height+height2, (rand.y-0.5f)*baseRad),
+            //                 to_float3(baseRad*0.3f*rand.z, 0.01f*rand2.y, baseRad*0.3f*rand2.x+0.025f)));
+            // mirror another box (and scale it) so we get 2 boxes for the price of 1.
+            //vec3 boxPos = baseCenter - to_float3((rand2.x-0.5f)*baseRad, height+height2, (rand2.y-0.5f)*baseRad);
+            //float big = sign(boxPos.x);
+            //boxPos.x = _fabs(boxPos.x)-0.02f - baseRad*0.3f*rand.w;
+            //d = _fminf(d, sdBox(boxPos, to_float3(baseRad*0.4f*rand.w, 0.02f*rand.y, baseRad*0.5f*rand.x + big*0.025f)));
+
+            //if (rand2.x > 0.75f) {
+                //float tor = sdTorus(
+                //    (baseCenter - to_float3(0.0f, height+height2 + 0.05f - baseRad, baseRad * (rand2.z*2.0f-1.0f))).xzy,
+                //                    to_float2(0.9f * baseRad, 0.01f));
+                //d = _fminf(d, tor);
+            //}
+
+            //d = _fmaxf(d, p.y);  // flatten the city for debugging cars
+
+            // Need to make a material variable.
+            *dist = d, *mat = matFloor;//rand2.x);
+            float3 litf = swi3(rand2,x,x,x)*0.8f+0.2f;
+            litf += randBig.x*0.25f-0.15f;
+            litf -= randBigger.x*0.2f-0.05f;
+            //litf.x += rand2.y*0.5f-0.25f;
+            //litf.y += rand2.z*0.5f-0.25f;
+            litf.z -= rand2.w*0.05f-0.025f;
+            litf += to_float3(0.0f, 0.025f, 0.04f);
+//            litf -= texture(iChannel2,to_float2(pint)*0.01f).x;
+            litf = _fmaxf(to_float3_s(0.05f), litf);
+
+            //uint3 lit = make_uint3(_saturatef(litf.x)*140.0f,_saturatef(litf.y)*140.0f,_saturatef(litf.z)*140.0f);
+            uint3 lit;
+            lit.x = (uint)(_saturatef(litf.x)*140.0f);
+            lit.y = (uint)(_saturatef(litf.y)*140.0f);
+            lit.z = (uint)(_saturatef(litf.z)*140.0f);
+
+
+            *mat = SetMatRGB(lit.x, lit.y, lit.z);
+            if (p.y < 0.01f) *mat = matFloor;
+            if (rand2.w < 0.25f) {
+                float dtemp = sdRoundBox(swi3((baseCenter - to_float3(0.0f, height, 0.0f)),x,z,y), to_float3(baseRad,baseRad,baseRad)*swi3(rand,x,y,z)*0.5f, baseRad*0.45f*rand.w );
+                matmin(dist, mat, dtemp, matBoring);
+            }
+
+        } else {
+            // Long and big segment
+            swi2S(p,x,z, swi2(p,x,z) + to_float2(pint.x&0x1,(pint.y&0x7)-3));
+            *dist = p.y, *mat = matFloor;
+            float3 baseCenter = p - to_float3(1.0f, 0.0f, 1.0f);
+            float d = length(swi2(baseCenter,x,z)) - 0.75f + _sinf(baseCenter.y*164.0f)*0.002f;
+            d = _fmaxf(d, _fabs(baseCenter.y)-0.25f);
+            float d2 = length(baseCenter +to_float3(0.0f, 0.6f, 0.0f)) - 0.995f;// + _sinf(baseCenter.z*128.0f)*0.005f;
+            d2 = _fmaxf(d2, length(swi2(baseCenter,x,z)) - 0.75f);
+            //d = _fminf(d, d2);
+            d = sdBox(abs_f3(baseCenter)-to_float3(0.5f,0,0), to_float3(0.3f, 0.1f, 3.3f))-0.1f;
+            //matmin(dist, mat, d2, matGlossyRough);
+            //matmin(dist, mat, d, matGlossyRough);
+            matmax(dist, mat, -d, SetMatRGB(50u,51u,53u));
+            d = sdBox((baseCenter)-to_float3(0.5f,0,(randBig.z-0.5f)*4.0f), to_float3(0.5f*randBig.x, 0.74f, 2.0f*randBig.y));
+            matmax(dist, mat, -d, niceColors[(int)(randBig.x*3.99f)]);
+            d = sdBox((baseCenter)-to_float3(-0.5f,0,(randBig.w-0.5f)*4.0f), to_float3(0.5f*randBig.y, 0.74f, 2.0f*randBig.x));
+            matmax(dist, mat, -d, niceColors[(int)(randBig.y*3.99f)]);
+        }
+    } else {
+        // big dome
+        swi2S(p,x,z, swi2(p,x,z) + to_float2(pint.x&0x3,pint.y&0x3));
+        *dist = p.y, *mat = matFloor;
+        float3 baseCenter = p - to_float3(2.0f, 0.5f*randBigger.y, 2.0f);
+        //float d = length(swi2(baseCenter,x,z)) - 1.75f*randBigger.z;
+        float waveRoof = _fminf(0.015f, _fabs(   (_sinf(p.x*4.0f)+_sinf(p.z*16.0f))   *0.015f));
+        //d = sdHexPrism((baseCenter - to_float3(0, waveRoof -0.1f, 0.0f)).xzy, to_float2(1.75f-randBigger.z*1.2f, 0.2f))-0.1f;
+        //d = _fmaxf(d, _fabs(baseCenter.y)-0.25f);
+        float d2 = sdRoundBox(baseCenter*to_float3(1,1.0f-waveRoof,1) + to_float3(0,0.75f,0), to_float3_s(1.1f-randBigger.w*0.2f), 0.65f-randBigger.x*0.3f);
+        float d = sdRoundBox(RotateY(baseCenter,0.785f)*to_float3(1,1.0f-waveRoof,1) + to_float3(0,0.75f,0), to_float3_s(1.1f-randBigger.w*0.2f), 0.65f-randBigger.x*0.3f);
+        d = _fminf(d,d2);
+        d*=1.25f; // Distance field on these shapes is a little bad, so sun shadows are getting messed up. nudge it.
+        uint m =matDome;// SetMatRGB(65u,72u,78u);
+        if (p.y < 0.2f) m = SetMatRGB(60u,112u,120u);
+        matmin(dist, mat, d, m);
+    }
+    // Pipes everywhere!
+    float3 rep = p - to_float3(0.0f, 0.1f, 0.5f);
+    rep.x = Repeat(rep.x, 0.5f);
+    float d = length(swi2(rep,x,y)) - 0.0625f * rand2.x;
+    //d = _fmaxf(d, _fabs(rep.z) - 0.5f);
+    if (rand.z > 0.7f) matmin(dist, mat, d, matPipe);
+
+    // Vertical pipes too. So sci-fi!
+    rep = p - to_float3(0.0f, 0.13f * rand.z, 0.5f);
+    rep.z = Repeat(rep.z, 0.5f);
+    d = length(swi2(rep,y,z)) - 0.025f;
+    //d = _fmaxf(d, _fabs(rep.z) - 0.5f);
+    if (randBigger.y > 0.6f) {
+        matmin(dist, mat, d, matWall);
+        rep = p - to_float3(0.0f, 0.5f * rand2.z, 0.5f);
+        rep.x = Repeat(rep.x, 1.0f);
+        d = length(swi2(rep,x,y)) - 0.05f;
+        if (randBig.y > 0.5f) {
+            uint m = matPipe;
+            if (randBig.x > 0.95f) m =matYellow;// SetMatRGB(100u,52u,40u);
+            matmin(dist, mat, d, m);
+        }
+    }
+
+    //return distAndMat;
+}
+
+// This is the distance function that defines all the scene's geometry.
+// The input is a position in space.
+// The output is the distance to the nearest surface and a material index.
+__DEVICE__ void DistanceToObject(float3 p, out float *dist, out uint *mat, float iTime)
+{
+/*  *mat = matFloor;
+    *dist = length(p+ to_float3(4.0f,2.0f,2.0f + _sinf((p.y + iTime)*8.0f)*0.04f)) - 4.0f;
+    float dist2 = length(p) - 1.0f;
+    *dist = _fminf(*dist, dist2);
+
+    return;*/
+    p = RotateY(p,ROT_SPEED*iTime);
+
+    float density = 8.0f;
+    float3 cyl = cylTransform(p);
+    cyl.x *= density;
+
+    *dist = -100000000.0f;
+    *mat = 0u;
+    //distAndMat.x = length(p.z) - 4.0f;
+
+    const float scale = 1.0f;
+    float scaleDen = scale / density;
+    cyl = swi3(cyl,y,z,x)/scaleDen;
+    cyl.z *=scaleDen;
+    cyl.y = cyl.y - 8.0f*density;
+    float3 cylBasic = cyl;
+    cyl.y = _fabs(cyl.y) - 1.0f; // make it a ring instead of solid cylinder
+    float3 rep = swi3(cyl,x,y,z);
+    swi2S(rep,x,z, fract_f2(swi2(cyl,x,z))); // [0..1] for representing the position in the city block
+    float dTemp;
+    uint mTemp;
+    CityBlock(rep, to_int2(_floor(cyl.x), _floor(cyl.z)), &dTemp, &mTemp);
+    dTemp *= scaleDen;
+    matmax(dist, mat, dTemp, mTemp);
+
+    // Side windows
+    matmax(dist, mat, _fabs(p.y) - 1.0f, matSideWindows);
+
+    float ringRad = 0.05f;
+    // Edge rings
+    float d = length(abs_f2(swi2(cyl,x,y)) + to_float2(-8.0f, 0)) - ringRad;
+    d *= scaleDen;
+    matmin(dist, mat, d, matYellow);
+    d = length(to_float2(_fabs(cyl.x), cyl.y) + to_float2(-8.0f, 1)) - ringRad;
+    d *= scaleDen;
+    matmin(dist, mat, d, matSpoke);
+
+    // Edge ring cross-beams
+    float3 prot = FlipX_f3(RotateX(cyl, PI*0.25f), 0.0f);
+    float prep = Repeat(prot.y, 1.414f);
+
+    d = length(to_float2(prot.x, prep) + to_float2(-8.0f, 0 )) - ringRad;
+    prep = Repeat(prot.z, 1.414f);
+    float d2 = length(to_float2(prot.x, prep) + to_float2(-8.0f, 0)) - ringRad;
+    d = _fminf(d, d2) * scaleDen;
+    d = _fmaxf(d, _fabs(length(p) - 8.0625f) - 0.125f);
+    matmin(dist, mat, d, matSpoke);
+
+    // Edge ring cross-beam joints
+/*    prep = Repeat(cyl.z, 2.0f);
+    d = length(to_float3(swi2(cyl,x,y) - to_float2(8.0f,0), prep)) - ringRad * 1.75f;
+    d *= scaleDen;
+    matmin(dist, mat, d, matGlossyRough);*/
+
+    // Hub Edge rings
+    d = length(RepeatX(swi2(cylBasic,x,y) + to_float2(-7.25f, 59.2f), 0.4f)) - 0.05f;
+    d = _fmaxf(d, _fabs(p.y) - 0.91f);
+    d *= scaleDen;
+    matmin(dist, mat, d, matPipe);
+
+    d  = sdBox(FlipZ_f3(p + to_float3(0,-0.57f,0.0f), 0.58f), to_float3(0.25f, 0.29f, 0.03f)) - 0.008f;
+    d2 = sdBox(FlipX_f3(p + to_float3(0,-0.57f,0.0f), 0.58f), to_float3(0.03f, 0.29f, 0.25f)) - 0.008f;
+    matmin(dist, mat, _fminf(d, d2), matFloor);
+
+    //vec3 sym = Symmetric4Y(swi3(p,x,y,z) + to_float3(0,-0.78f,0), 0.4f);
+    //d = Truss((swi3(sym,x,y,z)) - to_float3(0.25f,0.18f,0.24f), 0.005f, 0.0025f, 0.175f, 0.025f);
+    //matmin(dist, mat, d, matPipe);
+    d = Truss(abs_f3(swi3(p,x,y,z) + to_float3(0,-0.78f,0)) - to_float3(0.25f,0.08f,0.4f), 0.005f, 0.0025f, 0.175f, 0.025f);
+    matmin(dist, mat, d, matPipe);
+    d = Truss(abs_f3(swi3(p,z,y,x) + to_float3(0,-0.78f,0)) - to_float3(0.25f,0.08f,0.4f), 0.005f, 0.0025f, 0.175f, 0.025f);
+    matmin(dist, mat, d, matPipe);
+
+    // Main Spokes
+    float ridge = clamp(_fabs(fract(p.z*4.0f)-0.5f), 0.05f, 0.1f)*0.125f;
+    float spoke = cylCap(abs_f3(swi3(p,x,y,z)) - to_float3(0.25f,0,0), 0.125f, 8.0f*scale) + ridge;
+    matmin(dist, mat, spoke, ridge > 0.01249f ? matSpoke : matGlossyRough);
+    ridge = clamp(_fabs(fract(p.x*4.0f)-0.5f), 0.05f, 0.1f)*0.125f;
+    spoke = cylCap(abs_f3(swi3(p,z,y,x)) - to_float3(0.25f,0,0), 0.125f, 8.0f*scale) + ridge;
+    matmin(dist, mat, spoke, ridge > 0.01249f ? matSpoke : matGlossyRough);
+
+    // Hub
+    ridge = clamp(_fabs(fract(p.y*1.44f+0.5f)-0.5f), 0.25f, 0.3f)*0.75f;
+    d = length(swi2(p,x,z)) - _saturatef(1.09f-_fabs(p.y*0.2f)) + ridge;
+    //d = _fminf(d, sbox(_fabs(p) - to_float3(1.0f/1.414f, 1.0f/1.414f, 0.0f), to_float3(0.1f, 0.1f, len)));
+    d = _fmaxf(d, _fabs(p.y) - 0.9f);
+    float dsub = length(swi2(p,x,z)) - 0.6f;
+    dsub = _fmaxf(dsub, _fabs(_fabs(p.y-1.0f) - 0.0f) - 0.6f);
+    d = _fmaxf(d, -dsub);
+    matmin(dist, mat, d, matFloor);
+
+    // Garage area in hub
+    d  = sdBox(FlipZ_f3(p + to_float3(0,-0.5f,0.0f), 0.59f), to_float3(0.25f, 0.1f, 0.05f)) - 0.001f;
+    d2 = sdBox(FlipX_f3(p + to_float3(0,-0.5f,0.0f), 0.59f), to_float3(0.05f, 0.1f, 0.25f)) - 0.001f;
+    matmax(dist, mat, -_fminf(d, d2), matPipe);
+
+    // Bay doors - looks bad.
+    /*d = length(_fabs(swi2(p,x,z)) - to_float2_s(0.8f)) - 0.5f;
+    d2 = sdBox(p + to_float3(0,-0.9f,0), to_float3(0.8f, 0.01f, 0.8f));
+    d = _fmaxf(d, d2);
+    matmin(dist, mat, d, matFloor);*/
+
+    // Rocket - looks bad.
+    /*float3 rocketPos = p + to_float3(0,-0.75f,0.35f);
+    d = cylCap(rocketPos, 0.046f, 0.12f);
+    d2 = sdCone(swi3(rocketPos,y,z,x), to_float2(0.08f, 0.02f), 0.2f );
+    d = _fminf(d,d2);
+    d2 = sdCone(swi3(rocketPos,y,z,x) + to_float3(0,-0.22f,0), to_float2(0.1f, 0.04f), 0.1f );
+    d = _fminf(d,d2);
+    matmin(dist, mat, d, matBoring);*/
+
+
+
+    // Wires
+    const float len = 8.0f * scale;
+    float wireThick = 0.001f;
+    prot = RotateY(p, PI*0.3333f);
+    float wire = length(prot - to_float3(0,0,clamp(prot.z, -len, len))) - wireThick;
+    float wire2 = length(prot - to_float3(clamp(prot.x, -len, len),0,0)) - wireThick;
+    //distAndMat = matmin(distAndMat, to_float2(_fminf(wire, wire2), matPipe));
+
+    prot = RotateY(p, PI*0.6666f);
+    wire = length(prot - to_float3(0,0,clamp(prot.z, -len, len))) - wireThick;
+    wire2 = length(prot - to_float3(clamp(prot.x, -len, len),0,0)) - wireThick;
+    //distAndMat = matmin(distAndMat, to_float2(_fminf(wire, wire2), matPipe));
+
+    // Wires
+    //float wireThick = 0.01f;
+    prot = RotateY(p, PI*0.25f);
+    prep = Repeat(prot.x, 0.25f*0.707f);
+/*    wire = length(to_float2(prep, _fabs(prot.y))) - wireThick;
+    wire = _fmaxf(wire, length(swi2(p,x,z))-len);
+
+    wire2 = _fmaxf(prep, _fmaxf(0.25f-p.z, _fmaxf(0.25f-p.x, wire)));
+    matmin(dist, mat, wire2, matPipe);
+    wire = _fmaxf(prep, _fmaxf(0.25f+p.z, _fmaxf(0.25f+p.x, wire)));
+    matmin(dist, mat, wire, matPipe);
+
+    prep = Repeat(prot.z, 0.25f*0.707f);
+    wire = length(to_float2(prep, _fabs(prot.y))) - wireThick;
+    wire = _fmaxf(wire, length(swi2(p,x,z))-len);
+
+    wire2 = _fmaxf(prep, _fmaxf(0.25f+p.z, _fmaxf(0.25f-p.x, wire)));
+    matmin(dist, mat, wire2, matPipe);
+    wire = _fmaxf(prep, _fmaxf(0.25f-p.z, _fmaxf(0.25f+p.x, wire)));
+    matmin(dist, mat, wire, matPipe);*/
+
+    // Ladder-struts in spokes
+    prep = Repeat(p.x, 0.25f);
+    d = length(to_float2(prep, _fabs(p.y) - 0.0f))-0.015f;
+    d = _fmaxf(d, length(swi2(p,x,z))-len);
+    d = _fmaxf(d, _fabs(p.z) - 0.25f);
+    matmin(dist, mat, d, matSpoke);
+
+    prep = Repeat(p.z, 0.25f);
+    d = length(to_float2(prep, _fabs(p.y) - 0.0f))-0.015f;
+    d = _fmaxf(d, length(swi2(p,x,z))-len);
+    d = _fmaxf(d, _fabs(p.x) - 0.25f);
+    matmin(dist, mat, d, matSpoke);
+
+    // 45 degree struts
+    prep = Repeat(prot.z+0.09f, 0.25f*0.707f);
+    d = length(to_float2(prep, _fabs(prot.y) - 0.0f))-0.015f;
+    d = _fmaxf(d, length(swi2(p,x,z))-len);
+    d = _fmaxf(d, _fabs(p.x) - 0.25f);
+    matmin(dist, mat, d, matSpoke);
+
+    prep = Repeat(prot.x+0.09f, 0.25f*0.707f);
+    d = length(to_float2(prep, _fabs(prot.y) - 0.0f))-0.015f;
+    d = _fmaxf(d, length(swi2(p,x,z))-len);
+    d = _fmaxf(d, _fabs(p.z) - 0.25f);
+    matmin(dist, mat, d, matSpoke);
+
+    // Solar array
+/*    prot = RotateY(p + to_float3(-8.0f,0.0f,0.0f), PI*0.25f);
+  prep = Repeat(prot.z, 0.5f*0.707f);
+    prot = RotateX(to_float3(swi2(prot,x,y), prep), 0.5f);
+    //prot = to_float3(prot.x, prot.y, prep);
+    float3 cr = normalize(cross(sunDir, to_float3(1,0,0)));
+    cr = normalize(cross(cr, sunDir));
+    //prot = to_float3(prot.x, sunDir.y * prot.y - cr.z * prot.z, cr.x * prot.y + sunDir.z * prot.z);
+  d = sdBox(prot, to_float3(4.0f, 0.001f, 0.095f));
+    d = _fmaxf(d, length(swi2(p,x,z))-len);
+    d = _fmaxf(d, 0.5f-p.x);
+    d = _fmaxf(d, 0.5f+p.z);
+    matmin(dist, mat, d, matSolarPanel);*/
+
+    p = RotateY(p,-ROT_SPEED*iTime);
+
+    // Communications tower / truss
+    d = Truss(swi3(p,x,z,y) + to_float3(0,0,4), 0.015f, 0.0075f, 3.535f, 0.05f);
+    matmin(dist, mat, d, matGlossyRough);
+
+    // Dishes
+    float tempD;
+    uint tempM;
+    Dish(RepeatY_f3(RotateY(p, _sinf(_floor(p.y/0.666f+0.5f)*1.73f+iTime*0.1f)) + to_float3(0,4.9f,0), 0.666f), &tempD, &tempM);
+    tempD = _fmaxf(tempD, Flip(p.y+4.9f, 2.666f));
+    matmin(dist, mat, tempD, tempM);
+
+    //float d = length(p) - 2.0f;
+    //matmin(dist, mat, d, 0u);// distAndMat, to_float2(d, matGlossyRough));
+    //d = length(p-3.0f) - 2.0f;
+    //distAndMat = matmin(distAndMat, to_float2(d, matChrome));
+
+/*    d = cylCap(swi3(p,z,x,y) - to_float3(0.0f, 0.0f, 2.0f), 0.05f, 2.0f);
+    matmin(dist, mat, d, SetMatRGB(0u, 255u, 0u));
+    d = cylCap(swi3(p,y,z,x) - to_float3(0.0f, 0.0f, 2.0f), 0.05f, 2.0f);
+    matmin(dist, mat, d, SetMatRGB(255u, 0u, 0u));
+    d = cylCap(swi3(p,x,y,z) - to_float3(0.0f, 0.0f, 2.0f), 0.05f, 2.0f);
+    matmin(dist, mat, d, SetMatRGB(0u, 0u, 255u));*/
+
+    //return distAndMat;
+}
+
+// dirVec MUST BE NORMALIZED FIRST!!!!
+__DEVICE__ float SphereIntersect(float3 pos, float3 dirVecPLZNormalizeMeFirst, float3 spherePos, float rad)
+{
+    float3 radialVec = pos - spherePos;
+    float b = dot(radialVec, dirVecPLZNormalizeMeFirst);
+    float c = dot(radialVec, radialVec) - rad * rad;
+    float h = b * b - c;
+    if (h < 0.0f) return -1.0f;
+    return -b - _sqrtf(h);
+}
+
+__DEVICE__ float4 texPanelsDense(float2 uv, out float3 *normal) {
+
+    float3 texNormal = to_float3_s(0);
+    float4 texColor = to_float4_s(0);
+    float mask = 0.0f;
+    for (int i = ZERO_TRICK; i < 9; i++) {
+        float3 tempN;
+        float4 tempC = texPanels(uv/(float)(i+1)+37.5f*(float)(1-i), &tempN);
+        texColor = _mix(tempC, texColor, mask);
+        texNormal = _mix(tempN, texNormal, mask);
+        mask = _saturatef((texColor.w-0.05f)*200.0f);
+    }
+
+    *normal = texNormal;
+    return texColor;
+}
+
+
+// Input is UV coordinate of pixel to render.
+// Output is RGB color.
+__DEVICE__ float3 RayTrace(in float2 fragCoord, float2 iResolution, float iTime, float4 iMouse, bool AntiAlias, float3 View[3], __TEXTURE2D__ iChannel2 )
+{
+  // How much space between voxel borders and geometry for voxel ray march optimization
+  float voxelPad = 0.005f;
+  // p should be in [0..1] range on xz plane
+
+  // -------------------------------- animate ---------------------------------------
+  const float3 sunCol = to_float3(2.58f, 2.38f, 2.10f)*0.8f;
+  const float3 sunDir = normalize(to_float3(0.93f, 1.0f, 1.0f));
+  const float3 skyCol = to_float3(0.3f,0.45f,0.8f)*0.5f;
+  const float exposure = 1.7f;
+
+  float3 camPos, camUp, camLookat;
+  // ------------------- Set up the camera rays for ray marching --------------------
+  // Map uv to [-1.0..1.0]
+  float2 uv = fragCoord/iResolution * 2.0f - 1.0f;
+  uv /= 3.0f;  // zoom in
+
+  // Camera up vector.
+  camUp=to_float3(0,1,0) + View[0];
+
+  // Camera lookat.
+  camLookat=to_float3(0,-1.75f,0) + View[1];
+
+  // debugging camera
+  float mx = -iMouse.x/iResolution.x*PI*2.0f;// + localTime * 0.05f;
+  float my = iMouse.y/iResolution.y*3.14f + PI/2.0f;// + _sinf(localTime * 0.3f)*0.8f+0.1f;//*PI/2.01f;
+  camPos = to_float3(_cosf(my)*_cosf(mx),_sinf(my),_cosf(my)*_sinf(mx))*13.0f;  // 9
+  if ((dot(swi2(iMouse,x,y), to_float2_s(1.0f)) <= 64.0f)) {
+        camPos = to_float3(10.0f, 6.6f, -8.0f)*1.0f;
+        int whichCam = (int)(iTime*0.095f) % 3;
+        float remainder = fract(iTime * 0.095f);
+        if (whichCam == 0) {
+            camPos = to_float3(10.0f, 6.6f, -8.0f)*(1.4f - remainder*0.2f);
+            camLookat=to_float3(0,-1.75f,0);
+            camUp=to_float3(0,1,0.5f);
+        }
+        else if (whichCam == 1) {
+            camPos = to_float3(1.0f, 4.0f + remainder*2.0f, -1.0f)*6.0f;
+            camLookat=to_float3(0,-1.75f,0);
+            camUp=to_float3(1,1,-0.5f);
+        }
+        else if (whichCam == 2) {
+/*            camPos = to_float3(-4.0f, 6.6f, 7.0f)*2.0f;
+            camLookat=to_float3(0,-2.5f,0);
+            camUp=to_float3(1,1,-0.5f);
+            uv *= 0.5f;*/
+            camPos = to_float3(-4.0f-remainder*2.0f, 6.6f+remainder*6.0f, 7.0f+remainder*6.0f)*2.0f;
+            camLookat=to_float3(0,-2.5f,0);
+            camUp=to_float3(1,1,-0.5f);
+            uv *= 0.5f+remainder*0.5f;
+        }
+    }
+
+  camPos += View[2];
+
+
+  // Camera setup for ray tracing / marching
+  float3 camVec=normalize(camLookat - camPos);
+  float3 sideNorm=normalize(cross(camUp, camVec));
+  float3 upNorm=cross(camVec, sideNorm);
+  float3 worldFacing=(camPos + camVec);
+  float3 worldPix = worldFacing + uv.x * sideNorm * (iResolution.x/iResolution.y) + uv.y * upNorm;
+  float3 rayVec = normalize(worldPix - camPos);
+
+  // ----------------------------- Ray march the scene ------------------------------
+  float dist;
+  uint mat;
+  //vec2 distAndMat;
+  float t = 0.05f;// + Hash2d(uv)*0.1f;  // random dither-fade things close to the camera
+  const float maxDepth = 45.0f; // farthest distance rays will travel
+  float3 pos = to_float3_s(0.0f);
+  const float smallVal = 0.000625f;
+  // ray marching time
+  for (int i = ZERO_TRICK; i < 250; i++)  // This is the count of the max times the ray actually marches.
+    {
+        // Step along the ray.
+        pos = (camPos + rayVec * t);
+        float walkA, walkB;
+        //vec2 distAndMatA, distAndMatB;
+        {
+            // This is _the_ function that defines the "distance field".
+            // It's really what makes the scene geometry. The idea is that the
+            // distance field returns the distance to the closest object, and then
+            // we know we are safe to "march" along the ray by that much distance
+            // without hitting anything. We repeat this until we get really close
+            // and then break because we have effectively hit the object.
+            DistanceToObject(pos, &dist, &mat, iTime);
+
+
+
+/*    float3 pRot = RotateY(pos,ROT_SPEED*iTime);
+
+    float density = 8.0f;
+    float3 cyl = cylTransform(pRot);
+    cyl.x *= density; // cyl.x is the angle around the space station. cyl.z is the length from the center.
+
+    const float scale = 1.0f;
+    float scaleDen = scale / density;
+    cyl = cyl.yzx/scaleDen;
+    cyl.z *=scaleDen;
+    cyl.y = cyl.y - 8.0f*density;
+    float3 cylBasic = cyl;
+    cyl.y = _fabs(cyl.y) - 1.0f; // make it a ring instead of solid cylinder
+
+    cyl.z = cyl.y;*/
+
+
+            // 2d voxel walk through the city blocks.
+            // The distance function is not continuous at city block boundaries,
+            // so we have to pause our ray march at each voxel boundary.
+            walkA = dist;
+            /*float dx = -fract(pos.x);
+            if (rayVec.x > 0.0f) dx = fract(-pos.x);
+            float dz = -fract(pos.z);
+            if (rayVec.z > 0.0f) dz = fract(-pos.z);
+            float nearestVoxel = _fminf(fract(dx/rayVec.x), fract(dz/rayVec.z))+voxelPad;
+            nearestVoxel = _fmaxf(voxelPad, nearestVoxel);// hack that assumes streets and sidewalks are this wide.
+            //nearestVoxel = _fmaxf(nearestVoxel, t * 0.02f); // hack to stop voxel walking in the distance.
+            walkA = _fminf(walkA, nearestVoxel);*/
+        }
+        dist = walkA;
+        float walk = walkA;
+        // move down the ray a safe amount
+        t += walk;
+        // If we are very close to the object, let's call it a hit and exit this loop.
+        if ((t > maxDepth) || (_fabs(dist) < smallVal)) break;
+    }
+
+    // Ray trace a ground plane to infinity
+    float alpha = -camPos.y / rayVec.y;
+/*    if ((t > maxDepth) && (rayVec.y < -0.0f))
+    {
+        swi2(pos,x,z) = swi2(camPos,x,z) + swi2(rayVec,x,z) * alpha;
+        pos.y = -0.0f;
+        t = alpha;
+        distAndMat.y = 0.0f;
+        distAndMat.x = 0.0f;
+    }*/
+  // --------------------------------------------------------------------------------
+  // Now that we have done our ray marching, let's put some color on this geometry.
+  float3 finalColor = to_float3_s(0.0f);
+
+  // If a ray actually hit the object, let's light it.
+    if ((t <= maxDepth) || (t == alpha))
+  {
+        //vec2 distAndMat = to_float2_s(0.0f);  // Distance and material
+        // calculate the normal from the distance field. The distance field is a volume, so if you
+        // sample the current point and neighboring points, you can use the difference to get
+        // the normal.
+        float3 smallVec = to_float3(smallVal, 0, 0);
+        //vec3 normalU = to_float3(dist - DistanceToObject(pos - swi3(smallVec,x,y,y)).x,
+        //                         dist - DistanceToObject(pos - swi3(smallVec,y,x,y)).x,
+        //                         dist - DistanceToObject(pos - swi3(smallVec,y,y,x)).x);
+        float3 normalU = to_float3_s(0.0f);
+        for( int i=ZERO_TRICK; i<4; i++ )
+        {
+            float3 e = 0.5773f*(2.0f*to_float3((((i+3)>>1)&1),((i>>1)&1),(i&1))-1.0f);
+            /*if (i==0) {
+                distAndMat = DistanceToObject(pos+0.0005f*e);
+                normalU += e*distAndMat.x;
+            } else {*/
+            float tempDist;
+            uint tempMat;
+            DistanceToObject(pos+0.0005f*e, &tempDist, &tempMat, iTime);
+            normalU += e*tempDist;
+            //}
+        }
+        float3 normal = normalize(normalU);
+
+
+        // calculate ambient occlusion.
+        float ff = 0.0125f;
+        float aa = 80.0f;
+        float ambient = 1.0f;
+        for( int i=ZERO_TRICK; i<6; i++ )
+        {
+            float tempDist;
+            uint tempMat;
+            DistanceToObject(pos + normal * ff, &tempDist, &tempMat, iTime);
+            ambient *= _saturatef(tempDist*aa);
+            ff *= 2.0f;
+            aa /= 2.0f;
+        }
+        ambient = _fmaxf(0.025f, _powf(ambient, 0.5f));  // tone down ambient with a pow and min clamp it.
+        ambient = _saturatef(ambient);
+
+        // calculate the reflection vector for highlights
+        //vec3 ref = reflect(rayVec, normal);
+
+        // Trace a ray toward the sun for sun shadows
+        float sunShadow = 1.0f;
+        float iter = 0.01f;
+        float3 nudgePos = pos + normal*0.002f;  // don't start tracing too close or inside the object
+        for (int i = ZERO_TRICK; i < 40; i++)
+        {
+            float3 shadowPos = nudgePos + sunDir * iter;
+            float tempDist;
+            uint tempMat;
+            DistanceToObject(shadowPos, &tempDist, &tempMat, iTime);
+            sunShadow *= _saturatef(tempDist*200.0f);  // Shadow hardness
+            if (tempDist <= 0.0f) break;
+
+            float walk = tempDist;
+            float dx = -fract(shadowPos.x);
+            if (sunDir.x > 0.0f) dx = fract(-shadowPos.x);
+            float dz = -fract(shadowPos.z);
+            if (sunDir.z > 0.0f) dz = fract(-shadowPos.z);
+            float nearestVoxel = _fminf(fract(dx/sunDir.x), fract(dz/sunDir.z))+smallVal;
+            nearestVoxel = _fmaxf(0.2f, nearestVoxel);// hack that assumes streets and sidewalks are this wide.
+            walk = _fminf(walk, nearestVoxel);
+
+            iter += _fmaxf(0.005f, walk);
+            if (iter > 4.5f) break;
+        }
+        sunShadow = _saturatef(sunShadow);
+
+        float specular = 0.0f;
+        float3 texColor = to_float3(0.5f, 0.5f, 0.5f);
+        float3 rustColor = to_float3(0.5f, 0.45f, 0.4f);
+        /*if ((distAndMat.y >= matFloor) && (distAndMat.y < matFloor + 1.0f)) {
+            texColor = _mix(texColor, rustColor, distAndMat.y);
+//            texColor *= (distAndMat.y*0.75f+0.25f);
+        }*/
+        float3 pRot = RotateY(pos,ROT_SPEED*iTime);
+        if (mat == matWall) {
+            texColor = to_float3(0.5f, 0.6f, 0.7f);
+        }
+        else if (mat == matPipe) {
+            texColor = to_float3(0.15f, 0.12f, 0.1f)*0.5f;
+        }
+        else if (mat == matChrome) {
+            texColor = to_float3(0.01f, 0.01f, 0.01f);
+            specular = 1.0f;
+        }
+        else if (mat == matGlossyRough) {
+            texColor = to_float3_s(0.5f);
+            specular = 0.99f;
+        }
+        else if (mat == matYellow) {
+            texColor = to_float3(0.6f, 0.42f, 0.05f)*0.755f;
+            specular = 0.1f;
+        } else if (mat == matSideWindows) {
+            float3 cyl = cylTransform(pRot);
+            float grid = _fmaxf(_fabs(fract(cyl.x*16.0f)*2.0f-1.0f), _fabs(fract(cyl.z*32.0f)*2.0f-1.0f));
+            grid = _saturatef(grid*5.0f-4.5f);
+            texColor = to_float3(0.5f,0.7f,1.0f)*grid;
+            specular = 0.2f;
+            /*float3 spNorm;
+            float4 rgbspec = texSolarPanels(swi2(cyl,x,z)*16.0f, spNorm, AntiAlias);
+            float3 cyl = cylTransform(pRot);
+            float3 spNorm;
+            float4 rgbspec = texSolarPanels(swi2(cyl,x,z)*16.0f, spNorm, AntiAlias);
+            texColor = swi3(rgbspec,x,y,z);
+            specular = rgbspec.w;*/
+        } else if (mat == matFloor) {
+
+            float3 cyl = cylTransform(pRot);
+            float3 spNorm;
+            if (length(pRot) > 7.0f) swi2S(cyl,x,y, swi2(cyl,x,y) * to_float2(16.0f,4.0f));
+            float4 rgbspec = texPanelsDense(swi2(cyl,x,y)*8.0f * to_float2(0.2f, 1.2f), &spNorm);
+//          texColor = swi3(normal,x,y,z)*0.5f+0.5f;// to_float3_s(0.0f) + rgbspec.aaa*4.0f;
+            texColor = to_float3(0.0f,0.02f,0.05f);
+            if (length(pRot) > 7.0f)   texColor += to_float3_s(rgbspec.w)*7.0f-0.39f;
+            else                       texColor = _fmaxf(to_float3_s(0.33f),texColor + to_float3_s(rgbspec.w)*4.0f);
+            texColor *= to_float3(0.96f, 0.98f, 0.97f);
+            specular = rgbspec.w * 0.1f;
+            if (_fabs(normal.y) > 0.9f) texColor = to_float3_s(0.4f);
+            //texColor = to_float3(0.0f,1.0f,0.0f);
+        } else if (mat == matDome) {
+            float3 cyl = cylTransform(pRot);
+            texColor *= to_float3(0.91f, 0.97f, 0.998f)*0.8f;
+            float windows = _saturatef(_fabs(fract(cyl.z*64.0f)-0.5f)*16.0f-4.0f);
+            //windows = _fmaxf(windows, _saturatef(_fabs(fract(cyl.x*24.0f)-0.5f)*16.0f-4.0f));
+            //if (_fabs(normal.y) > 0.15f) texColor = _mix(texColor, to_float3(0.6f, 0.7f, 0.9f)*0.4f, windows);
+            //if (_fabs(cyl.z) < 8.25f) {
+            //if (length(swi2(normal,y,z)) < 0.7f) {
+            specular = windows*0.2f;
+            texColor *= windows*0.35f+0.65f;
+            //}
+        } else if (IsMatRGB(mat)) {
+            texColor = GetMatRGB(mat)*(1.0f/255.0f);
+        }
+
+        float n = 0.0f;
+        float doubler = 1.0f;
+        for (int i = ZERO_TRICK; i < 4; i++) {
+            n += noise(pRot * 8.0f * doubler) / doubler;
+            doubler *= 2.0f;
+            //n += noise(pos*16.0f)*0.5f;
+            //n += noise(pos*32.0f)*0.25f;
+            //n += noise(pos*64.0f)*0.125f;
+        }
+        texColor *= (n*0.25f+0.75f);
+
+        if (mat == matSpoke) {
+            texColor = to_float3_s(1.0f)*0.6f;
+        }
+
+        if (mat == matSolarPanel) {
+            float3 spNorm;
+            float4 rgbspec = texSolarPanels(Rotate(swi2(pRot,x,z)*64.0f, PI*0.25f), &spNorm, AntiAlias);// to_float3(0.3f, 0.4f, 0.5f)*0.35f;
+            texColor = swi3(rgbspec,x,y,z);
+            specular = rgbspec.w;
+        }
+        float3 texNorm;
+        //float4 rgbspec = texSolarPanels(swi2(pos,y,z)*16.0f, &texNorm, AntiAlias);
+        //specular = rgbspec.w;
+        //if (distAndMat.y >= 100.0f) {
+            // world space transform...
+            //normal = normalize(normal+ texNorm);
+            //texColor = fract(to_float3(swi2(pos,x,z), 0.0f));
+        //}
+
+        // ------ Calculate lighting color ------
+        // Start with sun color, standard lighting equation, and shadow
+        float3 lightColor = sunCol * _saturatef(dot(sunDir, normal)) * sunShadow;
+        // weighted average the near ambient occlusion with the far for just the right look
+        float ambientAvg = ambient;// (ambient*3.0f + ambientS) * 0.25f;
+        // Add sky color with ambient acclusion
+        lightColor += (skyCol * _saturatef(dot(normal, normalize(earthPos)) *0.5f+0.5f))*_powf(ambientAvg, 0.25f);
+
+        float3 ref = reflect(rayVec, normalize(normal));
+        //vec3 envTemp = _tex2DVecN(iChannel0,ref.x,ref.y,15).xyz;
+        //vec3 env = _saturatef(envTemp * envTemp * envTemp * envTemp);// GetEnvMap(ref, sunDir);
+        float3 env;
+        if (mat == matGlossyRough) {
+            env = GetEnvMapSpaceGlossy(pRot, ref, sunDir, sunCol, sunShadow);
+        } else {
+            env = GetEnvMapSpace(pRot, ref, sunDir, sunCol, sunShadow, iTime, iChannel2);
+        }
+
+        // Make windows-looking lights even though that would be the
+        // floor and the roof for the people inside. It still looks cool. :D
+        if (mat == matFloor) {
+            float n2 = _saturatef((n-0.5f)*1.0f);
+            float windows = 1.0f-_saturatef(_fabs(fract(pRot.y*16.0f)-0.5f)*14.0f-0.9f);
+            if (texColor.x < 0.0001f) {
+                texColor = to_float3_s(0.4f);
+                texColor *= windows;
+                lightColor += to_float3(0.99f,0.8f,0.35f)*2.0f*n2;
+            }
+            //texColor = to_float3(n2);
+            //texColor = to_float3(windows);
+        }
+
+        // finally, apply the light to the texture.
+        finalColor = texColor * lightColor;
+        finalColor = _mix(finalColor, env, specular);
+        // I'm a terrible person for doing this on a space scene, but...
+        // Let's fake some fog just to make it look bigger. :/
+        finalColor = _mix(finalColor, to_float3(0.07f,0.13f,0.2f), 0.08f);
+
+        // visualize length of gradient of distance field to check distance field correctness
+        //finalColor = to_float3_s(0.25f) * (length(normalU) / smallVec.x);
+  }
+    else
+    {
+        finalColor = GetEnvMapSpace(camPos, rayVec, sunDir, sunCol, 1.0f, iTime, iChannel2);
+    }
+
+    // vignette?
+    finalColor *= to_float3_s(1.1f) * _saturatef(1.1f - length(uv/1.2f));
+    finalColor *= exposure;
+
+    // output the final color without gamma correction - will do gamma later.
+    return (clamp(finalColor, 0.0f, 1.0f));
+}
+
+//const float kKeyLeft  = 37.5f / 256.0f;
+//const float kKeyUp    = 38.5f / 256.0f;
+//const float kKeyRight = 39.5f / 256.0f;
+//const float kKeyDown  = 40.5f / 256.0f;
+//const float kKeySpace = 32.5f / 256.0f;
+
+//__DEVICE__ float SampleKey(float key)
+//{
+//  return step(0.5f, texture(iChannel1, to_float2(key, 0.25f)).x);
+//}
+
+__KERNEL__ void OrbitalMegastructureFuse(__CONSTANTREF__ Params*  params,  __TEXTURE2D__ iChannel0, __TEXTURE2D_WRITE__ destinationTexture)
+{
+   DEFINE_KERNEL_ITERATORS_XY(fusion_x, fusion_y);
+
+   if (fusion_x >= params->width || fusion_y >= params->height)
+     return;
+
+  float2 iResolution = to_float2(params->iResolution[0], params->iResolution[1]);
+  float  iTime       = params->iTime;
+  float4 iMouse      = to_float4(params->iMouse[0],params->iMouse[1],params->iMouse[2],params->iMouse[3]);
+  int    iFrame      = params->iFrame;
+  float4 fragColor   = to_float4_s(0.0f);
+  float2 fragCoord   = to_float2(fusion_x,fusion_y);
+
+
+  bool   AntiAlias = params->AntiAlias;
+  float2 View1XY = to_float2(params->View1XY[0], params->View1XY[1]);
+  float  View1Z = params->View1Z;
+  float2 View2XY = to_float2(params->View2XY[0], params->View2XY[1]);
+  float  View2Z = params->View2Z;
+  float2 View3XY = to_float2(params->View3XY[0], params->View3XY[1]);
+  float  View3Z = params->View3Z;
+
+  // --------
+
+    float3 View[3] = { to_float3_aw(View1XY, View1Z), to_float3_aw(View2XY, View2Z), to_float3_aw(View3XY, View3Z) };
+
+    // ---- Random functions use one 32 bit state var to change things up ----
+    // This is the single state variable for the random number generator.
+    uint randomState = 4056649889u;
+    // 0xffffff is biggest 2^n-1 that 32 bit float does exactly.
+
+    SetRandomSeed(fragCoord, iResolution, iFrame, &randomState);
+    // Do a multi-pass render if anti-aliasing is on
+    float3 finalColor = to_float3_s(0.0f);
+    finalColor = RayTrace(fragCoord, iResolution, iTime, iMouse, AntiAlias, View, iChannel0);
+
+    float2 R = iResolution;
+    float2 uv = ( 2.0f*fragCoord - R ) / R.y;          // [-1,1] vertically
+    uv *= 18.0f;
+    //uv  += swi2(iMouse,x,y) * 0.1f;
+    //uv.x += iTime * 1.1f;
+    float3 texNormal;
+    float4 texColor = texPanelsDense(uv, &texNormal);
+    float3 tempLightDir = normalize( to_float3_aw((swi2(iMouse,x,y)-fragCoord)*0.003f, 1.0f) );
+    float lightDot = dot(tempLightDir, normalize(swi3(texNormal,x,y,z)));
+    //finalColor = swi3(texColor,x,y,z) * _fmaxf(0.0f,lightDot)*0.8f + to_float3(0.01f, 0.2f, 0.4f)*0.2f;
+    //finalColor += to_float3_s(1.0f) * _powf(_fmaxf(0.0f,lightDot), 104.0f) * texColor.w;
+    //if (iMouse.z > 0.0f) finalColor = texNormal * 0.5f + 0.5f;
+    //if (SampleKey(kKeySpace) > 0.5f) finalColor = to_float3_aw(1) * texColor.w;
+    fragColor = to_float4_aw(sqrt_f3(_saturatef(finalColor)),1.0f);
+
+  _tex2DVec4Write(destinationTexture, fusion_x, fusion_y, fragColor);
+}
+]]
+-- /*
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Create
+-- // ------------------------------------------------------------------------
+
+function Create()
+
+  ShaderFuse.begin_create()
+
+  ----- Inspector Panel Controls
+
+  
+  -- Speed Slider
+  
+  InFrequency = self:AddInput("Speedup", "speed", {
+    LINKID_DataType    = "Number",
+    INPID_InputControl = "SliderControl",
+    INP_Default        = 1.0,
+    INP_MinScale 	     = 0.0,
+    INP_MaxScale 	     = 5.0,
+    SLCS_LowName       = "stop",
+    SLCS_HighName      = "5x",
+  })
+  
+  -- iMouse Controls
+  
+  InMouseXY = self:AddInput("iMouse.xy", "iMouseXY", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+  })
+  
+  InMouseZW = self:AddInput("iMouse.zw", "iMouseZW", {
+    LINKID_DataType = "Point",
+    INPID_InputControl = "OffsetControl",
+    INP_DoNotifyChanged  = false,
+    INPID_PreviewControl = "CrosshairControl",
+    INP_Disabled = true,
+  })
+  
+  InMouseDrag = self:AddInput("Mouse Button Pressed", "iMouseClick", {
+    LINKID_DataType = "Number",
+    INPID_InputControl = "CheckboxControl",
+    INP_DoNotifyChanged  = false,
+    INP_MinScale = 0,
+    INP_MaxScale = 1,
+    INP_Default = 0,
+  })
+  InAntiAliasCheckbox = self:AddInput("AntiAlias", "AntiAlias", {
+    LINKID_DataType     = "Number",
+    INPID_InputControl  = "CheckboxControl",
+    INP_Integer         = true,
+    INP_Default         = 0,
+  })
+
+  InView1XYPoint = self:AddInput("View1XY", "View1XY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InView1ZSlider = self:AddInput("View1Z", "View1Z", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InView2XYPoint = self:AddInput("View2XY", "View2XY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InView2ZSlider = self:AddInput("View2Z", "View2Z", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  InView3XYPoint = self:AddInput("View3XY", "View3XY", {
+      LINKID_DataType    = "Point",
+      INPID_InputControl = "OffsetControl",
+      INPID_PreviewControl  = "CrosshairControl",
+      INP_DefaultX          = 0.0,
+      INP_DefaultY          = 0.0,
+  })
+
+  InView3ZSlider = self:AddInput("View3Z", "View3Z", {
+          LINKID_DataType    = "Number",
+          INPID_InputControl = "SliderControl",
+          INP_MinScale       = -10.0,
+          INP_MaxScale       = 10.0,
+          INP_Default        = 0.0,
+      })
+
+  Sep3 = self:AddInput(string.rep("_", 52), "Separator3", {
+    LINKID_DataType     = "Text",
+    INPID_InputControl  = "LabelControl",
+    INP_External        = false,
+    INP_Passive         = true,
+    IC_Visible          = true,
+    INP_DoNotifyChanged = true,
+    IC_NoLabel          = true,
+  })
+  
+  
+  InEdges = self:AddInput("Edges", "Edges", {
+    LINKID_DataType = "Number",
+    INPID_InputControl  = "MultiButtonControl",
+    INP_Default         = 3.0,
+    INP_Integer         = true,
+    INP_DoNotifyChanged = true,
+    INP_External        = false,
+    MBTNC_ForceButtons  = true,
+    INP_MinScale        = 0,
+    INP_MaxScale        = 3,
+    INP_MinAllowed      = 0,
+    INP_MaxAllowed      = 3,
+    MBTNC_ShowBasicButton = true,
+    MBTNC_StretchToFit  = false, --true,
+    MBTNC_ShowToolTip   = true,
+    { MBTNC_AddButton = "Canvas", MBTNCD_ButtonWidth = 4/16, },
+    { MBTNC_AddButton = "Wrap",MBTNCD_ButtonWidth = 3/16, },
+    { MBTNC_AddButton = "Duplicate", MBTNCD_ButtonWidth = 5/16, },
+    { MBTNC_AddButton = "Mirror", MBTNCD_ButtonWidth = 4/16, }, 
+   }) 
+
+  ----- Size & Depth
+  InSize = self:AddInput("Size", "Size_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default        = 0,
+    INP_Integer        = true,
+    ICD_Width          = 1,
+	  { CCS_AddString  = "Default", },
+    { CCS_AddString  = "Manually", },
+	  { CCS_AddString  = "Image0", },
+    { CCS_AddString  = "1920x1080", },
+	  { CCS_AddString  = "1200x675", },
+	  { CCS_AddString  = "800x450", },
+	  { CCS_AddString  = "640x360", },
+    CC_LabelPosition = "Horizontal",
+	  ICS_ControlPage  = "Image",
+  })
+  
+  InWidth = self:AddInput("Width", "_Width", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1920,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+	InHeight = self:AddInput("Height", "_Height", {
+		LINKID_DataType 	= "Number",
+		INPID_InputControl 	= "SliderControl",
+		INP_Default 		= 1080,
+		INP_Integer         = true,
+		INP_MinScale 		= 0,
+		INP_MaxScale 		= 4096,
+	})
+  
+  InDepth = self:AddInput("Depth_Fuse", "Depth_Fuse", {
+    LINKID_DataType  = "Number",
+    INPID_InputControl = "ComboControl",
+    INP_DoNotifyChanged = true,
+    INP_Default      = 0,
+    INP_Integer      = true,
+    ICD_Width        = 1,
+    { CCS_AddString  = "Default", },
+    { CCS_AddString  = "int8", },
+    { CCS_AddString  = "int16", },
+    { CCS_AddString  = "float16", },
+    { CCS_AddString  = "float32", },
+    CC_LabelPosition = "Horizontal",
+    ICS_ControlPage  = "Image",
+  })
+  
+  InMyWidth = self:FindInput("Width")
+	InMyWidth:SetAttrs({ IC_Visible = false })
+	InMyHeight = self:FindInput("Height")
+	InMyHeight:SetAttrs({ IC_Visible = false })
+	InMyDepth = self:FindInput("Depth")
+	InMyDepth:SetAttrs({ IC_Visible = false }) 
+
+  ----- In/Out
+
+  InChannel0 = self:AddInput( "iChannel0",  "iChannel0",  { LINKID_DataType = "Image", LINK_Main = 1, INP_Required = false  })
+
+  OutImage = self:AddOutput("Output", "Output", {
+    LINKID_DataType = "Image",
+    LINK_Main       = 1,
+  })
+
+
+  ShaderFuse.end_create()
+
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Process
+-- // ------------------------------------------------------------------------
+function DefineEdges(edges, nodeX)
+
+    --This gets the value of our input image for us to modify inside the kernel
+    if edges == 0 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_BORDER, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 1 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_WRAP, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 2 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_DUPLICATE, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 3 then
+      nodeX:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+    elseif edges == 4 then
+      --print("Sampler 4")
+    end
+end
+
+
+
+function Process(req)
+
+	-- Imagesize and Depth
+  if (InSize:GetValue(req).Value >= 1) then
+		if (InSize:GetValue(req).Value == 2) then
+			if (InChannel0:GetValue(req) ~= nil) then
+			   Width = InChannel0:GetValue(req).Width
+			   Height = InChannel0:GetValue(req).Height
+			end
+		else
+			Width = InWidth:GetValue(req).Value
+			Height = InHeight:GetValue(req).Value 
+		end
+	end	
+  
+  -- Alle ( int und float )
+  if (InDepth:GetValue(req).Value > 0) then
+	  if InDepth:GetValue(req).Value == 1 then 
+	    SourceDepth = 5 
+    else 
+	    if InDepth:GetValue(req).Value == 2 then 
+	        SourceDepth = 6 
+	    else 
+	        if InDepth:GetValue(req).Value == 3 then 
+ 		        SourceDepth = 7 
+		    	else
+			      SourceDepth = 8
+	        end
+		  end
+	  end
+	end
+
+  local imgattrs = {
+    IMG_Document = self.Comp,
+    { IMG_Channel = "Red", },
+    { IMG_Channel = "Green", },
+    { IMG_Channel = "Blue", },
+    { IMG_Channel = "Alpha", },
+    IMG_Width  = Width,
+    IMG_Height = Height,
+    IMG_XScale = XAspect,
+    IMG_YScale = YAspect,
+    IMAT_OriginalWidth  = realwidth, -- nil !?!
+    IMAT_OriginalHeight = realheight, -- nil !?!
+    IMG_Quality = not req:IsQuick(),
+    IMG_MotionBlurQuality = not req:IsNoMotionBlur(),
+    IMG_DeferAlloc = true,
+    IMG_ProxyScale = ( (not req:IsStampOnly()) and 1 or nil),
+    IMG_Depth = ( (SourceDepth~=0) and SourceDepth or nil   )
+  }
+
+  local dst   = Image(imgattrs)
+  local black = Pixel({R=0,G=0,B=0,A=0})
+  dst:Fill(black)
+
+
+  if req:IsPreCalc() then
+    local out = Image({IMG_Like = dst, IMG_NoData = true})
+    OutImage:Set(req, out)
+    return
+  end
+
+
+  node = DVIPComputeNode(req,
+    "OrbitalMegastructureFuse", ShaderCompatibilityCode..ShaderKernelCode,
+    "Params", ShaderParameters
+  )
+
+  -- Extern texture or create a new one
+
+  iChannel0 = InChannel0:GetValue(req)
+
+  if iChannel0==nil then
+    iChannel0 = Image(imgattrs)
+    iChannel0:Fill(black)
+  end
+
+  -- DCTL parameters
+
+  local framerate = self.Comp:GetPrefs("Comp.FrameFormat.Rate")
+
+  local params = {}
+
+  if MULTIBUFFER then -- MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER MULTIBUFFER 
+    params = nodeA:GetParamBlock(ShaderParameters)
+  else  
+    params = node:GetParamBlock(ShaderParameters)
+  end  
+
+  params.iResolution[0] = dst.Width
+  params.iResolution[1] = dst.Height
+  params.iTime = (req.Time / framerate) * InFrequency:GetValue(req).Value
+  
+  -- iMouse
+  
+  local mouse_xy  = InMouseXY:GetValue(req)
+  local mouse_zw  = InMouseZW:GetValue(req)
+  
+  params.iMouse[0] = mouse_xy.X
+  params.iMouse[1] = mouse_xy.Y
+  params.iMouse[2] = mouse_zw.X
+  params.iMouse[3] = mouse_zw.Y
+  
+  if InMouseDrag:GetValue(req).Value ~= 0 then
+    if params.iMouse[2]==-1 and params.iMouse[3]==-1 then
+      params.iMouse[2]=params.iMouse[0]
+      params.iMouse[3]=params.iMouse[1]
+    end
+  else
+    params.iMouse[2] = -1
+    params.iMouse[3] = -1
+  end
+  
+  if mouse_zw.X ~= params.iMouse[2] or mouse_zw.Y ~= params.iMouse[3] then
+    InMouseZW:SetAttrs({INP_Disabled=false})
+    InMouseZW:SetSource(Point(params.iMouse[2],params.iMouse[3]),0,0)
+    InMouseZW:SetAttrs({INP_Disabled=true})
+  end
+  
+  params.iMouse[0] = params.iMouse[0] * Width
+  params.iMouse[1] = params.iMouse[1] * Height
+  if params.iMouse[2] == -1 and params.iMouse[3] == -1 then
+    params.iMouse[2] = 0
+    params.iMouse[3] = 0
+  else
+    params.iMouse[2] = params.iMouse[2] * Width
+    params.iMouse[3] = params.iMouse[3] * Height
+  end
+  params.iFrame = req.Time
+
+  params.AntiAlias = InAntiAliasCheckbox:GetValue(req).Value
+  params.View1XY = {InView1XYPoint:GetValue(req).X,InView1XYPoint:GetValue(req).Y}
+  params.View1Z = InView1ZSlider:GetValue(req).Value
+  params.View2XY = {InView2XYPoint:GetValue(req).X,InView2XYPoint:GetValue(req).Y}
+  params.View2Z = InView2ZSlider:GetValue(req).Value
+  params.View3XY = {InView3XYPoint:GetValue(req).X,InView3XYPoint:GetValue(req).Y}
+  params.View3Z = InView3ZSlider:GetValue(req).Value
+  -- Resolution
+
+  params.width  = dst.Width
+  params.height = dst.Height
+
+  -- Per channel time and resolution
+
+
+  local edges = InEdges:GetValue(req).Value
+
+  -- Set parameters and add I/O
+  node:SetParamBlock(params)
+  --node:AddSampler("RowSampler", TEX_FILTER_MODE_LINEAR,TEX_ADDRESS_MODE_MIRROR, TEX_NORMALIZED_COORDS_TRUE)
+  DefineEdges(edges, node)
+    
+  node:AddInput("iChannel0",iChannel0) -- TODO: add a better channel name
+  node:AddOutput("dst", dst)
+
+
+  local ok = node:RunSession(req)
+
+	if (not ok) then
+		dst = nil
+    dump(node:GetErrorLog())
+	end
+
+  OutImage:Set(req,dst)
+  
+  collectgarbage();
+end
+
+
+
+-- // ------------------------------------------------------------------------
+-- // Callback
+-- // ------------------------------------------------------------------------
+
+function NotifyChanged(inp, param, time)
+ 	if (param ~= nil) then
+
+		if inp == InSize then
+		  if param.Value == 1 then
+			  InWidth:SetAttrs({ IC_Visible = true })
+			  InHeight:SetAttrs({ IC_Visible = true })
+		  else
+			  InWidth:SetAttrs({ IC_Visible = false })
+			  InHeight:SetAttrs({ IC_Visible = false })
+		  end
+		  
+		  if param.Value == 3 then --1920x1080
+			  InWidth:SetSource(Number(1920),0,0)
+			  InHeight:SetSource(Number(1080),0,0)
+		  end
+		  if param.Value == 4 then --1200x675
+			  InWidth:SetSource(Number(1200),0,0)
+			  InHeight:SetSource(Number(675),0,0)
+		  end
+		  if param.Value == 5 then --800x450
+			  InWidth:SetSource(Number(800),0,0)
+			  InHeight:SetSource(Number(450),0,0)
+		  end
+ 	    if param.Value == 6 then --640x360
+		    InWidth:SetSource(Number(640),0,0)
+		    InHeight:SetSource(Number(360),0,0)
+		  end
+		end 
+
+ 	end
+end
+
+
+-- */
